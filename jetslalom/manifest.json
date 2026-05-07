@@ -1,0 +1,16 @@
+{
+  "name": "JETSlalom",
+  "short_name": "JETSlalom",
+  "description": "Endless ski-descent neón. Esquivá árboles, pasá por banderas, sobreviví al chaser.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "fullscreen",
+  "display_override": ["fullscreen", "standalone"],
+  "orientation": "portrait",
+  "background_color": "#06030f",
+  "theme_color": "#0f0a24",
+  "lang": "es-AR",
+  "categories": ["games", "arcade"],
+  "icons": [],
+  "prefer_related_applications": false
+}

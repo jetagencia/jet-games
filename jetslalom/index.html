@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="JETSlalom">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0f0a24">
+<title>JETSlalom</title>
+<link rel="manifest" href="manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700;800&family=Poppins:wght@600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    width: 100%; height: 100%; overflow: hidden;
+    background: #06030f; color: #e4d9ff;
+    font-family: 'JetBrains Mono', monospace;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none; -webkit-user-select: none;
+    touch-action: none;
+    overscroll-behavior: none;
+  }
+  body { position: relative; }
+
+  canvas#game {
+    display: block; position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    background: linear-gradient(180deg, #0a0719 0%, #1a1340 100%);
+    touch-action: none;
+  }
+
+  #hud {
+    position: absolute; top: env(safe-area-inset-top, 0); left: 0; right: 0;
+    padding: 14px 18px;
+    display: flex; justify-content: space-between; align-items: flex-start;
+    pointer-events: none;
+    z-index: 5;
+  }
+  .stat { display: flex; flex-direction: column; gap: 2px; }
+  .stat-label { font-size: 9px; font-weight: 700; letter-spacing: 2px; color: rgba(228,217,255,0.5); text-transform: uppercase; }
+  .stat-value { font-family: 'Poppins',sans-serif; font-weight: 800; font-size: 22px; line-height: 1; }
+  .stat.score .stat-value { color: #00f0ff; text-shadow: 0 0 12px rgba(0,240,255,0.5); }
+  .stat.combo .stat-value { color: #ff6ec7; text-shadow: 0 0 12px rgba(255,110,199,0.5); }
+  .stat.speed .stat-value { color: #ffd166; text-shadow: 0 0 12px rgba(255,209,102,0.5); }
+
+  #hint {
+    position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
+    color: rgba(228,217,255,0.4); font-size: 11px; letter-spacing: 2px;
+    text-transform: uppercase; pointer-events: none; z-index: 5;
+    text-align: center;
+  }
+
+  /* OVERLAYS */
+  .overlay {
+    position: fixed; inset: 0; background: rgba(6,3,15,0.92);
+    backdrop-filter: blur(8px);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 24px; z-index: 100;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.35s;
+  }
+  .overlay.show { opacity: 1; pointer-events: auto; }
+  .overlay h1 {
+    font-family: 'Poppins',sans-serif; font-weight: 900; font-size: 56px;
+    letter-spacing: -2px; line-height: 0.9; margin-bottom: 12px;
+    background: linear-gradient(135deg, #00f0ff, #ff6ec7);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text; text-align: center;
+  }
+  .overlay h2 {
+    font-family: 'Poppins',sans-serif; font-weight: 700; font-size: 28px;
+    color: #e4d9ff; margin-bottom: 4px; text-align: center;
+  }
+  .overlay p {
+    color: rgba(228,217,255,0.6); font-size: 13px; line-height: 1.6;
+    max-width: 320px; text-align: center; margin: 8px 0;
+  }
+  .stats-row {
+    display: flex; gap: 24px; margin: 18px 0 10px;
+    align-items: center;
+  }
+  .stats-row .stat { align-items: center; }
+  .stats-row .stat-value { font-size: 28px; }
+  .btn {
+    background: linear-gradient(135deg, #b794f6, #ff6ec7);
+    color: #06030f; border: none;
+    padding: 14px 32px; border-radius: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700; font-size: 13px; letter-spacing: 2px; text-transform: uppercase;
+    cursor: pointer; margin-top: 16px;
+    transition: transform 0.1s;
+  }
+  .btn:active { transform: scale(0.96); }
+
+  body::before {
+    content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 200;
+    background: radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,0.5) 100%);
+  }
+  body::after {
+    content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 201;
+    background: repeating-linear-gradient(0deg, transparent 0, transparent 2px, rgba(0,0,0,0.05) 3px);
+    opacity: 0.4;
+  }
+
+  .left-zone, .right-zone {
+    position: absolute; top: 0; bottom: 0; width: 50%;
+    z-index: 4;
+  }
+  .left-zone { left: 0; }
+  .right-zone { right: 0; }
+</style>
+</head>
+<body>
+
+<canvas id="game"></canvas>
+
+<!-- Touch zones invisibles -->
+<div class="left-zone" id="left-zone"></div>
+<div class="right-zone" id="right-zone"></div>
+
+<div id="hud">
+  <div class="stat score">
+    <span class="stat-label">Score</span>
+    <span class="stat-value" id="score-value">0</span>
+  </div>
+  <div class="stat combo">
+    <span class="stat-label">Combo</span>
+    <span class="stat-value" id="combo-value">0</span>
+  </div>
+  <div class="stat speed">
+    <span class="stat-label">Speed</span>
+    <span class="stat-value" id="speed-value">1.0×</span>
+  </div>
+</div>
+
+<div id="hint">Tocá izquierda o derecha para curvar</div>
+
+<!-- INTRO -->
+<div class="overlay show" id="overlay-intro">
+  <h1>JET//SLALOM</h1>
+  <p>Bajá la pendiente. Pasá entre las banderas. Esquivá los árboles.</p>
+  <p style="margin-top: 18px; font-size: 11px; opacity: 0.5;">
+    TAP a la izquierda → curva izquierda.<br>
+    TAP a la derecha → curva derecha.<br>
+    Combo de banderas seguidas = score multiplier.
+  </p>
+  <button class="btn" id="btn-start">Empezar</button>
+  <p style="margin-top: 16px; font-size: 10px; opacity: 0.3;">
+    JETCompany OÜ · Prototipo v0.1
+  </p>
+</div>
+
+<!-- GAME OVER -->
+<div class="overlay" id="overlay-gameover">
+  <h2 id="gameover-msg">¡Choque!</h2>
+  <h1 id="gameover-score">0</h1>
+  <p>Distancia: <span id="gameover-dist">0</span> m · Best: <span id="gameover-best">0</span></p>
+  <div class="stats-row">
+    <div class="stat combo">
+      <span class="stat-label">Max combo</span>
+      <span class="stat-value" id="gameover-combo">0</span>
+    </div>
+    <div class="stat score">
+      <span class="stat-label">Banderas</span>
+      <span class="stat-value" id="gameover-flags">0</span>
+    </div>
+  </div>
+  <button class="btn" id="btn-restart">Otra bajada</button>
+</div>
+
+<script>
+"use strict";
+
+// ============================================================================
+// CONFIG
+// ============================================================================
+const C = {
+  bg: '#0a0719',
+  snow: '#1a1340',
+  trail: 'rgba(228, 217, 255, 0.3)',
+  player: '#00f0ff',
+  flag: '#ff6ec7',
+  flagPole: '#e4d9ff',
+  tree: '#b794f6',
+  treeTrunk: '#3a2a6e',
+  shadow: 'rgba(0, 0, 0, 0.4)',
+};
+
+// ============================================================================
+// STATE
+// ============================================================================
+let canvas, ctx;
+let W = 0, H = 0;
+
+let player = null;     // { x, vx, y (mundo), tilt }
+let scrollY = 0;       // qué tan abajo estamos en el mundo (en pixels)
+let baseSpeed = 240;   // pixels/segundo de descenso (aumenta con tiempo)
+let speedMultiplier = 1;
+let elapsed = 0;
+let running = false;
+let lastTs = 0;
+
+let score = 0;
+let combo = 0;
+let maxCombo = 0;
+let flagsHit = 0;
+let bestScore = parseInt(localStorage.getItem('jetslalom-best') || '0', 10);
+
+let entities = [];     // árboles, banderas, etc, cada uno con { type, x, y, ... }
+let nextSpawn = 0;     // próximo y donde generar entities
+let snowParticles = [];
+
+let touchSide = 0;     // -1 izq, 1 der, 0 nada
+
+// ============================================================================
+// INIT
+// ============================================================================
+function init() {
+  canvas = document.getElementById('game');
+  ctx = canvas.getContext('2d');
+  resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
+  window.addEventListener('orientationchange', resizeCanvas);
+
+  // Touch zones
+  const left = document.getElementById('left-zone');
+  const right = document.getElementById('right-zone');
+
+  left.addEventListener('touchstart', e => { e.preventDefault(); touchSide = -1; }, { passive: false });
+  left.addEventListener('touchend', e => { e.preventDefault(); touchSide = 0; }, { passive: false });
+  left.addEventListener('mousedown', () => touchSide = -1);
+  left.addEventListener('mouseup', () => touchSide = 0);
+  left.addEventListener('mouseleave', () => touchSide = 0);
+
+  right.addEventListener('touchstart', e => { e.preventDefault(); touchSide = 1; }, { passive: false });
+  right.addEventListener('touchend', e => { e.preventDefault(); touchSide = 0; }, { passive: false });
+  right.addEventListener('mousedown', () => touchSide = 1);
+  right.addEventListener('mouseup', () => touchSide = 0);
+  right.addEventListener('mouseleave', () => touchSide = 0);
+
+  document.getElementById('btn-start').addEventListener('click', startGame);
+  document.getElementById('btn-restart').addEventListener('click', startGame);
+
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
+
+  // Init snow particles
+  for (let i = 0; i < 60; i++) {
+    snowParticles.push({
+      x: Math.random() * 600 - 300,
+      y: Math.random() * 1000,
+      r: 1 + Math.random() * 2,
+      vy: 30 + Math.random() * 40,
+    });
+  }
+}
+
+function resizeCanvas() {
+  const dpr = window.devicePixelRatio || 1;
+  W = window.innerWidth;
+  H = window.innerHeight;
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+
+// ============================================================================
+// GAME LOOP
+// ============================================================================
+function startGame() {
+  hideOverlay('overlay-intro');
+  hideOverlay('overlay-gameover');
+  player = { x: 0, vx: 0, y: 0, tilt: 0, alive: true };
+  scrollY = 0;
+  baseSpeed = 240;
+  speedMultiplier = 1;
+  elapsed = 0;
+  score = 0;
+  combo = 0;
+  maxCombo = 0;
+  flagsHit = 0;
+  entities = [];
+  nextSpawn = 200;
+  document.getElementById('hint').style.opacity = '1';
+  setTimeout(() => { document.getElementById('hint').style.opacity = '0'; }, 3000);
+  running = true;
+  lastTs = performance.now();
+  requestAnimationFrame(loop);
+}
+
+function loop(ts) {
+  if (!running) return;
+  const dt = Math.min(0.05, (ts - lastTs) / 1000);
+  lastTs = ts;
+  elapsed += dt;
+
+  update(dt);
+  draw();
+  updateHUD();
+
+  requestAnimationFrame(loop);
+}
+
+function update(dt) {
+  // Speed escala con tiempo
+  speedMultiplier = 1 + elapsed * 0.025;
+  const speed = baseSpeed * speedMultiplier;
+  scrollY += speed * dt;
+
+  // Player horizontal
+  const STEER_ACCEL = 800;
+  const FRICTION = 0.88;
+  if (touchSide !== 0) {
+    player.vx += touchSide * STEER_ACCEL * dt;
+    player.tilt += (touchSide * 0.5 - player.tilt) * 0.2;
+  } else {
+    player.tilt += (0 - player.tilt) * 0.15;
+  }
+  player.vx *= Math.pow(FRICTION, dt * 60);
+  player.vx = Math.max(-380, Math.min(380, player.vx));
+  player.x += player.vx * dt;
+
+  // Limit player horizontal a la pista (~ ancho fijo)
+  const trackHalf = Math.min(W * 0.42, 280);
+  if (player.x < -trackHalf) { player.x = -trackHalf; player.vx = -player.vx * 0.3; }
+  if (player.x > trackHalf) { player.x = trackHalf; player.vx = -player.vx * 0.3; }
+
+  // Spawn entities
+  while (nextSpawn < scrollY + H + 200) {
+    spawnEntity(nextSpawn);
+    nextSpawn += 80 + Math.random() * 60;
+  }
+
+  // Cleanup viejas
+  entities = entities.filter(e => e.y > scrollY - 100);
+
+  // Collision check
+  for (const e of entities) {
+    if (e.dead) continue;
+    const dx = e.x - player.x;
+    const dy = e.y - (scrollY + H * 0.6); // player en H*0.6 (60% desde arriba)
+    if (Math.abs(dy) > 30) continue;
+
+    if (e.type === 'tree' && Math.abs(dx) < 20 && Math.abs(dy) < 22) {
+      crash();
+      return;
+    }
+    if (e.type === 'flagpair' && Math.abs(dy) < 18) {
+      // chequear si pasó entre las dos banderas
+      if (dx > e.left && dx < e.right && !e.scored) {
+        e.scored = true;
+        combo++;
+        flagsHit++;
+        if (combo > maxCombo) maxCombo = combo;
+        const points = 100 + combo * 20;
+        score += points;
+        // visual feedback
+        e.flashTime = 0.4;
+        if (navigator.vibrate) navigator.vibrate(8);
+      } else if ((dx <= e.left || dx >= e.right) && !e.scored && !e.missed) {
+        e.missed = true;
+        combo = 0;
+      }
+    }
+  }
+
+  // Snow particles update
+  for (const p of snowParticles) {
+    p.y -= p.vy * dt;
+    p.x += Math.sin((scrollY + p.y) / 100) * 0.5;
+    if (p.y < -50) {
+      p.y = H + 50;
+      p.x = Math.random() * 600 - 300;
+    }
+  }
+
+  // Score bonus por distancia
+  score += Math.floor(speed * dt * 0.05);
+}
+
+function spawnEntity(yPos) {
+  const r = Math.random();
+  if (r < 0.55) {
+    // Árbol único
+    entities.push({ type: 'tree', x: (Math.random() - 0.5) * (W * 0.85), y: yPos, dead: false });
+  } else if (r < 0.85) {
+    // Par de banderas (slalom)
+    const center = (Math.random() - 0.5) * (W * 0.5);
+    const gap = 90 + Math.random() * 40;
+    entities.push({
+      type: 'flagpair',
+      x: center, y: yPos,
+      left: -gap / 2, right: gap / 2,
+      scored: false, missed: false, flashTime: 0,
+      dead: false,
+    });
+  } else {
+    // 2 árboles juntitos
+    const cx = (Math.random() - 0.5) * (W * 0.7);
+    entities.push({ type: 'tree', x: cx - 30, y: yPos, dead: false });
+    entities.push({ type: 'tree', x: cx + 30, y: yPos + 10, dead: false });
+  }
+}
+
+function crash() {
+  running = false;
+  if (score > bestScore) {
+    bestScore = score;
+    localStorage.setItem('jetslalom-best', bestScore.toString());
+  }
+  if (navigator.vibrate) navigator.vibrate([30, 60, 30]);
+  document.getElementById('gameover-score').textContent = score;
+  document.getElementById('gameover-dist').textContent = Math.floor(scrollY / 10);
+  document.getElementById('gameover-best').textContent = bestScore;
+  document.getElementById('gameover-combo').textContent = maxCombo;
+  document.getElementById('gameover-flags').textContent = flagsHit;
+  showOverlay('overlay-gameover');
+}
+
+// ============================================================================
+// DRAW
+// ============================================================================
+function draw() {
+  // Background gradient (más oscuro arriba, más claro abajo = simulando perspectiva)
+  const grad = ctx.createLinearGradient(0, 0, 0, H);
+  grad.addColorStop(0, '#06030f');
+  grad.addColorStop(1, '#1a1340');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+
+  // Snow particles
+  ctx.fillStyle = 'rgba(228, 217, 255, 0.5)';
+  for (const p of snowParticles) {
+    ctx.beginPath();
+    ctx.arc(W / 2 + p.x, p.y, p.r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Camera transform: world (player.y = scrollY in middle of screen-ish)
+  // Player se renderiza a screenY = H * 0.6
+  // Entity con world.y se renderiza a screenY = H*0.6 + (entity.y - (scrollY + H*0.6))
+  ctx.save();
+  ctx.translate(W / 2, 0);
+
+  // Track edges (líneas neón)
+  const trackHalf = Math.min(W * 0.42, 280);
+  ctx.strokeStyle = 'rgba(183, 148, 246, 0.3)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(-trackHalf, 0);
+  ctx.lineTo(-trackHalf, H);
+  ctx.moveTo(trackHalf, 0);
+  ctx.lineTo(trackHalf, H);
+  ctx.stroke();
+
+  // Lineas paralelas movidas (parallax de la nieve)
+  ctx.strokeStyle = 'rgba(26, 19, 64, 0.7)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i < 6; i++) {
+    const y = ((scrollY * 0.3 + i * 100) % 200);
+    ctx.beginPath();
+    ctx.moveTo(-W / 2, y);
+    ctx.lineTo(W / 2, y);
+    ctx.stroke();
+  }
+
+  // Entities
+  for (const e of entities) {
+    const screenY = H * 0.6 + (e.y - (scrollY + H * 0.6));
+    if (screenY < -100 || screenY > H + 50) continue;
+
+    if (e.type === 'tree') {
+      drawTree(e.x, screenY);
+    } else if (e.type === 'flagpair') {
+      drawFlagPair(e.x + e.left, e.x + e.right, screenY, e);
+    }
+  }
+
+  // Player
+  drawPlayer(player.x, H * 0.6, player.tilt);
+
+  ctx.restore();
+}
+
+function drawTree(x, y) {
+  // Sombra
+  ctx.fillStyle = C.shadow;
+  ctx.beginPath();
+  ctx.ellipse(x + 4, y + 12, 14, 5, 0, 0, Math.PI * 2);
+  ctx.fill();
+  // Tronco
+  ctx.fillStyle = C.treeTrunk;
+  ctx.fillRect(x - 3, y - 4, 6, 12);
+  // Triángulos verdes (tres niveles)
+  ctx.shadowColor = C.tree;
+  ctx.shadowBlur = 8;
+  ctx.fillStyle = C.tree;
+  ctx.beginPath();
+  ctx.moveTo(x, y - 32);
+  ctx.lineTo(x + 14, y - 6);
+  ctx.lineTo(x - 14, y - 6);
+  ctx.closePath();
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(x, y - 22);
+  ctx.lineTo(x + 12, y - 2);
+  ctx.lineTo(x - 12, y - 2);
+  ctx.closePath();
+  ctx.fill();
+  ctx.shadowBlur = 0;
+}
+
+function drawFlagPair(xLeft, xRight, y, e) {
+  // Flash si scored
+  if (e.flashTime && e.flashTime > 0) {
+    ctx.save();
+    ctx.fillStyle = 'rgba(255, 110, 199, ' + e.flashTime + ')';
+    ctx.fillRect(xLeft - 20, y - 30, (xRight - xLeft) + 40, 60);
+    ctx.restore();
+    e.flashTime -= 0.04;
+  }
+  // Pole + triángulo magenta cada uno
+  for (const fx of [xLeft, xRight]) {
+    ctx.fillStyle = C.flagPole;
+    ctx.fillRect(fx - 1, y - 22, 2, 28);
+    ctx.shadowColor = C.flag;
+    ctx.shadowBlur = 12;
+    ctx.fillStyle = e.scored ? '#a0ffe4' : C.flag;
+    ctx.beginPath();
+    ctx.moveTo(fx, y - 20);
+    ctx.lineTo(fx + 12, y - 14);
+    ctx.lineTo(fx, y - 8);
+    ctx.closePath();
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  }
+}
+
+function drawPlayer(x, y, tilt) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(tilt);
+
+  // Trail de nieve detrás (pluma simple)
+  ctx.fillStyle = C.trail;
+  for (let i = 1; i < 8; i++) {
+    ctx.beginPath();
+    ctx.arc(-i * 3, i * 4, 5 - i * 0.4, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Sombra
+  ctx.fillStyle = C.shadow;
+  ctx.beginPath();
+  ctx.ellipse(2, 14, 14, 4, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Esquies
+  ctx.fillStyle = '#e4d9ff';
+  ctx.fillRect(-10, 6, 4, 18);
+  ctx.fillRect(6, 6, 4, 18);
+
+  // Cuerpo neón
+  ctx.shadowColor = C.player;
+  ctx.shadowBlur = 14;
+  ctx.fillStyle = C.player;
+  ctx.beginPath();
+  ctx.ellipse(0, 0, 10, 16, 0, 0, Math.PI * 2);
+  ctx.fill();
+  // Cabeza
+  ctx.beginPath();
+  ctx.arc(0, -10, 6, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.shadowBlur = 0;
+  ctx.restore();
+}
+
+// ============================================================================
+// HUD
+// ============================================================================
+function updateHUD() {
+  document.getElementById('score-value').textContent = score;
+  document.getElementById('combo-value').textContent = combo + '×';
+  document.getElementById('speed-value').textContent = speedMultiplier.toFixed(1) + '×';
+}
+
+// ============================================================================
+// HELPERS
+// ============================================================================
+function showOverlay(id) { document.getElementById(id).classList.add('show'); }
+function hideOverlay(id) { document.getElementById(id).classList.remove('show'); }
+
+// BOOT
+init();
+</script>
+</body>
+</html>

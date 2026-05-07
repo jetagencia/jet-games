@@ -1,0 +1,51 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build artifacts
+build/
+dist/
+out/
+app/build/
+.gradle/
+
+# IDEs
+.vscode/
+.idea/
+*.iml
+.DS_Store
+Thumbs.db
+
+# Local env
+.env
+.env.local
+
+# Keystore — NUNCA AL REPO
+*.keystore
+*.jks
+*.p12
+KEYSTORE_INFO.md
+keystore-info*
+
+# APK / AAB outputs
+*.apk
+*.aab
+app-release-*.apk
+app-release-*.aab
+
+# Bubblewrap / Capacitor temporary
+twa-manifest.json.backup-*
+android/
+
+# Backups locales
+*.backup-*
+*-copia*
+*- copia*
+"index - copia*"
+"*copia*"
+
+# Misc
+*.log
+*.tmp
+.cache/

@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="JETFlow">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0f0a24">
+<meta name="mobile-web-app-capable" content="yes">
+<title>JETFlow</title>
+<link rel="manifest" href="manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700;800&family=Poppins:wght@600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    width: 100%; height: 100%; overflow: hidden;
+    background: #06030f; color: #e4d9ff;
+    font-family: 'JetBrains Mono', 'Courier New', monospace;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-user-select: none; user-select: none;
+    touch-action: manipulation;
+    overscroll-behavior: none;
+  }
+  body { display: flex; flex-direction: column; align-items: center; justify-content: stretch; padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom) 0; }
+
+  /* TOP BAR */
+  #top-bar {
+    width: 100%; padding: 14px 18px 10px;
+    display: flex; justify-content: space-between; align-items: flex-start;
+    background: linear-gradient(180deg, #0f0a24 0%, transparent 100%);
+    z-index: 5;
+  }
+  .stat { display: flex; flex-direction: column; gap: 2px; }
+  .stat-label {
+    font-size: 10px; font-weight: 700; letter-spacing: 2px;
+    color: rgba(228, 217, 255, 0.4); text-transform: uppercase;
+  }
+  .stat-value {
+    font-family: 'Poppins', sans-serif; font-weight: 800; font-size: 24px;
+    line-height: 1; letter-spacing: -0.5px;
+    color: #00f0ff; text-shadow: 0 0 12px rgba(0, 240, 255, 0.5);
+  }
+  .stat.target .stat-value { color: #ff6ec7; text-shadow: 0 0 12px rgba(255, 110, 199, 0.5); }
+  .stat.level .stat-value { color: #b794f6; text-shadow: 0 0 12px rgba(183, 148, 246, 0.5); }
+  .stat.timer .stat-value { color: #ffd166; text-shadow: 0 0 12px rgba(255, 209, 102, 0.5); }
+  .stat.timer.urgent .stat-value { color: #ff4757; text-shadow: 0 0 16px rgba(255, 71, 87, 0.7); animation: pulse 0.5s ease-in-out infinite alternate; }
+  @keyframes pulse { from { opacity: 1; } to { opacity: 0.5; } }
+
+  /* GAME CANVAS */
+  #game-wrap {
+    flex: 1; width: 100%; max-width: 460px; margin: 0 auto;
+    display: flex; align-items: center; justify-content: center;
+    position: relative;
+    padding: 8px;
+  }
+  canvas#grid {
+    display: block;
+    border-radius: 12px;
+    background: #0a0719;
+    box-shadow:
+      0 0 0 1px rgba(183, 148, 246, 0.15) inset,
+      0 8px 24px rgba(0, 0, 0, 0.5);
+    touch-action: none;
+  }
+
+  /* QUEUE */
+  #queue-wrap {
+    width: 100%; padding: 10px 12px 14px;
+    background: linear-gradient(0deg, #0f0a24 0%, transparent 100%);
+  }
+  #queue-label {
+    font-size: 10px; font-weight: 700; letter-spacing: 3px;
+    color: rgba(228, 217, 255, 0.4); text-transform: uppercase;
+    text-align: center; margin-bottom: 6px;
+  }
+  #queue {
+    display: flex; gap: 8px; justify-content: center;
+    align-items: center;
+  }
+  .queue-piece {
+    background: #1a1340;
+    border-radius: 10px;
+    flex-shrink: 0;
+    transition: transform 0.18s cubic-bezier(.25,.46,.45,.94), background 0.18s;
+    position: relative;
+  }
+  .queue-piece.current {
+    background: #2a1f4d;
+    box-shadow: 0 0 0 2px #00f0ff, 0 0 18px rgba(0, 240, 255, 0.5);
+    transform: scale(1.08);
+  }
+  .queue-piece.current::after {
+    content: 'NEXT'; position: absolute; top: -16px; left: 50%; transform: translateX(-50%);
+    font-size: 9px; font-weight: 700; letter-spacing: 2px;
+    color: #00f0ff; text-shadow: 0 0 8px rgba(0, 240, 255, 0.6);
+  }
+  .queue-piece canvas { display: block; }
+
+  /* CONTROLS */
+  #controls {
+    display: flex; gap: 8px; padding: 6px 12px 14px; width: 100%;
+    justify-content: center;
+  }
+  .btn {
+    background: rgba(183, 148, 246, 0.1);
+    border: 1px solid rgba(183, 148, 246, 0.25);
+    color: #e4d9ff;
+    padding: 10px 18px;
+    border-radius: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+    cursor: pointer; transition: all 0.18s;
+  }
+  .btn:active { background: rgba(183, 148, 246, 0.25); transform: scale(0.96); }
+  .btn.primary {
+    background: linear-gradient(135deg, #b794f6, #ff6ec7);
+    color: #06030f; border: none;
+  }
+
+  /* OVERLAYS */
+  .overlay {
+    position: fixed; inset: 0; background: rgba(6, 3, 15, 0.92);
+    backdrop-filter: blur(8px);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 24px; z-index: 100;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.35s ease;
+  }
+  .overlay.show { opacity: 1; pointer-events: auto; }
+  .overlay h1 {
+    font-family: 'Poppins', sans-serif; font-weight: 900; font-size: 56px;
+    letter-spacing: -2px; line-height: 0.9; margin-bottom: 8px;
+    background: linear-gradient(135deg, #00f0ff, #ff6ec7);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text; color: transparent;
+    text-align: center;
+  }
+  .overlay h2 {
+    font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 28px;
+    color: #e4d9ff; margin-bottom: 4px; text-align: center;
+  }
+  .overlay p {
+    color: rgba(228, 217, 255, 0.6); font-size: 13px;
+    line-height: 1.6; max-width: 320px; text-align: center;
+    margin: 8px 0;
+  }
+  .overlay .stats-row {
+    display: flex; gap: 24px; margin: 18px 0 28px;
+  }
+  .overlay .stats-row .stat { align-items: center; }
+  .overlay .stats-row .stat-value { font-size: 32px; }
+  .overlay .btn { margin-top: 12px; padding: 14px 32px; font-size: 13px; }
+
+  /* CRT scanline & vignette */
+  body::before {
+    content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 200;
+    background: radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,0.4) 100%);
+  }
+  body::after {
+    content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 201;
+    background: repeating-linear-gradient(0deg, transparent 0, transparent 2px, rgba(0,0,0,0.04) 3px);
+    opacity: 0.5;
+  }
+
+  /* MEDIA QUERIES */
+  @media (min-width: 600px) {
+    #game-wrap { max-width: 460px; }
+    .overlay h1 { font-size: 72px; }
+  }
+  @media (max-height: 700px) {
+    .overlay h1 { font-size: 44px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div id="top-bar">
+  <div class="stat score">
+    <span class="stat-label">Score</span>
+    <span class="stat-value" id="score-value">0</span>
+  </div>
+  <div class="stat target">
+    <span class="stat-label">Target</span>
+    <span class="stat-value" id="target-value">7</span>
+  </div>
+  <div class="stat level">
+    <span class="stat-label">Level</span>
+    <span class="stat-value" id="level-value">1</span>
+  </div>
+  <div class="stat timer" id="timer-stat">
+    <span class="stat-label">Flow in</span>
+    <span class="stat-value" id="timer-value">8</span>
+  </div>
+</div>
+
+<!-- GAME -->
+<div id="game-wrap">
+  <canvas id="grid"></canvas>
+</div>
+
+<!-- QUEUE -->
+<div id="queue-wrap">
+  <div id="queue-label">Próximas piezas →</div>
+  <div id="queue"></div>
+</div>
+
+<!-- CONTROLS -->
+<div id="controls">
+  <button class="btn" id="btn-skip">Saltar pieza (-50)</button>
+</div>
+
+<!-- INTRO OVERLAY -->
+<div class="overlay show" id="overlay-intro">
+  <h1>JET//FLOW</h1>
+  <p>Construí el camino antes de que el flooz se desborde.</p>
+  <p style="margin-top: 18px; font-size: 11px; opacity: 0.5;">
+    TAP en la grilla para colocar la pieza marcada.<br>
+    Pasá por cruces en ambas direcciones para BONUS 5×.<br>
+    Sobreviví el target de tubos.
+  </p>
+  <button class="btn primary" id="btn-start">Empezar</button>
+  <p style="margin-top: 16px; font-size: 10px; opacity: 0.3;">
+    JETCompany OÜ · Prototipo v0.1
+  </p>
+</div>
+
+<!-- GAME OVER OVERLAY -->
+<div class="overlay" id="overlay-gameover">
+  <h2 id="gameover-title">Desbordó</h2>
+  <h1 id="gameover-score">0</h1>
+  <p id="gameover-msg">Pasaste 0 tubos. Probá de nuevo.</p>
+  <div class="stats-row">
+    <div class="stat">
+      <span class="stat-label">Tubos</span>
+      <span class="stat-value" id="gameover-tubes">0</span>
+    </div>
+    <div class="stat target">
+      <span class="stat-label">Crosses</span>
+      <span class="stat-value" id="gameover-crosses">0</span>
+    </div>
+    <div class="stat level">
+      <span class="stat-label">Best</span>
+      <span class="stat-value" id="gameover-best">0</span>
+    </div>
+  </div>
+  <button class="btn primary" id="btn-restart">Otra vez</button>
+</div>
+
+<!-- LEVEL UP OVERLAY -->
+<div class="overlay" id="overlay-levelup">
+  <h2>¡Nivel completo!</h2>
+  <h1 id="levelup-score">0</h1>
+  <p id="levelup-msg">Buenísimo. Siguiente desafío.</p>
+  <button class="btn primary" id="btn-next">Siguiente</button>
+</div>
+
+<script>
+"use strict";
+
+// ============================================================================
+// CONFIG
+// ============================================================================
+const COLS = 7;
+const ROWS = 9;
+
+const COLORS = {
+  bg: '#0a0719',
+  gridLine: '#1a1340',
+  cellEmpty: '#0f0a24',
+  cellHover: '#1a1340',
+  pipeEmpty: '#3a2a6e',
+  pipeFilledA: '#00f0ff',
+  pipeFilledB: '#ff6ec7',
+  origin: '#ffb84d',
+  originGlow: 'rgba(255, 184, 77, 0.4)',
+  fluidGlow: 'rgba(0, 240, 255, 0.6)',
+};
+
+// Pipe types: array of connection sides [N, E, S, W] (0/1)
+const PIPE_TYPES = {
+  // 4 codos (cada combinación de 2 lados adyacentes)
+  ELBOW_NE: { id: 'NE', conn: [1, 1, 0, 0] },
+  ELBOW_ES: { id: 'ES', conn: [0, 1, 1, 0] },
+  ELBOW_SW: { id: 'SW', conn: [0, 0, 1, 1] },
+  ELBOW_WN: { id: 'WN', conn: [1, 0, 0, 1] },
+  // 2 rectas
+  STRAIGHT_NS: { id: 'NS', conn: [1, 0, 1, 0] },
+  STRAIGHT_EW: { id: 'EW', conn: [0, 1, 0, 1] },
+  // cruz
+  CROSS: { id: 'CROSS', conn: [1, 1, 1, 1] },
+};
+
+// Distribución probabilística de las piezas en la queue
+const PIECE_BAG = [
+  PIPE_TYPES.ELBOW_NE, PIPE_TYPES.ELBOW_ES, PIPE_TYPES.ELBOW_SW, PIPE_TYPES.ELBOW_WN,
+  PIPE_TYPES.STRAIGHT_NS, PIPE_TYPES.STRAIGHT_EW,
+  PIPE_TYPES.ELBOW_NE, PIPE_TYPES.ELBOW_ES, PIPE_TYPES.ELBOW_SW, PIPE_TYPES.ELBOW_WN,
+  PIPE_TYPES.STRAIGHT_NS, PIPE_TYPES.STRAIGHT_EW,
+  PIPE_TYPES.CROSS, // ~7% de probabilidad
+];
+
+// Levels
+const LEVELS = [
+  { target: 7, prepTime: 8, flowSpeed: 1000 },
+  { target: 9, prepTime: 7, flowSpeed: 900 },
+  { target: 12, prepTime: 6, flowSpeed: 800 },
+  { target: 15, prepTime: 5, flowSpeed: 700 },
+  { target: 18, prepTime: 4, flowSpeed: 600 },
+  { target: 22, prepTime: 4, flowSpeed: 550 },
+  { target: 26, prepTime: 3, flowSpeed: 500 },
+  { target: 30, prepTime: 3, flowSpeed: 450 },
+];
+
+// Direction vectors: N(0), E(1), S(2), W(3)
+const DIRS = [
+  { dx:  0, dy: -1, opp: 2 }, // N
+  { dx:  1, dy:  0, opp: 3 }, // E
+  { dx:  0, dy:  1, opp: 0 }, // S
+  { dx: -1, dy:  0, opp: 1 }, // W
+];
+
+// ============================================================================
+// STATE
+// ============================================================================
+let grid = [];      // grid[y][x] = { piece, filled: number 0-1, crossEnter: [bool x4], crossUsed: number }
+let queue = [];     // Array de pieces (próximas 5)
+let origin = null;  // {x, y, dir} — desde dónde sale el flooz y hacia qué dirección
+let score = 0;
+let bestScore = parseInt(localStorage.getItem('jetflow-best') || '0', 10);
+let levelIdx = 0;
+let prepTimer = 0;  // segundos
+let flowing = false;
+let flowPath = [];  // Array de {x, y, fromDir, toDir} representando el camino del flooz
+let flowProgress = 0; // 0..1, animación del segmento actual
+let flowSegment = 0;  // índice del segmento actual en flowPath
+let crossesBonus = 0;
+let tubesPassed = 0;
+let lastTimestamp = 0;
+
+let canvas, ctx;
+let cellSize = 40;
+let gridW, gridH;
+
+// ============================================================================
+// INIT
+// ============================================================================
+function init() {
+  canvas = document.getElementById('grid');
+  ctx = canvas.getContext('2d');
+  resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
+  window.addEventListener('orientationchange', resizeCanvas);
+
+  // Touch + mouse handler
+  canvas.addEventListener('touchstart', onCanvasTouch, { passive: false });
+  canvas.addEventListener('mousedown', onCanvasMouse);
+
+  document.getElementById('btn-start').addEventListener('click', startGame);
+  document.getElementById('btn-restart').addEventListener('click', startGame);
+  document.getElementById('btn-next').addEventListener('click', nextLevel);
+  document.getElementById('btn-skip').addEventListener('click', skipPiece);
+
+  // SW register (silently ignore failure)
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
+}
+
+function resizeCanvas() {
+  const wrap = document.getElementById('game-wrap');
+  const W = wrap.clientWidth - 16;
+  const H = wrap.clientHeight - 16;
+  // queremos cellSize tal que cellSize * COLS <= W y cellSize * ROWS <= H
+  cellSize = Math.floor(Math.min(W / COLS, H / ROWS));
+  gridW = cellSize * COLS;
+  gridH = cellSize * ROWS;
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = gridW * dpr;
+  canvas.height = gridH * dpr;
+  canvas.style.width = gridW + 'px';
+  canvas.style.height = gridH + 'px';
+  ctx.scale(dpr, dpr);
+  ctx.imageSmoothingEnabled = true;
+  draw();
+}
+
+// ============================================================================
+// GAME FLOW
+// ============================================================================
+function startGame() {
+  levelIdx = 0;
+  score = 0;
+  hideOverlay('overlay-intro');
+  hideOverlay('overlay-gameover');
+  hideOverlay('overlay-levelup');
+  setupLevel();
+}
+
+function nextLevel() {
+  hideOverlay('overlay-levelup');
+  levelIdx++;
+  if (levelIdx >= LEVELS.length) {
+    levelIdx = LEVELS.length - 1; // queda en el último, aumentar dificultad
+  }
+  setupLevel();
+}
+
+function setupLevel() {
+  const lvl = LEVELS[levelIdx];
+  grid = [];
+  for (let y = 0; y < ROWS; y++) {
+    const row = [];
+    for (let x = 0; x < COLS; x++) {
+      row.push({ piece: null, filled: 0, crossEnter: [false, false, false, false] });
+    }
+    grid.push(row);
+  }
+
+  // Origin aleatorio en una columna no extrema, en la fila 0 o la columna del borde
+  // Para simplicidad: origin en x=0, y aleatoria, mirando a Este (E)
+  const oy = Math.floor(Math.random() * ROWS);
+  origin = { x: 0, y: oy, dir: 1 }; // E
+  // Marcar origin tile como pieza fija
+  grid[oy][0] = {
+    piece: { id: 'ORIGIN', conn: [0, 1, 0, 0] }, // solo abre al E
+    filled: 0,
+    crossEnter: [false, false, false, false],
+    isOrigin: true,
+  };
+
+  // Llenar queue con 5 piezas
+  queue = [];
+  for (let i = 0; i < 5; i++) queue.push(randomPiece());
+
+  prepTimer = lvl.prepTime;
+  flowing = false;
+  flowPath = [];
+  flowSegment = 0;
+  flowProgress = 0;
+  crossesBonus = 0;
+  tubesPassed = 0;
+
+  updateHUD();
+  renderQueue();
+  draw();
+
+  // Comenzar countdown de preparación
+  lastTimestamp = performance.now();
+  requestAnimationFrame(loop);
+}
+
+function loop(ts) {
+  const dt = (ts - lastTimestamp) / 1000;
+  lastTimestamp = ts;
+
+  if (!flowing) {
+    // Countdown prep
+    prepTimer -= dt;
+    if (prepTimer <= 0) {
+      prepTimer = 0;
+      startFlow();
+    }
+    document.getElementById('timer-stat').classList.toggle('urgent', prepTimer < 3);
+  } else {
+    // Flow stepping
+    const lvl = LEVELS[levelIdx];
+    flowProgress += (dt * 1000) / lvl.flowSpeed;
+    while (flowProgress >= 1 && flowing) {
+      flowProgress -= 1;
+      stepFlow();
+    }
+  }
+
+  updateHUD();
+  draw();
+
+  if (flowing || prepTimer > 0) {
+    requestAnimationFrame(loop);
+  }
+}
+
+function startFlow() {
+  flowing = true;
+  // Inicializar flowPath con el origin tile, salida hacia origin.dir
+  flowPath = [{ x: origin.x, y: origin.y, fromDir: -1, toDir: origin.dir }];
+  flowSegment = 0;
+  flowProgress = 0;
+  // Marcar el origin tile como filled
+  grid[origin.y][origin.x].filled = 1;
+  tubesPassed = 1; // contamos el origin como 1 tubo
+  score += 10;
+}
+
+function stepFlow() {
+  // Avanzamos al siguiente tile siguiendo el toDir del actual
+  const current = flowPath[flowPath.length - 1];
+  const dir = DIRS[current.toDir];
+  const nx = current.x + dir.dx;
+  const ny = current.y + dir.dy;
+
+  // Fuera de la grilla → fin (game over si tubesPassed < target, level complete si >=)
+  if (nx < 0 || nx >= COLS || ny < 0 || ny >= ROWS) {
+    endLevel(false, 'Salió de la grilla');
+    return;
+  }
+
+  const nextCell = grid[ny][nx];
+  // Sin pieza → derrame
+  if (!nextCell.piece) {
+    endLevel(false, 'Se derramó (no había tubo)');
+    return;
+  }
+
+  // Verificar que la pieza tenga conexión en el lado opuesto
+  const incomingDir = current.toDir; // entramos por el opuesto
+  const enterFrom = DIRS[incomingDir].opp;
+  if (!nextCell.piece.conn[enterFrom]) {
+    endLevel(false, 'El tubo no estaba conectado');
+    return;
+  }
+
+  // Si es un cross
+  if (nextCell.piece.id === 'CROSS') {
+    nextCell.crossEnter[enterFrom] = true;
+    // Salida: directo opuesto
+    const exitDir = DIRS[enterFrom].opp;
+    const wasUsed = nextCell.filled > 0;
+    if (!wasUsed) {
+      tubesPassed++;
+      score += 10;
+      nextCell.filled = 1;
+    } else {
+      // Si entró por otra dirección distinta, BONUS 5x
+      const usedDirs = nextCell.crossEnter.filter(Boolean).length;
+      if (usedDirs === 2) {
+        crossesBonus++;
+        score += 50;
+        // visual flash al draw
+        nextCell.flashTime = 0.5;
+      }
+    }
+    flowPath.push({ x: nx, y: ny, fromDir: enterFrom, toDir: exitDir });
+  } else {
+    // Otra pieza: encontrar la salida = la otra conexión que NO sea la de entrada
+    let exitDir = -1;
+    for (let i = 0; i < 4; i++) {
+      if (i !== enterFrom && nextCell.piece.conn[i]) { exitDir = i; break; }
+    }
+    if (exitDir === -1) {
+      endLevel(false, 'Tubo sin salida');
+      return;
+    }
+    nextCell.filled = 1;
+    tubesPassed++;
+    score += 10;
+    flowPath.push({ x: nx, y: ny, fromDir: enterFrom, toDir: exitDir });
+  }
+
+  // Check level complete
+  const lvl = LEVELS[levelIdx];
+  if (tubesPassed >= lvl.target) {
+    // Bonus por completar
+    score += 100 * (levelIdx + 1);
+    endLevel(true, '¡Llegaste al target!');
+  }
+}
+
+function endLevel(success, msg) {
+  flowing = false;
+  if (score > bestScore) {
+    bestScore = score;
+    localStorage.setItem('jetflow-best', bestScore.toString());
+  }
+  if (success) {
+    document.getElementById('levelup-score').textContent = score;
+    document.getElementById('levelup-msg').textContent = msg + ' ' + tubesPassed + ' tubos · ' + crossesBonus + ' crosses';
+    showOverlay('overlay-levelup');
+  } else {
+    document.getElementById('gameover-score').textContent = score;
+    document.getElementById('gameover-msg').textContent = msg;
+    document.getElementById('gameover-tubes').textContent = tubesPassed;
+    document.getElementById('gameover-crosses').textContent = crossesBonus;
+    document.getElementById('gameover-best').textContent = bestScore;
+    showOverlay('overlay-gameover');
+  }
+}
+
+// ============================================================================
+// INPUT
+// ============================================================================
+function onCanvasTouch(e) {
+  e.preventDefault();
+  const t = e.touches[0];
+  if (!t) return;
+  const rect = canvas.getBoundingClientRect();
+  const x = t.clientX - rect.left;
+  const y = t.clientY - rect.top;
+  handleTap(x, y);
+}
+
+function onCanvasMouse(e) {
+  const rect = canvas.getBoundingClientRect();
+  handleTap(e.clientX - rect.left, e.clientY - rect.top);
+}
+
+function handleTap(px, py) {
+  const cx = Math.floor(px / cellSize);
+  const cy = Math.floor(py / cellSize);
+  if (cx < 0 || cx >= COLS || cy < 0 || cy >= ROWS) return;
+  // No reemplazar piezas existentes (incluyendo origin)
+  if (grid[cy][cx].piece) return;
+  // Colocar pieza actual
+  const piece = queue[0];
+  grid[cy][cx] = { piece, filled: 0, crossEnter: [false, false, false, false] };
+  // Avanzar queue
+  queue.shift();
+  queue.push(randomPiece());
+  renderQueue();
+  draw();
+}
+
+function skipPiece() {
+  if (score < 50) return;
+  score -= 50;
+  queue.shift();
+  queue.push(randomPiece());
+  renderQueue();
+  updateHUD();
+  draw();
+}
+
+// ============================================================================
+// QUEUE RENDER (DOM)
+// ============================================================================
+function renderQueue() {
+  const q = document.getElementById('queue');
+  q.innerHTML = '';
+  for (let i = 0; i < queue.length; i++) {
+    const div = document.createElement('div');
+    div.className = 'queue-piece' + (i === 0 ? ' current' : '');
+    const size = i === 0 ? 56 : 40;
+    div.style.width = size + 'px';
+    div.style.height = size + 'px';
+    const c = document.createElement('canvas');
+    c.width = size; c.height = size;
+    div.appendChild(c);
+    q.appendChild(div);
+    drawPiece(c.getContext('2d'), queue[i], size, false, true);
+  }
+}
+
+// ============================================================================
+// DRAW
+// ============================================================================
+function draw() {
+  ctx.fillStyle = COLORS.bg;
+  ctx.fillRect(0, 0, gridW, gridH);
+
+  // Grid lines
+  ctx.strokeStyle = COLORS.gridLine;
+  ctx.lineWidth = 1;
+  for (let x = 0; x <= COLS; x++) {
+    ctx.beginPath();
+    ctx.moveTo(x * cellSize, 0);
+    ctx.lineTo(x * cellSize, gridH);
+    ctx.stroke();
+  }
+  for (let y = 0; y <= ROWS; y++) {
+    ctx.beginPath();
+    ctx.moveTo(0, y * cellSize);
+    ctx.lineTo(gridW, y * cellSize);
+    ctx.stroke();
+  }
+
+  // Cells: piezas
+  for (let y = 0; y < ROWS; y++) {
+    for (let x = 0; x < COLS; x++) {
+      const cell = grid[y][x];
+      const cx = x * cellSize, cy = y * cellSize;
+      if (cell.piece) {
+        ctx.save();
+        ctx.translate(cx, cy);
+        if (cell.isOrigin) {
+          drawOriginTile(ctx, cellSize);
+        } else {
+          drawPiece(ctx, cell.piece, cellSize, cell.filled > 0, false);
+        }
+        if (cell.flashTime && cell.flashTime > 0) {
+          ctx.fillStyle = 'rgba(255, 110, 199, ' + (cell.flashTime * 0.5) + ')';
+          ctx.fillRect(0, 0, cellSize, cellSize);
+          cell.flashTime -= 0.05;
+        }
+        ctx.restore();
+      }
+    }
+  }
+
+  // Flow segment animation
+  if (flowing && flowPath.length > 0) {
+    const last = flowPath[flowPath.length - 1];
+    const dir = DIRS[last.toDir];
+    const cell = grid[last.y][last.x];
+    if (cell.piece && !cell.isOrigin) {
+      // Animar el progreso desde fromDir hasta toDir
+      ctx.save();
+      ctx.translate(last.x * cellSize, last.y * cellSize);
+      drawFlowProgress(ctx, last, cellSize, flowProgress);
+      ctx.restore();
+    }
+  }
+}
+
+function drawOriginTile(ctx, size) {
+  // Glow background
+  const grad = ctx.createRadialGradient(size/2, size/2, 4, size/2, size/2, size/1.5);
+  grad.addColorStop(0, COLORS.originGlow);
+  grad.addColorStop(1, 'transparent');
+  ctx.fillStyle = grad;
+  ctx.fillRect(-size/2, -size/2, size*2, size*2);
+  // Tile
+  ctx.fillStyle = '#1a1340';
+  ctx.fillRect(2, 2, size-4, size-4);
+  // Origin symbol
+  const r = size * 0.22;
+  ctx.fillStyle = COLORS.origin;
+  ctx.beginPath();
+  ctx.arc(size/2, size/2, r, 0, Math.PI * 2);
+  ctx.fill();
+  // Salida hacia E (un trazo grueso al borde derecho)
+  ctx.fillStyle = COLORS.origin;
+  ctx.fillRect(size/2 - 4, size/2 - 4, size/2 + 4, 8);
+  // Pulse
+  const pulse = (Math.sin(performance.now() / 300) + 1) / 2;
+  ctx.strokeStyle = 'rgba(255, 184, 77, ' + (0.3 + pulse * 0.4) + ')';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(2, 2, size - 4, size - 4);
+}
+
+function drawPiece(ctx, piece, size, filled, isPreview) {
+  // Background tile
+  if (!isPreview) {
+    ctx.fillStyle = '#1a1340';
+    ctx.fillRect(2, 2, size - 4, size - 4);
+  }
+  // Pipe segments según conexiones
+  const cx = size / 2, cy = size / 2;
+  const thickness = Math.max(8, size * 0.32);
+  const half = thickness / 2;
+  ctx.fillStyle = filled ? COLORS.pipeFilledA : COLORS.pipeEmpty;
+  ctx.strokeStyle = filled ? COLORS.pipeFilledB : 'transparent';
+  ctx.lineWidth = 2;
+
+  // Centro
+  if (filled) {
+    ctx.shadowColor = COLORS.fluidGlow;
+    ctx.shadowBlur = 12;
+  }
+
+  // N
+  if (piece.conn[0]) {
+    ctx.fillRect(cx - half, 0, thickness, cy);
+  }
+  // E
+  if (piece.conn[1]) {
+    ctx.fillRect(cx, cy - half, size - cx, thickness);
+  }
+  // S
+  if (piece.conn[2]) {
+    ctx.fillRect(cx - half, cy, thickness, size - cy);
+  }
+  // W
+  if (piece.conn[3]) {
+    ctx.fillRect(0, cy - half, cx, thickness);
+  }
+
+  ctx.shadowBlur = 0;
+
+  // Centro cuadradito (que se vea limpio)
+  ctx.fillStyle = filled ? COLORS.pipeFilledA : COLORS.pipeEmpty;
+  ctx.fillRect(cx - half, cy - half, thickness, thickness);
+}
+
+function drawFlowProgress(ctx, segment, size, progress) {
+  // Renderizar el "frente" del flooz dentro de la pieza
+  const cx = size / 2, cy = size / 2;
+  const thickness = Math.max(8, size * 0.32);
+  const half = thickness / 2;
+
+  ctx.shadowColor = COLORS.fluidGlow;
+  ctx.shadowBlur = 16;
+
+  const fromDir = segment.fromDir; // -1 si origin
+  const toDir = segment.toDir;
+
+  // Dibujar bola de flooz que avanza
+  let startPt, endPt;
+  if (fromDir === -1) {
+    startPt = { x: cx, y: cy };
+  } else {
+    const fd = DIRS[fromDir];
+    startPt = { x: cx + fd.dx * cx, y: cy + fd.dy * cy };
+  }
+  const td = DIRS[toDir];
+  endPt = { x: cx + td.dx * cx, y: cy + td.dy * cy };
+
+  // Para hacer el flow se ve como una línea engrosándose: dibujamos el segment completo y un blob al final
+  const t = Math.min(1, progress);
+  const cur = {
+    x: startPt.x + (endPt.x - startPt.x) * t,
+    y: startPt.y + (endPt.y - startPt.y) * t,
+  };
+
+  // Línea de flow
+  ctx.strokeStyle = COLORS.pipeFilledB;
+  ctx.lineWidth = thickness * 0.85;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(startPt.x, startPt.y);
+  ctx.lineTo(cur.x, cur.y);
+  ctx.stroke();
+
+  // Blob final
+  ctx.fillStyle = '#fff';
+  ctx.beginPath();
+  ctx.arc(cur.x, cur.y, thickness * 0.55, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.shadowBlur = 0;
+}
+
+// ============================================================================
+// HUD
+// ============================================================================
+function updateHUD() {
+  document.getElementById('score-value').textContent = score;
+  document.getElementById('target-value').textContent = LEVELS[levelIdx].target;
+  document.getElementById('level-value').textContent = levelIdx + 1;
+  document.getElementById('timer-value').textContent = flowing ? '🔥' : Math.ceil(prepTimer);
+}
+
+// ============================================================================
+// HELPERS
+// ============================================================================
+function randomPiece() {
+  return PIECE_BAG[Math.floor(Math.random() * PIECE_BAG.length)];
+}
+
+function showOverlay(id) { document.getElementById(id).classList.add('show'); }
+function hideOverlay(id) { document.getElementById(id).classList.remove('show'); }
+
+// ============================================================================
+// BOOT
+// ============================================================================
+init();
+</script>
+</body>
+</html>
