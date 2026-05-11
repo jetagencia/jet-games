@@ -1,0 +1,16 @@
+{
+  "name": "JETDrift",
+  "short_name": "JETDrift",
+  "description": "A quiet voyage. Drift hovercraft puzzle/race en mundos pastel low-poly.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "fullscreen",
+  "display_override": ["fullscreen", "standalone"],
+  "orientation": "any",
+  "background_color": "#f4c89a",
+  "theme_color": "#f4c89a",
+  "lang": "es-AR",
+  "categories": ["games", "casual"],
+  "icons": [],
+  "prefer_related_applications": false
+}

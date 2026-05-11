@@ -1,0 +1,1253 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="JETDrift">
+<meta name="theme-color" content="#0a0a14">
+<title>JETDrift v0.5 — Castle</title>
+<link rel="manifest" href="manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800;900&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    width: 100%; height: 100%; overflow: hidden;
+    background: #0a0a14; color: #fff;
+    font-family: 'Orbitron', sans-serif;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none; -webkit-user-select: none;
+    touch-action: none; overscroll-behavior: none;
+    position: fixed; inset: 0;
+  }
+  #render-canvas { display: block; position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; }
+
+  /* ========================================================================
+     COCKPIT FRAME — overlay sobre el canvas
+     ======================================================================== */
+  #cockpit {
+    position: absolute; inset: 0;
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  /* Top: thin curved frame con score + flag indicators */
+  #cockpit-top {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 60px;
+    background: linear-gradient(180deg,
+      rgba(20, 22, 38, 0.92) 0%,
+      rgba(20, 22, 38, 0.78) 70%,
+      rgba(20, 22, 38, 0) 100%);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 6px 16px;
+    border-bottom: 1px solid rgba(0, 255, 200, 0.18);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5);
+  }
+  #cockpit-top::before {
+    content: '';
+    position: absolute;
+    left: 50%; top: 0;
+    transform: translateX(-50%);
+    width: 36%;
+    height: 6px;
+    background: linear-gradient(90deg, transparent, #00ffc8, transparent);
+    box-shadow: 0 0 14px rgba(0, 255, 200, 0.7);
+  }
+
+  .flag-row { display: flex; gap: 5px; }
+  .flag-dot {
+    width: 12px; height: 12px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(0, 255, 200, 0.4);
+    box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.5);
+  }
+  .flag-dot.our.captured {
+    background: #00ffc8;
+    box-shadow: 0 0 8px rgba(0, 255, 200, 0.8), inset 0 0 4px rgba(255, 255, 255, 0.5);
+  }
+  .flag-dot.enemy.captured {
+    background: #ff3366;
+    box-shadow: 0 0 8px rgba(255, 51, 102, 0.8), inset 0 0 4px rgba(255, 255, 255, 0.5);
+  }
+  .top-label {
+    font-size: 8px;
+    letter-spacing: 3px;
+    color: rgba(0, 255, 200, 0.6);
+    font-weight: 700;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  .score-display {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    color: #00ffc8;
+    text-shadow: 0 0 12px rgba(0, 255, 200, 0.7), 0 0 24px rgba(0, 255, 200, 0.3);
+    font-variant-numeric: tabular-nums;
+  }
+  .level-display {
+    font-size: 9px;
+    letter-spacing: 3px;
+    color: rgba(255, 255, 255, 0.5);
+    font-weight: 700;
+    text-align: right;
+    margin-top: 2px;
+  }
+
+  /* Bottom: dashboard con instruments */
+  #cockpit-bottom {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 130px;
+    background: linear-gradient(0deg,
+      rgba(15, 16, 28, 0.98) 0%,
+      rgba(20, 22, 38, 0.92) 60%,
+      rgba(20, 22, 38, 0) 100%);
+    border-top: 1px solid rgba(0, 255, 200, 0.18);
+    box-shadow: 0 -6px 18px rgba(0, 0, 0, 0.5);
+    display: grid;
+    grid-template-columns: 1fr 1.4fr 1fr;
+    gap: 8px;
+    padding: 12px 14px;
+    align-items: stretch;
+  }
+  #cockpit-bottom::before {
+    content: '';
+    position: absolute;
+    left: 50%; bottom: calc(100% - 0px);
+    transform: translateX(-50%);
+    width: 36%;
+    height: 6px;
+    background: linear-gradient(90deg, transparent, #00ffc8, transparent);
+    box-shadow: 0 0 14px rgba(0, 255, 200, 0.7);
+  }
+
+  .panel {
+    background: linear-gradient(135deg, rgba(0, 30, 35, 0.6), rgba(0, 15, 25, 0.7));
+    border: 1px solid rgba(0, 255, 200, 0.25);
+    border-radius: 8px;
+    padding: 8px 10px;
+    box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.6),
+                inset 0 1px 0 rgba(0, 255, 200, 0.1);
+    position: relative;
+    overflow: hidden;
+  }
+  .panel::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(0deg, transparent 0, transparent 2px, rgba(0, 0, 0, 0.08) 3px);
+  }
+  .panel-label {
+    font-size: 8px;
+    letter-spacing: 3px;
+    color: rgba(0, 255, 200, 0.6);
+    font-weight: 700;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  /* LEFT: Items column */
+  .items-col {
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .item-slot {
+    flex: 1;
+    background: rgba(0, 20, 25, 0.5);
+    border: 1px solid rgba(0, 255, 200, 0.2);
+    border-radius: 6px;
+    display: flex; align-items: center; gap: 6px;
+    padding: 4px 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.6);
+    transition: all 0.18s;
+  }
+  .item-slot.has {
+    background: rgba(0, 50, 60, 0.5);
+    color: #00ffc8;
+    border-color: rgba(0, 255, 200, 0.5);
+    box-shadow: 0 0 10px rgba(0, 255, 200, 0.2);
+  }
+  .item-slot.active {
+    background: linear-gradient(135deg, rgba(0, 255, 200, 0.4), rgba(0, 100, 80, 0.5));
+    color: #fff;
+  }
+  .item-icon {
+    font-size: 18px;
+    line-height: 1;
+    width: 22px; text-align: center;
+  }
+  .item-count {
+    margin-left: auto;
+    font-size: 14px;
+    font-weight: 800;
+    color: #00ffc8;
+  }
+
+  /* CENTER: Radar */
+  .radar-wrap {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 4px;
+  }
+  #radar {
+    width: 96px; height: 96px;
+    background: radial-gradient(circle at center, rgba(0, 40, 30, 0.85), rgba(0, 10, 15, 0.9));
+    border: 2px solid rgba(0, 255, 200, 0.4);
+    border-radius: 50%;
+    position: relative;
+    box-shadow: inset 0 0 18px rgba(0, 0, 0, 0.7), 0 0 14px rgba(0, 255, 200, 0.25);
+  }
+  #radar canvas { width: 100%; height: 100%; display: block; border-radius: 50%; }
+
+  /* RIGHT: Speedometer + nitro */
+  .right-col {
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .speedo-wrap {
+    flex: 1;
+    background: rgba(0, 20, 25, 0.5);
+    border: 1px solid rgba(0, 255, 200, 0.25);
+    border-radius: 6px;
+    padding: 6px 8px;
+    position: relative;
+    overflow: hidden;
+  }
+  .speedo-value {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 24px;
+    font-weight: 800;
+    color: #00ffc8;
+    text-shadow: 0 0 10px rgba(0, 255, 200, 0.7);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+  .speedo-unit { font-size: 9px; color: rgba(255, 255, 255, 0.5); letter-spacing: 2px; }
+  .speedo-bar-wrap {
+    margin-top: 4px;
+    height: 5px;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .speedo-bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #00ffc8, #ffd700, #ff3366);
+    transition: width 0.18s;
+    box-shadow: 0 0 8px rgba(0, 255, 200, 0.5);
+  }
+
+  .nitro-btn {
+    background: linear-gradient(135deg, rgba(255, 100, 0, 0.5), rgba(180, 50, 0, 0.6));
+    border: 1.5px solid rgba(255, 150, 0, 0.7);
+    border-radius: 8px;
+    color: #fff;
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 800;
+    font-size: 14px;
+    letter-spacing: 2px;
+    padding: 6px;
+    pointer-events: auto;
+    cursor: pointer;
+    text-transform: uppercase;
+    box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.5), 0 0 14px rgba(255, 100, 0, 0.4);
+    transition: transform 0.1s;
+    display: flex; align-items: center; justify-content: center; gap: 4px;
+  }
+  .nitro-btn:active { transform: scale(0.94); }
+  .nitro-btn[data-disabled="true"] { opacity: 0.35; pointer-events: none; }
+
+  /* ========================================================================
+     STEERING TAP ZONES
+     ======================================================================== */
+  #steer-left, #steer-right {
+    position: absolute;
+    bottom: 130px;
+    top: 60px;
+    width: 22%;
+    z-index: 5;
+    pointer-events: auto;
+  }
+  #steer-left { left: 0; }
+  #steer-right { right: 0; }
+
+  .steer-indicator {
+    position: absolute;
+    top: 50%; transform: translateY(-50%);
+    width: 60px; height: 60px;
+    border-radius: 50%;
+    background: rgba(0, 255, 200, 0.05);
+    border: 2px solid rgba(0, 255, 200, 0.18);
+    display: flex; align-items: center; justify-content: center;
+    color: rgba(0, 255, 200, 0.6);
+    font-size: 32px;
+    font-weight: 800;
+    transition: all 0.12s;
+    pointer-events: none;
+  }
+  #steer-left .steer-indicator { left: 16px; }
+  #steer-right .steer-indicator { right: 16px; }
+  #steer-left.active .steer-indicator,
+  #steer-right.active .steer-indicator {
+    background: rgba(0, 255, 200, 0.25);
+    border-color: rgba(0, 255, 200, 0.7);
+    color: #00ffc8;
+    box-shadow: 0 0 24px rgba(0, 255, 200, 0.4);
+    transform: translateY(-50%) scale(1.12);
+  }
+
+  /* ========================================================================
+     SONAR ALERT (when detected)
+     ======================================================================== */
+  #sonar-alert {
+    position: absolute;
+    top: 70px;
+    left: 50%; transform: translateX(-50%);
+    background: rgba(255, 51, 102, 0.92);
+    color: #fff;
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 800;
+    font-size: 11px;
+    letter-spacing: 4px;
+    padding: 8px 16px;
+    border-radius: 4px;
+    z-index: 11;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+    box-shadow: 0 0 24px rgba(255, 51, 102, 0.7);
+    text-transform: uppercase;
+  }
+  #sonar-alert.show { opacity: 1; animation: alertPulse 0.6s ease-in-out infinite; }
+  @keyframes alertPulse {
+    0%, 100% { transform: translateX(-50%) scale(1); }
+    50% { transform: translateX(-50%) scale(1.06); }
+  }
+
+  /* ========================================================================
+     LOADING + INTRO
+     ======================================================================== */
+  #loading {
+    position: fixed; inset: 0; z-index: 200;
+    background: radial-gradient(ellipse at center, #1a1a2e 0%, #0a0a14 100%);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    transition: opacity 0.6s;
+  }
+  #loading.hide { opacity: 0; pointer-events: none; }
+  #loading h1 {
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 900; font-size: clamp(48px, 14vw, 96px);
+    letter-spacing: -1px;
+    background: linear-gradient(135deg, #00ffc8, #00aaff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 0 40px rgba(0, 255, 200, 0.3);
+    margin-bottom: 4px;
+  }
+  #loading .tag {
+    font-size: 11px; letter-spacing: 8px;
+    color: rgba(0, 255, 200, 0.6);
+    margin-bottom: 40px;
+  }
+  #loading-bar {
+    width: 180px; height: 2px;
+    background: rgba(0, 255, 200, 0.15);
+    overflow: hidden;
+  }
+  #loading-bar::before {
+    content: ''; display: block; height: 100%;
+    background: #00ffc8; width: 0%;
+    animation: load 1.4s ease-out forwards;
+    box-shadow: 0 0 12px rgba(0, 255, 200, 0.8);
+  }
+  @keyframes load { to { width: 100%; } }
+
+  #orientation-warn {
+    position: fixed; inset: 0; z-index: 300;
+    background: #0a0a14;
+    display: none;
+    align-items: center; justify-content: center;
+    flex-direction: column;
+    color: #00ffc8;
+    text-align: center;
+    padding: 24px;
+  }
+  #orientation-warn.show { display: flex; }
+  #orientation-warn .icon { font-size: 64px; margin-bottom: 18px; animation: rotateHint 2s ease-in-out infinite; }
+  @keyframes rotateHint { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(90deg); } }
+  #orientation-warn h2 {
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 700; font-size: 20px;
+    letter-spacing: 3px;
+    margin-bottom: 10px;
+  }
+  #orientation-warn p {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.6);
+    letter-spacing: 1px;
+    max-width: 280px;
+  }
+
+  /* CRT scanlines + vignette */
+  body::after {
+    content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 50;
+    background: radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.5) 100%);
+  }
+
+  /* In portrait, hide game and show rotation prompt */
+  @media (orientation: portrait) and (max-width: 900px) {
+    #orientation-warn { display: flex; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="render-canvas"></canvas>
+
+<div id="cockpit">
+  <!-- TOP -->
+  <div id="cockpit-top">
+    <div>
+      <div class="top-label">Tu citadel</div>
+      <div class="flag-row" id="our-flags">
+        <div class="flag-dot our"></div>
+        <div class="flag-dot our"></div>
+        <div class="flag-dot our"></div>
+      </div>
+    </div>
+    <div style="text-align:center">
+      <div class="top-label">Score</div>
+      <div class="score-display" id="score-value">000000</div>
+      <div class="level-display" id="level-value">Castle · Level 1</div>
+    </div>
+    <div style="text-align:right">
+      <div class="top-label">Enemigo</div>
+      <div class="flag-row" id="enemy-flags" style="justify-content:flex-end">
+        <div class="flag-dot enemy"></div>
+        <div class="flag-dot enemy"></div>
+        <div class="flag-dot enemy"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM DASHBOARD -->
+  <div id="cockpit-bottom">
+    <!-- LEFT: Items -->
+    <div class="panel items-col">
+      <div class="panel-label">Items</div>
+      <div class="item-slot" id="item-wall">
+        <span class="item-icon">▣</span>
+        <span>Wall</span>
+        <span class="item-count" id="count-wall">0</span>
+      </div>
+      <div class="item-slot" id="item-spring">
+        <span class="item-icon">⤴</span>
+        <span>Spring</span>
+        <span class="item-count" id="count-spring">0</span>
+      </div>
+      <div class="item-slot" id="item-cloak">
+        <span class="item-icon">◐</span>
+        <span>Cloak</span>
+        <span class="item-count" id="count-cloak">0</span>
+      </div>
+    </div>
+
+    <!-- CENTER: Radar -->
+    <div class="panel radar-wrap">
+      <div class="panel-label">Radar</div>
+      <div id="radar"><canvas width="120" height="120"></canvas></div>
+    </div>
+
+    <!-- RIGHT: Speedometer + Nitro -->
+    <div class="panel right-col">
+      <div class="panel-label">Velocidad</div>
+      <div class="speedo-wrap">
+        <div><span class="speedo-value" id="speedo-value">0</span> <span class="speedo-unit">KM/H</span></div>
+        <div class="speedo-bar-wrap"><div class="speedo-bar" id="speedo-bar"></div></div>
+      </div>
+      <button class="nitro-btn" id="btn-nitro" data-disabled="true">
+        <span style="font-size:18px">⚡</span> Nitro
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- STEERING ZONES -->
+<div id="steer-left"><div class="steer-indicator">◀</div></div>
+<div id="steer-right"><div class="steer-indicator">▶</div></div>
+
+<!-- SONAR ALERT -->
+<div id="sonar-alert">⚠ DETECTADO</div>
+
+<!-- ORIENTATION WARNING -->
+<div id="orientation-warn">
+  <div class="icon">📱</div>
+  <h2>Girá tu pantalla</h2>
+  <p>JETDrift se juega en landscape (horizontal). Rotá tu celular para arrancar.</p>
+</div>
+
+<!-- LOADING -->
+<div id="loading">
+  <h1>JETDrift</h1>
+  <div class="tag">CASTLE · LEVEL 1</div>
+  <div id="loading-bar"></div>
+</div>
+
+<script type="module">
+"use strict";
+
+import * as THREE from 'three';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+
+/* ============================================================================
+   JETDRIFT v0.5.0 — Visual Proof
+   1st person POV inside hovercraft, Castle theme, free movement.
+   Mechanically based on Hover! 1995, visually targeting Asphalt 9 polish.
+   ============================================================================ */
+
+// ============================================================================
+// CONFIG
+// ============================================================================
+const TILE = 8;
+const MAZE_W = 18;
+const MAZE_H = 18;
+const WALL_HEIGHT = 6;
+const HOVER_HEIGHT = 1.8;     // camera height above ground
+
+const ACCEL = 22;             // auto-accel per second
+const NITRO_ACCEL = 50;
+const FRICTION = 1.2;         // softer than v0.4 — more glide
+const MAX_SPEED = 24;
+const NITRO_MAX = 38;
+const TURN_RATE = 2.2;        // rad/s
+const TILT_AMOUNT = 0.18;
+
+// ============================================================================
+// STATE
+// ============================================================================
+let renderer, scene, camera, composer, bloomPass;
+const clock = new THREE.Clock();
+let W = window.innerWidth, H = window.innerHeight;
+const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+const player = {
+  pos: new THREE.Vector3(0, HOVER_HEIGHT, 0),
+  vel: new THREE.Vector3(),
+  yaw: 0,
+  tilt: 0,
+  bob: 0,
+  speed: 0,
+  nitroCharge: 0,           // 0..1
+  nitroActive: 0,           // seconds remaining
+};
+
+const input = {
+  steerLeft: false,
+  steerRight: false,
+  nitroPressed: false,
+};
+
+let maze = [];
+let wallMeshes = [];
+let radarCtx;
+let dustParticles;
+let dustGeom, dustPositions, dustOpacities, dustVel;
+
+// ============================================================================
+// THREE SETUP
+// ============================================================================
+function initThree() {
+  const canvas = document.getElementById('render-canvas');
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: 'high-performance' });
+  renderer.setPixelRatio(dpr);
+  renderer.setSize(W, H, false);
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.05;
+
+  scene = new THREE.Scene();
+  scene.fog = new THREE.FogExp2(0x0d0a18, 0.022);
+
+  camera = new THREE.PerspectiveCamera(82, W / H, 0.1, 300);
+  camera.position.copy(player.pos);
+
+  composer = new EffectComposer(renderer);
+  composer.addPass(new RenderPass(scene, camera));
+  bloomPass = new UnrealBloomPass(new THREE.Vector2(W, H), 0.55, 0.7, 0.7);
+  composer.addPass(bloomPass);
+  composer.addPass(new OutputPass());
+
+  window.addEventListener('resize', onResize);
+  window.addEventListener('orientationchange', onResize);
+}
+
+function onResize() {
+  W = window.innerWidth; H = window.innerHeight;
+  renderer.setSize(W, H, false);
+  composer.setSize(W, H);
+  bloomPass.setSize(W, H);
+  camera.aspect = W / H;
+  camera.updateProjectionMatrix();
+}
+
+// ============================================================================
+// CASTLE THEME — geometry + materials + lighting
+// ============================================================================
+function buildCastle() {
+  // === LIGHTING ===
+  const ambient = new THREE.AmbientLight(0x4030a0, 0.55);
+  scene.add(ambient);
+
+  const hemi = new THREE.HemisphereLight(0x6a4eff, 0x1a0d14, 0.45);
+  scene.add(hemi);
+
+  // Moonlight directional
+  const moon = new THREE.DirectionalLight(0xa0b8ff, 0.55);
+  moon.position.set(40, 80, 30);
+  scene.add(moon);
+
+  // === SKY (gradient with stars) ===
+  const skyGeom = new THREE.SphereGeometry(200, 24, 12);
+  const skyMat = new THREE.ShaderMaterial({
+    side: THREE.BackSide,
+    depthWrite: false,
+    uniforms: { time: { value: 0 } },
+    vertexShader: `
+      varying vec3 vWP;
+      void main() {
+        vWP = (modelMatrix * vec4(position, 1.0)).xyz;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    `,
+    fragmentShader: `
+      uniform float time;
+      varying vec3 vWP;
+      // Hash for procedural stars
+      float hash(vec3 p) { return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453); }
+      void main() {
+        float h = normalize(vWP).y;
+        vec3 top = vec3(0.06, 0.04, 0.18);
+        vec3 mid = vec3(0.28, 0.12, 0.34);
+        vec3 bot = vec3(0.42, 0.18, 0.30);
+        vec3 c;
+        if (h > 0.0) c = mix(mid, top, smoothstep(0.0, 0.7, h));
+        else c = mix(mid, bot, smoothstep(0.0, -0.4, h));
+        // Stars (only above horizon)
+        if (h > 0.05) {
+          vec3 sp = normalize(vWP) * 50.0;
+          vec3 g = floor(sp);
+          float s = hash(g);
+          if (s > 0.992) {
+            float twinkle = 0.5 + 0.5 * sin(time * 2.5 + s * 100.0);
+            c += vec3(twinkle * 0.7);
+          }
+        }
+        gl_FragColor = vec4(c, 1.0);
+      }
+    `,
+  });
+  const sky = new THREE.Mesh(skyGeom, skyMat);
+  scene.add(sky);
+  player._sky = sky;
+
+  // === FLOOR ===
+  const floorTex = makeFloorTexture();
+  const floorMat = new THREE.MeshStandardMaterial({
+    map: floorTex,
+    color: 0x6a5a4a,
+    roughness: 0.85,
+    metalness: 0.1,
+  });
+  const floorGeom = new THREE.PlaneGeometry(MAZE_W * TILE * 1.5, MAZE_H * TILE * 1.5);
+  const floor = new THREE.Mesh(floorGeom, floorMat);
+  floor.rotation.x = -Math.PI / 2;
+  floor.position.y = 0;
+  scene.add(floor);
+
+  // === MAZE WALLS ===
+  generateMaze();
+  buildMazeMeshes();
+
+  // === DISTANT MOUNTAINS (silhouettes) ===
+  buildMountains();
+
+  // === DUST PARTICLES (atmospheric) ===
+  buildDust();
+
+  // === TORCHES inside maze ===
+  buildTorches();
+}
+
+function makeFloorTexture() {
+  const c = document.createElement('canvas');
+  c.width = 256; c.height = 256;
+  const cx = c.getContext('2d');
+  // Stone tile base
+  cx.fillStyle = '#3a2f25';
+  cx.fillRect(0, 0, 256, 256);
+  // Tile pattern
+  cx.strokeStyle = '#1a140e';
+  cx.lineWidth = 2;
+  for (let y = 0; y < 256; y += 64) {
+    for (let x = 0; x < 256; x += 64) {
+      cx.strokeRect(x, y, 64, 64);
+      // subtle highlight
+      cx.fillStyle = `rgba(120, 90, 60, ${0.05 + Math.random() * 0.08})`;
+      cx.fillRect(x + 2, y + 2, 60, 60);
+    }
+  }
+  // Noise
+  for (let i = 0; i < 800; i++) {
+    cx.fillStyle = `rgba(0, 0, 0, ${0.04 + Math.random() * 0.06})`;
+    cx.fillRect(Math.random() * 256, Math.random() * 256, 1 + Math.random() * 2, 1 + Math.random() * 2);
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(MAZE_W * 1.5, MAZE_H * 1.5);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+function makeStoneTexture() {
+  const c = document.createElement('canvas');
+  c.width = 128; c.height = 128;
+  const cx = c.getContext('2d');
+  // Base stone
+  const grad = cx.createLinearGradient(0, 0, 0, 128);
+  grad.addColorStop(0, '#5a4a3a');
+  grad.addColorStop(1, '#3a2e22');
+  cx.fillStyle = grad;
+  cx.fillRect(0, 0, 128, 128);
+  // Block lines (medieval stone bricks)
+  cx.strokeStyle = '#1a120a';
+  cx.lineWidth = 2;
+  for (let y = 0; y < 128; y += 32) {
+    cx.beginPath(); cx.moveTo(0, y); cx.lineTo(128, y); cx.stroke();
+    const offset = (y / 32) % 2 === 0 ? 0 : 32;
+    for (let x = offset; x < 128 + 32; x += 64) {
+      cx.beginPath(); cx.moveTo(x, y); cx.lineTo(x, y + 32); cx.stroke();
+    }
+  }
+  // Highlights
+  for (let i = 0; i < 80; i++) {
+    cx.fillStyle = `rgba(160, 130, 90, ${0.04 + Math.random() * 0.06})`;
+    cx.fillRect(Math.random() * 128, Math.random() * 128, 1, 1);
+  }
+  // Cracks
+  cx.strokeStyle = 'rgba(0, 0, 0, 0.4)';
+  cx.lineWidth = 1;
+  for (let i = 0; i < 5; i++) {
+    cx.beginPath();
+    cx.moveTo(Math.random() * 128, Math.random() * 128);
+    cx.lineTo(Math.random() * 128, Math.random() * 128);
+    cx.stroke();
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+function generateMaze() {
+  // Initialize all walls
+  maze = [];
+  for (let y = 0; y < MAZE_H; y++) {
+    const row = [];
+    for (let x = 0; x < MAZE_W; x++) row.push(1);
+    maze.push(row);
+  }
+  // Recursive backtracker
+  const stack = [[1, 1]];
+  maze[1][1] = 0;
+  const dirs = [[0, -2], [2, 0], [0, 2], [-2, 0]];
+  while (stack.length) {
+    const [cx, cy] = stack[stack.length - 1];
+    const candidates = [];
+    for (const [dx, dy] of dirs) {
+      const nx = cx + dx, ny = cy + dy;
+      if (nx > 0 && ny > 0 && nx < MAZE_W - 1 && ny < MAZE_H - 1 && maze[ny][nx] === 1) {
+        candidates.push([nx, ny, cx + dx/2, cy + dy/2]);
+      }
+    }
+    if (!candidates.length) stack.pop();
+    else {
+      const [nx, ny, mx, my] = candidates[Math.floor(Math.random() * candidates.length)];
+      maze[ny][nx] = 0; maze[my][mx] = 0;
+      stack.push([nx, ny]);
+    }
+  }
+  // Open up 8% extra walls for less linear feel
+  for (let y = 1; y < MAZE_H - 1; y++)
+    for (let x = 1; x < MAZE_W - 1; x++)
+      if (maze[y][x] === 1 && Math.random() < 0.08) maze[y][x] = 0;
+}
+
+function buildMazeMeshes() {
+  const stoneTex = makeStoneTexture();
+  const wallMat = new THREE.MeshStandardMaterial({
+    map: stoneTex,
+    color: 0x8a7060,
+    roughness: 0.9,
+    metalness: 0.05,
+  });
+  const wallGeom = new THREE.BoxGeometry(TILE, WALL_HEIGHT, TILE);
+
+  let count = 0;
+  for (let y = 0; y < MAZE_H; y++)
+    for (let x = 0; x < MAZE_W; x++)
+      if (maze[y][x] === 1) count++;
+
+  const inst = new THREE.InstancedMesh(wallGeom, wallMat, count);
+  const dummy = new THREE.Object3D();
+  let i = 0;
+  for (let y = 0; y < MAZE_H; y++) {
+    for (let x = 0; x < MAZE_W; x++) {
+      if (maze[y][x] === 1) {
+        const wx = (x - MAZE_W / 2) * TILE + TILE / 2;
+        const wz = (y - MAZE_H / 2) * TILE + TILE / 2;
+        dummy.position.set(wx, WALL_HEIGHT / 2, wz);
+        dummy.updateMatrix();
+        inst.setMatrixAt(i, dummy.matrix);
+        i++;
+      }
+    }
+  }
+  inst.instanceMatrix.needsUpdate = true;
+  scene.add(inst);
+  wallMeshes.push(inst);
+}
+
+function buildMountains() {
+  // Distant ring of mountain silhouettes
+  const mountainGroup = new THREE.Group();
+  const mountainMat = new THREE.MeshBasicMaterial({ color: 0x2a1f3e });
+  for (let i = 0; i < 20; i++) {
+    const a = (i / 20) * Math.PI * 2;
+    const r = 130 + Math.random() * 30;
+    const x = Math.cos(a) * r;
+    const z = Math.sin(a) * r;
+    const h = 20 + Math.random() * 30;
+    const w = 30 + Math.random() * 25;
+    const geom = new THREE.ConeGeometry(w * 0.5, h, 5);
+    const m = new THREE.Mesh(geom, mountainMat);
+    m.position.set(x, h / 2 - 1, z);
+    m.rotation.y = Math.random() * Math.PI;
+    mountainGroup.add(m);
+  }
+  scene.add(mountainGroup);
+}
+
+function buildTorches() {
+  // Place torches at wall corners adjacent to open floor (= along the maze "corridors")
+  const torchPositions = [];
+  for (let y = 1; y < MAZE_H - 1; y++) {
+    for (let x = 1; x < MAZE_W - 1; x++) {
+      if (maze[y][x] !== 1) continue;
+      // Check if has open neighbor
+      const neighbors = [[1,0],[-1,0],[0,1],[0,-1]];
+      let hasFloor = false;
+      for (const [dx, dy] of neighbors) {
+        if (maze[y + dy] && maze[y + dy][x + dx] === 0) { hasFloor = true; break; }
+      }
+      if (hasFloor && Math.random() < 0.18) torchPositions.push([x, y]);
+    }
+  }
+
+  for (const [tx, ty] of torchPositions) {
+    const wx = (tx - MAZE_W / 2) * TILE + TILE / 2;
+    const wz = (ty - MAZE_H / 2) * TILE + TILE / 2;
+    // Flame sprite (small emissive sphere)
+    const flame = new THREE.Mesh(
+      new THREE.SphereGeometry(0.18, 8, 6),
+      new THREE.MeshBasicMaterial({ color: 0xff9944 })
+    );
+    flame.position.set(wx, WALL_HEIGHT * 0.7, wz);
+    scene.add(flame);
+    // Light
+    const light = new THREE.PointLight(0xff7733, 3.5, 12, 1.5);
+    light.position.copy(flame.position);
+    light.userData.basePos = flame.position.clone();
+    light.userData.flicker = Math.random() * Math.PI * 2;
+    light.userData.flame = flame;
+    scene.add(light);
+    if (!scene.userData.torches) scene.userData.torches = [];
+    scene.userData.torches.push(light);
+  }
+}
+
+function buildDust() {
+  const N = 200;
+  dustPositions = new Float32Array(N * 3);
+  dustOpacities = new Float32Array(N);
+  dustVel = new Float32Array(N * 3);
+  for (let i = 0; i < N; i++) {
+    dustPositions[i*3+0] = (Math.random() - 0.5) * 60;
+    dustPositions[i*3+1] = Math.random() * 8;
+    dustPositions[i*3+2] = (Math.random() - 0.5) * 60;
+    dustOpacities[i] = Math.random();
+    dustVel[i*3+0] = (Math.random() - 0.5) * 0.1;
+    dustVel[i*3+1] = -0.05 - Math.random() * 0.1;
+    dustVel[i*3+2] = (Math.random() - 0.5) * 0.1;
+  }
+  dustGeom = new THREE.BufferGeometry();
+  dustGeom.setAttribute('position', new THREE.BufferAttribute(dustPositions, 3));
+  const dustMat = new THREE.PointsMaterial({
+    size: 0.18, color: 0xffd6a8, transparent: true, opacity: 0.5,
+    blending: THREE.AdditiveBlending, depthWrite: false,
+    sizeAttenuation: true,
+  });
+  dustParticles = new THREE.Points(dustGeom, dustMat);
+  scene.add(dustParticles);
+}
+
+// ============================================================================
+// MAZE COLLISION
+// ============================================================================
+function isWallAt(wx, wz) {
+  const gx = Math.floor((wx + MAZE_W * TILE / 2) / TILE);
+  const gy = Math.floor((wz + MAZE_H * TILE / 2) / TILE);
+  if (gx < 0 || gy < 0 || gx >= MAZE_W || gy >= MAZE_H) return true;
+  return maze[gy][gx] === 1;
+}
+
+function checkCollision(wx, wz, r) {
+  const checks = [
+    [wx - r, wz - r], [wx + r, wz - r], [wx - r, wz + r], [wx + r, wz + r],
+    [wx, wz - r], [wx, wz + r], [wx - r, wz], [wx + r, wz]
+  ];
+  for (const [cx, cz] of checks) if (isWallAt(cx, cz)) return true;
+  return false;
+}
+
+// ============================================================================
+// PLAYER SPAWN
+// ============================================================================
+function spawnPlayer() {
+  // Find a random open cell
+  let placed = false;
+  while (!placed) {
+    const x = 1 + Math.floor(Math.random() * (MAZE_W - 2));
+    const y = 1 + Math.floor(Math.random() * (MAZE_H - 2));
+    if (maze[y][x] === 0) {
+      player.pos.x = (x - MAZE_W / 2) * TILE + TILE / 2;
+      player.pos.z = (y - MAZE_H / 2) * TILE + TILE / 2;
+      player.pos.y = HOVER_HEIGHT;
+      placed = true;
+    }
+  }
+  player.yaw = 0;
+  player.vel.set(0, 0, 0);
+}
+
+// ============================================================================
+// INPUT
+// ============================================================================
+function setupInput() {
+  const left = document.getElementById('steer-left');
+  const right = document.getElementById('steer-right');
+  const nitro = document.getElementById('btn-nitro');
+
+  const press = (zone, set) => {
+    zone.addEventListener('touchstart', e => { e.preventDefault(); set(true); zone.classList.add('active'); }, { passive: false });
+    zone.addEventListener('touchend', e => { e.preventDefault(); set(false); zone.classList.remove('active'); }, { passive: false });
+    zone.addEventListener('touchcancel', e => { e.preventDefault(); set(false); zone.classList.remove('active'); }, { passive: false });
+    zone.addEventListener('mousedown', e => { e.preventDefault(); set(true); zone.classList.add('active'); });
+    document.addEventListener('mouseup', () => { set(false); zone.classList.remove('active'); });
+  };
+  press(left, v => input.steerLeft = v);
+  press(right, v => input.steerRight = v);
+
+  // Keyboard fallback for desktop
+  window.addEventListener('keydown', e => {
+    if (e.key === 'ArrowLeft' || e.key === 'a') { input.steerLeft = true; left.classList.add('active'); }
+    if (e.key === 'ArrowRight' || e.key === 'd') { input.steerRight = true; right.classList.add('active'); }
+    if (e.key === ' ' || e.key === 'Shift') tryNitro();
+  });
+  window.addEventListener('keyup', e => {
+    if (e.key === 'ArrowLeft' || e.key === 'a') { input.steerLeft = false; left.classList.remove('active'); }
+    if (e.key === 'ArrowRight' || e.key === 'd') { input.steerRight = false; right.classList.remove('active'); }
+  });
+
+  nitro.addEventListener('click', e => { e.preventDefault(); tryNitro(); });
+}
+
+function tryNitro() {
+  if (player.nitroCharge >= 1.0 && player.nitroActive <= 0) {
+    player.nitroActive = 1.5;
+    player.nitroCharge = 0;
+    updateNitroBtn();
+  }
+}
+function updateNitroBtn() {
+  const btn = document.getElementById('btn-nitro');
+  btn.dataset.disabled = (player.nitroCharge < 1.0) ? 'true' : 'false';
+}
+
+// ============================================================================
+// UPDATE
+// ============================================================================
+function update(dt) {
+  // Auto-accelerate forward
+  const useNitro = player.nitroActive > 0;
+  const accel = useNitro ? NITRO_ACCEL : ACCEL;
+  const maxSp = useNitro ? NITRO_MAX : MAX_SPEED;
+
+  // Forward direction (yaw 0 = facing -Z)
+  const fx = Math.sin(player.yaw);
+  const fz = -Math.cos(player.yaw);
+
+  // Apply forward thrust
+  player.vel.x += fx * accel * dt;
+  player.vel.z += fz * accel * dt;
+
+  // Steering
+  let turnInput = 0;
+  if (input.steerLeft) turnInput -= 1;
+  if (input.steerRight) turnInput += 1;
+  player.yaw += turnInput * TURN_RATE * dt;
+  // Tilt visual
+  const targetTilt = turnInput * TILT_AMOUNT;
+  player.tilt += (targetTilt - player.tilt) * Math.min(1, dt * 8);
+
+  // Friction (allows drift feeling but stops eventually)
+  const friction = Math.exp(-FRICTION * dt);
+  player.vel.x *= friction;
+  player.vel.z *= friction;
+
+  // Cap
+  player.speed = Math.hypot(player.vel.x, player.vel.z);
+  if (player.speed > maxSp) {
+    player.vel.x = player.vel.x / player.speed * maxSp;
+    player.vel.z = player.vel.z / player.speed * maxSp;
+    player.speed = maxSp;
+  }
+
+  // Move with collision
+  const r = 0.6;
+  let nx = player.pos.x + player.vel.x * dt;
+  let nz = player.pos.z + player.vel.z * dt;
+  if (checkCollision(nx, player.pos.z, r)) {
+    player.vel.x *= -0.3;
+    nx = player.pos.x;
+  }
+  if (checkCollision(nx, nz, r)) {
+    player.vel.z *= -0.3;
+    nz = player.pos.z;
+  }
+  player.pos.x = nx;
+  player.pos.z = nz;
+
+  // Bob (engine vibration)
+  player.bob += dt * (4 + player.speed * 0.3);
+  const bobY = HOVER_HEIGHT + Math.sin(player.bob) * 0.08 + Math.sin(player.bob * 1.7) * 0.04;
+  const bobR = Math.sin(player.bob * 0.5) * 0.015 * (player.speed / MAX_SPEED + 0.3);
+
+  // Apply to camera
+  camera.position.set(player.pos.x, bobY, player.pos.z);
+  camera.rotation.order = 'YXZ';
+  camera.rotation.y = -player.yaw;
+  camera.rotation.x = bobR;
+  camera.rotation.z = player.tilt + bobR;
+
+  // Nitro decay + charge
+  if (player.nitroActive > 0) {
+    player.nitroActive -= dt;
+  } else {
+    // Charge nitro by sustained speed
+    if (player.speed > MAX_SPEED * 0.7) {
+      player.nitroCharge = Math.min(1.0, player.nitroCharge + dt * 0.18);
+    }
+  }
+  if (Math.floor(player.nitroCharge * 100) % 5 === 0) updateNitroBtn();
+
+  // Update sky
+  if (player._sky) player._sky.material.uniforms.time.value = clock.getElapsedTime();
+
+  // Torch flicker
+  if (scene.userData.torches) {
+    for (const t of scene.userData.torches) {
+      t.userData.flicker += dt * (4 + Math.random() * 3);
+      t.intensity = 3.0 + Math.sin(t.userData.flicker) * 0.6 + (Math.random() - 0.5) * 0.5;
+      if (t.userData.flame) {
+        const s = 1 + Math.sin(t.userData.flicker * 2) * 0.2;
+        t.userData.flame.scale.set(s, s * 1.3, s);
+      }
+    }
+  }
+
+  // Dust particles
+  if (dustGeom) {
+    const N = dustPositions.length / 3;
+    for (let i = 0; i < N; i++) {
+      dustPositions[i*3+0] += dustVel[i*3+0];
+      dustPositions[i*3+1] += dustVel[i*3+1];
+      dustPositions[i*3+2] += dustVel[i*3+2];
+      // Recycle particles that fall
+      if (dustPositions[i*3+1] < 0) {
+        dustPositions[i*3+0] = player.pos.x + (Math.random() - 0.5) * 40;
+        dustPositions[i*3+1] = 6 + Math.random() * 4;
+        dustPositions[i*3+2] = player.pos.z + (Math.random() - 0.5) * 40;
+      }
+    }
+    dustGeom.attributes.position.needsUpdate = true;
+  }
+}
+
+// ============================================================================
+// HUD UPDATE
+// ============================================================================
+function updateHUD() {
+  // Score (dummy increment)
+  // Just shows elapsed time as score for now
+  // const t = Math.floor(clock.getElapsedTime() * 10);
+  // document.getElementById('score-value').textContent = String(t).padStart(6, '0');
+
+  // Speedometer
+  const kmh = Math.floor(player.speed * 8.5);  // arbitrary scale to feel arcade
+  document.getElementById('speedo-value').textContent = kmh;
+  const speedPct = Math.min(100, (player.speed / NITRO_MAX) * 100);
+  document.getElementById('speedo-bar').style.width = speedPct + '%';
+
+  // Radar
+  drawRadar();
+}
+
+function drawRadar() {
+  const c = document.querySelector('#radar canvas');
+  if (!c) return;
+  if (!radarCtx) radarCtx = c.getContext('2d');
+  const ctx = radarCtx;
+  const w = c.width, h = c.height;
+  ctx.clearRect(0, 0, w, h);
+
+  // BG with sweep
+  const t = clock.getElapsedTime();
+  const sweepAngle = (t * 1.8) % (Math.PI * 2);
+  ctx.fillStyle = 'rgba(0, 30, 25, 0.85)';
+  ctx.beginPath(); ctx.arc(w/2, h/2, w/2 - 2, 0, Math.PI * 2); ctx.fill();
+
+  // Crosshairs
+  ctx.strokeStyle = 'rgba(0, 255, 200, 0.18)';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(0, h/2); ctx.lineTo(w, h/2); ctx.moveTo(w/2, 0); ctx.lineTo(w/2, h); ctx.stroke();
+  ctx.beginPath(); ctx.arc(w/2, h/2, w/4, 0, Math.PI * 2); ctx.stroke();
+
+  // Sweep line + trail
+  ctx.save();
+  ctx.translate(w/2, h/2);
+  ctx.rotate(sweepAngle);
+  const sweepGrad = ctx.createLinearGradient(0, 0, w/2, 0);
+  sweepGrad.addColorStop(0, 'rgba(0, 255, 200, 0.5)');
+  sweepGrad.addColorStop(1, 'rgba(0, 255, 200, 0)');
+  ctx.fillStyle = sweepGrad;
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.arc(0, 0, w/2 - 4, -0.35, 0);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+
+  // Walls (sampled) — rotate with player yaw
+  const range = MAZE_W * TILE * 0.5;
+  const scale = (w / 2 - 4) / range;
+  ctx.fillStyle = 'rgba(0, 255, 200, 0.5)';
+  for (let y = 0; y < MAZE_H; y += 1) {
+    for (let x = 0; x < MAZE_W; x += 1) {
+      if (maze[y][x] !== 1) continue;
+      const wx = (x - MAZE_W / 2) * TILE + TILE / 2;
+      const wz = (y - MAZE_H / 2) * TILE + TILE / 2;
+      const dx = wx - player.pos.x;
+      const dz = wz - player.pos.z;
+      const cs = Math.cos(player.yaw), sn = Math.sin(player.yaw);
+      const lx = dx * cs - dz * sn;
+      const lz = dx * sn + dz * cs;
+      const px = w/2 + lx * scale;
+      const py = h/2 + lz * scale;
+      const d = Math.hypot(dx, dz);
+      if (d > range) continue;
+      const alpha = 1 - d / range;
+      ctx.fillStyle = `rgba(0, 255, 200, ${0.15 + alpha * 0.3})`;
+      ctx.fillRect(px - 1, py - 1, 2, 2);
+    }
+  }
+
+  // Player (center)
+  ctx.fillStyle = '#fff';
+  ctx.shadowColor = '#00ffc8';
+  ctx.shadowBlur = 6;
+  ctx.beginPath();
+  ctx.moveTo(w/2, h/2 - 5);
+  ctx.lineTo(w/2 - 4, h/2 + 4);
+  ctx.lineTo(w/2 + 4, h/2 + 4);
+  ctx.closePath();
+  ctx.fill();
+  ctx.shadowBlur = 0;
+}
+
+// ============================================================================
+// ORIENTATION CHECK
+// ============================================================================
+function checkOrientation() {
+  const portrait = window.innerHeight > window.innerWidth && window.innerWidth < 900;
+  const warn = document.getElementById('orientation-warn');
+  warn.classList.toggle('show', portrait);
+}
+
+// ============================================================================
+// LOOP
+// ============================================================================
+function loop() {
+  requestAnimationFrame(loop);
+  const dt = Math.min(0.05, clock.getDelta());
+  update(dt);
+  updateHUD();
+  composer.render();
+}
+
+// ============================================================================
+// BOOT
+// ============================================================================
+function boot() {
+  initThree();
+  buildCastle();
+  spawnPlayer();
+  setupInput();
+  checkOrientation();
+  window.addEventListener('resize', checkOrientation);
+  window.addEventListener('orientationchange', checkOrientation);
+
+  setTimeout(() => document.getElementById('loading').classList.add('hide'), 1400);
+  loop();
+}
+
+boot();
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(() => {});
+}
+</script>
+</body>
+</html>

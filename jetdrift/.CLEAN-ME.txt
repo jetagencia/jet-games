@@ -1,0 +1,1 @@
+Borrar manualmente desde Windows Explorer: jetdrift/src/ (es del v0.4 obsoleto)
