@@ -11,10 +11,12 @@ Reimaginaciones modernas y monetizables de clásicos pre-2000.
 | **JETDrift** (`jetdrift/`) | Hover! (1995) | v0.4 — Dunes theme en construcción | [jetdrift/](./jetdrift) |
 | **JETFlow** (`jetflow/`) | Pipe Mania (1989) | v0.1 prototipo playable | [jetflow/](./jetflow) |
 | **JETSlalom** (`jetslalom/`) | SkiFree (1991) | v0.1 prototipo playable | [jetslalom/](./jetslalom) |
+| **JETJump** (`jetjump/`) | Salto ecuestre (simulación original) | v0.1 jugable, arte provisional | [jetjump/](./jetjump) |
 
 ## Documentación
 
 - [`docs/DESIGN-1.0.md`](./docs/DESIGN-1.0.md) — design doc consensuado de JETDrift
+- [`docs/DESIGN-JETJUMP.md`](./docs/DESIGN-JETJUMP.md) — design doc de JETJump
 - [`docs/PORTFOLIO-ROADMAP.md`](./docs/PORTFOLIO-ROADMAP.md) — orden de release + branding
 - [`docs/PRIVACY-POLICY-DRAFT.md`](./docs/PRIVACY-POLICY-DRAFT.md) — privacy GDPR (DRAFT)
 - [`docs/TERMS-OF-SERVICE-DRAFT.md`](./docs/TERMS-OF-SERVICE-DRAFT.md) — terms (DRAFT)

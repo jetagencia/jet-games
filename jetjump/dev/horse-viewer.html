@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>JETJump — visor de caballo</title>
+<script type="importmap">{"imports":{"three":"../vendor/three.module.js","three/addons/":"../vendor/addons/"}}</script>
+<style>body{margin:0;background:#8aa;overflow:hidden}#i{position:fixed;left:8px;top:8px;font:13px monospace;color:#fff;background:#0008;padding:6px}</style>
+</head>
+<body>
+<div id="i"></div>
+<script type="module">
+import * as THREE from 'three';
+import { HorseModel } from '../src/horse.js';
+const q = new URLSearchParams(location.search);
+const W = innerWidth, H = innerHeight;
+const r = new THREE.WebGLRenderer({ antialias: true });
+r.setSize(W, H); r.shadowMap.enabled = true; r.shadowMap.type = THREE.PCFSoftShadowMap;
+r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 1.0;
+document.body.appendChild(r.domElement);
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0x9fb4c4);
+const cam = new THREE.PerspectiveCamera(38, W / H, 0.1, 100);
+const sun = new THREE.DirectionalLight(0xfff2dc, 3.2); sun.position.set(4, 8, 5); sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048); sun.shadow.camera.left = -4; sun.shadow.camera.right = 4; sun.shadow.camera.top = 4; sun.shadow.camera.bottom = -4; sun.shadow.bias = -0.0005;
+scene.add(sun);
+scene.add(new THREE.HemisphereLight(0xcfe3ff, 0x6a5a3a, 1.4));
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(30, 30), new THREE.MeshStandardMaterial({ color: 0xb49a6a, roughness: 1 }));
+ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
+const grid = new THREE.GridHelper(10, 20, 0x444, 0x777); grid.position.y = 0.002; scene.add(grid);
+const t0 = performance.now();
+const horse = new HorseModel({ coat: q.get('coat') || 'bay', blaze: true, socks: [0, 1, 0, 1] });
+scene.add(horse.root);
+document.getElementById('i').textContent = `build ${(performance.now() - t0).toFixed(0)}ms`;
+const gait = +(q.get('gait') ?? 3);
+const view = q.get('view') || 'side';
+const jump = q.has('jump') ? +q.get('jump') : -1;
+const phase = +(q.get('phase') ?? 0.3);
+const dist = +(q.get('dist') ?? 4.5);
+if (view === 'side') cam.position.set(0, 1.5, dist); else if (view === 'front') cam.position.set(dist, 1.6, 0.6); else if (view === 'iso') cam.position.set(dist * 0.7, 2.2, dist * 0.7); else cam.position.set(-dist * 0.8, 2.0, dist * 0.5);
+cam.lookAt(0, 1.2, 0);
+const w = [0, 0, 0, 0]; if (gait >= 1) w[gait - 1] = 1;
+let ph = phase;
+function frame() {
+  ph = q.has('anim') ? (performance.now() - t0) / 1000 * 1.6 % 1 : phase;
+  horse.update({ phase: ph, w, L: 3.4, lead: 1, jumpT: jump, jumpW: jump >= 0 ? 1 : 0, pitch: jump >= 0 ? 0.3 * Math.cos(Math.PI * jump) : 0, roll: 0, y: jump >= 0 ? 1.12 + 0.9 * Math.sin(Math.PI * jump) : 1.12, v: gait >= 3 ? 6 : gait * 1.5, omega: 0 }, 1 / 60);
+  r.render(scene, cam);
+  requestAnimationFrame(frame);
+}
+frame();
+window.__ready = true;
+</script>
+</body>
+</html>
