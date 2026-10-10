@@ -1,0 +1,46 @@
+# Salchidrez — Prototipo v0.1
+
+Ajedrez de perros salchicha. Reglas completas del ajedrez, pero cada pieza es un salchicha: cuanto más importante la pieza, más larga la salchicha. Cuando se mueve, el perro estira el cuerpo hasta la casilla destino y después la cola lo alcanza.
+
+## Cómo probar
+
+1. Abrí `index.html` en Chrome móvil o devtools mobile.
+2. Elegí modo (**Vs IA** o **2 jugadores**), dificultad y color.
+3. Tocá un perro para elegirlo. Los **huesitos** marcan adónde puede ir; el **marco rosa** marca una captura.
+4. Tocá el destino. Si un cachorro llega al fondo, elegís en qué se convierte.
+
+## La jauría
+
+| Pieza | Nombre | Cómo reconocerlo |
+|---|---|---|
+| Rey | Rey Salchichón | corona dorada, el más largo |
+| Reina | Reina Longaniza | tiara y collar de perlas |
+| Torre | Torre Cucha | lleva su cucha a cuestas |
+| Alfil | Obispo Chorizo | mitra puntiaguda |
+| Caballo | Salchi-jinete | gorra y montura, salta en vez de estirarse |
+| Peón | Cachorro | pañuelo, el más corto |
+
+Bandos: **Crema** (blancas, glow cian) vs **Chocolate** (negras, glow magenta).
+
+## Estado del prototipo
+
+✅ Implementado:
+- Motor de ajedrez completo: enroque, captura al paso, promoción con elección, jaque, jaque mate, ahogado
+- Tablas por triple repetición, regla de 50 movidas y material insuficiente
+- Motor validado con perft contra 6 posiciones estándar (inicial d4, Kiwipete d3, etc.)
+- IA negamax + alpha-beta + quiescence, 3 niveles: Cachorro (d1 + ruido), Salchicha (d2), Campeón (iterativo hasta d4, 1.6 s)
+- Perros dibujados por código en Canvas2D (sin assets): cola que mueve, orejas que se balancean, parpadeo
+- Animación de "salchicha estirada" al moverse, salto del caballo, capturado que sale volando con "¡GUAU!"
+- Los perros se dan vuelta según hacia dónde caminaron
+- Deshacer (en Vs IA deshace tu jugada y la de la IA)
+- Bandejas de capturas con diferencia de material
+- Sonidos sintetizados con WebAudio (ladrido en captura y jaque, aullido al final)
+- Victorias por dificultad persistentes (localStorage)
+- Estética neón consistente con el resto del portfolio JET
+
+🔜 Próximas iteraciones:
+- IA en Web Worker para no bloquear el hilo en Campeón
+- Multijugador online / pasar y jugar con tablero girado
+- Puzzles diarios de mate ("¿Dónde está el hueso?")
+- Skins de razas (salchicha de pelo largo, arlequín)
+- Iconos PWA

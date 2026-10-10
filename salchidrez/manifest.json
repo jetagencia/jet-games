@@ -1,0 +1,16 @@
+{
+  "name": "Salchidrez",
+  "short_name": "Salchidrez",
+  "description": "Ajedrez de perros salchicha. Cuanto más importante la pieza, más larga la salchicha.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "fullscreen",
+  "display_override": ["fullscreen", "standalone"],
+  "orientation": "portrait",
+  "background_color": "#06030f",
+  "theme_color": "#0f0a24",
+  "lang": "es-AR",
+  "categories": ["games", "board"],
+  "icons": [],
+  "prefer_related_applications": false
+}

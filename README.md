@@ -11,6 +11,7 @@ Reimaginaciones modernas y monetizables de clásicos pre-2000.
 | **JETDrift** (`jetdrift/`) | Hover! (1995) | v0.4 — Dunes theme en construcción | [jetdrift/](./jetdrift) |
 | **JETFlow** (`jetflow/`) | Pipe Mania (1989) | v0.1 prototipo playable | [jetflow/](./jetflow) |
 | **JETSlalom** (`jetslalom/`) | SkiFree (1991) | v0.1 prototipo playable | [jetslalom/](./jetslalom) |
+| **Salchidrez** (`salchidrez/`) | Ajedrez, con perros salchicha | v0.1 prototipo playable | [salchidrez/](./salchidrez) |
 
 ## Documentación
 
