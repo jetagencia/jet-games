@@ -1,4 +1,4 @@
-# Salchidrez. Prototipo v0.3
+# Salchidrez. Prototipo v0.4
 
 Ajedrez de perros salchicha. Reglas completas del ajedrez, pero cada pieza es un salchicha disfrazado de lo que representa. Cuando se mueve, el perro estira el cuerpo hasta la casilla destino y después la cola lo alcanza. El caballero salta.
 
@@ -57,7 +57,9 @@ Los efectos (ladridos, olfateos, pasitos, boing del caballero, nube de pelea, fa
 - IA negamax + alpha-beta + quiescence, 3 niveles: Cachorro, Salchicha y Campeón
 - Perros dibujados por código en Canvas2D (sin imágenes), con vestuario por pieza
 - Arrastrar para estirar, salto del caballero, huellitas en el camino, nube de pelea con sacudón, onomatopeyas
-- Globitos de diálogo según la pieza, rey que transpira en jaque, perros que saltan y olfatean mientras esperan
+- Escena de jaque: el perro que ataca se da vuelta, se estira hacia el rey y ladra con la boca abierta (cejas fruncidas, colmillos, ondas de ladrido); una línea roja marca la amenaza. El rey pega un salto del susto, abre los ojos, para las orejas, tiembla, transpira y grita ("¡Socorro, guardias!", "¡No me muerdas!"). Si zafa, suspira ("¡Uf, zafé!"); si se come al atacante, "¡Tomá, por ladrar!"
+- Jaque mate: tres ladridos, el rey dice "¡Me rindo!" y se desmaya patas para arriba con ojos en X y estrellitas
+- Globitos de diálogo según la pieza, perros que saltan y olfatean mientras esperan
 - Menú ilustrado con tarjetas, logo con salchichas que caminan como oruga
 - Pantalla final con el ganador bailando, papel picado y huesitos, estadísticas de la partida
 - Tarjetas de jugador con avatar, estado y capturas; barra con deshacer, pista, música, sonidos y menú

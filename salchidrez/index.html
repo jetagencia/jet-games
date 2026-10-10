@@ -249,7 +249,7 @@
       <button class="link" id="btn-legend">Quién es quién</button>
       <label class="link" for="opt-glyphs"><input type="checkbox" id="opt-glyphs"> Símbolos clásicos</label>
     </div>
-    <p class="foot">JETCompany OÜ · Salchidrez v0.3<br><span id="wins-label"></span></p>
+    <p class="foot">JETCompany OÜ · Salchidrez v0.4<br><span id="wins-label"></span></p>
   </div>
 </div>
 
@@ -749,41 +749,103 @@ function drawDog(g, type, color, ox, oy, fx, fy, r, opts) {
 
   // Cabeza
   const hx = len - r * 0.05, hy = -r * 1.0;
-  // Hocico
+  // Expresión: mood = 'angry' | 'scared' | 'ko'; mouth = 0..1 (ladrido)
+  const mood = opts.mood;
+  const mo = Math.max(0, Math.min(1, opts.mouth || 0));
+  const hingeX = hx + r * 0.45, hingeY = hy + r * 0.42;
+  if (mo > 0.02) {
+    // Mandíbula de abajo, boca abierta y lengua
+    g.beginPath();
+    g.ellipse(hx + r * 0.95, hy + r * 0.6 + mo * r * 0.38, r * 0.66, r * 0.2, 0.1 + mo * 0.3, 0, Math.PI * 2);
+    fillStroke(g, pal.snout, pal.outline, lw);
+    g.beginPath();
+    g.ellipse(hx + r * 1.0, hy + r * 0.5 + mo * r * 0.18, r * 0.6, r * (0.07 + 0.27 * mo), 0.08 + mo * 0.15, 0, Math.PI * 2);
+    g.fillStyle = '#4a0a18'; g.fill();
+    g.beginPath();
+    g.ellipse(hx + r * 0.9, hy + r * 0.6 + mo * r * 0.3, r * 0.32, r * 0.12, 0.2, 0, Math.PI * 2);
+    g.fillStyle = '#ff7a9a'; g.fill();
+  }
+  // Hocico (se levanta un poco al ladrar)
+  g.save();
+  g.translate(hingeX, hingeY); g.rotate(-mo * 0.14); g.translate(-hingeX, -hingeY);
   g.beginPath();
   g.ellipse(hx + r * 0.95, hy + r * 0.28, r * 0.78, r * 0.42, 0.08, 0, Math.PI * 2);
   fillStroke(g, pal.snout, pal.outline, lw);
+  g.beginPath();
+  g.arc(hx + r * 1.68, hy + r * 0.16, r * 0.2, 0, Math.PI * 2);
+  g.fillStyle = '#140805'; g.fill();
+  if (mo > 0.02) {
+    // Colmillos
+    g.fillStyle = '#ffffff';
+    for (const tx of [1.15, 1.45]) {
+      g.beginPath();
+      g.moveTo(hx + r * (tx - 0.08), hy + r * 0.62);
+      g.lineTo(hx + r * tx, hy + r * (0.62 + 0.16 * mo));
+      g.lineTo(hx + r * (tx + 0.08), hy + r * 0.6);
+      g.closePath(); g.fill();
+    }
+  } else {
+    g.beginPath();
+    if (mood === 'scared') {
+      // Boquita temblorosa
+      g.moveTo(hx + r * 1.5, hy + r * 0.55);
+      for (let i = 1; i <= 4; i++) g.lineTo(hx + r * (1.5 - i * 0.14), hy + r * (0.55 + (i % 2 ? 0.07 : 0)));
+    } else {
+      g.moveTo(hx + r * 1.55, hy + r * 0.5);
+      g.quadraticCurveTo(hx + r * 1.2, hy + r * 0.65, hx + r * 0.9, hy + r * 0.5);
+    }
+    g.strokeStyle = pal.outline; g.lineWidth = lw * 0.8; g.stroke();
+  }
+  g.restore();
   // Cráneo
   g.beginPath();
   g.arc(hx, hy, r * 0.82, 0, Math.PI * 2);
   fillStroke(g, pal.body, pal.outline, lw);
-  // Nariz
-  g.beginPath();
-  g.arc(hx + r * 1.68, hy + r * 0.16, r * 0.2, 0, Math.PI * 2);
-  g.fillStyle = '#140805'; g.fill();
-  // Boca
-  g.beginPath();
-  g.moveTo(hx + r * 1.55, hy + r * 0.5);
-  g.quadraticCurveTo(hx + r * 1.2, hy + r * 0.65, hx + r * 0.9, hy + r * 0.5);
-  g.strokeStyle = pal.outline; g.lineWidth = lw * 0.8; g.stroke();
-  // Ojo
-  const blink = opts.blink ? 0.15 : 1;
-  g.beginPath();
-  g.ellipse(hx + r * 0.32, hy - r * 0.18, r * 0.17, r * 0.17 * blink, 0, 0, Math.PI * 2);
-  g.fillStyle = '#140805'; g.fill();
-  if (blink === 1) {
+  // Ojos según el ánimo
+  const ex = hx + r * 0.32, ey = hy - r * 0.18;
+  const blink = opts.blink && !mood ? 0.15 : 1;
+  if (mood === 'ko') {
     g.beginPath();
-    g.arc(hx + r * 0.37, hy - r * 0.24, r * 0.06, 0, Math.PI * 2);
-    g.fillStyle = '#fff'; g.fill();
-  }
-  if (color === 'b') {
-    // Ceja color fuego
+    g.moveTo(ex - r * 0.15, ey - r * 0.15); g.lineTo(ex + r * 0.15, ey + r * 0.15);
+    g.moveTo(ex + r * 0.15, ey - r * 0.15); g.lineTo(ex - r * 0.15, ey + r * 0.15);
+    g.strokeStyle = '#140805'; g.lineWidth = lw * 1.8; g.stroke();
+  } else if (mood === 'scared') {
+    g.beginPath(); g.arc(ex, ey, r * 0.27, 0, Math.PI * 2);
+    fillStroke(g, '#ffffff', '#140805', lw);
+    g.beginPath(); g.arc(ex + r * 0.06, ey + r * 0.02, r * 0.09, 0, Math.PI * 2);
+    g.fillStyle = '#140805'; g.fill();
+    // Ceja levantada de preocupación
     g.beginPath();
-    g.ellipse(hx + r * 0.25, hy - r * 0.48, r * 0.14, r * 0.08, -0.2, 0, Math.PI * 2);
-    g.fillStyle = pal.snout; g.fill();
+    g.moveTo(ex - r * 0.25, ey - r * 0.36);
+    g.quadraticCurveTo(ex, ey - r * 0.62, ex + r * 0.3, ey - r * 0.48);
+    g.strokeStyle = '#140805'; g.lineWidth = lw * 1.6; g.stroke();
+  } else {
+    g.beginPath();
+    g.ellipse(ex, ey, r * 0.17, r * 0.17 * blink, 0, 0, Math.PI * 2);
+    g.fillStyle = '#140805'; g.fill();
+    if (blink === 1) {
+      g.beginPath();
+      g.arc(ex + r * 0.05, ey - r * 0.06, r * 0.06, 0, Math.PI * 2);
+      g.fillStyle = '#fff'; g.fill();
+    }
+    if (mood === 'angry') {
+      // Ceja fruncida hacia el hocico
+      g.beginPath();
+      g.moveTo(ex - r * 0.28, ey - r * 0.42);
+      g.lineTo(ex + r * 0.26, ey - r * 0.16);
+      g.lineCap = 'round';
+      if (color === 'b') { g.strokeStyle = '#140805'; g.lineWidth = lw * 4; g.stroke(); g.strokeStyle = pal.snout; g.lineWidth = lw * 2; g.stroke(); }
+      else { g.strokeStyle = '#140805'; g.lineWidth = lw * 2.4; g.stroke(); }
+    } else if (color === 'b') {
+      // Ceja color fuego
+      g.beginPath();
+      g.ellipse(hx + r * 0.25, hy - r * 0.48, r * 0.14, r * 0.08, -0.2, 0, Math.PI * 2);
+      g.fillStyle = pal.snout; g.fill();
+    }
   }
-  // Oreja (cae y se mueve)
-  const earSwing = Math.sin(time * 0.004 + seed * 1.7) * 0.12 + (opts.walking ? Math.sin(time * 0.03) * 0.25 : 0);
+  // Oreja (cae y se mueve; del susto se para)
+  const earSwing = Math.sin(time * 0.004 + seed * 1.7) * 0.12 + (opts.walking ? Math.sin(time * 0.03) * 0.25 : 0)
+    + (mood === 'scared' ? 1.75 + Math.sin(time * 0.05) * 0.15 : 0) + (mood === 'angry' ? 0.55 : 0) + (mood === 'ko' ? 2.4 : 0);
   g.save();
   g.translate(hx - r * 0.25, hy - r * 0.25);
   g.rotate(0.25 + earSwing);
@@ -799,7 +861,7 @@ function drawDog(g, type, color, ox, oy, fx, fy, r, opts) {
   if (type === 'b') drawMitre(g, hx, topY, r, color, pal, lw);
   if (type === 'r') drawTowerHat(g, hx, topY, r, pal, lw);
   if (type === 'n') drawHelmet(g, hx, hy - r * 0.78, r, pal, lw, time);
-  if (type === 'q' && blink === 1) drawLashes(g, hx + r * 0.32, hy - r * 0.18, r, lw);
+  if (type === 'q' && blink === 1 && !mood) drawLashes(g, ex, ey, r, lw);
 
   // Caballito de palo, delante del pecho
   if (type === 'n') drawHobbyHorse(g, len + r * 0.75, r * 0.6, r * 0.9, lw);
@@ -1144,6 +1206,10 @@ const SAY = {
   p: ['¡Voy!', 'Quiero ser reina', 'Un pasito'],
   cap: ['¡Ñam!', '¡Te agarré!', '¡A la cucha!', '¡Guau!'],
   hit: ['¡PAF!', '¡ÑAM!', '¡PUM!', '¡GUAU!'],
+  // Jaque: el atacante ladra y el rey se asusta
+  bark: ['¡GUAU GUAU!', '¡Jaque, guau!', '¡GRRR… GUAU!', '¡Te tengo, rey!', '¡Guau! ¡Rendite!'],
+  scared: ['¡Auxilio!', '¡Socorro, guardias!', '¡No me muerdas!', '¡Mamita querida!', '¡Ay, ay, ay!', '¡Me quieren comer!'],
+  relief: ['¡Uf, zafé!', '¡Qué susto!', '¡Uf!', 'Me salvé por un pelo'],
 };
 const pickOne = a => a[Math.floor(Math.random() * a.length)];
 
@@ -1178,6 +1244,9 @@ let inGame = false;
 let bgItems = [];
 let confetti = [];
 let lastFrame = 0;
+let checkFx = null;       // escena de jaque: quién ladra y a qué rey
+let checkPending = false;
+let waves = [];           // ondas de ladrido que viajan hacia el rey
 
 function humanTurn() {
   if (over || pendingPromo) return false;
@@ -1185,7 +1254,14 @@ function humanTurn() {
 }
 
 function canAct() {
+  if (checkPending || (checkFx && performance.now() - checkFx.start < 900)) return false;
   return st && inGame && !anims.length && !aiThinking && humanTurn();
+}
+
+// Casillas de las piezas de `by` que atacan la casilla `sq`
+function attackersOf(state, sq, by) {
+  const tmp = Object.assign({}, state, { turn: by, cas: 0, ep: -1 });
+  return [...new Set(genPseudo(tmp).filter(m => m.to === sq).map(m => m.from))];
 }
 
 function newGame() {
@@ -1202,6 +1278,7 @@ function newGame() {
   selected = -1; selMoves = [];
   anims = []; floaters = []; bubbles = []; prints = []; idle = {};
   drag = null; hint = null; hintBusy = false;
+  checkFx = null; checkPending = false; waves = [];
   over = null; aiThinking = false; pendingPromo = null;
   blinkSeeds = Array.from({ length: 64 }, () => Math.random() * 5000);
   inGame = true;
@@ -1402,6 +1479,8 @@ function commitMove(m, d) {
   const s = L.s;
   const A = sqXY(m.from), B = sqXY(m.to);
   const t = typeOf(mover);
+  const escaping = checkFx && st.b[checkFx.kingSq] && colorOf(st.b[checkFx.kingSq]) === color ? checkFx : null;
+  checkFx = null; waves = [];
   const dirX = d ? dragDir(d) : (Math.sign(B.x - A.x) || facing[m.from] || 1);
   const dist = Math.hypot(B.x - A.x, B.y - A.y) / s;
   const r = DOG[t].r * s;
@@ -1464,6 +1543,13 @@ function commitMove(m, d) {
   lastMove = { from: m.from, to: m.to };
   deselect();
 
+  if (escaping) {
+    const ks = kingSquare(st.b, color);
+    const ate = m.cap && escaping.attackers.includes(m.to);
+    bubbles.push({ sq: ks, text: ate ? '¡Tomá, por ladrar!' : pickOne(SAY.relief), start: now + anim.dur + 150, dur: 1500 });
+    setTimeout(() => sfx('relief'), anim.dur + 150);
+  }
+
   checkGameState(key, now + anim.dur);
   updateHUD();
 }
@@ -1491,6 +1577,11 @@ function checkGameState(key, settle) {
   const moves = legalMoves(st);
   const chk = inCheck(st, st.turn);
   const winner = st.turn === 'w' ? 'b' : 'w';
+  if (chk) {
+    checkPending = true;
+    const id = gameId;
+    setTimeout(() => { if (id === gameId) startCheckFx(moves.length === 0); }, Math.max(0, settle - performance.now()));
+  }
   if (moves.length === 0) {
     if (chk) over = { title: '¡Jaque mate!', sub: matesub(winner), winner };
     else over = { title: 'Tablas por ahogado', sub: 'Ningún perro se puede mover. Todos a dormir la siesta.' };
@@ -1500,22 +1591,15 @@ function checkGameState(key, settle) {
     over = { title: 'Tablas', sub: 'Cincuenta movidas sin comer a nadie. Mucho olfateo, poca acción.' };
   } else if (insufficientMaterial(st.b)) {
     over = { title: 'Tablas', sub: 'No quedan perros para dar jaque mate.' };
-  } else if (chk) {
-    const wait = Math.max(0, settle - performance.now());
-    setTimeout(() => {
-      showToast('¡Jaque!');
-      sfx('check');
-      const ks = kingSquare(st.b, st.turn);
-      if (ks >= 0) say(ks, '¡Auxilio!');
-    }, wait);
   }
   if (over) {
     if (over.winner && opts.mode === 'ai' && over.winner === opts.color) recordWin();
     const id = gameId;
+    const mateShow = over.winner ? 3000 : 900;
     setTimeout(() => {
       if (id !== gameId || !over) return;
       showGameOver();
-    }, Math.max(1300, settle - performance.now() + 900));
+    }, Math.max(1300, settle - performance.now() + mateShow));
   }
 }
 
@@ -1525,6 +1609,59 @@ function matesub(winner) {
   return winner === opts.color
     ? `Le ganaste a la compu en ${LEVELS[opts.level]}. ¡Buen perro!`
     : `La compu ${LEVELS[opts.level]} te olfateó la jugada. ¿Revancha?`;
+}
+
+// El atacante se da vuelta, se estira hacia el rey y ladra; el rey salta del susto y grita
+function startCheckFx(mate, quiet) {
+  checkPending = false;
+  const kingSq = kingSquare(st.b, st.turn);
+  if (kingSq < 0) return;
+  const by = st.turn === 'w' ? 'b' : 'w';
+  const attackers = attackersOf(st, kingSq, by);
+  const now = performance.now();
+  const id0 = gameId;
+  const K = sqXY(kingSq);
+  for (const a of attackers) {
+    const P = sqXY(a);
+    facing[a] = Math.sign(K.x - P.x) || facing[a];
+  }
+  if (attackers.length) {
+    const P = sqXY(attackers[0]);
+    facing[kingSq] = Math.sign(P.x - K.x) || facing[kingSq];
+  }
+  checkFx = { kingSq, attackers, start: quiet ? now - 5000 : now, mate, faintStart: mate ? now + 1350 : 0 };
+  if (quiet) { updateHUD(); return; }
+  const barks = mate ? [0, 320, 760] : [0, 320];
+  attackers.forEach((a, i) => {
+    say(a, mate ? '¡Jaque mate, guau!' : pickOne(SAY.bark));
+    for (const o of barks) waves.push({ from: a, to: kingSq, start: now + o + i * 90, dur: 520 });
+  });
+  if (mate) setTimeout(() => { if (gameId === id0) showToast('¡Jaque mate!'); }, 1900);
+  sfx(mate ? 'matebark' : 'checkbark');
+  if (navigator.vibrate) navigator.vibrate([40, 60, 40]);
+  const id = gameId;
+  setTimeout(() => { if (id === gameId) sfx('whimper'); }, 200);
+  bubbles = bubbles.filter(b => b.sq !== kingSq);
+  bubbles.push({ sq: kingSq, text: mate ? '¡Me rindo!' : pickOne(SAY.scared), start: now + 480, dur: mate ? 900 : 1700 });
+  if (mate) {
+    setTimeout(() => { if (id === gameId) sfx('faint'); }, 1350);
+    floaters.push({ text: '¡PLAF!', x: K.x, y: K.y - L.s * 0.6, start: now + 1800, dur: 1100, color: '#ffd166' });
+  }
+  updateHUD();
+}
+
+// Intensidad del ladrido (0..1) en el momento t de la escena
+function barkPulse(t, mate) {
+  let v = 0;
+  for (const o of (mate ? [0, 320, 760] : [0, 320])) {
+    const u = (t - o) / 260;
+    if (u >= 0 && u < 1) v = Math.max(v, Math.sin(Math.PI * u));
+  }
+  if (!mate && t > 1600) {
+    const u = ((t - 1600) % 2800) / 320;
+    if (u < 1) v = Math.max(v, 0.45 * Math.sin(Math.PI * u));
+  }
+  return v;
 }
 
 function showGameOver() {
@@ -1552,7 +1689,7 @@ function maybeAI() {
   const id = gameId;
   const waitAnims = () => {
     if (id !== gameId) return;
-    if (anims.length) { setTimeout(waitAnims, 60); return; }
+    if (anims.length || checkPending || (checkFx && performance.now() - checkFx.start < 1500)) { setTimeout(waitAnims, 60); return; }
     setTimeout(() => {
       if (id !== gameId) return;
       const m = chooseAIMove(st, opts.level);
@@ -1575,8 +1712,10 @@ function undo() {
   for (let i = 0; i < steps; i++) snap = history.pop();
   st = snap.st; facing = snap.facing; lastMove = snap.lastMove; captured = snap.captured; posCounts = snap.posCounts;
   over = null; hint = null; idle = {}; bubbles = []; prints = [];
+  checkFx = null; checkPending = false; waves = [];
   deselect();
   hideOverlay('overlay-gameover');
+  if (inCheck(st, st.turn)) startCheckFx(false, true);
   sfx('undo');
   updateHUD();
   maybeAI();
@@ -1644,6 +1783,27 @@ function render(now) {
     grd.addColorStop(1, 'rgba(255, 70, 100, 0)');
     ctx.fillStyle = grd;
     ctx.fillRect(k.x - s / 2, k.y - s / 2, s, s);
+  }
+
+  // Línea de amenaza: del perro que da jaque al rey
+  if (checkFx && !(checkFx.mate && now > checkFx.faintStart)) {
+    const K = sqXY(checkFx.kingSq);
+    for (const a of checkFx.attackers) {
+      const P = sqXY(a);
+      ctx.save();
+      ctx.strokeStyle = 'rgba(255, 90, 120, 0.75)';
+      ctx.lineWidth = Math.max(3, s * 0.06);
+      ctx.lineCap = 'round';
+      ctx.setLineDash([s * 0.12, s * 0.12]);
+      ctx.lineDashOffset = -now * 0.05;
+      ctx.shadowColor = '#ff5a78'; ctx.shadowBlur = 10;
+      ctx.beginPath(); ctx.moveTo(P.x, P.y + s * 0.15); ctx.lineTo(K.x, K.y + s * 0.15); ctx.stroke();
+      ctx.restore();
+      ctx.save();
+      ctx.strokeStyle = 'rgba(255, 90, 120, 0.8)'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(P.x, P.y, s * 0.46, 0, Math.PI * 2); ctx.stroke();
+      ctx.restore();
+    }
   }
 
   // Huellitas
@@ -1716,7 +1876,23 @@ function render(now) {
     const P = sqXY(sq);
     const t = typeOf(p), col = colorOf(p);
     let cx = P.x, cy = P.y, wag = col === st.turn ? 0.3 : 0.12, sniff = 0;
+    let mood, mouth = 0, lunge = 0, isKing = false, grow = 1;
     const isSel = sq === selected;
+    if (checkFx) {
+      const ct = now - checkFx.start;
+      if (sq === checkFx.kingSq) {
+        isKing = true;
+        if (checkFx.mate && now > checkFx.faintStart) { drawFainted(ctx, t, col, P, now - checkFx.faintStart, facing[sq] || 1, now); continue; }
+        if (ct > 150) { mood = 'scared'; cx += Math.sin(now * 0.07) * s * 0.02; wag = 0; }
+        if (ct > 150 && ct < 600) cy -= Math.sin(Math.PI * (ct - 150) / 450) * s * 0.24;
+        if (ct > 150 && ct < 1300) grow = 1 + 0.18 * Math.sin(Math.PI * Math.min(1, (ct - 150) / 1150));
+      } else if (checkFx.attackers.includes(sq)) {
+        mood = 'angry'; wag = 1.4;
+        lunge = barkPulse(ct, checkFx.mate);
+        mouth = lunge;
+        grow = 1 + 0.14 * lunge;
+      }
+    }
     if (isSel) { cy -= Math.abs(Math.sin(now * 0.012)) * s * 0.08; wag = 1; }
     const id = idle[sq];
     if (id) {
@@ -1726,7 +1902,7 @@ function render(now) {
       else if (id.kind === 'sniff') sniff = Math.sin(k * Math.PI * 6) * (1 - k);
       else wag = 1.4;
     }
-    if (sq === chkKing) cx += Math.sin(now * 0.05) * s * 0.025;
+    if (sq === chkKing && !isKing) cx += Math.sin(now * 0.05) * s * 0.025;
     if (opts.glyphs === 'on') {
       ctx.save();
       ctx.font = `700 ${Math.max(9, s * 0.2)}px 'DejaVu Sans', 'Segoe UI Symbol', serif`;
@@ -1735,10 +1911,25 @@ function render(now) {
       ctx.fillText(GLYPH[t] + '︎', P.x + s / 2 - 2, P.y - s / 2 + 1);
       ctx.restore();
     }
-    const a = dogAnchors(t, cx, cy, s, facing[sq] || 1);
+    const a = dogAnchors(t, cx, cy, s * grow, facing[sq] || 1);
+    if (lunge > 0) {
+      // Se estira hacia el rey al ladrar
+      const K = sqXY(checkFx.kingSq);
+      const vx = K.x - P.x, vy = K.y - P.y, vl = Math.hypot(vx, vy) || 1;
+      a.fx += vx / vl * lunge * s * 0.38; a.fy += vy / vl * lunge * s * 0.38;
+    }
     const blink = ((now + blinkSeeds[sq]) % 4200) < 120;
-    drawDog(ctx, t, col, a.ox, a.oy, a.fx, a.fy + sniff * a.r * 0.25, a.r, { time: now, seed: sq, wag, blink });
+    drawDog(ctx, t, col, a.ox, a.oy, a.fx, a.fy + sniff * a.r * 0.25, a.r, { time: now, seed: sq, wag, blink, mood, mouth });
     if (sq === chkKing) drawSweat(ctx, a, now);
+    if (isKing) {
+      const ct = now - checkFx.start;
+      if (ct > 150 && ct < 1100) {
+        // Si arriba no hay lugar (fila de atrás), el "!" va al costado de la cabeza
+        const dir = Math.sign(a.fx - a.ox) || 1;
+        const up = a.fy - a.r * 3.6 > L.by + s * 0.15;
+        drawExclaim(ctx, up ? a.fx : a.fx - dir * a.r * 2.6, up ? a.fy - a.r * 3.6 : a.fy - a.r * 1.6, s, (ct - 150) / 950);
+      }
+    }
   }
 
   // Perro arrastrado: la cola queda en su casilla y el cuerpo se estira hasta el dedo
@@ -1822,6 +2013,26 @@ function render(now) {
   if (done.length) {
     anims = anims.filter(a => !done.includes(a));
     if (!anims.length) { updateHUD(); maybeAI(); }
+  }
+
+  // Ondas de ladrido que viajan hacia el rey
+  waves = waves.filter(w => now < w.start + w.dur);
+  for (const w of waves) {
+    const k = (now - w.start) / w.dur;
+    if (k < 0) continue;
+    const A = sqXY(w.from), K = sqXY(w.to);
+    const ang = Math.atan2(K.y - A.y, K.x - A.x);
+    const x = lerp(A.x, K.x, 0.15 + k * 0.7), y = lerp(A.y, K.y, 0.15 + k * 0.7) - s * 0.15;
+    ctx.save();
+    ctx.globalAlpha = 1 - k;
+    ctx.lineCap = 'round';
+    for (let i = 0; i < 3; i++) {
+      const rr = s * (0.1 + i * 0.09) * (0.7 + k * 0.6);
+      ctx.beginPath(); ctx.arc(x, y, rr, ang - 0.7, ang + 0.7);
+      ctx.strokeStyle = '#1a0f3a'; ctx.lineWidth = 6; ctx.stroke();
+      ctx.strokeStyle = '#fffaf0'; ctx.lineWidth = 3; ctx.stroke();
+    }
+    ctx.restore();
   }
 
   // Onomatopeyas
@@ -1957,6 +2168,40 @@ function drawFight(g, x, y, s, k, now) {
     drawStar(g, Math.cos(a) * s * 0.55 * grow, Math.sin(a) * s * 0.42 * grow, s * 0.09, '#ffd166');
   }
   g.restore();
+}
+
+// "!" de dibujito animado sobre la cabeza del rey asustado
+function drawExclaim(g, x, y, s, k) {
+  const pop = easeOutBack(Math.min(1, k * 4));
+  const fade = k > 0.8 ? 1 - (k - 0.8) / 0.2 : 1;
+  g.save();
+  g.globalAlpha = fade;
+  g.translate(x, y); g.scale(pop, pop); g.rotate(Math.sin(k * 20) * 0.08);
+  g.font = `700 ${Math.max(20, s * 0.5)}px Fredoka, sans-serif`;
+  g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.lineWidth = 6; g.strokeStyle = '#1a0f3a'; g.lineJoin = 'round';
+  g.strokeText('!', 0, 0);
+  g.fillStyle = '#ffd166'; g.fillText('!', 0, 0);
+  g.restore();
+}
+
+// Rey desmayado por el jaque mate: patas para arriba, ojos en X y estrellitas
+function drawFainted(g, t, col, P, el, dir, now) {
+  const s = L.s;
+  const k = Math.min(1, el / 450);
+  const bounce = k < 1 ? 0 : Math.abs(Math.sin(Math.min(1, (el - 450) / 400) * Math.PI)) * s * 0.06 * (1 - Math.min(1, (el - 450) / 400));
+  g.save();
+  g.translate(P.x, P.y - s * 0.02 - bounce - Math.sin(Math.PI * k) * s * 0.25);
+  g.rotate(ease(k) * Math.PI * dir);
+  const a = dogAnchors(t, 0, 0, s * 1.2, dir);
+  drawDog(g, t, col, a.ox, a.oy, a.fx, a.fy, a.r, { time: now, wag: 0, mood: 'ko', mouth: 0.25, noShadow: true });
+  g.restore();
+  if (k >= 1) {
+    for (let i = 0; i < 3; i++) {
+      const ang = now * 0.006 + i * 2.1;
+      drawStar(g, P.x + Math.cos(ang) * s * 0.34, P.y - s * 0.18 + Math.sin(ang) * s * 0.09, s * 0.12, '#ffd166');
+    }
+  }
 }
 
 function drawStar(g, x, y, r, color) {
@@ -2388,7 +2633,23 @@ function sfx(kind) {
       lfo.start(t0); lfo.stop(t0 + 0.45);
       bark(t0 + 0.05, 430, 0.32); bark(t0 + 0.2, 380, 0.28); break;
     }
-    case 'check': bark(t0, 460, 0.3); bark(t0 + 0.16, 460, 0.26); tone(t0 + 0.32, 'sine', 1320, 1320, 0.1, 0.01, 0.5); tone(t0 + 0.32, 'sine', 1760, 1760, 0.06, 0.01, 0.5); break;
+    case 'checkbark': bark(t0, 480, 0.36); bark(t0 + 0.32, 455, 0.34); break;
+    case 'matebark': bark(t0, 480, 0.36); bark(t0 + 0.32, 455, 0.34); bark(t0 + 0.76, 520, 0.4); break;
+    case 'whimper': {
+      // Gritito del rey: dos aullidos agudos cortos
+      for (const [dt, f0] of [[0, 900], [0.2, 1050]]) {
+        const o = actx.createOscillator(), g = actx.createGain(), f = actx.createBiquadFilter();
+        o.type = 'triangle'; f.type = 'bandpass'; f.frequency.value = 1300; f.Q.value = 0.8;
+        o.frequency.setValueAtTime(f0, t0 + dt);
+        o.frequency.linearRampToValueAtTime(f0 * 1.6, t0 + dt + 0.07);
+        o.frequency.exponentialRampToValueAtTime(f0 * 0.9, t0 + dt + 0.17);
+        env(g, t0 + dt, 0.2, 0.015, 0.16);
+        o.connect(f); f.connect(g); g.connect(sfxBus); o.start(t0 + dt); o.stop(t0 + dt + 0.22);
+      }
+      break;
+    }
+    case 'faint': tone(t0, 'sine', 1400, 160, 0.13, 0.02, 0.7); thump(t0 + 0.45, 0.4); tone(t0 + 0.5, 'sine', 300, 600, 0.08, 0.01, 0.12); break;
+    case 'relief': { const f = noise(t0, 'lowpass', 1500, 0.7, 0.12, 0.08, 0.45); f.frequency.exponentialRampToValueAtTime(300, t0 + 0.5); tone(t0, 'sine', 620, 420, 0.05, 0.05, 0.35); break; }
     case 'promo': [1047, 1319, 1568, 2093].forEach((f, i) => tone(t0 + i * 0.07, 'sine', f, f, 0.1, 0.01, 0.3)); break;
     case 'undo': { const f = noise(t0, 'bandpass', 3000, 1.2, 0.14, 0.02, 0.22); f.frequency.exponentialRampToValueAtTime(500, t0 + 0.24); break; }
     case 'win': pluckPhrase([57, 61, 64, 69, 73, 76, 81], 0.085); bark(t0 + 0.75, 470, 0.3); bark(t0 + 0.9, 470, 0.28); break;
@@ -2544,6 +2805,7 @@ function init() {
   const toMenu = () => {
     gameId++;
     inGame = false; aiThinking = false; drag = null; hint = null;
+    checkFx = null; checkPending = false; waves = [];
     hideOverlay('overlay-gameover');
     updateWinsLabel();
     updateHUD();
