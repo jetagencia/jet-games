@@ -4,7 +4,7 @@
 export class GameAudio {
   constructor() {
     this.ctx = null; this.enabled = true; this.master = null; this.noise = null;
-    this.crowdGain = null; this.windGain = null; this.indoor = false; this.cheerT = 0;
+    this.crowdGain = null; this.windGain = null; this.indoor = false; this.cheerT = 0; this.voiceOn = true;
   }
   ensure() {
     if (this.ctx) { if (this.ctx.state === 'suspended') this.ctx.resume(); return true; }
@@ -136,6 +136,33 @@ export class GameAudio {
     if (this.crowdGain) { this.crowdGain.gain.setTargetAtTime(0.22, t, 0.12); this.crowdGain.gain.setTargetAtTime(this.indoor ? 0.07 : 0.05, t + 1.0, 0.8); }
     this.tone({ f: 220, gain: 0.05, dur: 0.9, type: 'sawtooth', slide: 0.8, dest: this.master });
   }
+  // Locutor con síntesis de voz del sistema (si hay voz en español).
+  say(text, { force = false } = {}) {
+    if (!this.voiceOn || !('speechSynthesis' in window)) return;
+    try {
+      const ss = window.speechSynthesis;
+      if (ss.pending && !force) return;
+      if (force) ss.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      const voices = ss.getVoices();
+      const v = voices.find(x => /^es[-_](AR|MX|US|419)/i.test(x.lang)) || voices.find(x => /^es/i.test(x.lang));
+      if (v) u.voice = v;
+      u.lang = v ? v.lang : 'es-ES'; u.rate = 1.02; u.pitch = 0.95; u.volume = 0.9;
+      ss.speak(u);
+    } catch { /* sin voz */ }
+  }
+  strideBreath(v) { if (!this.ctx || !this.enabled) return; this.noiseBurst({ gain: 0.04 + Math.min(0.08, v * 0.01), dur: 0.22, f: 700, q: 0.7, type: 'lowpass', attack: 0.06 }); }
+  creak() { if (!this.ctx || !this.enabled) return; this.noiseBurst({ gain: 0.06, dur: 0.09, f: 320, q: 4, attack: 0.01 }); setTimeout(() => this.ctx && this.noiseBurst({ gain: 0.04, dur: 0.07, f: 420, q: 4 }), 60); }
+  jingle() { if (!this.ctx || !this.enabled) return; this.tone({ f: 3200 + Math.random() * 400, gain: 0.02, dur: 0.05, type: 'sine' }); this.tone({ f: 4300, gain: 0.012, dur: 0.04, type: 'sine' }); }
+  whoosh() {
+    if (!this.ctx || !this.enabled) return;
+    const c = this.ctx, t = c.currentTime;
+    const s = c.createBufferSource(); s.buffer = this.noise; const f = c.createBiquadFilter(); f.type = 'bandpass'; f.Q.value = 1.2;
+    f.frequency.setValueAtTime(300, t); f.frequency.exponentialRampToValueAtTime(2600, t + 0.5); f.frequency.exponentialRampToValueAtTime(400, t + 1.1);
+    const g = this.src(0, this.master); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.25, t + 0.4); g.gain.linearRampToValueAtTime(0, t + 1.2);
+    s.connect(f); f.connect(g); s.start(t); s.stop(t + 1.3);
+  }
+  duck(on) { if (this.master) this.master.gain.setTargetAtTime(this.enabled ? (on ? 0.45 : 0.9) : 0, this.ctx.currentTime, 0.25); }
   update(dt, speed) {
     if (this.windGain && !this.indoor) this.windGain.gain.setTargetAtTime(0.03 + Math.min(0.12, speed * 0.012), this.ctx.currentTime, 0.3);
   }

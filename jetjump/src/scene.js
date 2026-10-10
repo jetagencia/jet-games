@@ -8,6 +8,10 @@ import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { SMAAPass } from 'three/addons/postprocessing/SMAAPass.js';
 import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
 import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
+import { BokehPass } from 'three/addons/postprocessing/BokehPass.js';
+
+export const CAM_MODES = ['chase', 'far', 'onboard', 'tv', 'side', 'drone', 'fence'];
+export const CAM_NAMES = { chase: 'Seguimiento', far: 'Lejana', onboard: 'A bordo', tv: 'TV', side: 'Lateral', drone: 'Dron', fence: 'Valla', replay: 'Repetición' };
 
 const ASSET_BASE = new URL('../assets/', import.meta.url).href;
 
@@ -94,12 +98,13 @@ export class World {
     }
     this.bloom = new UnrealBloomPass(new THREE.Vector2(512, 512), 0.16, 0.6, 0.9);
     if (this.quality !== 'low') this.composer.addPass(this.bloom);
+    if (this.quality === 'high') { this.dof = new BokehPass(this.scene, this.camera, { focus: 10, aperture: 0.0001, maxblur: 0.006 }); this.dof.enabled = false; this.composer.addPass(this.dof); }
     this.composer.addPass(new OutputPass());
     this.grade = new ShaderPass(GradeShader); this.composer.addPass(this.grade);
     if (this.quality !== 'low') { this.smaa = new SMAAPass(1, 1); this.composer.addPass(this.smaa); }
     this.assets = this.loadAssets();
     this.camPos = new THREE.Vector3(0, 3, 10); this.camLook = new THREE.Vector3(); this.shake = 0; this.camMode = opts.cam || 'chase';
-    this.fenceGroups = []; this.rails = []; this.falling = []; this.env = null; this.courseGroup = null;
+    this.fenceGroups = []; this.rails = []; this.falling = []; this.moved = new Set(); this.env = null; this.courseGroup = null; this.replayT = 0;
     this.crowd = null; this.t = 0; this.cheerLevel = 0;
     this.tmp = new THREE.Vector3(); this.tmp2 = new THREE.Vector3();
     this.initParticles();
@@ -142,7 +147,7 @@ export class World {
     const env = this.env = new THREE.Group();
     const A = course.arena, indoor = course.indoor;
     const T = this.A || {};
-    this.scene.fog = indoor ? new THREE.Fog(0x1a1f2a, 60, 160) : new THREE.FogExp2(0xd8e3ea, 0.0038);
+    this.scene.fog = indoor ? new THREE.Fog(0x1a1f2a, 60, 160) : new THREE.FogExp2(0xe6dccc, 0.0036);
     this.scene.environment = indoor ? (T.envIn || null) : (T.envOut || null);
 
     // arena
@@ -178,7 +183,7 @@ export class World {
       this.scene.background = null;
       const sky = new THREE.Mesh(new THREE.SphereGeometry(380, 24, 12), new THREE.ShaderMaterial({
         side: THREE.BackSide, depthWrite: false,
-        uniforms: { top: { value: new THREE.Color(0x1f5fb8) }, hor: { value: new THREE.Color(0xe6eef5) }, sun: { value: (T.sunDir ? new THREE.Vector3(T.sunDir.x, Math.max(T.sunDir.y, 0.28), T.sunDir.z) : new THREE.Vector3(0.55, 0.5, 0.3)).normalize() } },
+        uniforms: { top: { value: new THREE.Color(0x2a66b6) }, hor: { value: new THREE.Color(0xf3e4cf) }, sun: { value: (T.sunDir ? new THREE.Vector3(T.sunDir.x, Math.max(T.sunDir.y, 0.24), T.sunDir.z) : new THREE.Vector3(0.55, 0.5, 0.3)).normalize() } },
         vertexShader: 'varying vec3 vP; void main(){ vP = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
         fragmentShader: 'uniform vec3 top, hor, sun; varying vec3 vP; void main(){ float t = clamp(vP.y*1.5, 0.0, 1.0); vec3 c = mix(hor, top, pow(t, 0.55)); float d = max(dot(vP, sun), 0.0); c += vec3(1.0, 0.93, 0.78) * pow(d, 260.0) * 2.2; c += vec3(1.0,0.86,0.62) * pow(d, 5.0) * 0.18; c = mix(c, vec3(0.98,0.94,0.9), (1.0 - t) * 0.25); gl_FragColor = vec4(c, 1.0); }',
       }));
@@ -243,8 +248,8 @@ export class World {
     }
 
     // luces
-    const sun = this.sun = new THREE.DirectionalLight(indoor ? 0xfff2e0 : 0xfff0d8, indoor ? 2.4 : 3.8);
-    if (!indoor && T.sunDir) { const dir = T.sunDir.clone(); dir.y = Math.max(dir.y, 0.28); sun.position.copy(dir.normalize().multiplyScalar(120)); }
+    const sun = this.sun = new THREE.DirectionalLight(indoor ? 0xfff2e0 : 0xffd2a0, indoor ? 2.4 : 3.6);
+    if (!indoor && T.sunDir) { const dir = T.sunDir.clone(); dir.y = Math.max(dir.y, 0.24); sun.position.copy(dir.normalize().multiplyScalar(120)); }
     else sun.position.set(indoor ? 20 : 60, indoor ? 30 : 80, indoor ? 10 : 35);
     sun.castShadow = this.quality !== 'low';
     const S = this.quality === 'high' ? 4096 : 2048;
@@ -253,7 +258,7 @@ export class World {
     sun.shadow.camera.left = -ext; sun.shadow.camera.right = ext; sun.shadow.camera.top = ext; sun.shadow.camera.bottom = -ext;
     sun.shadow.camera.near = 10; sun.shadow.camera.far = 260; sun.shadow.bias = -0.0006; sun.shadow.normalBias = 0.02;
     env.add(sun); env.add(sun.target);
-    const hemi = new THREE.HemisphereLight(indoor ? 0xdfe6ff : 0xbfd8ff, indoor ? 0x3a3a3a : 0x8a7a55, indoor ? 1.0 : 1.15);
+    const hemi = new THREE.HemisphereLight(indoor ? 0xdfe6ff : 0xb9d0f0, indoor ? 0x3a3a3a : 0x9a7a4a, indoor ? 1.0 : 1.0);
     env.add(hemi);
     if (indoor) { const fill = new THREE.DirectionalLight(0xe8f0ff, 1.0); fill.position.set(-30, 25, -20); env.add(fill); }
     if (indoor) this.scene.background = new THREE.Color(0x1a1f2a);
@@ -313,7 +318,7 @@ export class World {
     if (!this.env || this.envKey !== course.layout + course.indoor) { this.buildEnvironment(course); this.envKey = course.layout + course.indoor; }
     if (this.courseGroup) { this.scene.remove(this.courseGroup); this.dispose(this.courseGroup); }
     const G = this.courseGroup = new THREE.Group();
-    this.fenceGroups = []; this.rails = []; this.falling = [];
+    this.fenceGroups = []; this.rails = []; this.falling = []; this.moved = new Set();
     this.mats = {
       white: new THREE.MeshStandardMaterial({ color: 0xf5f5f0, roughness: 0.55 }),
       wood: new THREE.MeshStandardMaterial({ color: 0x8a6a48, roughness: 0.8, map: (this.A && this.A.wood) || null, bumpMap: (this.A && this.A.woodB) || null, bumpScale: 0.01 }),
@@ -471,7 +476,7 @@ export class World {
     const picks = E.type === 'w' ? list.filter(() => Math.random() < 0.5).slice(0, 4) : list;
     for (const m of picks) {
       if (m.userData.falling) continue;
-      m.userData.falling = true;
+      m.userData.falling = true; this.moved.add(m);
       const s = Math.random() < 0.5 ? -1 : 1;
       this.falling.push({ m, vy: 0.6, vx: 1.2 + Math.random() * 1.0, vz: s * (0.4 + Math.random() * 0.6), rx: (Math.random() - 0.5) * 3, ry: (Math.random() - 0.5) * 0.8, rz: (Math.random() - 0.5) * 2, t: 0, rest: m.geometry.boundingSphere ? 0.06 : 0.06 });
     }
@@ -523,34 +528,71 @@ export class World {
     const f = new THREE.Vector3(Math.cos(S.heading), 0, Math.sin(S.heading));
     const r = new THREE.Vector3(-Math.sin(S.heading), 0, Math.cos(S.heading));
     const P = new THREE.Vector3(S.x, S.y, S.z);
-    let want, look, fov = 52, k = 4;
-    if (this.camMode === 'chase') {
-      const sp = clamp(S.v / 10, 0, 1);
-      want = P.clone().addScaledVector(f, -7.2 - 1.5 * sp).addScaledVector(r, 1.1).add(new THREE.Vector3(0, 2.4 + 0.5 * S.jumpW, 0));
-      look = P.clone().addScaledVector(f, 7).add(new THREE.Vector3(0, 0.9 + 0.3 * S.jumpW, 0));
-      fov = 50 + 10 * sp;
-    } else if (this.camMode === 'onboard') {
-      want = S.eye ? S.eye.clone() : P.clone().add(new THREE.Vector3(0, 1.0, 0));
-      look = want.clone().addScaledVector(f, 12).add(new THREE.Vector3(0, -0.8, 0));
-      fov = 70; k = 30;
-    } else { // tv: cámara fija en la tribuna que sigue al caballo
-      const A = this.course.arena;
-      want = new THREE.Vector3(S.x * 0.3, 7.5, -A.h / 2 - 6);
-      look = P.clone().add(new THREE.Vector3(0, 0.8, 0));
-      const d = want.distanceTo(look);
-      fov = clamp(900 / d, 14, 40); k = 2.5;
+    const A = this.course ? this.course.arena : { w: 90, h: 60 };
+    const sp = clamp(S.v / 10, 0, 1);
+    let want, look, fov = 52, k = 4, snap = false;
+    const mode = S.replay ? 'replay' : this.camMode;
+    switch (mode) {
+      case 'far':
+        want = P.clone().addScaledVector(f, -11 - 2 * sp).addScaledVector(r, 1.5).add(new THREE.Vector3(0, 4.2 + 0.6 * S.jumpW, 0));
+        look = P.clone().addScaledVector(f, 9).add(new THREE.Vector3(0, 0.8, 0)); fov = 46; k = 3.5; break;
+      case 'onboard':
+        want = S.eye ? S.eye.clone() : P.clone().add(new THREE.Vector3(0, 1.0, 0));
+        look = want.clone().addScaledVector(f, 12).add(new THREE.Vector3(0, -0.8, 0)); fov = 72; k = 30; break;
+      case 'tv': {
+        want = new THREE.Vector3(S.x * 0.3, 7.5, -A.h / 2 - 6);
+        look = P.clone().add(new THREE.Vector3(0, 0.8, 0));
+        fov = clamp(900 / want.distanceTo(look), 14, 40); k = 2.5; break;
+      }
+      case 'side': {
+        want = new THREE.Vector3(clamp(S.x - f.x * 2, -A.w / 2, A.w / 2), 1.7, -A.h / 2 - 1.5);
+        look = P.clone().add(new THREE.Vector3(0, 0.9, 0));
+        fov = clamp(600 / want.distanceTo(look), 20, 55); k = 6; break;
+      }
+      case 'drone': {
+        const a = this.t * 0.22;
+        want = P.clone().add(new THREE.Vector3(Math.cos(a) * 13, 8.5 + Math.sin(this.t * 0.5) * 0.5, Math.sin(a) * 13));
+        look = P.clone().addScaledVector(f, 2).add(new THREE.Vector3(0, 0.6, 0)); fov = 42; k = 2.2; break;
+      }
+      case 'fence': {
+        const E = S.nextE;
+        if (E) {
+          if (this.fenceCamE !== E) { this.fenceCamE = E; snap = true; }
+          const side = ((S.x - E.x) * E.l[0] + (S.z - E.z) * E.l[1]) >= 0 ? 1 : -1;
+          want = new THREE.Vector3(E.x + E.l[0] * side * (E.half + 4.5) - E.n[0] * 2.5, 1.5, E.z + E.l[1] * side * (E.half + 4.5) - E.n[1] * 2.5);
+          look = P.clone().add(new THREE.Vector3(0, 1.0, 0));
+          fov = clamp(500 / want.distanceTo(look), 22, 50); k = 8;
+        } else { want = P.clone().addScaledVector(f, -8).add(new THREE.Vector3(0, 2.6, 0)); look = P.clone().addScaledVector(f, 6); }
+        break;
+      }
+      case 'replay': {
+        const F = S.focus || P;
+        const az = (S.replayA || 0) + S.replayT * 0.55;
+        want = new THREE.Vector3(F.x + Math.cos(az) * 7.5, 1.6 + S.replayT * 0.5, F.z + Math.sin(az) * 7.5);
+        look = P.clone().add(new THREE.Vector3(0, 1.1, 0));
+        fov = 36; k = 12; if (S.replayT < 0.05) snap = true; break;
+      }
+      default:
+        want = P.clone().addScaledVector(f, -7.2 - 1.5 * sp).addScaledVector(r, 1.1).add(new THREE.Vector3(0, 2.4 + 0.5 * S.jumpW, 0));
+        look = P.clone().addScaledVector(f, 7).add(new THREE.Vector3(0, 0.9 + 0.3 * S.jumpW, 0));
+        fov = 50 + 10 * sp;
     }
-    const a = 1 - Math.exp(-dt * k), b = 1 - Math.exp(-dt * (k * 1.6));
-    this.camPos.lerp(want, this.camMode === 'onboard' ? 1 : a);
-    this.camLook.lerp(look, this.camMode === 'onboard' ? 1 : b);
+    const a = snap ? 1 : 1 - Math.exp(-dt * k), b = snap ? 1 : 1 - Math.exp(-dt * (k * 1.6));
+    this.camPos.lerp(want, mode === 'onboard' ? 1 : a);
+    this.camLook.lerp(look, mode === 'onboard' ? 1 : b);
     cam.position.copy(this.camPos);
-    if (this.shake > 0) {
-      cam.position.x += (Math.random() - 0.5) * this.shake; cam.position.y += (Math.random() - 0.5) * this.shake * 0.6;
-      this.shake = Math.max(0, this.shake - dt * 1.4);
-    }
+    if (this.shake > 0) { cam.position.x += (Math.random() - 0.5) * this.shake; cam.position.y += (Math.random() - 0.5) * this.shake * 0.6; this.shake = Math.max(0, this.shake - dt * 1.4); }
     cam.lookAt(this.camLook);
-    cam.fov += (fov - cam.fov) * Math.min(1, dt * 3); cam.updateProjectionMatrix();
+    cam.fov += (fov - cam.fov) * Math.min(1, dt * (snap ? 30 : 3)); cam.updateProjectionMatrix();
+    if (this.dof) {
+      const on = mode === 'replay' || mode === 'tv' || mode === 'fence' || mode === 'side';
+      this.dof.enabled = on;
+      if (on) { const d = cam.position.distanceTo(P); this.dof.uniforms.focus.value = d; this.dof.uniforms.aperture.value = mode === 'replay' ? 0.00035 : 0.00012; this.dof.uniforms.maxblur.value = mode === 'replay' ? 0.009 : 0.005; }
+    }
   }
+
+  railSnapshot() { const out = []; for (const m of this.moved) out.push({ m, p: m.position.clone(), r: m.rotation.clone() }); return out; }
+  railRestore(snap) { for (const s of snap) { s.m.position.copy(s.p); s.m.rotation.copy(s.r); } }
 
   update(dt, S) {
     this.t += dt;

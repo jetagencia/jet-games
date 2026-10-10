@@ -6,7 +6,7 @@ const KEY = 'jetjump.profile.v1';
 const SKEY = 'jetjump.settings.v1';
 
 export const DEFAULT_SETTINGS = {
-  sound: true, haptics: true, assist: true, quality: 'high', cam: 'chase', invertStick: false, tutorialSeen: false, lefty: false,
+  sound: true, music: true, announcer: true, haptics: true, assist: true, quality: 'high', cam: 'chase', replays: 'faults', horseModel: 'auto', invertStick: false, tutorialSeen: false, lefty: false,
 };
 
 export function loadSettings() {

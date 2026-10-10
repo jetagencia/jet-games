@@ -1,6 +1,8 @@
 // JETJump — interfaz: menú, carrera (establo), modos, pre-recorrido, resultados.
 import { World } from './scene.js';
 import { GameAudio } from './audio.js';
+import { Music } from './music.js';
+import { CAM_MODES, CAM_NAMES } from './scene.js';
 import { Game } from './game.js';
 import { buildCourse, LAYOUTS, FENCE_NAMES } from './courses.js';
 import { mulberry32, clamp } from './sim.js';
@@ -57,12 +59,14 @@ export class App {
     this.settings = loadSettings();
     this.profile = loadProfile();
     this.audio = new GameAudio();
+    this.audio.voiceOn = this.settings.announcer !== false;
+    this.music = new Music(this.audio); this.music.enabled = this.settings.music !== false;
     this.world = null; this.game = null;
     this.screen = $('screen'); this.modal = $('modal');
     this.worker = new Worker('./src/rivals-worker.js', { type: 'module' });
     this.pending = new Map(); this.reqId = 0;
     this.worker.onmessage = (e) => { const cb = this.pending.get(e.data.id); if (cb) { this.pending.delete(e.data.id); cb(e.data.results); } };
-    document.body.addEventListener('pointerdown', () => this.audio.ensure());
+    document.body.addEventListener('pointerdown', () => { this.audio.ensure(); if (this.audio.ctx && !this.musicStarted) { this.musicStarted = true; if (this.screenMood) this.music.play(this.screenMood); } });
     this.screen.addEventListener('click', (e) => { const a = e.target.closest('[data-a]'); if (a) { this.audio.click(); this.action(a.dataset.a, a.dataset, a); } });
     this.modal.addEventListener('click', (e) => { const a = e.target.closest('[data-a]'); if (a) { this.audio.click(); this.action(a.dataset.a, a.dataset, a); } else if (e.target === this.modal) this.closeModal(); });
     this.screen.addEventListener('change', (e) => { const el = e.target; if (el.dataset.plan) { this.profile.plan[el.dataset.plan] = el.value; saveProfile(this.profile); } });
@@ -74,12 +78,13 @@ export class App {
   ensureWorld() {
     if (this.world) return;
     this.world = new World($('game'), { quality: this.settings.quality, cam: this.settings.cam });
-    this.game = new Game({ world: this.world, audio: this.audio, settings: this.settings });
+    this.game = new Game({ world: this.world, audio: this.audio, settings: this.settings, music: this.music });
   }
   simRivals(spec, rivals, mode) {
     return new Promise((res) => { const id = ++this.reqId; this.pending.set(id, res); this.worker.postMessage({ id, spec, rivals, mode }); });
   }
   show(html, cls = '') { this.screen.innerHTML = html; this.screen.className = 'screen ' + cls; this.screen.style.display = ''; this.screen.scrollTop = 0; }
+  mood(m) { this.screenMood = m; if (this.audio.ctx) this.music.play(m); }
   hide() { this.screen.style.display = 'none'; }
   openModal(html) { this.modal.innerHTML = `<div class="modal-card">${html}</div>`; this.modal.style.display = 'flex'; }
   closeModal() { this.modal.style.display = 'none'; this.modal.innerHTML = ''; }
@@ -103,6 +108,7 @@ export class App {
         </div>
         <div class="foot">JETCompany OÜ · v0.1 · reglamento FEI simplificado</div>
       </div>`, 'menu-screen');
+    this.mood('menu');
   }
 
   action(a, d, el) {
@@ -129,13 +135,24 @@ export class App {
       case 'daily': this.dailySetup(); break;
       case 'dailystart': this.dailyStart(); break;
       case 'settings': this.settingsModal(); break;
-      case 'set': { const k = d.k; if (k === 'quality' || k === 'cam') this.settings[k] = d.v; else this.settings[k] = !this.settings[k]; saveSettings(this.settings); if (this.world && k === 'cam') this.world.camMode = this.settings.cam; if (k === 'sound') { this.audio.ensure(); this.audio.setEnabled(this.settings.sound); } this.settingsModal(); break; }
+      case 'set': {
+        const k = d.k;
+        if (k === 'quality' || k === 'cam' || k === 'replays' || k === 'horseModel') this.settings[k] = d.v; else this.settings[k] = !this.settings[k];
+        saveSettings(this.settings);
+        if (this.world && k === 'cam') this.world.camMode = this.settings.cam;
+        if (k === 'sound') { this.audio.ensure(); this.audio.setEnabled(this.settings.sound); }
+        if (k === 'music') { this.music.setEnabled(this.settings.music); if (this.settings.music && this.screenMood) this.music.play(this.screenMood); }
+        if (k === 'announcer') this.audio.voiceOn = this.settings.announcer;
+        this.settingsModal(this.settingsInGame); break;
+      }
       case 'reset': deleteProfile(); this.profile = null; this.closeModal(); this.showMenu(); break;
       case 'walk': this.walk = !this.walk; this.preRound(this.pre); break;
       case 'go': this.closeModal(); this.hide(); this.startRide(this.pre); break;
       case 'tutorial-ok': this.settings.tutorialSeen = true; saveSettings(this.settings); this.closeModal(); this.game.pause(false); break;
       case 'resume': this.closeModal(); this.game.pause(false); break;
-      case 'cam': { const modes = ['chase', 'tv', 'onboard']; this.world.camMode = modes[(modes.indexOf(this.world.camMode) + 1) % 3]; this.pauseMenu(); break; }
+      case 'resume-settings': this.pauseMenu(); break;
+      case 'cam': { this.world.camMode = CAM_MODES[(CAM_MODES.indexOf(this.world.camMode) + 1) % CAM_MODES.length]; this.pauseMenu(); break; }
+      case 'settings-ingame': this.settingsModal(true); break;
       case 'quit': this.closeModal(); this.game.pause(false); this.game.ride.elim = this.game.ride.elim || 'Retirado'; this.game.endAt = performance.now() + 100; break;
       case 'results-back': this.afterResults(); break;
       case 'jo': this.closeModal(); this.startJumpOff(); break;
@@ -186,6 +203,7 @@ export class App {
         <div class="hub-body">${body}</div>
         <footer class="hub-f"><span class="muted">Gastos semanales: ${D.fmtMoney(salaries + board)}</span><button class="primary" data-a="week">Pasar semana ▶</button></footer>
       </div>`, 'hub-screen');
+    this.mood('stable');
   }
 
   horseCard(h, own) {
@@ -346,11 +364,12 @@ export class App {
           <button data-a="walk">${walk ? 'Ocultar distancias' : 'Reconocer la pista (distancias)'}</button>
           <button class="primary big" data-a="go">Entrar a pista</button>
         </div></div></div>`, 'pre-screen');
+    this.mood('preround');
   }
 
   startRide(pre) {
     this.ensureWorld();
-    this.hide();
+    this.hide(); this.music.stop(); this.screenMood = null;
     const h = pre.horse;
     const staff = this.profile && pre.kind === 'career' ? this.profile.staff : [];
     const stats = D.effectiveHorse(h, staff);
@@ -363,6 +382,7 @@ export class App {
     }
     this.game.start({
       course: pre.course, horseStats: stats, horseLook: look, rider, mode: pre.mode, fitness: h.fitness, assist: this.settings.assist, title: pre.title,
+      riderName: this.profile ? this.profile.name : 'el jinete', horseName: h.name,
       onEnd: (res) => this.onRoundEnd(res),
     });
     if (!this.settings.tutorialSeen) {
@@ -379,7 +399,7 @@ export class App {
   pauseMenu() {
     if (!this.game || !this.game.running) return;
     this.game.pause(true);
-    this.openModal(`<h2>Pausa</h2><div class="row col"><button class="primary" data-a="resume">Reanudar</button><button data-a="cam">Cámara: ${{ chase: 'seguimiento', tv: 'TV', onboard: 'a bordo' }[this.world.camMode]}</button><button data-a="quit">Abandonar</button></div>`);
+    this.openModal(`<h2>Pausa</h2><div class="row col"><button class="primary" data-a="resume">Reanudar</button><button data-a="cam">Cámara: ${CAM_NAMES[this.world.camMode] || this.world.camMode}</button><button data-a="settings-ingame">Ajustes</button><button data-a="quit">Abandonar</button></div>`);
   }
 
   // ------------------------------------------------------------ resultados
@@ -433,7 +453,8 @@ export class App {
     this.hide();
     const h = pre.horse;
     const staff = this.profile && pre.kind === 'career' ? this.profile.staff : [];
-    this.game.start({ course, horseStats: D.effectiveHorse(h, staff), horseLook: this.game.horse.look, rider: this.profile ? this.profile.rider.skills : { eye: 0.5, balance: 0.5, nerve: 0.5, turns: 0.5 }, mode: 'A', fitness: h.fitness * 0.95, assist: this.settings.assist, title: pre.title, countdown: 30, onEnd: (res) => this.onRoundEnd(res) });
+    this.game.start({ course, horseStats: D.effectiveHorse(h, staff), horseLook: this.game.horse.look, rider: this.profile ? this.profile.rider.skills : { eye: 0.5, balance: 0.5, nerve: 0.5, turns: 0.5 }, mode: 'A', fitness: h.fitness * 0.95, assist: this.settings.assist, title: pre.title, countdown: 30, riderName: this.profile ? this.profile.name : 'el jinete', horseName: h.name, onEnd: (res) => this.onRoundEnd(res) });
+    this.music.stop(); this.screenMood = null;
   }
 
   showResults() {
@@ -447,10 +468,13 @@ export class App {
     const fmt = (r) => r.elim ? `<span class="bad">ELIM</span>` : pre.mode === 'C' ? `${r.score.toFixed(2)} s` : `${r.faults} / ${r.time.toFixed(2)} s`;
     const rows = T.map(r => `<tr class="${r.me ? 'me' : ''}"><td>${r.pos}</td><td>${esc(r.name)}<br><small>${esc(r.horse)}</small></td><td>${fmt(r)}</td>${pre.jo ? `<td>${r.jo ? (r.jo.elim ? '<span class="bad">ELIM</span>' : `${r.jo.faults} / ${r.jo.time.toFixed(2)} s`) : '–'}</td>` : ''}<td>${prizes[r.pos - 1] ? D.fmtMoney(prizes[r.pos - 1]) : ''}</td></tr>`).join('');
     const headline = me.elim ? `Eliminado: ${me.elim}` : me.pos === 1 ? '¡Victoria!' : me.pos <= 3 ? `¡Podio! ${me.pos}º puesto` : `${me.pos}º puesto`;
+    this.screenMood = me.elim ? 'lose' : me.pos <= 3 ? 'win' : 'stable';
     this.show(`<div class="results"><header class="hub-h"><div class="hub-title"><b>${esc(pre.title)}</b><small>${headline}</small></div></header>
       <div class="results-body"><table><thead><tr><th>#</th><th>Binomio</th><th>${pre.mode === 'C' ? 'Tiempo' : 'Faltas / tiempo'}</th>${pre.jo ? '<th>Desempate</th>' : ''}<th>Premio</th></tr></thead><tbody>${rows}</tbody></table>
       ${award}</div>
       <footer class="hub-f"><button class="primary" data-a="results-back">${pre.kind === 'career' ? 'Volver al establo' : 'Menú'}</button></footer></div>`, 'results-screen');
+    this.mood(this.screenMood);
+    if (me.pos === 1 && !me.elim) this.audio.say(`${pre.title}: ganador, ${this.profile ? this.profile.name : 'el jinete'} con ${pre.horse.name}.`);
   }
   applyCareer(me, money) {
     const P = this.profile, pre = this.pre, h = pre.horse;
@@ -484,7 +508,8 @@ export class App {
     pre.title = `Potencia · Muro ${hgt.toFixed(2)} m`;
     this.ensureWorld(); this.hide();
     const h = pre.horse;
-    this.game.start({ course: pre.course, horseStats: D.effectiveHorse(h, []), horseLook: { coat: h.coat, blaze: h.blaze, socks: h.socks, boots: h.bootsColor, pad: h.padColor, rider: { jacket: this.profile ? this.profile.rider.jacket : 0x14204a } }, rider: this.profile ? this.profile.rider.skills : { eye: 0.5, balance: 0.5, nerve: 0.5, turns: 0.5 }, mode: 'power', fitness: h.fitness, assist: this.settings.assist, title: pre.title, countdown: 20, onEnd: (res) => this.onRoundEnd(res) });
+    this.game.start({ course: pre.course, horseStats: D.effectiveHorse(h, []), horseLook: { coat: h.coat, blaze: h.blaze, socks: h.socks, boots: h.bootsColor, pad: h.padColor, rider: { jacket: this.profile ? this.profile.rider.jacket : 0x14204a } }, rider: this.profile ? this.profile.rider.skills : { eye: 0.5, balance: 0.5, nerve: 0.5, turns: 0.5 }, mode: 'power', fitness: h.fitness, assist: this.settings.assist, title: pre.title, countdown: 20, riderName: this.profile ? this.profile.name : 'el jinete', horseName: h.name, onEnd: (res) => this.onRoundEnd(res) });
+    this.music.stop(); this.screenMood = null;
   }
   powerRound(res) {
     const pre = this.pre, hgt = pre.heights[pre.round];
@@ -498,18 +523,21 @@ export class App {
     const title = playerClear ? (alive === 0 ? '¡Ganaste la Potencia!' : '¡Muro máximo superado!') : `Eliminado en ${hgt.toFixed(2)} m`;
     const standing = pre.rivals.map(r => `<tr><td>${esc(r.name)}<br><small>${esc(r.horse.name)}</small></td><td>${r.alive ? 'sigue' : 'cayó en ' + r.outAt.toFixed(2) + ' m'}</td></tr>`).join('');
     this.show(`<div class="results"><header class="hub-h"><div class="hub-title"><b>Potencia</b><small>${title}</small></div></header><div class="results-body"><div class="log">${pre.log.map(l => `<div>${esc(l)}</div>`).join('')}</div><table><tbody>${standing}</tbody></table></div><footer class="hub-f"><button class="primary" data-a="menu">Menú</button></footer></div>`, 'results-screen');
+    this.mood(playerClear ? 'win' : 'lose');
   }
 
   // ------------------------------------------------------------ ajustes
-  settingsModal() {
-    const s = this.settings;
+  settingsModal(inGame = false) {
+    const s = this.settings; this.settingsInGame = inGame;
     const t = (k, label) => `<button class="toggle ${s[k] ? 'on' : ''}" data-a="set" data-k="${k}">${label}<i></i></button>`;
     this.openModal(`<h2>Ajustes</h2><div class="settings">
-      ${t('sound', 'Sonido')}${t('haptics', 'Vibración')}${t('assist', 'Asistente de distancias')}${t('invertStick', 'Invertir dirección')}
+      ${t('sound', 'Efectos de sonido')}${t('music', 'Música')}${t('announcer', 'Locutor')}${t('haptics', 'Vibración')}${t('assist', 'Asistente de distancias')}${t('invertStick', 'Invertir dirección')}
+      <div class="seg"><span>Repeticiones</span>${['all', 'faults', 'off'].map(q => `<button class="${(s.replays || 'faults') === q ? 'sel' : ''}" data-a="set" data-k="replays" data-v="${q}">${{ all: 'Todos los saltos', faults: 'Solo faltas', off: 'Nunca' }[q]}</button>`).join('')}</div>
+      <div class="seg wrap"><span>Cámara</span>${CAM_MODES.map(q => `<button class="${s.cam === q ? 'sel' : ''}" data-a="set" data-k="cam" data-v="${q}">${CAM_NAMES[q]}</button>`).join('')}</div>
       <div class="seg"><span>Calidad</span>${['low', 'med', 'high'].map(q => `<button class="${s.quality === q ? 'sel' : ''}" data-a="set" data-k="quality" data-v="${q}">${{ low: 'Baja', med: 'Media', high: 'Alta' }[q]}</button>`).join('')}</div>
-      <div class="seg"><span>Cámara</span>${['chase', 'tv', 'onboard'].map(q => `<button class="${s.cam === q ? 'sel' : ''}" data-a="set" data-k="cam" data-v="${q}">${{ chase: 'Seguimiento', tv: 'TV', onboard: 'A bordo' }[q]}</button>`).join('')}</div>
-      <p class="muted">La calidad se aplica al reiniciar la app.</p>
-      ${this.profile ? '<button class="danger" data-a="reset">Borrar carrera</button>' : ''}
-      </div><div class="row"><button class="primary" data-a="closemodal">Listo</button></div>`);
+      <div class="seg"><span>Modelo de caballo</span>${['auto', 'procedural'].map(q => `<button class="${(s.horseModel || 'auto') === q ? 'sel' : ''}" data-a="set" data-k="horseModel" data-v="${q}">${{ auto: 'Archivo GLB si existe', procedural: 'Procedural' }[q]}</button>`).join('')}</div>
+      <p class="muted">La calidad y el modelo se aplican al próximo recorrido. Colocá un caballo con esqueleto en <code>assets/models/horse.glb</code> para reemplazar el procedural.</p>
+      ${this.profile && !inGame ? '<button class="danger" data-a="reset">Borrar carrera</button>' : ''}
+      </div><div class="row"><button class="primary" data-a="${inGame ? 'resume-settings' : 'closemodal'}">Listo</button></div>`);
   }
 }

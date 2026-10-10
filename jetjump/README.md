@@ -21,6 +21,23 @@ Ver `../docs/DESIGN-JETJUMP.md` para el diseño completo, el estado del arte vis
 | **Entrenamiento** | Pista libre, sin reloj ni faltas, con asistente que califica cada distancia. |
 | **Desafío del día** | Pista y altura derivadas de la fecha; se guarda el mejor resultado. |
 
+## Cámaras, repeticiones, sonido y música
+
+- Siete cámaras de juego (botón 🎥 o pausa): seguimiento, lejana, a bordo, TV, lateral, dron y valla. Profundidad de campo real en TV, lateral, valla y repeticiones (calidad alta).
+- Repetición automática en cámara lenta tras cada salto (ajustable: todos, solo faltas, nunca) con cámara orbital, barras que caen sincronizadas y ducking de audio.
+- Audio procedural por capas: cascos por aire y velocidad, respiración en cada tranco, cuero y filete, barra, agua, campana, aplausos, "ooh", viento y murmullo. Locutor por síntesis de voz del sistema (anuncia binomio, faltas y tiempo).
+- Música original generativa (`src/music.js`): seis estados (menú, establo, previa, repetición, victoria, derrota) con progresiones, arpegios, cuerdas, metales, timbales y reverb de convolución. Todo sintetizado, sin samples.
+
+## Modelo de caballo externo
+
+El motor usa un caballo procedural. Para el acabado realista:
+
+1. Conseguí un caballo con esqueleto o morphs en GLB (Sketchfab: filtros *Downloadable* + *Animated*, licencia CC-BY o comercial).
+2. Guardalo como `assets/models/horse.glb`. Clips reconocidos por nombre: `idle/stand`, `walk`, `trot`, `canter`, `gallop/run`, `jump`.
+3. El juego lo carga solo (Ajustes → Modelo de caballo → "Archivo GLB si existe"), lo escala a 1,95 m de alto, lo orienta y le monta el jinete. Los clips se sincronizan con la fase del tranco de la simulación.
+
+La ruta está verificada con `assets/models/horse-demo.glb` (caballo de ejemplo de three.js, MIT, estilizado) que sirve solo para probar el pipeline.
+
 ## Reglas implementadas (Tabla A)
 
 - 4 faltas por barra derribada, pie en la ría o desobediencia (rehúse/escape).
@@ -36,10 +53,11 @@ jetjump/
   index.html            página, CSS, HUD y controles
   src/sim.js            física: aires, trancos, balística del salto, reglas, piloto IA
   src/courses.js        diseños de pista (Clásico, Gran Premio con ría, Indoor) y constructor
-  src/horse.js          caballo y jinete procedurales (metaballs + cadenas articuladas)
+  src/horse.js          caballo y jinete procedurales (loft de secciones + pelo) y cargador GLB
   src/scene.js          mundo three.js: pista, vallas, público, cielo, HDRI, GTAO, cámaras
   src/game.js           partida: input, HUD, eventos → audio/efectos
-  src/audio.js          audio procedural WebAudio (cascos, barra, agua, campana, público)
+  src/audio.js          audio procedural WebAudio (cascos, barra, agua, campana, público, locutor)
+  src/music.js          música generativa por estado de ánimo
   src/data.js           razas, estadísticas, personal, categorías, economía, entrenamiento
   src/save.js           perfil y ajustes en localStorage
   src/ui.js             menú, establo, modos, reconocimiento de pista, resultados

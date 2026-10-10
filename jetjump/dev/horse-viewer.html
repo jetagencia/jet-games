@@ -17,7 +17,7 @@ const r = new THREE.WebGLRenderer({ antialias: true });
 r.setSize(W, H); r.shadowMap.enabled = true; r.shadowMap.type = THREE.PCFSoftShadowMap;
 r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 1.0;
 document.body.appendChild(r.domElement);
-const scene = new THREE.Scene(); scene.background = new THREE.Color(0x9fb4c4);
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0x9fb4c4); scene.environment = null;
 const cam = new THREE.PerspectiveCamera(38, W / H, 0.1, 100);
 const sun = new THREE.DirectionalLight(0xfff2dc, 3.2); sun.position.set(4, 8, 5); sun.castShadow = true;
 sun.shadow.mapSize.set(2048, 2048); sun.shadow.camera.left = -4; sun.shadow.camera.right = 4; sun.shadow.camera.top = 4; sun.shadow.camera.bottom = -4; sun.shadow.bias = -0.0005;

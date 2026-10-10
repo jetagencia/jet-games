@@ -1,7 +1,8 @@
 // JETJump — partida: une simulación, mundo 3D, caballo, input, HUD y audio.
 import * as THREE from 'three';
 import { Ride, GAIT_NAMES, strideFreq, clamp } from './sim.js';
-import { HorseModel } from './horse.js';
+import { HorseModel, HorseGLB, loadHorseAsset } from './horse.js';
+import { CAM_MODES } from './scene.js';
 import { FENCE_NAMES } from './courses.js';
 
 const $ = (id) => document.getElementById(id);
@@ -39,8 +40,9 @@ export class Input {
 }
 
 export class Game {
-  constructor({ world, audio, settings }) {
-    this.world = world; this.audio = audio; this.settings = settings;
+  constructor({ world, audio, settings, music }) {
+    this.world = world; this.audio = audio; this.settings = settings; this.music = music;
+    this.buffer = []; this.replay = null; this.replayAt = 0;
     this.input = new Input(settings);
     this.horse = null; this.horseKey = '';
     this.running = false; this.paused = false;
@@ -52,15 +54,23 @@ export class Game {
     this.meterCtx = this.ui.meter.getContext('2d'); this.mapCtx = this.ui.minimap.getContext('2d');
     this.toastT = 0; this.hudT = 0; this.mapT = 0;
     this.loop = this.loop.bind(this);
-    $('btn-cam').addEventListener('click', () => { const modes = ['chase', 'tv', 'onboard']; this.world.camMode = modes[(modes.indexOf(this.world.camMode) + 1) % 3]; this.audio.click(); });
+    $('btn-cam').addEventListener('click', () => this.cycleCam());
     window.addEventListener('resize', () => this.world.resize());
   }
 
-  ensureHorse(look) {
-    const key = JSON.stringify(look);
+  cycleCam() { this.world.camMode = CAM_MODES[(CAM_MODES.indexOf(this.world.camMode) + 1) % CAM_MODES.length]; this.audio.click(); this.toast(`Cámara: ${this.camName()}`, 1.2); }
+  camName() { return ({ chase: 'seguimiento', far: 'lejana', onboard: 'a bordo', tv: 'TV', side: 'lateral', drone: 'dron', fence: 'valla' })[this.world.camMode] || this.world.camMode; }
+
+  async ensureHorse(look) {
+    const key = JSON.stringify(look) + (this.settings.horseModel || 'auto');
     if (this.horse && this.horseKey === key) return this.horse;
     if (this.horse) { this.world.scene.remove(this.horse.root); }
-    this.horse = new HorseModel(look); this.horseKey = key;
+    let model = null;
+    if ((this.settings.horseModel || 'auto') !== 'procedural') {
+      const gltf = await loadHorseAsset(new URL('../assets/models/horse.glb', import.meta.url).href);
+      if (gltf) model = new HorseGLB(gltf, look);
+    }
+    this.horse = model || new HorseModel(look); this.horseKey = key;
     this.world.scene.add(this.horse.root);
     return this.horse;
   }
@@ -70,7 +80,9 @@ export class Game {
     this.cfg = cfg;
     await this.world.assets;
     this.world.setCourse(cfg.course);
-    this.ensureHorse(cfg.horseLook);
+    await this.ensureHorse(cfg.horseLook);
+    this.buffer.length = 0; this.replay = null; this.replayAt = 0; this.fenceFault = false;
+    $('hud-replay').style.display = 'none';
     this.ride = new Ride({ course: cfg.course, horse: cfg.horseStats, rider: cfg.rider, mode: cfg.mode, assist: cfg.assist, fitness: cfg.fitness ?? 1 });
     if (cfg.countdown != null) this.ride.countdown = cfg.countdown;
     this.world.camMode = this.settings.cam || 'chase';
@@ -87,12 +99,14 @@ export class Game {
     this.toast(cfg.mode === 'train' ? 'Entrenamiento libre: saltá en cualquier orden' : 'Campana: tenés 45 s para cruzar la salida', 3.5);
     if (cfg.mode !== 'train') this.audio.bell();
     this.audio.ambient(true, cfg.course.indoor);
+    if (this.music) this.music.stop();
+    if (cfg.mode !== 'train' && cfg.riderName) setTimeout(() => this.running && this.audio.say(`En pista, ${cfg.riderName}, con ${cfg.horseName || 'su caballo'}.`), 1200);
     this.pulseJump(false);
     document.body.classList.add('playing');
     requestAnimationFrame(this.loop);
   }
 
-  stop() { this.running = false; this.audio.ambient(false); document.body.classList.remove('playing'); }
+  stop() { this.running = false; if (this.replay) this.endReplay(); this.audio.ambient(false); this.audio.duck(false); document.body.classList.remove('playing'); document.body.classList.remove('replaying'); }
   pause(v) { this.paused = v; if (!v) this.last = performance.now(); }
 
   toast(msg, dur = 1.8, cls = '') {
@@ -106,6 +120,8 @@ export class Game {
     requestAnimationFrame(this.loop);
     let dt = Math.max(0, Math.min(0.05, (now - this.last) / 1000)); this.last = now;
     if (this.paused) { this.world.render(); return; }
+    if (this.replay) { this.stepReplay(dt); return; }
+    if (this.replayAt && now >= this.replayAt) { this.replayAt = 0; this.startReplay(); return; }
     const ride = this.ride;
     const inp = this.input.read();
     // sub-pasos para estabilidad
@@ -115,9 +131,11 @@ export class Game {
       ride.step(sdt, { steer: inp.steer, pace: inp.pace, jump: i === 0 && inp.jump });
       this.handleEvents(ride.events);
     }
-    this.updateHorsePose(dt);
+    const pose = this.updateHorsePose(dt);
+    this.record(now, pose);
     const eye = this.world.camMode === 'onboard' ? this.horse.rider.eyeCam.getWorldPosition(new THREE.Vector3()) : null;
-    this.world.update(dt, { x: ride.x, y: ride.y - 1.12 + 1.1, z: ride.z, heading: ride.heading, v: ride.v, jumpW: this.jumpW, eye });
+    const apn = ride.approach();
+    this.world.update(dt, { x: ride.x, y: ride.y - 1.12 + 1.1, z: ride.z, heading: ride.heading, v: ride.v, jumpW: this.jumpW, eye, nextE: apn ? apn.E : null });
     this.audio.update(dt, ride.v);
     this.updateHUD(dt);
     this.world.render();
@@ -141,12 +159,14 @@ export class Game {
           break;
         }
         case 'takeoff': {
-          A.hup();
-          this.lastSpot = e;
+          A.hup(); A.creak();
+          this.lastSpot = e; this.fenceFault = false; this.replayE = r.els[e.el];
           break;
         }
+        case 'stride': { if (e.gait >= 3) { A.strideBreath(e.v); if (Math.random() < 0.3) A.jingle(); } break; }
         case 'land': {
-          A.thud(0.8); W.dust(new THREE.Vector3(r.x, 0, r.z), 1.3); this.haptic(20);
+          A.thud(0.8); A.creak(); W.dust(new THREE.Vector3(r.x, 0, r.z), 1.3); this.haptic(20);
+          if (this.replayE && this.wantReplay(this.replayE)) this.replayAt = performance.now() + 650;
           if (this.cfg.mode === 'train' || this.settings.assist) {
             const s = this.lastSpot;
             if (s) {
@@ -157,15 +177,16 @@ export class Game {
           break;
         }
         case 'knock': {
-          A.knock(); A.ooh(); W.knockRail(e.el, e.plane); W.shake = 0.25; this.haptic([30, 40, 30]);
+          A.knock(); A.ooh(); W.knockRail(e.el, e.plane); W.shake = 0.25; this.haptic([30, 40, 30]); this.fenceFault = true;
           this.toast(`Barra ${r.course.elements[e.el].label} · 4 faltas`, 2, 'bad');
           break;
         }
         case 'rub': A.rub(); break;
-        case 'water': { A.splash(); W.splash(new THREE.Vector3(r.x, 0, r.z)); this.toast('Pisó el agua · 4 faltas', 2, 'bad'); break; }
+        case 'water': { A.splash(); W.splash(new THREE.Vector3(r.x, 0, r.z)); this.toast('Pisó el agua · 4 faltas', 2, 'bad'); this.fenceFault = true; break; }
         case 'refusal': {
           A.snort(); A.ooh(); W.shake = 0.3; this.haptic(60);
           this.toast(e.n >= 2 ? `${e.kind}: segunda desobediencia` : `${e.kind} · 4 faltas`, 2.5, 'bad');
+          if (e.n < 2) A.say(e.kind === 'Escape' ? 'Escape. Cuatro faltas.' : 'Rehúse. Cuatro faltas.');
           break;
         }
         case 'halt': A.snort(); break;
@@ -179,10 +200,12 @@ export class Game {
           const clear = r.faults === 0;
           A.cheer(clear ? 1 : r.faults <= 4 ? 0.5 : 0.25); W.cheer(clear ? 1 : 0.4); A.fanfare(clear);
           this.toast(clear ? '¡RECORRIDO LIMPIO!' : `Llegada · ${r.faults} faltas`, 3, clear ? 'good' : '');
+          const tt = r.time.toFixed(2).replace('.', ' con ');
+          A.say(clear ? `Sin faltas. ${tt} segundos.` : `${r.faults} faltas. ${tt} segundos.`, { force: true });
           this.endAt = performance.now() + 3200;
           break;
         }
-        case 'elim': { this.toast(`Eliminado: ${e.reason}`, 3, 'bad'); A.fanfare(false); this.endAt = performance.now() + 3200; break; }
+        case 'elim': { this.toast(`Eliminado: ${e.reason}`, 3, 'bad'); A.fanfare(false); A.say(`Eliminado. ${e.reason}.`, { force: true }); this.endAt = performance.now() + 3200; break; }
       }
     }
   }
@@ -197,10 +220,59 @@ export class Game {
     const two = r.gait >= 3 ? 0.3 + (ap && ap.d < 12 ? 0.45 : 0) : 0;
     this.horse.root.position.set(r.x, 0, r.z);
     this.horse.root.rotation.y = -r.heading;
-    this.horse.update({
-      phase: r.phase, w: this.w, L: r.strideLen(), lead: r.lead, jumpT: r.jump ? r.jump.t / r.jump.T : -1, jumpW: this.jumpW,
-      pitch: r.pitch, roll: r.roll, y: r.y, v: r.v, omega: r.omega, refuse: this.refuseW, approachTwo: two,
-    }, dt);
+    const pose = {
+      phase: r.phase, w: this.w.slice(), L: r.strideLen(), lead: r.lead, jumpT: r.jump ? r.jump.t / r.jump.T : -1, jumpW: this.jumpW,
+      pitch: r.pitch, roll: r.roll, y: r.y, v: r.v, omega: r.omega, refuse: this.refuseW, approachTwo: two, x: r.x, z: r.z, heading: r.heading,
+    };
+    this.horse.update(pose, dt);
+    return pose;
+  }
+
+  // ---- repetición en cámara lenta
+  record(now, pose) {
+    this.buffer.push({ t: now, pose, rails: this.world.railSnapshot() });
+    if (this.buffer.length > 480) this.buffer.splice(0, this.buffer.length - 480);
+  }
+  wantReplay(E) {
+    const mode = this.settings.replays || 'faults';
+    if (mode === 'off' || this.cfg.mode === 'train' || this.replay) return false;
+    if (mode === 'all') return true;
+    return this.fenceFault;
+  }
+  startReplay() {
+    const E = this.replayE; const now = performance.now();
+    const frames = this.buffer.filter(f => f.t >= now - 3400);
+    if (frames.length < 10) return;
+    const P = new THREE.Vector3(E.x + E.n[0] * E.spread / 2, 0, E.z + E.n[1] * E.spread / 2);
+    const az = Math.atan2(frames[0].pose.z - E.z, frames[0].pose.x - E.x) + 0.9;
+    this.replay = { frames, t0: frames[0].t, clock: 0, speed: 0.33, wall: performance.now(), focus: P, az, live: this.world.railSnapshot(), prevCam: this.world.camMode };
+    this.audio.whoosh(); this.audio.duck(true); if (this.music) this.music.play('replay');
+    $('hud-replay').style.display = ''; document.body.classList.add('replaying');
+  }
+  stepReplay(dt) {
+    const R = this.replay;
+    R.clock = (performance.now() - R.wall) * R.speed;
+    const tt = R.t0 + R.clock;
+    let i = R.idx || 0; while (i < R.frames.length - 1 && R.frames[i + 1].t <= tt) i++; R.idx = i;
+    const fr = R.frames[i];
+    const p = fr.pose;
+    this.horse.root.position.set(p.x, 0, p.z); this.horse.root.rotation.y = -p.heading;
+    this.horse.update(p, dt * R.speed);
+    this.world.railRestore(fr.rails);
+    const T = R.clock / 1000;
+    this.world.update(dt, { x: p.x, y: p.y - 1.12 + 1.1, z: p.z, heading: p.heading, v: p.v, jumpW: p.jumpW, replay: true, focus: R.focus, replayT: T, replayA: R.az });
+    this.world.render();
+    if (i >= R.frames.length - 1) this.endReplay();
+  }
+  endReplay() {
+    const R = this.replay; if (!R) return;
+    this.world.railRestore(R.live);
+    this.replay = null; this.fenceFault = false;
+    this.audio.duck(false); if (this.music) this.music.stop(0.6);
+    $('hud-replay').style.display = 'none'; document.body.classList.remove('replaying');
+    // restituir la pose en vivo y la cámara
+    this.updateHorsePose(0.016);
+    this.world.camMode = R.prevCam; this.last = performance.now();
   }
 
   updateHUD(dt) {

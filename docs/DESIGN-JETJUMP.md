@@ -49,8 +49,12 @@ Tres diseños reutilizables con alturas 1.00-1.60 y velocidad 325-400 m/min: **C
 
 - three.js 0.160 con ACES, sombras PCF 4K, iluminación por imagen (HDRI de three.js), GTAO, bloom suave, SMAA y gradación final (viñeta + grano). Tres niveles de calidad.
 - Pista de arena con normal map procedural, césped con textura y normal, ladrillo real en los muros, agua con normal animado, público instanciado (cuerpo + cabeza) que salta al festejar, tribuna, palco de jurado, carteles JET Games, árboles con copas irregulares, pabellón cubierto para Indoor.
-- Caballo procedural: tronco y cuello por metaballs congeladas, patas y cola articuladas, montura, cabezada, riendas que unen manos y filete, jinete en dos puntos durante el salto. Seis capas con moteado de tordillo, estrella y calcetines.
-- Audio 100 % procedural: cascos por aire y velocidad, barra (doble golpe), roce, agua, campana, aplausos, "ooh", resoplido, viento y murmullo.
+- Caballo procedural v2: tronco, cuello y cabeza por barrido de secciones elípticas sobre curvas, con proporciones de un caballo de 1,68 m; patas y cola articuladas; crin y cola con tarjetas de pelo; montura, cabezada, riendas que unen manos y filete; jinete en dos puntos durante el salto. Seis capas con moteado de tordillo, estrella y calcetines. Cargador GLB con mezcla de clips por aire para reemplazarlo por un modelo con licencia.
+- Luz de hora dorada: sol bajo y cálido tomado del HDRI, sombras largas, cielo procedural con disco solar, niebla cálida.
+- Siete cámaras de juego más la cámara orbital de repetición, con profundidad de campo (Bokeh) en las cámaras de transmisión.
+- Repetición automática en cámara lenta (0,33×) de cada salto o solo de las faltas: buffer de poses y de barras caídas, ducking de audio y música propia.
+- Audio 100 % procedural por capas: cascos por aire y velocidad, respiración por tranco, cuero, filete, barra (doble golpe), roce, agua, campana, aplausos, "ooh", resoplido, viento y murmullo. Locutor con síntesis de voz del sistema.
+- Música original generativa: secuenciador de semicorcheas con seis estados (menú, establo, previa, repetición, victoria, derrota), pad, arpegios, bajo, cuerdas, metales, timbales, percusión suave y reverb de convolución generada.
 
 ### Estado del arte y límite honesto
 

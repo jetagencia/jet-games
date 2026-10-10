@@ -128,6 +128,8 @@
   .seg { display: flex; align-items: center; gap: 6px; } .seg span { flex: 1; font-size: 14px; }
   .seg button { min-height: 38px; padding: 6px 12px; border-radius: 999px; font-size: 13px; }
   .seg button.sel { background: var(--gold); color: #1b1608; border-color: transparent; }
+  .seg.wrap { flex-wrap: wrap; } .seg.wrap span { flex-basis: 100%; }
+  code { font-family: 'JetBrains Mono', monospace; font-size: 12px; background: rgba(255,255,255,0.08); padding: 1px 5px; border-radius: 4px; }
 
   /* ---------- HUD ---------- */
   #hud { position: absolute; inset: 0; z-index: 10; pointer-events: none; display: none; font-family: 'JetBrains Mono', monospace; }
@@ -157,6 +159,10 @@
   #minimap { position: absolute; right: calc(12px + var(--sa-r)); top: calc(78px + var(--sa-t)); width: 150px; height: 100px; background: rgba(11,26,19,0.5); border: 1px solid rgba(217,179,91,0.25); border-radius: 10px; }
   .hud-tools { position: absolute; left: calc(12px + var(--sa-l)); top: calc(78px + var(--sa-t)); display: flex; flex-direction: column; gap: 8px; pointer-events: auto; }
   .hud-tools button { width: 44px; min-height: 44px; padding: 0; border-radius: 50%; background: rgba(11,26,19,0.62); font-size: 18px; }
+  #hud-replay { position: absolute; left: 50%; top: calc(74px + var(--sa-t)); transform: translateX(-50%); font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 12px; letter-spacing: 3px; color: #fff; background: rgba(198,40,40,0.85); padding: 6px 14px; border-radius: 999px; display: flex; align-items: center; gap: 8px; }
+  #hud-replay i { width: 8px; height: 8px; border-radius: 50%; background: #fff; animation: blink 1s infinite; }
+  @keyframes blink { 50% { opacity: 0.2; } }
+  body.replaying #controls, body.replaying .hud-bottom, body.replaying #minimap, body.replaying .hud-top .hud-fence, body.replaying #stick-zone { display: none !important; }
   .toast { position: absolute; top: 34%; left: 50%; transform: translate(-50%, -50%) scale(0.9); font-family: 'Poppins', sans-serif; font-weight: 800; font-size: 22px; padding: 10px 22px; border-radius: 999px; background: rgba(11,26,19,0.75); border: 1px solid rgba(243,234,214,0.3); opacity: 0; transition: opacity 0.2s, transform 0.2s; white-space: nowrap; }
   .toast.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
   .toast.good { color: var(--green); border-color: var(--green); } .toast.bad { color: var(--red); border-color: var(--red); } .toast.warn { color: var(--amber); }
@@ -194,6 +200,7 @@
     <div class="hud-speed"><span id="hud-speed">0</span><span>m/min</span><span id="hud-gait">Parado</span></div>
     <div class="stamina"><i id="hud-stamina"></i></div>
   </div>
+  <div id="hud-replay" style="display:none"><i></i>REPETICIÓN</div>
   <div id="hud-toast" class="toast"></div>
 </div>
 
