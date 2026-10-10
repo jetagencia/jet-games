@@ -1,13 +1,26 @@
-# Salchidrez. Prototipo v0.2
+# Salchidrez. Prototipo v0.3
 
-Ajedrez de perros salchicha. Reglas completas del ajedrez, pero cada pieza es un salchicha: cuanto más importante la pieza, más larga la salchicha. Cuando se mueve, el perro estira el cuerpo hasta la casilla destino y después la cola lo alcanza.
+Ajedrez de perros salchicha. Reglas completas del ajedrez, pero cada pieza es un salchicha disfrazado de lo que representa. Cuando se mueve, el perro estira el cuerpo hasta la casilla destino y después la cola lo alcanza. El caballero salta.
 
 ## Cómo probar
 
-1. Abrí `index.html` en Chrome móvil o devtools mobile.
-2. Elegí modo (**Vs IA** o **2 jugadores**), dificultad y color.
-3. Tocá un perro para elegirlo. Los **huesitos** marcan adónde puede ir; el **marco rosa** marca una captura.
-4. Tocá el destino. Si un cachorro llega al fondo, elegís en qué se convierte.
+Hace falta servirlo por http (la música se carga con `fetch`). Desde esta carpeta:
+
+```
+python3 -m http.server 8000
+```
+
+y abrir `http://localhost:8000` en Chrome móvil o devtools mobile.
+
+Para subirlo a Hostinger alcanza con estos archivos: `index.html`, `manifest.json`, `sw.js` y `milonga.mp3`. La carpeta `tools/` no se sube.
+
+## Cómo se juega
+
+- Elegí contra quién (la compu o un amigo en el mismo teléfono), la dificultad y tus perros.
+- **Tocá** un perro y aparecen huesitos donde puede ir, o **arrastralo**: la cabeza sigue al dedo y la salchicha se estira. Si lo soltás en una casilla que no vale, vuelve a su lugar.
+- Comer abre una nube de pelea de dibujito animado; el comido sale volando.
+- **Pista** busca una buena jugada y la marca con huellitas y una casilla dorada.
+- **Deshacer** vuelve atrás (contra la compu deshace tu jugada y la de ella).
 
 ## La jauría
 
@@ -22,29 +35,37 @@ Ajedrez de perros salchicha. Reglas completas del ajedrez, pero cada pieza es un
 
 Opcional: símbolo clásico (♔♕♖♗♘♙) en la esquina de cada casilla, se activa desde el menú.
 
-Bandos: **Crema** (blancas, glow cian) vs **Chocolate** (negras, glow magenta).
+## Música
+
+"Milonga del Salchicha", original. Trío de bandoneón, guitarra criolla y contrabajo en la menor y do mayor, 2/4, 88 bpm, 32 compases (43,6 s en loop sin costura).
+
+- La partitura y la síntesis están en `tools/milonga.js`: guitarra y contrabajo con síntesis de cuerda pulsada (Karplus-Strong), bandoneón con lengüetas desafinadas, formante y vibrato, reverb de sala por convolución.
+- `tools/render-music.js` la renderiza con Chromium (Playwright) y ffmpeg a `milonga.mp3`:
+
+```
+NODE_PATH=$(npm root -g) node salchidrez/tools/render-music.js
+```
+
+Los efectos (ladridos, olfateos, pasitos, boing del caballero, nube de pelea, fanfarria de guitarra al ganar) se sintetizan en vivo con WebAudio.
 
 ## Estado del prototipo
 
 ✅ Implementado:
 - Motor de ajedrez completo: enroque, captura al paso, promoción con elección, jaque, jaque mate, ahogado
 - Tablas por triple repetición, regla de 50 movidas y material insuficiente
-- Motor validado con perft contra 6 posiciones estándar (inicial d4, Kiwipete d3, etc.)
-- IA negamax + alpha-beta + quiescence, 3 niveles: Cachorro (d1 + ruido), Salchicha (d2), Campeón (iterativo hasta d4, 1.6 s)
-- Perros dibujados por código en Canvas2D (sin assets): cola que mueve, orejas que se balancean, parpadeo
-- Animación de "salchicha estirada" al moverse, salto del caballo, capturado que sale volando con "¡GUAU!"
-- Los perros se dan vuelta según hacia dónde caminaron
-- Deshacer (en Vs IA deshace tu jugada y la de la IA)
-- Bandejas de capturas con diferencia de material
-- Música original, "Milonga del Salchicha": la menor, 96 bpm, bajo de milonga 3-3-2, acordes en contratiempo, melodía punteada y un "guau" al cierre de cada frase. Se sintetiza en vivo con WebAudio, sin archivos de audio
-- Sonidos sintetizados con WebAudio (ladrido en captura y jaque, aullido al final). Música y sonidos se prenden y apagan por separado y la preferencia se guarda
-- Interfaz pensada para el teléfono: tablero de ancho completo, perros con más cabeza y sombreros más grandes, tarjetas de jugador con avatar, estado y capturas, barra inferior con íconos grandes
-- Victorias por dificultad persistentes (localStorage)
-- Estética neón consistente con el resto del portfolio JET
+- Motor validado con perft contra 6 posiciones estándar
+- IA negamax + alpha-beta + quiescence, 3 niveles: Cachorro, Salchicha y Campeón
+- Perros dibujados por código en Canvas2D (sin imágenes), con vestuario por pieza
+- Arrastrar para estirar, salto del caballero, huellitas en el camino, nube de pelea con sacudón, onomatopeyas
+- Globitos de diálogo según la pieza, rey que transpira en jaque, perros que saltan y olfatean mientras esperan
+- Menú ilustrado con tarjetas, logo con salchichas que caminan como oruga
+- Pantalla final con el ganador bailando, papel picado y huesitos, estadísticas de la partida
+- Tarjetas de jugador con avatar, estado y capturas; barra con deshacer, pista, música, sonidos y menú
+- Preferencias y victorias guardadas en el teléfono (localStorage)
 
 🔜 Próximas iteraciones:
 - IA en Web Worker para no bloquear el hilo en Campeón
-- Multijugador online / pasar y jugar con tablero girado
-- Puzzles diarios de mate ("¿Dónde está el hueso?")
-- Skins de razas (salchicha de pelo largo, arlequín)
+- Multijugador online
+- Puzzles diarios de mate
+- Skins de razas (pelo largo, arlequín)
 - Iconos PWA
