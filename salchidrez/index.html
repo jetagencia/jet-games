@@ -105,9 +105,10 @@
   .btn:active { transform: scale(0.96); }
   .btn.ghost { background: transparent; color: #e4d9ff; border: 1px solid rgba(183,148,246,0.4); margin-top: 10px; }
 
-  .legend { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px 10px; margin-top: 8px; max-width: 340px; }
+  .legend { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px 10px; margin-top: 8px; max-width: 340px; }
   .legend div { display: flex; flex-direction: column; align-items: center; font-size: 10px; color: rgba(228,217,255,0.75); text-align: center; line-height: 1.3; }
-  .legend canvas { width: 64px; height: 64px; }
+  .legend canvas { width: 50px; height: 50px; }
+  .legend .pair { display: flex; gap: 2px; }
   .legend b { color: #e4d9ff; font-size: 10px; }
 
   .promo-row { display: flex; gap: 10px; margin-top: 14px; }
@@ -187,6 +188,12 @@
     </div>
   </div>
 
+  <div class="opt-label">Símbolos clásicos en las casillas</div>
+  <div class="opt-row" data-opt="glyphs">
+    <button class="chip on" data-val="on">Mostrar</button>
+    <button class="chip" data-val="off">Ocultar</button>
+  </div>
+
   <button class="btn" id="btn-start">Jugar</button>
   <button class="btn ghost" id="btn-legend">Quién es quién</button>
   <p style="margin-top: 14px; font-size: 10px; opacity: 0.3;">
@@ -254,13 +261,14 @@ const DOG = {
 };
 
 const NAMES = {
-  k: ['Rey Salchichón', 'corona, el más largo'],
-  q: ['Reina Longaniza', 'tiara y collar de perlas'],
-  r: ['Torre Cucha', 'lleva su cucha a cuestas'],
-  b: ['Obispo Chorizo', 'mitra puntiaguda'],
-  n: ['Salchi-jinete', 'gorra y montura, salta'],
-  p: ['Cachorro', 'pañuelo, el más corto'],
+  k: ['Rey Salchichón', 'corona con cruz y capa de armiño'],
+  q: ['Reina Longaniza', 'corona de perlas, collar y pestañas'],
+  r: ['Torre', 'sombrero de torre con almenas'],
+  b: ['Obispo Chorizo', 'mitra, báculo y alzacuello'],
+  n: ['Caballero', 'yelmo, armadura y caballito'],
+  p: ['Cachorro', 'pañuelo, el más chiquito'],
 };
+const GLYPH = { k: '\u2654', q: '\u2655', r: '\u2656', b: '\u2657', n: '\u2658', p: '\u2659' };
 
 const SIDE_NAME = { w: 'Crema', b: 'Chocolate' };
 const LEVELS = ['Cachorro', 'Salchicha', 'Campeón'];
@@ -639,6 +647,9 @@ function drawDog(g, type, color, ox, oy, fx, fy, r, opts) {
     g.restore();
   }
 
+  // Báculo del obispo, detrás de todo
+  if (type === 'b') drawCrozier(g, len - r * 2.0, r, lw);
+
   // Cola
   const wag = Math.sin(time * 0.012 * (1 + wagAmt * 2) + seed) * wagAmt;
   g.beginPath();
@@ -671,11 +682,12 @@ function drawDog(g, type, color, ox, oy, fx, fy, r, opts) {
   g.fill();
   g.restore();
 
-  // Accesorios de lomo
-  if (type === 'r') drawCucha(g, len * 0.45, -r * 0.85, r, pal, lw);
-  if (type === 'n') drawSaddle(g, len * 0.45, -r * 0.9, r, pal, lw);
-  if (type === 'q') drawPearls(g, len - r * 0.35, -r * 0.2, r);
+  // Vestuario sobre el lomo
+  if (type === 'k') drawKingCape(g, len, r, lw);
+  if (type === 'n') drawArmor(g, len, r, pal, lw);
   if (type === 'p') drawBandana(g, len - r * 0.45, -r * 0.35, r, pal, lw);
+  if (type === 'b') drawClericalCollar(g, len - r * 0.35, -r * 0.3, r, lw);
+  if (type === 'q') drawPearls(g, len - r * 0.35, -r * 0.25, r, lw);
 
   // Cabeza
   const hx = len - r * 0.05, hy = -r * 1.0;
@@ -724,124 +736,304 @@ function drawDog(g, type, color, ox, oy, fx, fy, r, opts) {
 
   // Sombreros
   const topY = hy - r * 0.7;
-  if (type === 'k') drawCrown(g, hx, topY, r, lw);
-  if (type === 'q') drawTiara(g, hx, topY, r, pal, lw);
-  if (type === 'b') drawMitre(g, hx, topY, r, color, lw);
-  if (type === 'n') drawCap(g, hx, topY, r, pal, lw);
+  if (type === 'k') drawCrown(g, hx, topY, r, pal, lw);
+  if (type === 'q') drawCoronet(g, hx, topY, r, pal, lw);
+  if (type === 'b') drawMitre(g, hx, topY, r, color, pal, lw);
+  if (type === 'r') drawTowerHat(g, hx, topY, r, pal, lw);
+  if (type === 'n') drawHelmet(g, hx, hy - r * 0.78, r, pal, lw, time);
+  if (type === 'q' && blink === 1) drawLashes(g, hx + r * 0.32, hy - r * 0.18, r, lw);
+
+  // Caballito de palo, delante del pecho
+  if (type === 'n') drawHobbyHorse(g, len + r * 0.75, r * 0.6, r * 0.9, lw);
 
   g.restore();
 }
 
-function drawCrown(g, x, y, r, lw) {
-  const w = r * 1.35, h = r * 0.95;
+// ---------------------------------------------------------------------------
+// Vestuario: cada pieza lleva en la cabeza lo que la identifica en el ajedrez
+// ---------------------------------------------------------------------------
+const GOLD = '#ffcf4d', GOLD_DK = '#8a5a00';
+const METAL = '#d7deeb', METAL_DK = '#4b5570';
+
+// Rey: corona con cruz arriba (como la pieza clásica) y capa roja de armiño
+function drawKingCape(g, len, r, lw) {
   g.beginPath();
-  g.moveTo(x - w / 2, y + r * 0.1);
-  g.lineTo(x - w / 2, y - h * 0.6);
-  g.lineTo(x - w / 4, y - h * 0.15);
-  g.lineTo(x, y - h);
-  g.lineTo(x + w / 4, y - h * 0.15);
-  g.lineTo(x + w / 2, y - h * 0.6);
-  g.lineTo(x + w / 2, y + r * 0.1);
+  g.moveTo(len * 0.78, -r * 1.05);
+  g.quadraticCurveTo(len * 0.4, -r * 1.25, r * 0.15, -r * 0.95);
+  g.lineTo(-r * 0.05, r * 0.55);
+  g.quadraticCurveTo(len * 0.35, r * 0.85, len * 0.72, r * 0.25);
   g.closePath();
-  fillStroke(g, '#ffd166', '#7a5300', lw);
-  for (const [px, py, col] of [[x, y - h * 0.15, '#ff6ec7'], [x - w / 3, y - r * 0.05, '#00f0ff'], [x + w / 3, y - r * 0.05, '#00f0ff']]) {
-    g.beginPath(); g.arc(px, py, r * 0.12, 0, Math.PI * 2); g.fillStyle = col; g.fill();
+  fillStroke(g, '#d1263f', '#4a0712', lw);
+  // Borde de armiño
+  g.beginPath();
+  g.moveTo(-r * 0.05, r * 0.55);
+  g.quadraticCurveTo(len * 0.35, r * 0.85, len * 0.72, r * 0.25);
+  g.strokeStyle = '#fff8ee'; g.lineWidth = r * 0.32; g.stroke();
+  g.fillStyle = '#14080a';
+  for (let i = 1; i <= 3; i++) {
+    const t = i / 4;
+    const x = (1 - t) * (1 - t) * (-r * 0.05) + 2 * (1 - t) * t * len * 0.35 + t * t * len * 0.72;
+    const y = (1 - t) * (1 - t) * r * 0.55 + 2 * (1 - t) * t * r * 0.85 + t * t * r * 0.25;
+    g.beginPath(); g.arc(x, y, r * 0.06, 0, Math.PI * 2); g.fill();
   }
 }
 
-function drawTiara(g, x, y, r, pal, lw) {
-  const w = r * 1.15;
+function drawCrown(g, x, y, r, pal, lw) {
+  const w = r * 1.55, b = y + r * 0.15;
+  // Terciopelo
+  g.beginPath(); g.ellipse(x, b - r * 0.55, w * 0.42, r * 0.55, 0, 0, Math.PI * 2);
+  fillStroke(g, '#d1263f', '#4a0712', lw);
+  // Puntas
   g.beginPath();
-  g.moveTo(x - w / 2, y + r * 0.12);
-  g.quadraticCurveTo(x - w / 4, y - r * 0.25, x - w / 6, y - r * 0.35);
-  g.lineTo(x, y - r * 0.75);
-  g.lineTo(x + w / 6, y - r * 0.35);
-  g.quadraticCurveTo(x + w / 4, y - r * 0.25, x + w / 2, y + r * 0.12);
+  g.moveTo(x - w / 2, b);
+  g.lineTo(x - w / 2, b - r * 1.05);
+  g.lineTo(x - w / 4, b - r * 0.5);
+  g.lineTo(x, b - r * 1.2);
+  g.lineTo(x + w / 4, b - r * 0.5);
+  g.lineTo(x + w / 2, b - r * 1.05);
+  g.lineTo(x + w / 2, b);
   g.closePath();
-  fillStroke(g, '#e8e2ff', '#6a5aa8', lw);
-  g.beginPath(); g.arc(x, y - r * 0.32, r * 0.16, 0, Math.PI * 2);
-  g.fillStyle = '#ff6ec7'; g.fill();
+  fillStroke(g, GOLD, GOLD_DK, lw);
+  // Cruz
+  roundRectPath(g, x - r * 0.1, b - r * 2.0, r * 0.2, r * 0.85, r * 0.04);
+  fillStroke(g, GOLD, GOLD_DK, lw);
+  roundRectPath(g, x - r * 0.33, b - r * 1.78, r * 0.66, r * 0.2, r * 0.04);
+  fillStroke(g, GOLD, GOLD_DK, lw);
+  // Banda con gemas
+  roundRectPath(g, x - w / 2, b - r * 0.38, w, r * 0.38, r * 0.08);
+  fillStroke(g, GOLD, GOLD_DK, lw);
+  for (const [dx, col] of [[-0.45, pal.team], [0, '#d1263f'], [0.45, pal.team]]) {
+    g.beginPath(); g.arc(x + dx * w, b - r * 0.19, r * 0.1, 0, Math.PI * 2); g.fillStyle = col; g.fill();
+  }
 }
 
-function drawPearls(g, x, y, r) {
-  g.fillStyle = '#f7f3ff';
-  for (let i = 0; i < 5; i++) {
-    const a = -0.9 + i * 0.45;
+// Reina: corona de puntas finas con perlas (la "coronita" de la pieza), collar y pestañas
+function drawCoronet(g, x, y, r, pal, lw) {
+  const w = r * 1.45, b = y + r * 0.15;
+  const tips = [[-0.5, 0.75], [-0.25, 1.0], [0, 1.25], [0.25, 1.0], [0.5, 0.75]];
+  g.beginPath();
+  g.moveTo(x - w / 2, b);
+  for (let i = 0; i < tips.length; i++) {
+    const [tx, th] = tips[i];
+    if (i > 0) g.lineTo(x + (tx - 0.125) * w, b - r * 0.4);
+    g.lineTo(x + tx * w, b - r * th);
+  }
+  g.lineTo(x + w / 2, b);
+  g.closePath();
+  fillStroke(g, GOLD, GOLD_DK, lw);
+  for (const [tx, th] of tips) {
+    g.beginPath(); g.arc(x + tx * w, b - r * th - r * 0.08, r * 0.13, 0, Math.PI * 2);
+    fillStroke(g, '#fff8ff', '#7a6a9a', lw * 0.7);
+  }
+  roundRectPath(g, x - w / 2, b - r * 0.32, w, r * 0.32, r * 0.08);
+  fillStroke(g, GOLD, GOLD_DK, lw);
+  g.beginPath(); g.arc(x, b - r * 0.16, r * 0.12, 0, Math.PI * 2); g.fillStyle = pal.team; g.fill();
+}
+
+function drawPearls(g, x, y, r, lw) {
+  for (let i = 0; i < 6; i++) {
+    const a = -1.1 + i * 0.44;
     g.beginPath();
-    g.arc(x + Math.sin(a) * r * 0.55, y + Math.cos(a) * r * 0.45, r * 0.11, 0, Math.PI * 2);
-    g.fill();
+    g.arc(x + Math.sin(a) * r * 0.6, y + Math.cos(a) * r * 0.5, r * 0.13, 0, Math.PI * 2);
+    fillStroke(g, '#fff8ff', '#7a6a9a', lw * 0.6);
   }
 }
 
-function drawMitre(g, x, y, r, color, lw) {
-  const w = r * 0.95, h = r * 1.55;
-  const fill = color === 'w' ? '#f5f0ff' : '#8a5cf6';
+function drawLashes(g, ex, ey, r, lw) {
+  g.strokeStyle = '#140805'; g.lineWidth = lw * 0.9;
   g.beginPath();
-  g.moveTo(x - w / 2, y + r * 0.1);
-  g.quadraticCurveTo(x - w / 2, y - h * 0.6, x - r * 0.05, y - h);
-  g.lineTo(x + r * 0.05, y - h * 0.82);
-  g.quadraticCurveTo(x + w / 2, y - h * 0.55, x + w / 2, y + r * 0.1);
-  g.closePath();
-  fillStroke(g, fill, '#3a2a6e', lw);
-  g.beginPath();
-  g.moveTo(x, y + r * 0.05); g.lineTo(x, y - h * 0.65);
-  g.moveTo(x - w * 0.25, y - h * 0.38); g.lineTo(x + w * 0.25, y - h * 0.38);
-  g.strokeStyle = '#ffd166'; g.lineWidth = lw * 1.6; g.stroke();
+  for (const a of [-2.2, -1.7, -1.2]) {
+    g.moveTo(ex + Math.cos(a) * r * 0.17, ey + Math.sin(a) * r * 0.17);
+    g.lineTo(ex + Math.cos(a) * r * 0.34, ey + Math.sin(a) * r * 0.34);
+  }
+  g.stroke();
 }
 
-function drawCap(g, x, y, r, pal, lw) {
+// Obispo (alfil): mitra alta con la ranura de la pieza, cruz dorada, báculo y alzacuello
+function drawCrozier(g, x, r, lw) {
   g.beginPath();
-  g.arc(x, y + r * 0.2, r * 0.62, Math.PI, 0);
-  g.closePath();
-  fillStroke(g, pal.team, '#06030f', lw);
-  // Visera
-  g.beginPath();
-  g.ellipse(x + r * 0.7, y + r * 0.18, r * 0.42, r * 0.12, 0.1, 0, Math.PI * 2);
-  fillStroke(g, pal.team, '#06030f', lw);
-  g.beginPath(); g.arc(x, y - r * 0.42, r * 0.1, 0, Math.PI * 2); g.fillStyle = '#06030f'; g.fill();
+  g.moveTo(x, r * 1.45);
+  g.lineTo(x, -r * 2.6);
+  g.arc(x + r * 0.38, -r * 2.6, r * 0.38, Math.PI, Math.PI * 2.15);
+  g.strokeStyle = GOLD_DK; g.lineWidth = r * 0.22 + lw * 2; g.stroke();
+  g.strokeStyle = GOLD; g.lineWidth = r * 0.22; g.stroke();
 }
 
-function drawSaddle(g, x, y, r, pal, lw) {
-  roundRectPath(g, x - r * 0.75, y - r * 0.15, r * 1.5, r * 0.65, r * 0.25);
-  fillStroke(g, '#8a4b22', '#2e1406', lw);
+function drawMitre(g, x, y, r, color, pal, lw) {
+  const w = r * 1.2, h = r * 2.15, b = y + r * 0.2;
+  const fill = color === 'w' ? '#f7f3ff' : '#7b4fd9';
+  // Cintas que cuelgan atrás
   g.beginPath();
-  g.moveTo(x - r * 0.75, y - r * 0.05); g.quadraticCurveTo(x - r * 0.95, y - r * 0.45, x - r * 0.55, y - r * 0.4);
-  g.strokeStyle = '#2e1406'; g.lineWidth = lw * 1.5; g.stroke();
-  roundRectPath(g, x - r * 0.75, y + r * 0.25, r * 1.5, r * 0.18, r * 0.05);
-  g.fillStyle = pal.team; g.fill();
+  g.moveTo(x - w * 0.3, b); g.lineTo(x - w * 0.62, b + r * 0.85);
+  g.strokeStyle = GOLD_DK; g.lineWidth = r * 0.24 + lw * 2; g.stroke();
+  g.strokeStyle = fill; g.lineWidth = r * 0.24; g.stroke();
+  // Cuerpo de la mitra
+  g.beginPath();
+  g.moveTo(x - w / 2, b);
+  g.quadraticCurveTo(x - w * 0.62, b - h * 0.55, x, b - h);
+  g.quadraticCurveTo(x + w * 0.62, b - h * 0.55, x + w / 2, b);
+  g.closePath();
+  fillStroke(g, fill, '#2a1a55', lw);
+  // Ranura diagonal (el corte del alfil)
+  g.beginPath();
+  g.moveTo(x - w * 0.12, b - h * 0.9);
+  g.lineTo(x + w * 0.38, b - h * 0.5);
+  g.strokeStyle = '#2a1a55'; g.lineWidth = lw * 2.2; g.stroke();
+  // Banda dorada y cruz
+  roundRectPath(g, x - w / 2, b - r * 0.3, w, r * 0.3, r * 0.06);
+  fillStroke(g, GOLD, GOLD_DK, lw * 0.8);
+  g.beginPath();
+  g.moveTo(x, b - r * 0.4); g.lineTo(x, b - h * 0.42);
+  g.moveTo(x - w * 0.22, b - h * 0.3); g.lineTo(x + w * 0.22, b - h * 0.3);
+  g.strokeStyle = GOLD; g.lineWidth = r * 0.16; g.stroke();
+  g.beginPath(); g.arc(x, b - h * 0.95, r * 0.11, 0, Math.PI * 2); g.fillStyle = GOLD; g.fill();
 }
 
-function drawCucha(g, x, y, r, pal, lw) {
-  const w = r * 1.55, h = r * 0.9;
-  // Paredes
-  g.beginPath();
-  g.rect(x - w / 2, y - h, w, h);
-  fillStroke(g, '#c9a27a', '#3a2010', lw);
-  // Techo
-  g.beginPath();
-  g.moveTo(x - w / 2 - r * 0.2, y - h + r * 0.05);
-  g.lineTo(x, y - h - r * 0.75);
-  g.lineTo(x + w / 2 + r * 0.2, y - h + r * 0.05);
-  g.closePath();
-  fillStroke(g, '#e0475b', '#4a0f18', lw);
-  // Puerta
-  g.beginPath();
-  g.moveTo(x - r * 0.28, y);
-  g.lineTo(x - r * 0.28, y - h * 0.45);
-  g.arc(x, y - h * 0.45, r * 0.28, Math.PI, 0);
-  g.lineTo(x + r * 0.28, y);
-  g.closePath();
-  g.fillStyle = '#1a0b04'; g.fill();
-  // Cartelito con el color del equipo
-  g.beginPath(); g.arc(x, y - h - r * 0.22, r * 0.1, 0, Math.PI * 2);
-  g.fillStyle = pal.team; g.fill();
+function drawClericalCollar(g, x, y, r, lw) {
+  roundRectPath(g, x - r * 0.45, y - r * 0.15, r * 0.9, r * 0.3, r * 0.12);
+  fillStroke(g, '#1b1430', '#06030f', lw * 0.7);
+  g.fillStyle = '#ffffff';
+  g.fillRect(x - r * 0.1, y - r * 0.12, r * 0.2, r * 0.24);
 }
 
+// Torre: sombrero de torre de castillo (almenas, ventanita, banderín)
+function drawTowerHat(g, x, y, r, pal, lw) {
+  const b = y + r * 0.2, wb = r * 1.35, wt = r * 1.2, h = r * 1.25;
+  const stone = '#b9b2d6', stoneDk = '#3e3760';
+  // Mástil y banderín
+  g.beginPath(); g.moveTo(x, b - h - r * 0.3); g.lineTo(x, b - h - r * 1.15);
+  g.strokeStyle = stoneDk; g.lineWidth = lw * 1.4; g.stroke();
+  g.beginPath(); g.moveTo(x, b - h - r * 1.15); g.lineTo(x + r * 0.6, b - h - r * 0.98); g.lineTo(x, b - h - r * 0.78); g.closePath();
+  fillStroke(g, pal.team, '#06030f', lw * 0.7);
+  // Cuerpo con almenas
+  const m = wt / 5;
+  g.beginPath();
+  g.moveTo(x - wb / 2, b);
+  g.lineTo(x - wt / 2, b - h);
+  g.lineTo(x - wt / 2, b - h - r * 0.38);
+  g.lineTo(x - wt / 2 + m, b - h - r * 0.38);
+  g.lineTo(x - wt / 2 + m, b - h);
+  g.lineTo(x - wt / 2 + 2 * m, b - h);
+  g.lineTo(x - wt / 2 + 2 * m, b - h - r * 0.38);
+  g.lineTo(x - wt / 2 + 3 * m, b - h - r * 0.38);
+  g.lineTo(x - wt / 2 + 3 * m, b - h);
+  g.lineTo(x - wt / 2 + 4 * m, b - h);
+  g.lineTo(x - wt / 2 + 4 * m, b - h - r * 0.38);
+  g.lineTo(x + wt / 2, b - h - r * 0.38);
+  g.lineTo(x + wt / 2, b - h);
+  g.lineTo(x + wb / 2, b);
+  g.closePath();
+  fillStroke(g, stone, stoneDk, lw);
+  // Ladrillos
+  g.beginPath();
+  g.moveTo(x - wb * 0.48, b - h * 0.35); g.lineTo(x + wb * 0.48, b - h * 0.35);
+  g.moveTo(x - wb * 0.46, b - h * 0.7); g.lineTo(x + wb * 0.46, b - h * 0.7);
+  g.moveTo(x - wb * 0.2, b); g.lineTo(x - wb * 0.2, b - h * 0.35);
+  g.moveTo(x + wb * 0.25, b - h * 0.35); g.lineTo(x + wb * 0.25, b - h * 0.7);
+  g.strokeStyle = 'rgba(62,55,96,0.55)'; g.lineWidth = lw * 0.7; g.stroke();
+  // Ventanita
+  g.beginPath();
+  g.moveTo(x - r * 0.14, b - h * 0.4);
+  g.lineTo(x - r * 0.14, b - h * 0.72);
+  g.arc(x, b - h * 0.72, r * 0.14, Math.PI, 0);
+  g.lineTo(x + r * 0.14, b - h * 0.4);
+  g.closePath();
+  g.fillStyle = '#1a1230'; g.fill();
+}
+
+// Caballo: el perro es un caballero con yelmo, penacho, armadura y su caballito de palo
+function drawArmor(g, len, r, pal, lw) {
+  g.save();
+  roundRectPath(g, 0, -r, len, r * 2, r);
+  g.clip();
+  const x0 = len * 0.18, x1 = len * 0.82;
+  g.fillStyle = METAL;
+  g.fillRect(x0, -r, x1 - x0, r * 2);
+  g.strokeStyle = METAL_DK; g.lineWidth = lw;
+  g.beginPath();
+  for (let i = 0; i <= 3; i++) {
+    const x = x0 + (x1 - x0) * i / 3;
+    g.moveTo(x, -r); g.lineTo(x, r);
+  }
+  g.stroke();
+  g.fillStyle = METAL_DK;
+  for (let i = 0; i < 3; i++) {
+    const x = x0 + (x1 - x0) * (i + 0.5) / 3;
+    g.beginPath(); g.arc(x, -r * 0.6, r * 0.07, 0, Math.PI * 2); g.fill();
+  }
+  // Brillo
+  g.fillStyle = 'rgba(255,255,255,0.55)';
+  g.fillRect(x0, -r * 0.85, x1 - x0, r * 0.18);
+  g.restore();
+}
+
+function drawHobbyHorse(g, x, y, r, lw) {
+  // Palo hacia atrás, entre las patas
+  g.beginPath();
+  g.moveTo(x - r * 0.35, y + r * 0.6);
+  g.lineTo(x - r * 2.4, y + r * 1.35);
+  g.strokeStyle = '#3a2010'; g.lineWidth = r * 0.16 + lw * 2; g.stroke();
+  g.strokeStyle = '#a8703a'; g.lineWidth = r * 0.16; g.stroke();
+  // Cabeza de caballo
+  g.beginPath();
+  g.moveTo(x - r * 0.5, y + r * 0.75);
+  g.lineTo(x - r * 0.48, y - r * 0.45);
+  g.quadraticCurveTo(x - r * 0.35, y - r * 0.8, x - r * 0.15, y - r * 1.05); // oreja
+  g.lineTo(x - r * 0.02, y - r * 0.65);
+  g.quadraticCurveTo(x + r * 0.55, y - r * 0.5, x + r * 0.85, y + r * 0.05);
+  g.quadraticCurveTo(x + r * 0.9, y + r * 0.35, x + r * 0.6, y + r * 0.35);
+  g.lineTo(x + r * 0.1, y + r * 0.25);
+  g.quadraticCurveTo(x - r * 0.05, y + r * 0.5, x - r * 0.05, y + r * 0.75);
+  g.closePath();
+  fillStroke(g, '#f4efe6', '#3a2010', lw);
+  // Crin
+  g.beginPath();
+  g.moveTo(x - r * 0.5, y - r * 0.4);
+  g.quadraticCurveTo(x - r * 0.85, y + r * 0.1, x - r * 0.55, y + r * 0.7);
+  g.strokeStyle = '#7a4524'; g.lineWidth = r * 0.22; g.stroke();
+  // Riendas y ojo
+  g.beginPath();
+  g.moveTo(x + r * 0.55, y + r * 0.1); g.lineTo(x - r * 0.1, y - r * 0.15);
+  g.strokeStyle = '#d1263f'; g.lineWidth = lw * 1.3; g.stroke();
+  g.beginPath(); g.arc(x + r * 0.05, y - r * 0.4, r * 0.08, 0, Math.PI * 2); g.fillStyle = '#140805'; g.fill();
+  g.beginPath(); g.arc(x + r * 0.72, y + r * 0.1, r * 0.05, 0, Math.PI * 2); g.fill();
+}
+
+function drawHelmet(g, x, y, r, pal, lw, time) {
+  // Penacho que se mueve
+  const sway = Math.sin(time * 0.006) * 0.12;
+  for (let i = 0; i < 3; i++) {
+    g.save();
+    g.translate(x - r * 0.1, y - r * 0.55);
+    g.rotate(-0.9 - i * 0.35 + sway);
+    g.beginPath(); g.ellipse(0, -r * 0.55, r * 0.2, r * 0.6, 0, 0, Math.PI * 2);
+    fillStroke(g, i === 1 ? '#d1263f' : pal.team, '#06030f', lw * 0.7);
+    g.restore();
+  }
+  // Yelmo
+  g.beginPath();
+  g.moveTo(x - r * 0.88, y + r * 0.35);
+  g.arc(x, y + r * 0.35, r * 0.88, Math.PI, 0);
+  g.lineTo(x + r * 1.15, y + r * 0.5);
+  g.lineTo(x + r * 0.7, y + r * 0.62);
+  g.lineTo(x - r * 0.88, y + r * 0.55);
+  g.closePath();
+  fillStroke(g, METAL, METAL_DK, lw);
+  // Ranura del visor y cresta
+  g.beginPath();
+  g.moveTo(x + r * 0.1, y + r * 0.32); g.lineTo(x + r * 0.95, y + r * 0.42);
+  g.strokeStyle = METAL_DK; g.lineWidth = lw * 1.5; g.stroke();
+  g.beginPath();
+  g.moveTo(x - r * 0.75, y - r * 0.05); g.quadraticCurveTo(x, y - r * 0.75, x + r * 0.75, y - r * 0.05);
+  g.strokeStyle = 'rgba(255,255,255,0.6)'; g.lineWidth = lw; g.stroke();
+}
+
+// Peón: cachorro con pañuelo del color del equipo
 function drawBandana(g, x, y, r, pal, lw) {
   g.beginPath();
-  g.moveTo(x - r * 0.35, y - r * 0.35);
-  g.lineTo(x + r * 0.45, y - r * 0.2);
-  g.lineTo(x + r * 0.05, y + r * 0.45);
+  g.moveTo(x - r * 0.4, y - r * 0.35);
+  g.lineTo(x + r * 0.5, y - r * 0.2);
+  g.lineTo(x + r * 0.05, y + r * 0.55);
   g.closePath();
   fillStroke(g, pal.team, '#06030f', lw * 0.8);
 }
@@ -867,7 +1059,7 @@ let canvas, ctx;
 let W = 0, H = 0, DPR = 1;
 let L = { bx: 0, by: 0, s: 0 }; // layout del tablero
 
-const opts = { mode: 'ai', level: 1, color: 'w' };
+const opts = { mode: 'ai', level: 1, color: 'w', glyphs: 'on' };
 let soundOn = true;
 
 let st = null;            // estado del motor
@@ -1211,6 +1403,14 @@ function render(now) {
     if (sq === chkKing) cx += Math.sin(now * 0.05) * s * 0.025;
     const a = dogAnchors(t, cx, cy, s, facing[sq] || 1);
     const blink = ((now + blinkSeeds[sq]) % 4200) < 120;
+    if (opts.glyphs === 'on') {
+      ctx.save();
+      ctx.font = `700 ${Math.max(9, s * 0.2)}px 'DejaVu Sans', 'Segoe UI Symbol', serif`;
+      ctx.textAlign = 'right'; ctx.textBaseline = 'top';
+      ctx.fillStyle = PAL[col].team; ctx.globalAlpha = 0.75;
+      ctx.fillText(GLYPH[t] + '\uFE0E', P.x + s / 2 - 2, P.y - s / 2 + 1);
+      ctx.restore();
+    }
     drawDog(ctx, t, col, a.ox, a.oy, a.fx, a.fy, a.r, {
       time: now, seed: sq, wag: isSel ? 0.9 : (col === st.turn ? 0.3 : 0.12), blink,
     });
@@ -1441,8 +1641,13 @@ function init() {
   for (const t of ['k', 'q', 'r', 'b', 'n', 'p']) {
     const d = document.createElement('div');
     const cv = document.createElement('canvas');
-    paintPreview(cv, t, t === 'k' || t === 'r' || t === 'n' ? 'w' : 'b', 64);
-    d.appendChild(cv);
+    paintPreview(cv, t, 'w', 64);
+    const cv2 = document.createElement('canvas');
+    paintPreview(cv2, t, 'b', 64);
+    const pair = document.createElement('span');
+    pair.className = 'pair';
+    pair.appendChild(cv); pair.appendChild(cv2);
+    d.appendChild(pair);
     const nm = document.createElement('b'); nm.textContent = NAMES[t][0];
     const ds = document.createElement('span'); ds.textContent = NAMES[t][1];
     d.appendChild(nm); d.appendChild(ds);

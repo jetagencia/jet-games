@@ -13,12 +13,14 @@ Ajedrez de perros salchicha. Reglas completas del ajedrez, pero cada pieza es un
 
 | Pieza | Nombre | Cómo reconocerlo |
 |---|---|---|
-| Rey | Rey Salchichón | corona dorada, el más largo |
-| Reina | Reina Longaniza | tiara y collar de perlas |
-| Torre | Torre Cucha | lleva su cucha a cuestas |
-| Alfil | Obispo Chorizo | mitra puntiaguda |
-| Caballo | Salchi-jinete | gorra y montura, salta en vez de estirarse |
-| Peón | Cachorro | pañuelo, el más corto |
+| Rey | Rey Salchichón | corona con cruz arriba y capa roja de armiño |
+| Reina | Reina Longaniza | corona de puntas con perlas, collar de perlas y pestañas |
+| Torre | Torre | sombrero de torre de castillo con almenas, ventanita y banderín |
+| Alfil | Obispo Chorizo | mitra con la ranura del alfil, báculo dorado y alzacuello |
+| Caballo | Caballero | yelmo con penacho, armadura y caballito de palo; salta en vez de estirarse |
+| Peón | Cachorro | pañuelo, el más chiquito |
+
+Opcional: símbolo clásico (♔♕♖♗♘♙) en la esquina de cada casilla, se activa desde el menú.
 
 Bandos: **Crema** (blancas, glow cian) vs **Chocolate** (negras, glow magenta).
 
