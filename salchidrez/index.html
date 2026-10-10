@@ -32,93 +32,94 @@
     touch-action: none;
   }
 
-  #hud {
-    position: absolute; top: env(safe-area-inset-top, 0); left: 0; right: 0;
-    padding: 12px 16px;
-    display: flex; justify-content: space-between; align-items: flex-start;
-    pointer-events: none;
-    z-index: 5;
-  }
-  .stat { display: flex; flex-direction: column; gap: 2px; }
-  .stat-label { font-size: 9px; font-weight: 700; letter-spacing: 2px; color: rgba(228,217,255,0.5); text-transform: uppercase; }
-  .stat-value { font-family: 'Poppins',sans-serif; font-weight: 800; font-size: 20px; line-height: 1.1; }
-  .stat.turn .stat-value.w { color: #00f0ff; text-shadow: 0 0 12px rgba(0,240,255,0.5); }
-  .stat.turn .stat-value.b { color: #ff6ec7; text-shadow: 0 0 12px rgba(255,110,199,0.5); }
-  .stat.status { align-items: flex-end; text-align: right; }
-  .stat.status .stat-value { color: #ffd166; text-shadow: 0 0 12px rgba(255,209,102,0.5); font-size: 16px; }
-
   #bar {
-    position: absolute; left: 0; right: 0; bottom: env(safe-area-inset-bottom, 0);
-    padding: 10px 16px 14px;
-    display: flex; justify-content: center; gap: 10px;
+    position: absolute; left: 0; right: 0; bottom: 0;
+    padding: 8px 12px calc(10px + env(safe-area-inset-bottom, 0px));
+    display: flex; justify-content: center; gap: 8px;
     z-index: 5;
   }
+  .tool {
+    flex: 1; max-width: 120px; min-height: 60px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
+    background: rgba(183,148,246,0.12); color: #e4d9ff;
+    border: 1px solid rgba(183,148,246,0.35); border-radius: 14px;
+    font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 12px; letter-spacing: 0.5px;
+    cursor: pointer; transition: transform 0.1s, opacity 0.2s, background 0.2s;
+  }
+  .tool svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .tool:active { transform: scale(0.95); }
+  .tool:disabled { opacity: 0.3; }
+  .tool.off { color: rgba(228,217,255,0.4); background: transparent; }
+  .tool.off svg { opacity: 0.5; }
+  .tool:focus-visible, .chip:focus-visible, .btn:focus-visible { outline: 2px solid #ffd166; outline-offset: 2px; }
+
   .chip {
     background: rgba(183,148,246,0.12); color: #e4d9ff;
     border: 1px solid rgba(183,148,246,0.35);
-    padding: 10px 14px; border-radius: 10px;
-    font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 11px;
-    letter-spacing: 1.5px; text-transform: uppercase;
+    padding: 13px 18px; border-radius: 12px; min-height: 48px;
+    font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 14px;
+    letter-spacing: 0.5px;
     cursor: pointer; transition: transform 0.1s, background 0.2s;
   }
   .chip:active { transform: scale(0.96); }
-  .chip:disabled { opacity: 0.35; }
   .chip.on { background: linear-gradient(135deg, #b794f6, #ff6ec7); color: #06030f; border-color: transparent; }
 
   /* OVERLAYS */
   .overlay {
     position: fixed; inset: 0; background: rgba(6,3,15,0.92);
     backdrop-filter: blur(8px);
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    padding: 24px 16px; z-index: 100;
+    display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+    padding: calc(24px + env(safe-area-inset-top, 0px)) 16px calc(24px + env(safe-area-inset-bottom, 0px)); z-index: 100;
     opacity: 0; pointer-events: none;
     transition: opacity 0.35s;
     overflow-y: auto;
   }
   .overlay.show { opacity: 1; pointer-events: auto; }
+  .overlay > :first-child { margin-top: auto; }
+  .overlay > :last-child { margin-bottom: auto; }
   .overlay h1 {
-    font-family: 'Poppins',sans-serif; font-weight: 900; font-size: 50px;
+    font-family: 'Poppins',sans-serif; font-weight: 900; font-size: 64px;
     letter-spacing: -2px; line-height: 0.95; margin-bottom: 8px;
     background: linear-gradient(135deg, #00f0ff, #ff6ec7);
     -webkit-background-clip: text; -webkit-text-fill-color: transparent;
     background-clip: text; text-align: center;
   }
   .overlay h2 {
-    font-family: 'Poppins',sans-serif; font-weight: 700; font-size: 26px;
+    font-family: 'Poppins',sans-serif; font-weight: 800; font-size: 30px;
     color: #e4d9ff; margin-bottom: 4px; text-align: center;
   }
   .overlay p {
-    color: rgba(228,217,255,0.6); font-size: 13px; line-height: 1.6;
-    max-width: 340px; text-align: center; margin: 6px 0;
+    color: rgba(228,217,255,0.7); font-size: 15px; line-height: 1.55;
+    max-width: 360px; text-align: center; margin: 6px 0;
   }
-  .opt-label { font-size: 9px; font-weight: 700; letter-spacing: 2px; color: rgba(228,217,255,0.5); text-transform: uppercase; margin: 14px 0 6px; }
+  .opt-label { font-size: 12px; font-weight: 700; letter-spacing: 1.5px; color: rgba(228,217,255,0.6); text-transform: uppercase; margin: 18px 0 8px; text-align: center; }
   .opt-row { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
   .btn {
     background: linear-gradient(135deg, #b794f6, #ff6ec7);
     color: #06030f; border: none;
-    padding: 14px 32px; border-radius: 10px;
+    padding: 18px 44px; border-radius: 14px; min-width: 220px;
     font-family: 'JetBrains Mono', monospace;
-    font-weight: 700; font-size: 13px; letter-spacing: 2px; text-transform: uppercase;
+    font-weight: 800; font-size: 16px; letter-spacing: 2px; text-transform: uppercase;
     cursor: pointer; margin-top: 18px;
     transition: transform 0.1s;
   }
   .btn:active { transform: scale(0.96); }
   .btn.ghost { background: transparent; color: #e4d9ff; border: 1px solid rgba(183,148,246,0.4); margin-top: 10px; }
 
-  .legend { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px 10px; margin-top: 8px; max-width: 340px; }
-  .legend div { display: flex; flex-direction: column; align-items: center; font-size: 10px; color: rgba(228,217,255,0.75); text-align: center; line-height: 1.3; }
-  .legend canvas { width: 50px; height: 50px; }
+  .legend { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 10px; margin-top: 10px; width: 100%; max-width: 380px; }
+  .legend div { display: flex; flex-direction: column; align-items: center; font-size: 12px; color: rgba(228,217,255,0.75); text-align: center; line-height: 1.35; }
+  .legend canvas { width: 66px; height: 66px; }
   .legend .pair { display: flex; gap: 2px; }
-  .legend b { color: #e4d9ff; font-size: 10px; }
+  .legend b { color: #e4d9ff; font-size: 14px; margin-top: 2px; }
 
-  .promo-row { display: flex; gap: 10px; margin-top: 14px; }
+  .promo-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 16px; }
   .promo-row button {
     background: rgba(183,148,246,0.12); border: 1px solid rgba(183,148,246,0.4);
     border-radius: 12px; padding: 6px; cursor: pointer;
     display: flex; flex-direction: column; align-items: center;
-    color: #e4d9ff; font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700;
+    color: #e4d9ff; font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700;
   }
-  .promo-row canvas { width: 64px; height: 64px; }
+  .promo-row canvas { width: 72px; height: 72px; }
 
   #toast {
     position: absolute; left: 50%; top: 42%; transform: translate(-50%, -50%) scale(0.8);
@@ -144,23 +145,25 @@
 
 <canvas id="game"></canvas>
 
-<div id="hud">
-  <div class="stat turn">
-    <span class="stat-label">Turno</span>
-    <span class="stat-value w" id="turn-value">Crema</span>
-  </div>
-  <div class="stat status">
-    <span class="stat-label" id="mode-label">Vs IA</span>
-    <span class="stat-value" id="status-value">&nbsp;</span>
-  </div>
-</div>
-
 <div id="toast"></div>
 
 <div id="bar">
-  <button class="chip" id="btn-undo">↶ Deshacer</button>
-  <button class="chip" id="btn-sound">Sonido: on</button>
-  <button class="chip" id="btn-menu">Menú</button>
+  <button class="tool" id="btn-undo" aria-label="Deshacer">
+    <svg viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>
+    <span>Deshacer</span>
+  </button>
+  <button class="tool" id="btn-music" aria-label="Música">
+    <svg viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+    <span>Música</span>
+  </button>
+  <button class="tool" id="btn-sound" aria-label="Sonidos">
+    <svg viewBox="0 0 24 24"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/></svg>
+    <span>Sonidos</span>
+  </button>
+  <button class="tool" id="btn-menu" aria-label="Menú">
+    <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+    <span>Menú</span>
+  </button>
 </div>
 
 <!-- INTRO -->
@@ -196,8 +199,8 @@
 
   <button class="btn" id="btn-start">Jugar</button>
   <button class="btn ghost" id="btn-legend">Quién es quién</button>
-  <p style="margin-top: 14px; font-size: 10px; opacity: 0.3;">
-    JETCompany OÜ · Prototipo v0.1 · <span id="wins-label"></span>
+  <p style="margin-top: 16px; font-size: 12px; opacity: 0.45;">
+    JETCompany OÜ · Prototipo v0.2 · <br><span id="wins-label"></span>
   </p>
 </div>
 
@@ -206,7 +209,7 @@
   <h2>La jauría</h2>
   <p>Mismas reglas que el ajedrez de siempre. Solo que ladran.</p>
   <div class="legend" id="legend-grid"></div>
-  <p style="font-size: 11px;">Tocá un perro para elegirlo. Los huesitos marcan adónde puede ir.</p>
+  <p style="font-size: 14px;">Tocá un perro para elegirlo. Los huesitos marcan adónde puede ir.</p>
   <button class="btn" id="btn-legend-close">Entendido</button>
 </div>
 
@@ -252,12 +255,12 @@ const PAL = {
 
 // Proporciones por pieza (relativas al tamaño de casilla): radio del cuerpo y largo
 const DOG = {
-  p: { r: 0.12,  len: 0.29 },
-  n: { r: 0.135, len: 0.37 },
-  b: { r: 0.135, len: 0.39 },
-  r: { r: 0.14,  len: 0.41 },
-  q: { r: 0.14,  len: 0.44 },
-  k: { r: 0.145, len: 0.46 },
+  p: { r: 0.15,  len: 0.26 },
+  n: { r: 0.165, len: 0.30 },
+  b: { r: 0.165, len: 0.31 },
+  r: { r: 0.17,  len: 0.32 },
+  q: { r: 0.17,  len: 0.34 },
+  k: { r: 0.175, len: 0.35 },
 };
 
 const NAMES = {
@@ -612,7 +615,7 @@ function dogAnchors(type, cx, cy, s, dir) {
   const d = DOG[type];
   const r = d.r * s, len = d.len * s;
   const off = (len + 0.65 * r) / 2;
-  const y = cy + s * 0.1;
+  const y = cy + s * 0.13;
   const ox = cx - dir * off;
   return { ox, oy: y, fx: ox + dir * len, fy: y, r };
 }
@@ -1039,7 +1042,7 @@ function drawBandana(g, x, y, r, pal, lw) {
 }
 
 function drawBone(g, x, y, s, alpha) {
-  const w = s * 0.2, k = s * 0.045;
+  const w = s * 0.3, k = s * 0.065;
   g.save();
   g.globalAlpha = alpha;
   g.translate(x, y);
@@ -1060,7 +1063,8 @@ let W = 0, H = 0, DPR = 1;
 let L = { bx: 0, by: 0, s: 0 }; // layout del tablero
 
 const opts = { mode: 'ai', level: 1, color: 'w', glyphs: 'on' };
-let soundOn = true;
+let soundOn = loadPref('salchidrez-sfx', true);
+let musicOn = loadPref('salchidrez-music', true);
 
 let st = null;            // estado del motor
 let facing = [];          // dirección en pantalla de cada perro (+1 / -1)
@@ -1099,7 +1103,6 @@ function newGame() {
   anims = []; floaters = [];
   over = null; aiThinking = false; pendingPromo = null;
   blinkSeeds = Array.from({ length: 64 }, () => Math.random() * 5000);
-  document.getElementById('mode-label').textContent = opts.mode === 'ai' ? 'Vs IA · ' + LEVELS[opts.level] : '2 jugadores';
   updateHUD();
   maybeAI();
 }
@@ -1114,17 +1117,37 @@ function defaultFacing(p) {
 // ============================================================================
 // LAYOUT
 // ============================================================================
+function safeInsets() {
+  const probe = document.createElement('div');
+  probe.style.cssText = 'position:fixed;visibility:hidden;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)';
+  document.body.appendChild(probe);
+  const cs = getComputedStyle(probe);
+  const out = { top: parseFloat(cs.paddingTop) || 0, bottom: parseFloat(cs.paddingBottom) || 0 };
+  probe.remove();
+  return out;
+}
+
+// Tarjeta de jugador arriba, tablero, tarjeta abajo, barra de herramientas
 function resize() {
   DPR = Math.min(window.devicePixelRatio || 1, 2);
   W = window.innerWidth; H = window.innerHeight;
   canvas.width = W * DPR; canvas.height = H * DPR;
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
-  const top = 70, bottom = 72, trays = 2 * 34;
-  const size = Math.max(160, Math.min(W - 24, H - top - bottom - trays, 640));
+  const ins = safeInsets();
+  const barH = 80 + ins.bottom;
+  const gap = 10;
+  const cardH = H < 640 ? 56 : 68;
+  const avail = H - ins.top - 8 - barH - 2 * cardH - 2 * gap;
+  const size = Math.max(160, Math.min(W - 12, avail, 720));
   const s = Math.floor(size / 8);
   L.s = s;
+  L.cardH = cardH;
   L.bx = Math.round((W - s * 8) / 2);
-  L.by = Math.round(top + 34 + Math.max(0, (H - top - bottom - trays - s * 8) / 2));
+  const group = cardH * 2 + gap * 2 + s * 8;
+  const top = ins.top + 8 + Math.max(0, (H - ins.top - 8 - barH - group) / 2);
+  L.topCardY = Math.round(top);
+  L.by = Math.round(top + cardH + gap);
+  L.botCardY = L.by + s * 8 + gap;
 }
 
 function sqXY(sq) {
@@ -1375,7 +1398,7 @@ function render(now) {
     const p = sqXY(m.to);
     if (m.cap && !m.ep) {
       ctx.save();
-      ctx.strokeStyle = C.capture; ctx.lineWidth = 3; ctx.shadowColor = C.capture; ctx.shadowBlur = 10;
+      ctx.strokeStyle = C.capture; ctx.lineWidth = Math.max(3, s * 0.07); ctx.shadowColor = C.capture; ctx.shadowBlur = 10;
       roundRectPath(ctx, p.x - s / 2 + 4, p.y - s / 2 + 4, s - 8, s - 8, 8);
       ctx.stroke();
       ctx.restore();
@@ -1461,9 +1484,9 @@ function render(now) {
     if (!anims.length) maybeAI();
   }
 
-  // Bandejas de capturas
-  drawTray(flipped ? 'w' : 'b', L.by - 30);
-  drawTray(flipped ? 'b' : 'w', L.by + s * 8 + 6);
+  // Tarjetas de jugador
+  drawCard(flipped ? 'w' : 'b', L.topCardY, now);
+  drawCard(flipped ? 'b' : 'w', L.botCardY, now);
 
   // Floaters
   floaters = floaters.filter(f => now < f.start + f.dur);
@@ -1485,27 +1508,77 @@ function render(now) {
   requestAnimationFrame(render);
 }
 
-// Los perros que capturó `by`, chiquitos, al costado de su lado del tablero
-function drawTray(by, y) {
-  const list = captured[by].slice().sort((a, b) => VAL[b] - VAL[a]);
-  const victim = by === 'w' ? 'b' : 'w';
-  const ms = 30;
-  let x = L.bx + 4;
-  for (const t of list) {
-    const a = dogAnchors(t, x + ms * 0.45, y + ms * 0.4, ms, 1);
-    drawDog(ctx, t, victim, a.ox, a.oy, a.fx, a.fy, a.r, { noShadow: true, time: 0, wag: 0 });
-    x += ms * 0.62;
-    if (x > L.bx + L.s * 8 - ms * 0.6) break;
+function playerName(color) {
+  if (opts.mode === 'pvp') return SIDE_NAME[color];
+  return color === opts.color ? 'Vos' : 'IA ' + LEVELS[opts.level];
+}
+
+function playerStatus(color) {
+  if (over) {
+    if (!over.winner) return { text: over.msg, col: '#ffd166' };
+    return over.winner === color ? { text: '¡Ganó!', col: '#ffd166' } : { text: 'Jaque mate', col: '#ff5a7a' };
   }
-  // Diferencia de material
+  if (st.turn !== color) return { text: 'Esperando', col: 'rgba(228,217,255,0.45)' };
+  if (aiThinking) return { text: 'Olfateando la jugada…', col: '#ffd166' };
+  if (inCheck(st, color)) return { text: '¡Jaque! Salvá al rey', col: '#ff5a7a' };
+  if (opts.mode === 'ai') return { text: 'Te toca. Tocá un perro', col: PAL[color].team };
+  return { text: 'Le toca mover', col: PAL[color].team };
+}
+
+// Tarjeta con avatar, nombre, estado y los perros que capturó ese jugador
+function drawCard(color, y, now) {
+  const h = L.cardH, x = L.bx - 6, w = L.s * 8 + 12;
+  const active = !over && st.turn === color;
+  const team = PAL[color].team;
+  ctx.save();
+  roundRectPath(ctx, x, y, w, h, 14);
+  ctx.fillStyle = active ? 'rgba(36, 26, 74, 0.95)' : 'rgba(20, 14, 45, 0.75)';
+  ctx.fill();
+  if (active) { ctx.shadowColor = team; ctx.shadowBlur = 12 + Math.sin(now * 0.005) * 6; }
+  ctx.lineWidth = active ? 2.5 : 1;
+  ctx.strokeStyle = active ? team : 'rgba(183,148,246,0.25)';
+  ctx.stroke();
+  ctx.restore();
+
+  // Avatar: el rey de ese bando
+  const av = h * 0.85;
+  const a = dogAnchors('k', x + h * 0.6, y + h * 0.56, av, 1);
+  drawDog(ctx, 'k', color, a.ox, a.oy, a.fx, a.fy, a.r, { time: active ? now : 0, wag: active ? 0.6 : 0, noShadow: true });
+
+  const tx = x + h * 1.25;
+  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = '#f3ecff';
+  ctx.font = `800 ${Math.round(h * 0.3)}px Poppins, sans-serif`;
+  ctx.fillText(playerName(color), tx, y + h * 0.45);
+  const stt = playerStatus(color);
+  ctx.fillStyle = stt.col;
+  ctx.font = `700 ${Math.round(h * 0.2)}px 'JetBrains Mono', monospace`;
+  ctx.fillText(stt.text, tx, y + h * 0.77);
+
+  // Capturas a la derecha
+  const list = captured[color].slice().sort((p, q) => VAL[q] - VAL[p]);
+  const victim = color === 'w' ? 'b' : 'w';
   let diff = 0;
-  for (const t of captured[by]) diff += VAL[t];
+  for (const t of captured[color]) diff += VAL[t];
   for (const t of captured[victim]) diff -= VAL[t];
+  let right = x + w - 10;
   if (diff > 0) {
-    ctx.fillStyle = PAL[by].team;
-    ctx.font = "700 12px 'JetBrains Mono', monospace";
+    ctx.fillStyle = team;
+    ctx.font = `800 ${Math.round(h * 0.26)}px Poppins, sans-serif`;
     ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
-    ctx.fillText('+' + Math.round(diff / 100), L.bx + L.s * 8 - 2, y + 12);
+    ctx.fillText('+' + Math.round(diff / 100), right, y + h * 0.5);
+    right -= ctx.measureText('+' + Math.round(diff / 100)).width + 8;
+  }
+  if (list.length) {
+    const ms = h * 0.62;
+    const left = Math.max(x + w * 0.52, tx + 120);
+    const room = right - left - ms * 0.5;
+    const step = Math.min(ms * 0.6, list.length > 1 ? room / (list.length - 1) : ms);
+    for (let i = 0; i < list.length; i++) {
+      const cx = right - ms * 0.42 - (list.length - 1 - i) * step;
+      const d = dogAnchors(list[i], cx, y + h * 0.47, ms, 1);
+      drawDog(ctx, list[i], victim, d.ox, d.oy, d.fx, d.fy, d.r, { noShadow: true, time: 0, wag: 0 });
+    }
   }
 }
 
@@ -1522,16 +1595,7 @@ function paintPreview(cv, t, color, css) {
 // HUD
 // ============================================================================
 function updateHUD() {
-  const tv = document.getElementById('turn-value');
-  tv.textContent = SIDE_NAME[st.turn];
-  tv.className = 'stat-value ' + st.turn;
-  let status = ' ';
-  if (over) status = over.msg;
-  else if (aiThinking) status = 'Olfateando…';
-  else if (inCheck(st, st.turn)) status = '¡Jaque!';
-  else if (opts.mode === 'ai') status = st.turn === opts.color ? 'Te toca' : ' ';
-  document.getElementById('status-value').textContent = status;
-  document.getElementById('btn-undo').disabled = !history.length;
+  document.getElementById('btn-undo').disabled = !history.length || !!aiThinking;
 }
 
 let toastTimer = 0;
@@ -1546,10 +1610,15 @@ function showToast(text) {
 // ============================================================================
 // SONIDO (WebAudio sintetizado, sin assets)
 // ============================================================================
-let actx = null;
+let actx = null, sfxBus = null, musicBus = null;
 function audioUnlock() {
-  if (actx || !soundOn) return;
-  try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { actx = null; }
+  if (!actx) {
+    try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { actx = null; return; }
+    sfxBus = actx.createGain(); sfxBus.gain.value = 1; sfxBus.connect(actx.destination);
+    musicBus = actx.createGain(); musicBus.gain.value = 0; musicBus.connect(actx.destination);
+  }
+  if (actx.state === 'suspended') actx.resume();
+  if (musicOn) Music.start();
 }
 
 function sfx(kind) {
@@ -1563,7 +1632,7 @@ function sfx(kind) {
     g.gain.setValueAtTime(0.0001, t0 + delay);
     g.gain.exponentialRampToValueAtTime(vol, t0 + delay + 0.015);
     g.gain.exponentialRampToValueAtTime(0.0001, t0 + delay + dur);
-    o.connect(g).connect(actx.destination);
+    o.connect(g).connect(sfxBus);
     o.start(t0 + delay); o.stop(t0 + delay + dur + 0.02);
   };
   if (kind === 'move') tone('triangle', 420, 260, 0.09, 0.15, 0);
@@ -1577,6 +1646,169 @@ function sfx(kind) {
     tone('sawtooth', 300, 700, 0.5, 0.1, 0);
     tone('sine', 700, 450, 0.7, 0.12, 0.45);
   }
+}
+
+
+// ============================================================================
+// MÚSICA ORIGINAL: "Milonga del Salchicha"
+// Compuesta para el juego y sintetizada en vivo con WebAudio (sin archivos).
+// La menor, 96 bpm, bajo de milonga 3-3-2, acordes en contratiempo y melodía
+// punteada. 16 compases: A (presentación) + B (respuesta) y vuelta a empezar.
+// ============================================================================
+const Music = (() => {
+  const BPM = 96;
+  const STEP = 60 / BPM / 4; // semicorchea
+  const CH = {
+    Am: { root: 45, tones: [57, 60, 64] },
+    Dm: { root: 38, tones: [57, 62, 65] },
+    E7: { root: 40, tones: [56, 59, 62, 64] },
+    F:  { root: 41, tones: [57, 60, 65] },
+    C:  { root: 48, tones: [55, 60, 64] },
+    G:  { root: 43, tones: [55, 59, 62] },
+  };
+  // [paso, nota midi, duración en pasos]
+  const SONG = [
+    ['Am', [[0, 76, 4], [4, 72, 2], [6, 74, 2], [8, 76, 4], [12, 69, 4]]],
+    ['Am', [[0, 72, 2], [2, 71, 2], [4, 72, 2], [6, 76, 4], [10, 74, 2], [12, 72, 4]]],
+    ['Dm', [[0, 77, 4], [4, 74, 2], [6, 77, 2], [8, 81, 4], [12, 77, 4]]],
+    ['E7', [[0, 76, 3], [3, 74, 3], [6, 72, 2], [8, 71, 4], [12, 68, 4]]],
+    ['Am', [[0, 76, 4], [4, 72, 2], [6, 74, 2], [8, 76, 4], [12, 69, 4]]],
+    ['F',  [[0, 77, 2], [2, 76, 2], [4, 77, 2], [6, 81, 6], [12, 79, 2], [14, 77, 2]]],
+    ['E7', [[0, 76, 4], [4, 74, 2], [6, 72, 2], [8, 71, 2], [10, 72, 2], [12, 74, 4]]],
+    ['Am', [[0, 69, 6], [6, 76, 2], [8, 81, 6]], 'woof'],
+    ['C',  [[0, 79, 4], [4, 76, 2], [6, 79, 2], [8, 84, 4], [12, 79, 4]]],
+    ['G',  [[0, 79, 2], [2, 77, 2], [4, 76, 2], [6, 74, 6], [12, 71, 4]]],
+    ['Am', [[0, 72, 4], [4, 76, 2], [6, 81, 2], [8, 80, 2], [10, 81, 2], [12, 76, 4]]],
+    ['E7', [[0, 80, 6], [6, 76, 2], [8, 74, 4], [12, 71, 4]]],
+    ['F',  [[0, 77, 4], [4, 81, 2], [6, 77, 2], [8, 72, 4], [12, 77, 4]]],
+    ['Dm', [[0, 74, 2], [2, 77, 2], [4, 81, 2], [6, 86, 6], [12, 84, 2], [14, 81, 2]]],
+    ['E7', [[0, 80, 4], [4, 83, 2], [6, 80, 2], [8, 76, 4], [12, 74, 2], [14, 71, 2]]],
+    ['Am', [[0, 69, 4], [4, 72, 2], [6, 76, 2], [8, 81, 8]], 'woof'],
+  ];
+  const hz = m => 440 * Math.pow(2, (m - 69) / 12);
+  let timer = 0, nextTime = 0, step = 0, loops = 0, noise = null;
+
+  function env(g, t, peak, attack, decay) {
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(peak, t + attack);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + attack + decay);
+  }
+  // Melodía: cuerda punteada (diente de sierra con filtro que se cierra)
+  function pluck(m, t, dur) {
+    const o = actx.createOscillator(), o2 = actx.createOscillator();
+    const f = actx.createBiquadFilter(), g = actx.createGain();
+    o.type = 'sawtooth'; o2.type = 'triangle';
+    o.frequency.value = hz(m); o2.frequency.value = hz(m) * 1.003;
+    f.type = 'lowpass'; f.Q.value = 4;
+    f.frequency.setValueAtTime(3200, t);
+    f.frequency.exponentialRampToValueAtTime(700, t + Math.max(0.18, dur));
+    env(g, t, 0.16, 0.006, Math.max(0.2, dur * 0.95));
+    o.connect(f); o2.connect(f); f.connect(g); g.connect(musicBus);
+    o.start(t); o2.start(t); o.stop(t + dur + 0.3); o2.stop(t + dur + 0.3);
+  }
+  // Bajo: triángulo redondo
+  function bass(m, t) {
+    const o = actx.createOscillator(), g = actx.createGain();
+    o.type = 'triangle'; o.frequency.value = hz(m);
+    env(g, t, 0.42, 0.01, 0.32);
+    o.connect(g); g.connect(musicBus);
+    o.start(t); o.stop(t + 0.4);
+  }
+  // Acordes: golpe corto tipo bandoneón apagado
+  function stab(tones, t, vol) {
+    const f = actx.createBiquadFilter(), g = actx.createGain();
+    f.type = 'lowpass'; f.frequency.value = 1500;
+    env(g, t, vol, 0.008, 0.14);
+    f.connect(g); g.connect(musicBus);
+    for (const m of tones) {
+      const o = actx.createOscillator();
+      o.type = 'square'; o.frequency.value = hz(m);
+      o.connect(f); o.start(t); o.stop(t + 0.2);
+    }
+  }
+  function noiseBuf() {
+    if (noise) return noise;
+    noise = actx.createBuffer(1, actx.sampleRate * 0.2, actx.sampleRate);
+    const d = noise.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    return noise;
+  }
+  // Percusión suave: escobilla
+  function brush(t, vol) {
+    const src = actx.createBufferSource(), f = actx.createBiquadFilter(), g = actx.createGain();
+    src.buffer = noiseBuf();
+    f.type = 'bandpass'; f.frequency.value = 7000; f.Q.value = 0.8;
+    env(g, t, vol, 0.004, 0.06);
+    src.connect(f); f.connect(g); g.connect(musicBus);
+    src.start(t); src.stop(t + 0.1);
+  }
+  // El "guau" que cierra cada frase
+  function woof(t) {
+    for (const [f0, f1, d, v] of [[460, 200, 0.12, 0.09], [420, 180, 0.11, 0.07]]) {
+      const o = actx.createOscillator(), f = actx.createBiquadFilter(), g = actx.createGain();
+      o.type = 'sawtooth';
+      o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(f1, t + d);
+      f.type = 'lowpass'; f.frequency.value = 1400;
+      env(g, t, v, 0.01, d);
+      o.connect(f); f.connect(g); g.connect(musicBus);
+      o.start(t); o.stop(t + d + 0.05);
+      t += 0.16;
+    }
+  }
+
+  function schedule() {
+    while (nextTime < actx.currentTime + 0.15) {
+      const bar = Math.floor(step / 16) % SONG.length;
+      const pos = step % 16;
+      const [chName, notes, extra] = SONG[bar];
+      const ch = CH[chName];
+      const t = nextTime;
+      // Bajo de milonga 3-3-2
+      if (pos === 0) bass(ch.root, t);
+      if (pos === 6) bass(ch.root + 7, t);
+      if (pos === 12) bass(ch.root + 12, t);
+      // Acordes en contratiempo
+      if (pos === 4 || pos === 10 || pos === 14) stab(ch.tones, t, pos === 10 ? 0.05 : 0.035);
+      // Escobillas
+      if (pos % 2 === 0) brush(t, pos % 4 === 0 ? 0.05 : 0.025);
+      // Melodía (en la segunda vuelta, una octava más arriba la parte B)
+      for (const [ns, m, d] of notes) {
+        if (ns === pos) pluck(m + (loops % 2 === 1 && bar >= 8 ? 12 : 0), t, d * STEP);
+      }
+      if (extra === 'woof' && pos === 13) woof(t);
+      nextTime += STEP;
+      step++;
+      if (step % (16 * SONG.length) === 0) loops++;
+    }
+  }
+
+  return {
+    start() {
+      if (!actx || timer) return;
+      nextTime = actx.currentTime + 0.1;
+      musicBus.gain.cancelScheduledValues(actx.currentTime);
+      musicBus.gain.setValueAtTime(0.0001, actx.currentTime);
+      musicBus.gain.exponentialRampToValueAtTime(0.55, actx.currentTime + 1.2);
+      timer = setInterval(schedule, 30);
+      schedule();
+    },
+    stop() {
+      if (!timer) return;
+      clearInterval(timer); timer = 0;
+      if (actx) {
+        musicBus.gain.cancelScheduledValues(actx.currentTime);
+        musicBus.gain.setValueAtTime(musicBus.gain.value, actx.currentTime);
+        musicBus.gain.linearRampToValueAtTime(0, actx.currentTime + 0.3);
+      }
+    },
+  };
+})();
+
+function loadPref(key, def) {
+  try { const v = localStorage.getItem(key); return v === null ? def : v === '1'; } catch (e) { return def; }
+}
+function savePref(key, val) {
+  try { localStorage.setItem(key, val ? '1' : '0'); } catch (e) { /* sin storage */ }
 }
 
 // ============================================================================
@@ -1628,13 +1860,26 @@ function init() {
   document.getElementById('btn-gameover-menu').addEventListener('click', toMenu);
   document.getElementById('btn-menu').addEventListener('click', toMenu);
   document.getElementById('btn-undo').addEventListener('click', undo);
-  document.getElementById('btn-sound').addEventListener('click', e => {
-    soundOn = !soundOn;
-    e.target.textContent = 'Sonido: ' + (soundOn ? 'on' : 'off');
-    e.target.classList.toggle('on', !soundOn);
-    audioUnlock();
+  const syncAudioButtons = () => {
+    document.getElementById('btn-music').classList.toggle('off', !musicOn);
+    document.getElementById('btn-sound').classList.toggle('off', !soundOn);
+  };
+  syncAudioButtons();
+  document.getElementById('btn-sound').addEventListener('click', () => {
+    soundOn = !soundOn; savePref('salchidrez-sfx', soundOn);
+    syncAudioButtons(); audioUnlock();
   });
-  document.getElementById('btn-legend').addEventListener('click', () => showOverlay('overlay-legend'));
+  document.getElementById('btn-music').addEventListener('click', () => {
+    musicOn = !musicOn; savePref('salchidrez-music', musicOn);
+    syncAudioButtons();
+    if (musicOn) audioUnlock(); else Music.stop();
+  });
+  // Cualquier primer toque habilita el audio (los navegadores lo exigen)
+  window.addEventListener('pointerdown', audioUnlock, { once: true });
+  document.addEventListener('visibilitychange', () => {
+    if (!actx) return;
+    if (document.hidden) actx.suspend(); else actx.resume();
+  });  document.getElementById('btn-legend').addEventListener('click', () => showOverlay('overlay-legend'));
   document.getElementById('btn-legend-close').addEventListener('click', () => hideOverlay('overlay-legend'));
 
   const grid = document.getElementById('legend-grid');

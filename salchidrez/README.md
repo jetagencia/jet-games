@@ -1,4 +1,4 @@
-# Salchidrez — Prototipo v0.1
+# Salchidrez. Prototipo v0.2
 
 Ajedrez de perros salchicha. Reglas completas del ajedrez, pero cada pieza es un salchicha: cuanto más importante la pieza, más larga la salchicha. Cuando se mueve, el perro estira el cuerpo hasta la casilla destino y después la cola lo alcanza.
 
@@ -36,7 +36,9 @@ Bandos: **Crema** (blancas, glow cian) vs **Chocolate** (negras, glow magenta).
 - Los perros se dan vuelta según hacia dónde caminaron
 - Deshacer (en Vs IA deshace tu jugada y la de la IA)
 - Bandejas de capturas con diferencia de material
-- Sonidos sintetizados con WebAudio (ladrido en captura y jaque, aullido al final)
+- Música original, "Milonga del Salchicha": la menor, 96 bpm, bajo de milonga 3-3-2, acordes en contratiempo, melodía punteada y un "guau" al cierre de cada frase. Se sintetiza en vivo con WebAudio, sin archivos de audio
+- Sonidos sintetizados con WebAudio (ladrido en captura y jaque, aullido al final). Música y sonidos se prenden y apagan por separado y la preferencia se guarda
+- Interfaz pensada para el teléfono: tablero de ancho completo, perros con más cabeza y sombreros más grandes, tarjetas de jugador con avatar, estado y capturas, barra inferior con íconos grandes
 - Victorias por dificultad persistentes (localStorage)
 - Estética neón consistente con el resto del portfolio JET
 
