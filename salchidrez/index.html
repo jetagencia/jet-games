@@ -70,6 +70,7 @@
   .tool svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
   .tool:active { transform: translateY(3px); box-shadow: 0 1px 0 rgba(0,0,0,0.35); }
   .tool:disabled { opacity: 0.32; }
+  .tool[hidden] { display: none; }
   .tool.off { color: var(--muted); }
   .tool.off svg { opacity: 0.45; }
   .tool.hint { color: var(--gold); border-color: rgba(255, 209, 102, 0.5); }
@@ -77,7 +78,7 @@
 
   /* TOAST */
   #toast {
-    position: absolute; left: 50%; top: 40%;
+    position: absolute; left: 50%; top: 18%;
     transform: translate(-50%, -50%) scale(0.6) rotate(-4deg);
     padding: 12px 26px; border-radius: 999px;
     background: var(--grad); color: #1a0f3a;
@@ -249,7 +250,7 @@
       <button class="link" id="btn-legend">Quién es quién</button>
       <label class="link" for="opt-glyphs"><input type="checkbox" id="opt-glyphs"> Símbolos clásicos</label>
     </div>
-    <p class="foot">JETCompany OÜ · Salchidrez v0.4<br><span id="wins-label"></span></p>
+    <p class="foot">JETCompany OÜ · Salchidrez v0.5<br><span id="wins-label"></span></p>
   </div>
 </div>
 
@@ -809,6 +810,11 @@ function drawDog(g, type, color, ox, oy, fx, fy, r, opts) {
     g.moveTo(ex - r * 0.15, ey - r * 0.15); g.lineTo(ex + r * 0.15, ey + r * 0.15);
     g.moveTo(ex + r * 0.15, ey - r * 0.15); g.lineTo(ex - r * 0.15, ey + r * 0.15);
     g.strokeStyle = '#140805'; g.lineWidth = lw * 1.8; g.stroke();
+  } else if (mood === 'happy') {
+    // Ojitos cerrados de contento
+    g.beginPath();
+    g.arc(ex, ey + r * 0.05, r * 0.16, Math.PI * 1.1, Math.PI * 1.9);
+    g.strokeStyle = '#140805'; g.lineWidth = lw * 1.8; g.lineCap = 'round'; g.stroke();
   } else if (mood === 'scared') {
     g.beginPath(); g.arc(ex, ey, r * 0.27, 0, Math.PI * 2);
     fillStroke(g, '#ffffff', '#140805', lw);
@@ -1210,7 +1216,17 @@ const SAY = {
   bark: ['¡GUAU GUAU!', '¡Jaque, guau!', '¡GRRR… GUAU!', '¡Te tengo, rey!', '¡Guau! ¡Rendite!'],
   scared: ['¡Auxilio!', '¡Socorro, guardias!', '¡No me muerdas!', '¡Mamita querida!', '¡Ay, ay, ay!', '¡Me quieren comer!'],
   relief: ['¡Uf, zafé!', '¡Qué susto!', '¡Uf!', 'Me salvé por un pelo'],
+  dread: ['¡Ay no!', '¡Glup!', '¡Mamá!', '¡Nooo!'],
+  promo: { q: '¡Ahora soy Reina!', r: '¡Soy una Torre!', b: '¡Me ordené Obispo!', n: '¡Caballero armado!' },
 };
+// La compu tiene personalidad: comenta, se burla y se enoja
+const AI_SAY = {
+  move: ['Mmm… por acá', 'Olfateo, olfateo…', 'Esta me gusta', '¿Y ahora qué hacés?', 'Ajá', 'Lo tengo pensado'],
+  cap: ['¡Ñam! ¿Viste?', 'Gracias por el bocado', '¡Uno menos!', 'Je, je, je', 'Estaba rico'],
+  lost: ['¡Eh! ¡Era mi favorito!', 'No vale…', 'Grrr, ya vas a ver', '¡Devolvemelo!', 'Eso dolió'],
+  think: ['Olfateando la jugada…', 'Mmm, dejame pensar…', 'Rascándose la oreja…', 'Siguiendo un rastro…'],
+};
+const MOOD_TXT = { happy: 'Muy confiada', angry: 'Enojada', scared: 'Asustada' };
 const pickOne = a => a[Math.floor(Math.random() * a.length)];
 
 const opts = { mode: 'ai', level: 1, color: 'w', glyphs: loadPref('salchidrez-glyphs', false) ? 'on' : 'off' };
@@ -1244,6 +1260,8 @@ let inGame = false;
 let bgItems = [];
 let confetti = [];
 let lastFrame = 0;
+let promoFx = null;       // el cachorro que acaba de coronar
+let aiThinkText = '';
 let checkFx = null;       // escena de jaque: quién ladra y a qué rey
 let checkPending = false;
 let waves = [];           // ondas de ladrido que viajan hacia el rey
@@ -1278,7 +1296,7 @@ function newGame() {
   selected = -1; selMoves = [];
   anims = []; floaters = []; bubbles = []; prints = []; idle = {};
   drag = null; hint = null; hintBusy = false;
-  checkFx = null; checkPending = false; waves = [];
+  checkFx = null; checkPending = false; waves = []; promoFx = null;
   over = null; aiThinking = false; pendingPromo = null;
   blinkSeeds = Array.from({ length: 64 }, () => Math.random() * 5000);
   inGame = true;
@@ -1459,7 +1477,6 @@ function openPromo(cands) {
       const m = pendingPromo.find(c => c.promo === t);
       pendingPromo = null;
       commitMove(m, null);
-      sfx('promo');
     });
     row.appendChild(btn);
     requestAnimationFrame(() => paintDogCanvas(cv, t, st.turn, 0, false));
@@ -1501,14 +1518,17 @@ function commitMove(m, d) {
     const CP = sqXY(capSq);
     const arrive = now + anim.dur * (d ? 0.35 : 0.6);
     anims.push({ kind: 'fight', x: CP.x, y: CP.y, start: arrive, dur: 560 });
-    anims.push({ kind: 'fly', piece: m.cap, dir: facing[capSq], x: CP.x, y: CP.y, start: arrive + 380, dur: 700, spin: (Math.random() < 0.5 ? -1 : 1) });
+    const dreadDir = Math.sign(A.x - CP.x) || facing[capSq] || 1;
+    anims.push({ kind: 'fly', piece: m.cap, dir: dreadDir, x: CP.x, y: CP.y, created: now, start: arrive + 380, dur: 700, spin: (Math.random() < 0.5 ? -1 : 1) });
+    if (arrive - now > 250) floaters.push({ text: pickOne(SAY.dread), x: CP.x, y: CP.y - s * 0.75, start: now + 40, dur: arrive - now - 20, color: '#f6f0ff', small: true });
     floaters.push({ text: pickOne(SAY.hit), x: CP.x, y: CP.y - s * 0.55, start: arrive + 80, dur: 900, color: PAL[colorOf(m.cap)].team });
     shake = { start: arrive, until: arrive + 260 };
     captured[color].push(typeOf(m.cap));
     facing[capSq] = 1;
     setTimeout(() => { sfx('fight'); if (navigator.vibrate) navigator.vibrate([20, 40, 30]); }, arrive - now);
     const victim = typeOf(m.cap);
-    bubbles.push({ sq: m.to, text: pickOne(SAY.cap), start: arrive + 650, dur: 1300 });
+    const aiMover = opts.mode === 'ai' && color !== opts.color;
+    bubbles.push({ sq: m.to, text: pickOne(aiMover ? AI_SAY.cap : SAY.cap), start: arrive + 650, dur: 1400 });
     if (victim !== 'p') {
       const who = PIECE[victim];
       let msg;
@@ -1529,7 +1549,24 @@ function commitMove(m, d) {
     const rdir = Math.sign(RB.x - RA.x) || 1;
     anims.push({ kind: 'stretch', piece: st.b[rf], dir: rdir, from: RA, to: RB, toSq: rt, start: now + 140, dur: 440 });
     facing[rt] = rdir; facing[rf] = 1;
-    bubbles.push({ sq: rt, text: '¡Enroque!', start: now + 500, dur: 1200 });
+    // El rey y la torre chocan los cinco
+    const K2 = sqXY(m.to);
+    anims.push({ kind: 'sparkle', x: (K2.x + RB.x) / 2, y: K2.y - s * 0.3, start: now + 600, dur: 800, scale: 0.6 });
+    bubbles.push({ sq: m.to, text: '¡Me escondo!', start: now + 650, dur: 1300 });
+    bubbles.push({ sq: rt, text: '¡Yo te cubro!', start: now + 1500, dur: 1300 });
+    setTimeout(() => { showToast('¡Enroque!', true); sfx('chime'); }, 600);
+  }
+
+  if (m.promo) {
+    const at = now + anim.dur;
+    anims.push({ kind: 'sparkle', x: B.x, y: B.y, start: at, dur: 1100, scale: 1 });
+    promoFx = { sq: m.to, start: at };
+    bubbles.push({ sq: m.to, text: SAY.promo[m.promo], start: at + 500, dur: 1700 });
+    setTimeout(() => { sfx('promo'); showToast('¡Coronó!', true); }, anim.dur);
+  }
+  const aiMoved = opts.mode === 'ai' && color !== opts.color;
+  if (aiMoved && !m.cap && !m.castle && !m.promo && Math.random() < 0.3) {
+    bubbles.push({ sq: m.to, text: pickOne(AI_SAY.move), start: now + anim.dur + 120, dur: 1400 });
   }
 
   facing[m.to] = dirX;
@@ -1538,6 +1575,11 @@ function commitMove(m, d) {
   hint = null;
 
   st = applyMove(st, m);
+  // Si le comiste algo a la compu, se queja
+  if (opts.mode === 'ai' && color === opts.color && m.cap && (typeOf(m.cap) !== 'p' || Math.random() < 0.4)) {
+    const aiKing = kingSquare(st.b, color === 'w' ? 'b' : 'w');
+    if (aiKing >= 0) bubbles.push({ sq: aiKing, text: pickOne(AI_SAY.lost), start: now + anim.dur + 900, dur: 1500 });
+  }
   const key = posKey(st);
   posCounts[key] = (posCounts[key] || 0) + 1;
   lastMove = { from: m.from, to: m.to };
@@ -1685,6 +1727,7 @@ function showGameOver() {
 function maybeAI() {
   if (over || aiThinking || !inGame || opts.mode !== 'ai' || st.turn === opts.color) return;
   aiThinking = true;
+  aiThinkText = pickOne(AI_SAY.think);
   updateHUD();
   const id = gameId;
   const waitAnims = () => {
@@ -1878,6 +1921,11 @@ function render(now) {
     let cx = P.x, cy = P.y, wag = col === st.turn ? 0.3 : 0.12, sniff = 0;
     let mood, mouth = 0, lunge = 0, isKing = false, grow = 1;
     const isSel = sq === selected;
+    if (promoFx && sq === promoFx.sq) {
+      const pk = (now - promoFx.start) / 900;
+      if (pk >= 0 && pk < 1) { grow = 1 + 0.4 * Math.sin(Math.PI * pk) * (1 - pk * 0.4); wag = 1.5; mood = 'happy'; mouth = 0.5; }
+      else if (pk >= 1) promoFx = null;
+    }
     if (checkFx) {
       const ct = now - checkFx.start;
       if (sq === checkFx.kingSq) {
@@ -1959,8 +2007,12 @@ function render(now) {
     if (k < 0) {
       if (a.kind === 'fly') {
         const t = typeOf(a.piece);
-        const d = dogAnchors(t, a.x, a.y, s, a.dir);
-        drawDog(ctx, t, colorOf(a.piece), d.ox, d.oy, d.fx, d.fy, d.r, { time: now, seed: 3 });
+        const el = now - (a.created || a.start);
+        const tremble = Math.sin(now * 0.08) * s * 0.025;
+        const hop = el < 380 ? Math.sin(Math.PI * el / 380) * s * 0.16 : 0;
+        const d = dogAnchors(t, a.x + tremble, a.y - hop, s * (el < 900 ? 1.08 : 1), a.dir);
+        drawDog(ctx, t, colorOf(a.piece), d.ox, d.oy, d.fx, d.fy, d.r, { time: now, seed: 3, mood: 'scared', wag: 0 });
+        if (el > 40 && el < 800) drawExclaim(ctx, d.fx - a.dir * d.r * 2.4, d.fy - d.r * 1.8, s * 0.8, (el - 40) / 760);
       }
       continue;
     }
@@ -2008,6 +2060,8 @@ function render(now) {
       ctx.restore();
     } else if (a.kind === 'fight') {
       drawFight(ctx, a.x, a.y, s, k, now);
+    } else if (a.kind === 'sparkle') {
+      drawSparkle(ctx, a.x, a.y, s * a.scale, k, now);
     }
   }
   if (done.length) {
@@ -2042,7 +2096,7 @@ function render(now) {
     if (k < 0) continue;
     ctx.save();
     ctx.globalAlpha = Math.min(1, (1 - k) * 2);
-    ctx.font = `700 ${Math.max(18, s * 0.42)}px Fredoka, sans-serif`;
+    ctx.font = `700 ${Math.max(f.small ? 14 : 18, s * (f.small ? 0.3 : 0.42))}px Fredoka, sans-serif`;
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     const sc = easeOutBack(Math.min(1, k * 4)) * (1 + k * 0.2);
     ctx.translate(f.x, f.y - k * s * 0.5);
@@ -2170,6 +2224,34 @@ function drawFight(g, x, y, s, k, now) {
   g.restore();
 }
 
+// Rayos dorados y estrellitas que salen disparadas
+function drawSparkle(g, x, y, s, k, now) {
+  g.save();
+  g.translate(x, y);
+  const fade = 1 - k;
+  if (k < 0.25) {
+    g.globalAlpha = (0.25 - k) / 0.25 * 0.8;
+    g.beginPath(); g.arc(0, 0, s * (0.3 + k * 2), 0, Math.PI * 2);
+    g.fillStyle = '#fffaf0'; g.fill();
+  }
+  g.globalAlpha = fade * 0.7;
+  g.rotate(now * 0.002);
+  for (let i = 0; i < 12; i++) {
+    g.rotate(Math.PI / 6);
+    g.beginPath();
+    g.moveTo(s * 0.18, -s * 0.04); g.lineTo(s * (0.45 + k * 0.5), 0); g.lineTo(s * 0.18, s * 0.04);
+    g.closePath(); g.fillStyle = i % 2 ? '#ffd166' : '#ff8fb8'; g.fill();
+  }
+  g.restore();
+  for (let i = 0; i < 8; i++) {
+    const ang = i / 8 * Math.PI * 2 + 0.3;
+    const dist = s * (0.2 + easeOutBack(Math.min(1, k * 1.5)) * 0.65);
+    g.save(); g.globalAlpha = fade;
+    drawStar(g, x + Math.cos(ang) * dist, y + Math.sin(ang) * dist * 0.8, s * 0.09 * (1 - k * 0.5), i % 2 ? '#ffd166' : '#00e5f5');
+    g.restore();
+  }
+}
+
 // "!" de dibujito animado sobre la cabeza del rey asustado
 function drawExclaim(g, x, y, s, k) {
   const pop = easeOutBack(Math.min(1, k * 4));
@@ -2269,15 +2351,30 @@ function playerName(color) {
   return color === opts.color ? 'Vos' : 'La compu';
 }
 
+// Cara del avatar según cómo viene la partida para ese bando
+function sideMood(color) {
+  if (over) return over.winner ? (over.winner === color ? 'happy' : 'ko') : undefined;
+  if (inGame && inCheck(st, color)) return 'scared';
+  const other = color === 'w' ? 'b' : 'w';
+  let diff = 0;
+  for (const t of captured[color]) diff += VAL[t];
+  for (const t of captured[other]) diff -= VAL[t];
+  if (diff >= 300) return 'happy';
+  if (diff <= -300) return 'angry';
+  return undefined;
+}
+
 function playerStatus(color) {
   if (over) {
     if (!over.winner) return { text: 'Tablas', col: '#ffd166' };
     return over.winner === color ? { text: '¡Ganó!', col: '#ffd166' } : { text: 'Jaque mate', col: '#ff6b8a' };
   }
   if (st.turn !== color) {
-    return { text: opts.mode === 'ai' && color !== opts.color ? `Nivel ${LEVELS[opts.level]}` : 'Esperando', col: 'rgba(246,240,255,0.55)' };
+    const md = sideMood(color);
+    if (opts.mode === 'ai' && color !== opts.color) return { text: MOOD_TXT[md] || `Nivel ${LEVELS[opts.level]}`, col: md === 'angry' ? '#ff9a6b' : 'rgba(246,240,255,0.6)' };
+    return { text: 'Esperando', col: 'rgba(246,240,255,0.55)' };
   }
-  if (aiThinking) return { text: 'Olfateando la jugada…', col: '#ffd166' };
+  if (aiThinking) return { text: aiThinkText || 'Olfateando la jugada…', col: '#ffd166' };
   if (hintBusy) return { text: 'Buscando una pista…', col: '#ffd166' };
   if (inCheck(st, color)) return { text: '¡Jaque! Salvá al rey', col: '#ff6b8a' };
   if (!inGame) return { text: 'Elegí cómo jugar', col: PAL[color].team };
@@ -2310,7 +2407,11 @@ function drawCard(color, y, now) {
   ctx.clip();
   const bob = active ? Math.abs(Math.sin(now * 0.007)) * h * 0.04 : 0;
   const a = dogAnchors('k', ax, ay + h * 0.02 - bob, h * 0.92, 1);
-  drawDog(ctx, 'k', color, a.ox, a.oy, a.fx, a.fy, a.r, { time: active ? now : 0, wag: active ? 0.8 : 0, noShadow: true });
+  const md = sideMood(color);
+  drawDog(ctx, 'k', color, a.ox, a.oy, a.fx, a.fy, a.r, {
+    time: now, wag: active || md === 'happy' ? 0.8 : 0, noShadow: true,
+    mood: md, mouth: md === 'happy' ? 0.45 : md === 'angry' ? 0.15 * (1 + Math.sin(now * 0.01)) : 0,
+  });
   ctx.restore();
 
   const tx = x + h * 1.12;
@@ -2549,6 +2650,11 @@ function updateHUD() {
 let toastTimer = 0;
 function showToast(text, small) {
   const el = document.getElementById('toast');
+  // Fuera del tablero: debajo de tu tarjeta si hay lugar, si no sobre la tarjeta de arriba
+  const barTop = document.getElementById('bar').getBoundingClientRect().top || H - 90;
+  const below = L.botCardY + L.cardH;
+  const room = barTop - below;
+  el.style.top = (room > 70 ? below + room / 2 : L.topCardY + L.cardH / 2) + 'px';
   el.textContent = text;
   el.classList.toggle('small', !!small);
   el.classList.remove('show');
@@ -2650,7 +2756,8 @@ function sfx(kind) {
     }
     case 'faint': tone(t0, 'sine', 1400, 160, 0.13, 0.02, 0.7); thump(t0 + 0.45, 0.4); tone(t0 + 0.5, 'sine', 300, 600, 0.08, 0.01, 0.12); break;
     case 'relief': { const f = noise(t0, 'lowpass', 1500, 0.7, 0.12, 0.08, 0.45); f.frequency.exponentialRampToValueAtTime(300, t0 + 0.5); tone(t0, 'sine', 620, 420, 0.05, 0.05, 0.35); break; }
-    case 'promo': [1047, 1319, 1568, 2093].forEach((f, i) => tone(t0 + i * 0.07, 'sine', f, f, 0.1, 0.01, 0.3)); break;
+    case 'promo': [1047, 1319, 1568, 2093, 2637].forEach((f, i) => tone(t0 + i * 0.07, 'sine', f, f, 0.1, 0.01, 0.35)); break;
+    case 'chime': [784, 1175].forEach((f, i) => tone(t0 + i * 0.1, 'sine', f, f, 0.1, 0.01, 0.3)); break;
     case 'undo': { const f = noise(t0, 'bandpass', 3000, 1.2, 0.14, 0.02, 0.22); f.frequency.exponentialRampToValueAtTime(500, t0 + 0.24); break; }
     case 'win': pluckPhrase([57, 61, 64, 69, 73, 76, 81], 0.085); bark(t0 + 0.75, 470, 0.3); bark(t0 + 0.9, 470, 0.28); break;
     case 'lose': {
@@ -2692,14 +2799,15 @@ function pluckPhrase(notes, gap) {
 }
 
 // ============================================================================
-// MÚSICA: "Milonga del Salchicha" (original, ver tools/milonga.js)
+// MÚSICA: si hay un musica.mp3 en la carpeta del juego, suena en loop.
+// Si no está, el botón de música no aparece.
 // ============================================================================
+const MUSIC_FILE = 'musica.mp3';
 const Music = (() => {
-  const LOOP_END = 32 * 8 * (60 / 88 / 4); // 32 compases de 2/4 a 88 bpm
   let buf = null, loading = null, src = null, wanted = false;
   function load() {
     if (!loading) {
-      loading = fetch('milonga.mp3')
+      loading = fetch(MUSIC_FILE)
         .then(r => { if (!r.ok) throw new Error('sin música'); return r.arrayBuffer(); })
         .then(ab => new Promise((res, rej) => actx.decodeAudioData(ab, res, rej)))
         .then(b => { buf = b; return b; })
@@ -2708,20 +2816,19 @@ const Music = (() => {
     return loading;
   }
   return {
+    available: false,
     async start() {
       wanted = true;
-      if (!actx || src) return;
+      if (!actx || src || !this.available) return;
       await load();
       if (!buf || !wanted || src) return;
       src = actx.createBufferSource();
       src.buffer = buf;
       src.loop = true;
-      src.loopStart = 0;
-      src.loopEnd = Math.min(LOOP_END, buf.duration);
       src.connect(musicBus);
       musicBus.gain.cancelScheduledValues(actx.currentTime);
       musicBus.gain.setValueAtTime(0, actx.currentTime);
-      musicBus.gain.linearRampToValueAtTime(0.45, actx.currentTime + 2);
+      musicBus.gain.linearRampToValueAtTime(0.4, actx.currentTime + 2);
       src.start();
     },
     stop() {
@@ -2836,6 +2943,15 @@ function init() {
     if (!actx) return;
     if (document.hidden) actx.suspend(); else actx.resume();
   });
+  // El botón de música aparece solo si hay un archivo de música
+  const musicBtn = document.getElementById('btn-music');
+  musicBtn.hidden = true;
+  fetch(MUSIC_FILE, { method: 'HEAD' }).then(r => {
+    if (!r.ok) return;
+    Music.available = true;
+    musicBtn.hidden = false;
+    if (musicOn && inGame && actx) Music.start();
+  }).catch(() => {});
   document.getElementById('btn-legend').addEventListener('click', () => { buildLegend(); showOverlay('overlay-legend'); });
   document.getElementById('btn-legend-close').addEventListener('click', () => hideOverlay('overlay-legend'));
 
