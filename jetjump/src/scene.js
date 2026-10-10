@@ -127,7 +127,7 @@ export class World {
     const tex = (name, srgb = true, rep = 1) => new Promise((res) => tl.load(ASSET_BASE + 'tex/' + name, (t) => { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(rep, rep); t.anisotropy = 8; if (srgb) t.colorSpace = THREE.SRGBColorSpace; res(t); }, undefined, () => res(null)));
     const hdr = (name) => new Promise((res) => new RGBELoader().load(ASSET_BASE + 'hdr/' + name, (t) => { t.mapping = THREE.EquirectangularReflectionMapping; res(t); }, undefined, () => res(null)));
     const [grass, grassN, wood, woodB, brick, brickB, waterN, hOut, hIn] = await Promise.all([
-      tex('grass.jpg', true, 90), tex('grass_nm.jpg', false, 90), tex('wood.jpg', true, 1), tex('wood_bump.jpg', false, 1), tex('brick.jpg', true, 1), tex('brick_bump.jpg', false, 1), tex('water_nm.jpg', false, 4), hdr('outdoor.hdr'), hdr('indoor.hdr'),
+      tex('grass.jpg', true, 90), tex('grass_nm.jpg', false, 90), tex('wood.jpg', true, 1), tex('wood_bump.jpg', false, 1), tex('brick.jpg', true, 1), tex('brick_bump.jpg', false, 1), tex('water_nm.jpg', false, 4), hdr('outdoor.hdr.txt'), hdr('indoor.hdr.txt'),
     ]);
     const pm = new THREE.PMREMGenerator(this.renderer); pm.compileEquirectangularShader();
     const envOut = hOut ? pm.fromEquirectangular(hOut).texture : null;

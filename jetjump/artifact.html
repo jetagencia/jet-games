@@ -1,0 +1,209 @@
+<title>JETJump</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Poppins:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #0b1a13; --panel: #122a1f; --panel2: #183526; --line: rgba(217,179,91,0.22);
+    --gold: #d9b35b; --gold2: #f0d48a; --cream: #f3ead6; --muted: rgba(243,234,214,0.6);
+    --green: #4ed38a; --red: #ff6b6b; --amber: #ffd36b; --navy: #14204a;
+    --sa-t: env(safe-area-inset-top, 0px); --sa-b: env(safe-area-inset-bottom, 0px); --sa-l: env(safe-area-inset-left, 0px); --sa-r: env(safe-area-inset-right, 0px);
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: var(--bg); color: var(--cream); font-family: 'Poppins', system-ui, sans-serif; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; touch-action: none; overscroll-behavior: none; }
+  button { font: inherit; color: inherit; background: var(--panel2); border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px; cursor: pointer; min-height: 44px; }
+  button:disabled { opacity: 0.4; cursor: default; }
+  button.primary { background: linear-gradient(180deg, var(--gold2), var(--gold)); color: #1b1608; border-color: transparent; font-weight: 700; }
+  button.danger { background: #4a1a1a; }
+  button.icon { width: 44px; min-width: 44px; padding: 0; font-size: 22px; line-height: 1; }
+  button.big { min-height: 64px; text-align: left; display: flex; flex-direction: column; gap: 2px; justify-content: center; padding: 10px 16px; }
+  button.big small { color: var(--muted); font-weight: 500; font-size: 12px; }
+  button.primary.big small { color: #3a2e10; }
+  select, input { font: inherit; color: var(--cream); background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; min-height: 44px; width: 100%; }
+  label { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--muted); }
+  h2 { font-size: 22px; font-weight: 800; margin-bottom: 8px; }
+  h3 { font-size: 14px; font-weight: 700; color: var(--gold); margin: 14px 0 8px; letter-spacing: 0.5px; text-transform: uppercase; }
+  h3 small { text-transform: none; font-weight: 500; letter-spacing: 0; }
+  p { line-height: 1.45; margin-bottom: 8px; }
+  .muted { color: var(--muted); font-size: 13px; }
+  .bad { color: var(--red); }
+  .row { display: flex; gap: 10px; align-items: center; margin-top: 10px; flex-wrap: wrap; }
+  .row.col { flex-direction: column; align-items: stretch; }
+  .row > button { flex: 1; }
+
+  canvas#game { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+
+  /* ---------- pantallas ---------- */
+  #screen { position: absolute; inset: 0; z-index: 20; overflow-y: auto; overflow-x: hidden; background: radial-gradient(120% 90% at 50% 0%, #163424 0%, var(--bg) 60%); padding: var(--sa-t) var(--sa-r) var(--sa-b) var(--sa-l); touch-action: pan-y; }
+  .menu { min-height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px 16px; gap: 18px; }
+  .logo { text-align: center; }
+  .logo .jet { font-weight: 900; font-size: 46px; letter-spacing: -2px; color: var(--cream); }
+  .logo .jump { font-weight: 900; font-size: 46px; letter-spacing: -2px; background: linear-gradient(90deg, var(--gold2), var(--gold)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .logo .tag { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: var(--muted); }
+  .menu-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; width: min(820px, 100%); }
+  .foot { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--muted); letter-spacing: 1px; }
+
+  .hub, .setup, .pre, .results { min-height: 100%; display: flex; flex-direction: column; }
+  .hub-h { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-bottom: 1px solid var(--line); background: rgba(11,26,19,0.8); position: sticky; top: 0; z-index: 2; backdrop-filter: blur(8px); }
+  .hub-title { flex: 1; display: flex; flex-direction: column; line-height: 1.15; }
+  .hub-title b { font-size: 16px; } .hub-title small { color: var(--muted); font-size: 12px; }
+  .money { font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--gold); font-size: 15px; }
+  .tabs { display: flex; gap: 6px; padding: 8px 12px; overflow-x: auto; border-bottom: 1px solid var(--line); }
+  .tabs button { white-space: nowrap; min-height: 38px; padding: 6px 14px; border-radius: 999px; font-size: 13px; }
+  .tabs button.sel { background: var(--gold); color: #1b1608; border-color: transparent; font-weight: 700; }
+  .hub-body { flex: 1; padding: 12px; }
+  .hub-f { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 12px calc(10px + var(--sa-b)); border-top: 1px solid var(--line); background: rgba(11,26,19,0.9); position: sticky; bottom: 0; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 10px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+  .card-h { display: flex; align-items: center; gap: 10px; }
+  .card-h > div { flex: 1; display: flex; flex-direction: column; line-height: 1.2; }
+  .card-h small { color: var(--muted); font-size: 12px; }
+  .card.horse { grid-column: span 1; }
+  .card.injured { border-color: rgba(255,107,107,0.5); }
+  .coat { width: 34px; height: 34px; border-radius: 50%; border: 2px solid var(--gold); flex: none; }
+  .icon-big { font-size: 26px; }
+  .chip { font-family: 'JetBrains Mono', monospace; font-size: 11px; padding: 4px 8px; border-radius: 999px; background: rgba(217,179,91,0.15); color: var(--gold2); white-space: nowrap; }
+  .chip.bad { background: rgba(255,107,107,0.2); color: var(--red); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .bar { height: 7px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; flex: 1; }
+  .bar i { display: block; height: 100%; background: linear-gradient(90deg, #7fb0ff, #4ed38a); border-radius: 4px; }
+  .bar.gold i { background: linear-gradient(90deg, var(--gold), var(--gold2)); }
+  .bar.green i { background: var(--green); } .bar.red i { background: var(--red); }
+  .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 14px; }
+  .stats > div { display: grid; grid-template-columns: 64px 1fr 44px; align-items: center; gap: 6px; font-size: 11px; }
+  .stats em { font-style: normal; font-family: 'JetBrains Mono', monospace; text-align: right; color: var(--muted); }
+  .state { display: flex; gap: 10px; font-size: 11px; color: var(--muted); }
+  .state span { flex: 1; display: flex; align-items: center; gap: 6px; }
+  .plan { flex: 1; }
+  .price { font-family: 'JetBrains Mono', monospace; color: var(--gold); font-weight: 700; flex: 1; }
+  .tier.locked { opacity: 0.6; } .lock { color: var(--muted); font-size: 13px; }
+  .log { display: flex; flex-direction: column; gap: 6px; font-size: 13px; max-height: 50vh; overflow-y: auto; }
+  .log > div { padding: 8px 10px; background: var(--panel); border-radius: 8px; }
+  .swatches { display: flex; gap: 8px; flex-wrap: wrap; }
+  .swatch { width: 44px; height: 44px; border-radius: 50%; border: 3px solid transparent; }
+  .swatch.sel { border-color: var(--gold2); }
+  .statrow { display: grid; grid-template-columns: 90px 1fr 54px; align-items: center; gap: 8px; margin-top: 8px; font-size: 13px; }
+  .statrow em { font-style: normal; font-family: 'JetBrains Mono', monospace; text-align: right; }
+  .statrow small, .statrow p { grid-column: 1 / -1; margin: 0; font-size: 12px; }
+  .pick { width: 100%; text-align: left; display: flex; flex-direction: column; gap: 2px; align-items: flex-start; }
+  .pick small { color: var(--muted); } .pick em { font-style: normal; font-size: 12px; }
+  .form { display: flex; flex-direction: column; gap: 14px; padding: 16px; max-width: 520px; margin: 0 auto; width: 100%; }
+  .pre-body { flex: 1; display: grid; grid-template-columns: 1.4fr 1fr; gap: 14px; padding: 12px; align-items: start; }
+  @media (max-width: 720px) { .pre-body { grid-template-columns: 1fr; } }
+  .map-wrap { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 8px; }
+  .course-map { width: 100%; height: auto; display: block; }
+  .pre-info { display: flex; flex-direction: column; gap: 10px; }
+  .results-body { flex: 1; padding: 12px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; color: var(--muted); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; padding: 6px 8px; }
+  td { padding: 8px; border-top: 1px solid var(--line); vertical-align: top; font-family: 'JetBrains Mono', monospace; }
+  td:nth-child(2) { font-family: 'Poppins', sans-serif; }
+  td small { color: var(--muted); }
+  tr.me td { background: rgba(217,179,91,0.15); color: var(--gold2); }
+  .award { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+  .award span { background: var(--panel2); border: 1px solid var(--line); border-radius: 999px; padding: 8px 14px; font-weight: 600; color: var(--gold2); }
+
+  /* ---------- modal ---------- */
+  #modal { position: absolute; inset: 0; z-index: 40; display: none; align-items: center; justify-content: center; background: rgba(5,12,9,0.7); backdrop-filter: blur(6px); padding: 16px; }
+  .modal-card { background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 18px; width: min(560px, 100%); max-height: calc(100% - 20px); overflow-y: auto; touch-action: pan-y; }
+  .tut { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .tut > div { background: var(--panel2); border-radius: 12px; padding: 10px; font-size: 13px; }
+  .tut p { margin: 4px 0 0; color: var(--muted); }
+  .settings { display: flex; flex-direction: column; gap: 8px; }
+  .toggle { display: flex; justify-content: space-between; align-items: center; text-align: left; }
+  .toggle i { width: 44px; height: 24px; border-radius: 12px; background: rgba(255,255,255,0.15); position: relative; transition: background 0.2s; }
+  .toggle i::after { content: ''; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: transform 0.2s; }
+  .toggle.on i { background: var(--green); } .toggle.on i::after { transform: translateX(20px); }
+  .seg { display: flex; align-items: center; gap: 6px; } .seg span { flex: 1; font-size: 14px; }
+  .seg button { min-height: 38px; padding: 6px 12px; border-radius: 999px; font-size: 13px; }
+  .seg button.sel { background: var(--gold); color: #1b1608; border-color: transparent; }
+  .seg.wrap { flex-wrap: wrap; } .seg.wrap span { flex-basis: 100%; }
+  code { font-family: 'JetBrains Mono', monospace; font-size: 12px; background: rgba(255,255,255,0.08); padding: 1px 5px; border-radius: 4px; }
+
+  /* ---------- HUD ---------- */
+  #hud { position: absolute; inset: 0; z-index: 10; pointer-events: none; display: none; font-family: 'JetBrains Mono', monospace; }
+  body.playing #hud, body.playing #stick-zone, body.playing #controls { display: block; }
+  .hud-top { position: absolute; top: calc(8px + var(--sa-t)); left: calc(10px + var(--sa-l)); right: calc(10px + var(--sa-r)); display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+  .hud-box { background: rgba(11,26,19,0.62); border: 1px solid rgba(217,179,91,0.25); border-radius: 12px; padding: 6px 10px; backdrop-filter: blur(6px); }
+  .hud-fence { display: flex; align-items: center; gap: 10px; }
+  #hud-fence { font-family: 'Poppins', sans-serif; font-weight: 900; font-size: 30px; line-height: 1; color: var(--gold2); min-width: 40px; text-align: center; }
+  .hud-fence .sub { display: flex; flex-direction: column; font-size: 11px; color: var(--muted); line-height: 1.3; }
+  #hud-strides { color: var(--cream); font-weight: 700; font-size: 13px; }
+  .hud-center { text-align: center; }
+  #hud-title { font-family: 'Poppins', sans-serif; font-size: 11px; color: var(--muted); font-weight: 600; letter-spacing: 1px; text-transform: uppercase; }
+  .hud-clock { display: flex; align-items: baseline; gap: 10px; justify-content: center; }
+  #hud-time { font-weight: 700; font-size: 24px; } #hud-ta { font-size: 11px; color: var(--muted); }
+  .timebar { height: 4px; background: rgba(255,255,255,0.12); border-radius: 2px; overflow: hidden; margin-top: 3px; }
+  #hud-timebar { display: block; height: 100%; width: 0; background: var(--green); } #hud-timebar.warn { background: var(--amber); } #hud-timebar.over { background: var(--red); }
+  .hud-faults { display: flex; flex-direction: column; align-items: flex-end; }
+  #hud-faults { font-family: 'Poppins', sans-serif; font-weight: 900; font-size: 30px; line-height: 1; color: var(--cream); }
+  .hud-faults small { font-size: 10px; color: var(--muted); letter-spacing: 1px; }
+  #hud-countdown { font-size: 12px; color: var(--amber); margin-top: 4px; }
+  .hud-bottom { position: absolute; bottom: calc(10px + var(--sa-b)); left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  #stride-meter { width: 240px; height: 40px; transition: opacity 0.3s; margin-bottom: 4px; }
+  .hud-speed { display: flex; gap: 8px; align-items: baseline; font-size: 11px; color: var(--muted); }
+  #hud-speed { font-size: 18px; font-weight: 700; color: var(--cream); }
+  .stamina { width: 120px; height: 4px; background: rgba(255,255,255,0.12); border-radius: 2px; overflow: hidden; }
+  #hud-stamina { display: block; height: 100%; background: linear-gradient(90deg, var(--gold), var(--green)); width: 100%; }
+  #minimap { position: absolute; right: calc(12px + var(--sa-r)); top: calc(78px + var(--sa-t)); width: 150px; height: 100px; background: rgba(11,26,19,0.5); border: 1px solid rgba(217,179,91,0.25); border-radius: 10px; }
+  .hud-tools { position: absolute; left: calc(12px + var(--sa-l)); top: calc(78px + var(--sa-t)); display: flex; flex-direction: column; gap: 8px; pointer-events: auto; }
+  .hud-tools button { width: 44px; min-height: 44px; padding: 0; border-radius: 50%; background: rgba(11,26,19,0.62); font-size: 18px; }
+  #hud-replay { position: absolute; left: 50%; top: calc(74px + var(--sa-t)); transform: translateX(-50%); font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 12px; letter-spacing: 3px; color: #fff; background: rgba(198,40,40,0.85); padding: 6px 14px; border-radius: 999px; display: flex; align-items: center; gap: 8px; }
+  #hud-replay i { width: 8px; height: 8px; border-radius: 50%; background: #fff; animation: blink 1s infinite; }
+  @keyframes blink { 50% { opacity: 0.2; } }
+  body.replaying #controls, body.replaying .hud-bottom, body.replaying #minimap, body.replaying .hud-top .hud-fence, body.replaying #stick-zone { display: none !important; }
+  .toast { position: absolute; top: 34%; left: 50%; transform: translate(-50%, -50%) scale(0.9); font-family: 'Poppins', sans-serif; font-weight: 800; font-size: 22px; padding: 10px 22px; border-radius: 999px; background: rgba(11,26,19,0.75); border: 1px solid rgba(243,234,214,0.3); opacity: 0; transition: opacity 0.2s, transform 0.2s; white-space: nowrap; }
+  .toast.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  .toast.good { color: var(--green); border-color: var(--green); } .toast.bad { color: var(--red); border-color: var(--red); } .toast.warn { color: var(--amber); }
+
+  /* ---------- controles ---------- */
+  #stick-zone { position: absolute; left: 0; top: 20%; bottom: 0; width: 55%; z-index: 11; display: none; touch-action: none; }
+  #stick { position: absolute; width: 120px; height: 120px; margin: -60px 0 0 -60px; border-radius: 50%; border: 2px solid rgba(243,234,214,0.35); background: rgba(243,234,214,0.06); opacity: 0; pointer-events: none; transition: opacity 0.15s; }
+  #stick .knob { position: absolute; left: 50%; top: 50%; width: 52px; height: 52px; margin: -26px 0 0 -26px; border-radius: 50%; background: rgba(243,234,214,0.8); }
+  #controls { position: absolute; right: calc(16px + var(--sa-r)); bottom: calc(16px + var(--sa-b)); z-index: 12; display: none; }
+  .ctl { display: grid; grid-template-columns: 64px 110px; grid-template-rows: 64px 64px; gap: 10px; align-items: end; }
+  .ctl button { border-radius: 50%; font-family: 'Poppins', sans-serif; font-weight: 900; font-size: 26px; background: rgba(11,26,19,0.7); border: 2px solid rgba(243,234,214,0.35); width: 64px; height: 64px; padding: 0; touch-action: none; }
+  .ctl button.on { background: rgba(243,234,214,0.3); }
+  #btn-jump { grid-row: 1 / 3; grid-column: 2; width: 110px; height: 110px; font-size: 17px; letter-spacing: 1px; background: radial-gradient(circle at 40% 35%, #f6dc98, var(--gold)); color: #1b1608; border-color: transparent; align-self: center; box-shadow: 0 6px 24px rgba(0,0,0,0.4); transition: transform 0.1s, box-shadow 0.2s; }
+  #btn-jump.ready { animation: pulse 0.5s infinite alternate; }
+  #btn-jump.pressed { transform: scale(0.92); }
+  @keyframes pulse { from { box-shadow: 0 0 0 0 rgba(217,179,91,0.6); } to { box-shadow: 0 0 0 14px rgba(217,179,91,0); } }
+
+  #rotate { position: absolute; inset: 0; z-index: 60; display: none; align-items: center; justify-content: center; background: var(--bg); text-align: center; padding: 24px; font-weight: 700; }
+  @media (orientation: portrait) and (max-width: 640px) { body.playing #rotate { display: flex; } }
+</style>
+<script type="importmap">{"imports":{"three":"./vendor/three.module.js","three/addons/":"./vendor/addons/"}}</script>
+
+<canvas id="game"></canvas>
+
+<div id="hud">
+  <div class="hud-top">
+    <div class="hud-box hud-fence"><div id="hud-fence">1</div><div class="sub"><span id="hud-fence-type">Vertical</span><span id="hud-dist"></span><span id="hud-strides"></span></div></div>
+    <div class="hud-box hud-center"><div id="hud-title"></div><div class="hud-clock"><span id="hud-time">0.0</span><span id="hud-ta"></span></div><div class="timebar"><i id="hud-timebar"></i></div><div id="hud-countdown"></div></div>
+    <div class="hud-box hud-faults"><div id="hud-faults">0</div><small>FALTAS</small></div>
+  </div>
+  <canvas id="minimap" width="150" height="100"></canvas>
+  <div class="hud-tools"><button id="btn-pause" title="Pausa">⏸</button><button id="btn-cam" title="Cámara">🎥</button></div>
+  <div class="hud-bottom">
+    <canvas id="stride-meter" width="240" height="40"></canvas>
+    <div class="hud-speed"><span id="hud-speed">0</span><span>m/min</span><span id="hud-gait">Parado</span></div>
+    <div class="stamina"><i id="hud-stamina"></i></div>
+  </div>
+  <div id="hud-replay" style="display:none"><i></i>REPETICIÓN</div>
+  <div id="hud-toast" class="toast"></div>
+</div>
+
+<div id="stick-zone"><div id="stick"><div class="knob"></div></div></div>
+<div id="controls"><div class="ctl">
+  <button id="pace-up" title="Más ritmo">+</button>
+  <button id="btn-jump">SALTAR</button>
+  <button id="pace-down" title="Menos ritmo">−</button>
+</div></div>
+
+<div id="screen" class="screen"></div>
+<div id="modal"></div>
+<div id="rotate">Girá el teléfono: JETJump se juega en horizontal 🔄</div>
+
+<script type="module">
+  import { App } from './src/ui.js';
+  window.app = new App();
+</script>
