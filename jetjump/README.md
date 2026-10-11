@@ -36,7 +36,7 @@ El motor usa un caballo procedural. Para el acabado realista:
 2. Guardalo como `assets/models/horse.glb.wasm`. Clips reconocidos por nombre: `idle/stand`, `walk`, `trot`, `canter`, `gallop/run`, `jump`.
 3. El juego lo carga solo (Ajustes → Modelo de caballo → "Archivo GLB si existe"), lo escala a 1,95 m de alto, lo orienta y le monta el jinete. Los clips se sincronizan con la fase del tranco de la simulación.
 
-El caballo incluido en `assets/models/horse.glb.wasm` es el de [Mesh2Motion](https://github.com/scottpetrovic/mesh2motion-app) (CC0, uso comercial permitido), con esqueleto y 14 clips (Walk, Trot, Run, Idle, Rear...). El cargador le suaviza las normales, le aplica el pelaje del caballo elegido leyendo la paleta original para distinguir crin, cola y cascos, y le monta montura, cincha, estribos y riendas que siguen al lomo. `horse-demo.glb` es el ejemplo de three.js (MIT) y sirve solo para probar el pipeline.
+El caballo incluido en `assets/models/horse.glb.wasm` es el de [Mesh2Motion](https://github.com/scottpetrovic/mesh2motion-app) (CC0, uso comercial permitido), con esqueleto y 14 clips (Walk, Trot, Run, Idle, Rear...). El cargador lo suelda y lo subdivide (Loop, conservando los pesos de piel; 3.400 → 55.000 triángulos), lee la paleta original para distinguir crin, cola y cascos, genera un pelaje de 19.000 pelos con relieve y brillo, reemplaza la cola rígida por mechones de pelo, agrega ojos con córnea y párpado, y monta montura, cincha, estribos y riendas que siguen al lomo. `horse-demo.glb` es el ejemplo de three.js (MIT) y sirve solo para probar el pipeline.
 
 ## Reglas implementadas (Tabla A)
 

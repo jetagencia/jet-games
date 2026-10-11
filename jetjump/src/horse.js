@@ -123,6 +123,63 @@ function hairTexture(color) {
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
 }
 
+
+// Pelaje: decenas de miles de pelos cortos siguiendo un campo de flujo. Devuelve
+// albedo multiplicativo (el color base lo pone el vértice), normal y rugosidad.
+const coatCache = new Map();
+export function coatTextures(size = 2048, seed = 1) {
+  const key = size + ':' + seed;
+  if (coatCache.has(key)) return coatCache.get(key);
+  const c = document.createElement('canvas'); c.width = c.height = size;
+  const g = c.getContext('2d');
+  g.fillStyle = '#e6e6e6'; g.fillRect(0, 0, size, size);
+  // dibuja con repetición: copias desplazadas cerca de los bordes para que el mosaico no tenga costuras
+  const wrapDraw = (x, y, r, fn) => { for (const ox of [-size, 0, size]) for (const oy of [-size, 0, size]) { if (x + ox < -r || x + ox > size + r || y + oy < -r || y + oy > size + r) continue; fn(ox, oy); } };
+  // variación de tono muy suave (zonas más claras y más oscuras del pelaje)
+  for (let i = 0; i < 40; i++) {
+    const x = Math.random() * size, y = Math.random() * size, r = size * (0.08 + Math.random() * 0.16);
+    const v = 222 + Math.floor(Math.random() * 22);
+    wrapDraw(x, y, r, (ox, oy) => { const grd = g.createRadialGradient(x + ox, y + oy, 0, x + ox, y + oy, r); grd.addColorStop(0, `rgba(${v},${v - 3},${v - 6},0.18)`); grd.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = grd; g.beginPath(); g.arc(x + ox, y + oy, r, 0, Math.PI * 2); g.fill(); });
+  }
+  const H = document.createElement('canvas'); H.width = H.height = size;
+  const gh = H.getContext('2d'); gh.fillStyle = '#808080'; gh.fillRect(0, 0, size, size);
+  const n = Math.round(size * size / 55);
+  const flow = (x, y) => -0.35 + (vnoise(x / size * 6, y / size * 6, seed) - 0.5) * 1.2 + (vnoise(x / size * 30, y / size * 30, seed + 3) - 0.5) * 0.5;
+  g.lineCap = 'round'; gh.lineCap = 'round';
+  const margin = size / 100;
+  for (let i = 0; i < n; i++) {
+    const x = Math.random() * size, y = Math.random() * size;
+    const a = flow(x, y), len = size / 170 * (0.6 + Math.random() * 0.9), w = 0.6 + Math.random() * 1.1;
+    const lum = 206 + Math.floor(Math.random() * 44);
+    const dx = Math.cos(a) * len, dy = Math.sin(a) * len;
+    const col = `rgba(${lum},${lum - 3},${lum - 6},${0.3 + Math.random() * 0.35})`;
+    const hv = 128 + Math.floor((Math.random() - 0.5) * 90);
+    const hcol = `rgba(${hv},${hv},${hv},0.6)`;
+    const draw = (ox, oy) => {
+      g.strokeStyle = col; g.lineWidth = w; g.beginPath(); g.moveTo(x + ox, y + oy); g.lineTo(x + ox + dx, y + oy + dy); g.stroke();
+      gh.strokeStyle = hcol; gh.lineWidth = w * 1.4; gh.beginPath(); gh.moveTo(x + ox, y + oy); gh.lineTo(x + ox + dx, y + oy + dy); gh.stroke();
+    };
+    if (x < margin || y < margin || x > size - margin || y > size - margin) wrapDraw(x, y, margin, draw); else draw(0, 0);
+  }
+  const map = new THREE.CanvasTexture(c); map.wrapS = map.wrapT = THREE.RepeatWrapping; map.colorSpace = THREE.SRGBColorSpace; map.anisotropy = 8;
+  // normal desde la altura
+  const hd = gh.getImageData(0, 0, size, size).data;
+  const N = document.createElement('canvas'); N.width = N.height = size;
+  const gn = N.getContext('2d'); const nimg = gn.createImageData(size, size), nd = nimg.data;
+  const str = 1.6;
+  for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
+    const i = (y * size + x) * 4;
+    const l = hd[(y * size + ((x - 1 + size) % size)) * 4], r = hd[(y * size + ((x + 1) % size)) * 4], u = hd[(((y - 1 + size) % size) * size + x) * 4], d = hd[(((y + 1) % size) * size + x) * 4];
+    const nx = (l - r) / 255 * str, ny = (u - d) / 255 * str, nz = 1, ln = Math.hypot(nx, ny, nz);
+    nd[i] = 128 + 127 * nx / ln; nd[i + 1] = 128 + 127 * ny / ln; nd[i + 2] = 128 + 127 * nz / ln; nd[i + 3] = 255;
+  }
+  gn.putImageData(nimg, 0, 0);
+  const normal = new THREE.CanvasTexture(N); normal.wrapS = normal.wrapT = THREE.RepeatWrapping; normal.anisotropy = 8;
+  const out = { map, normal };
+  coatCache.set(key, out);
+  return out;
+}
+
 function mix5(a, b, t) { return a.map((v, i) => lerp(v, b[i], t)); }
 
 export class HorseModel {
@@ -572,7 +629,7 @@ export function loadHorseAsset(url) {
 // Refinado de mallas con esqueleto: soldar por posición, subdivisión Loop que
 // conserva color y pesos de piel, UV proyectadas para el pelaje.
 // ---------------------------------------------------------------------------
-function weldByPosition(geo, colorFor) {
+function weldByPosition(geo, colorFor, dropBones = null) {
   const pos = geo.getAttribute('position'), si = geo.getAttribute('skinIndex'), sw = geo.getAttribute('skinWeight');
   const idx = geo.getIndex() ? geo.getIndex().array : null;
   const n = pos.count, map = new Map(), remap = new Int32Array(n);
@@ -593,9 +650,12 @@ function weldByPosition(geo, colorFor) {
   for (let j = 0; j < acc.length; j++) { C[j * 3] /= acc[j]; C[j * 3 + 1] /= acc[j]; C[j * 3 + 2] /= acc[j]; }
   const F = [];
   const count = idx ? idx.length : n;
+  const dominated = (v) => { if (!dropBones) return false; let w = 0; for (let k = 0; k < 4; k++) if (dropBones.has(SI[v * 4 + k])) w += SW[v * 4 + k]; return w > 0.5; };
   for (let t = 0; t < count; t += 3) {
     const a = remap[idx ? idx[t] : t], b = remap[idx ? idx[t + 1] : t + 1], c = remap[idx ? idx[t + 2] : t + 2];
-    if (a !== b && b !== c && a !== c) F.push(a, b, c);
+    if (a === b || b === c || a === c) continue;
+    if (dropBones && (dominated(a) || dominated(b) || dominated(c))) continue;
+    F.push(a, b, c);
   }
   return { P, C, SI, SW, F };
 }
@@ -670,8 +730,8 @@ function loopSubdivide(D) {
   return { P: P2, C: C2, SI: SI2, SW: SW2, F: F2 };
 }
 
-function refineSkinnedGeometry(geo, colorFor, levels = 2) {
-  let D = weldByPosition(geo, colorFor);
+function refineSkinnedGeometry(geo, colorFor, levels = 2, dropBones = null) {
+  let D = weldByPosition(geo, colorFor, dropBones);
   for (let l = 0; l < levels; l++) D = loopSubdivide(D);
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.Float32BufferAttribute(D.P, 3));
@@ -724,10 +784,14 @@ export class HorseGLB {
         return [c.r * k, c.g * k, c.b * k];
       };
       const levels = cfg.levels ?? 2;
+      let drop = null;
+      if (o.skeleton && cfg.hairTail !== false) { drop = new Set(); o.skeleton.bones.forEach((b, i) => { if (/tail_?(2|3|4|5|6)|tail_?leaf|tail_?end|tail_?tip|tail_?mid/i.test(b.name)) drop.add(i); }); if (!drop.size) drop = null; }
       let geo;
-      try { geo = refineSkinnedGeometry(srcGeo, colorFor, levels); } catch (err) { console.warn('refinado falló', err); geo = srcGeo; }
+      try { geo = refineSkinnedGeometry(srcGeo, colorFor, levels, drop); } catch (err) { console.warn('refinado falló', err); geo = srcGeo; }
       o.geometry = geo;
-      o.material = new THREE.MeshPhysicalMaterial({ color: 0xffffff, vertexColors: true, roughness: 0.5, sheen: 1, sheenRoughness: 0.35, sheenColor: new THREE.Color(coat.sheen).multiplyScalar(0.5), clearcoat: 0.1, clearcoatRoughness: 0.6, bumpMap: fur, bumpScale: 0.004, envMapIntensity: 0.8 });
+      const ct = coatTextures(cfg.texSize ?? 1024, 1);
+      ct.map.repeat.set(2.2, 2.2); ct.normal.repeat.set(2.2, 2.2);
+      o.material = new THREE.MeshPhysicalMaterial({ color: 0xffffff, vertexColors: true, map: ct.map, normalMap: ct.normal, normalScale: new THREE.Vector2(0.45, 0.45), roughness: 0.48, sheen: 1, sheenRoughness: 0.3, sheenColor: new THREE.Color(coat.sheen).multiplyScalar(0.55), clearcoat: 0.12, clearcoatRoughness: 0.5, envMapIntensity: 0.9 });
     });
     this.body.add(model);
     model.updateMatrixWorld(true);
@@ -770,7 +834,7 @@ export class HorseGLB {
         const card = new THREE.Mesh(new THREE.PlaneGeometry(0.12, h), this.hairMat);
         // nace en la cresta y cae por el flanco derecho del cuello
         card.position.set(x, Math.max(pr.top, y0) + 0.01 - h * 0.5, pr.side * 0.85 + 0.03);
-        card.rotation.set(-0.25, 0.15, -0.35 - 0.2 * (1 - t)); card.castShadow = true;
+        card.rotation.set(-0.7, 0.1, -0.35 - 0.2 * (1 - t)); card.castShadow = true;
         this.body.add(card); this.body.updateMatrixWorld(true);
         const bn = nearest(card.position); if (bn) bn.attach(card);
         this.hairCards.push(card);
@@ -778,15 +842,37 @@ export class HorseGLB {
       const headB = neckBones[neckBones.length - 1];
       for (let i = 0; i < 2; i++) { const f = new THREE.Mesh(new THREE.PlaneGeometry(0.09, 0.2), this.hairMat); f.position.copy(b).add(new THREE.Vector3(0.12 + i * 0.03, 0.06, (i - 0.5) * 0.05)); f.rotation.set(0, (i - 0.5) * 0.4, -1.1); this.body.add(f); this.body.updateMatrixWorld(true); headB.attach(f); }
     }
-    const tailBones = []; model.traverse((o) => { if (o.isBone && /tail/i.test(o.name) && !/leaf/i.test(o.name)) tailBones.push(o); });
+    // cola: mechones largos que cuelgan del maslo (los dos primeros huesos)
+    const tailBones = []; model.traverse((o) => { if (o.isBone && /tail_?(1|2)$|^tail$|tail_?base/i.test(o.name)) tailBones.push(o); });
     tailBones.forEach((tb, i) => {
       const wp = this.body.worldToLocal(tb.getWorldPosition(new THREE.Vector3()));
-      for (let k = 0; k < 3; k++) {
-        const card = new THREE.Mesh(new THREE.PlaneGeometry(0.11 + i * 0.02, 0.34), this.hairMat);
-        card.position.set(wp.x - 0.02, wp.y - 0.15, wp.z); card.rotation.set(0, k * Math.PI / 3, 0.15); card.castShadow = true;
+      const n = i === 0 ? 9 : 6, len = i === 0 ? 0.85 : 0.7;
+      for (let k = 0; k < n; k++) {
+        const ang = k / n * Math.PI * 2;
+        const card = new THREE.Mesh(new THREE.PlaneGeometry(0.16, len), this.hairMat);
+        card.position.set(wp.x - 0.04 + Math.cos(ang) * 0.035, wp.y - len / 2 + 0.04, wp.z + Math.sin(ang) * 0.035);
+        card.rotation.set(0, ang, 0.18 + (i === 0 ? 0 : 0.1)); card.castShadow = true;
         this.body.add(card); this.body.updateMatrixWorld(true); tb.attach(card); this.hairCards.push(card);
       }
     });
+    // ojos con córnea y párpado, estimados entre nuca, orejas y boca
+    const headBone = bone(/^head$/i) || bone(/head/i), mouthB = bone(/mouth|jaw|nose/i);
+    if (headBone && mouthB) {
+      const hp = this.body.worldToLocal(headBone.getWorldPosition(new THREE.Vector3()));
+      const mp = this.body.worldToLocal(mouthB.getWorldPosition(new THREE.Vector3()));
+      const ex = lerp(hp.x, mp.x, 0.3), ey = lerp(hp.y, mp.y, 0.22);
+      let side = 0; const v = new THREE.Vector3();
+      this.model.traverse((o) => { if (!o.isMesh) return; const pz = o.geometry.getAttribute('position'); for (let i = 0; i < pz.count; i += 2) { v.fromBufferAttribute(pz, i); o.localToWorld(v); this.body.worldToLocal(v); if (Math.abs(v.x - ex) < 0.05 && Math.abs(v.y - ey) < 0.05) side = Math.max(side, v.z); } });
+      if (side > 0.03) {
+        const eyeMat = new THREE.MeshPhysicalMaterial({ color: 0x1d120b, roughness: 0.08, clearcoat: 1, clearcoatRoughness: 0.03, envMapIntensity: 1.5 });
+        const lidMat = new THREE.MeshPhysicalMaterial({ color: coat.body, roughness: 0.55, sheen: 0.8, sheenColor: new THREE.Color(coat.sheen).multiplyScalar(0.4) });
+        for (const sd of [-1, 1]) {
+          const eye = new THREE.Mesh(new THREE.SphereGeometry(0.026, 18, 14), eyeMat); eye.position.set(ex, ey, sd * (side - 0.012));
+          const lid = new THREE.Mesh(new THREE.SphereGeometry(0.031, 14, 10, 0, Math.PI * 2, 0, Math.PI * 0.42), lidMat); lid.position.set(ex, ey + 0.004, sd * (side - 0.012)); lid.rotation.x = sd * 0.55;
+          this.body.add(eye); this.body.add(lid); this.body.updateMatrixWorld(true); headBone.attach(eye); headBone.attach(lid);
+        }
+      }
+    }
     this.reinL = new THREE.Mesh(new THREE.CylinderGeometry(0.007, 0.007, 1, 5).translate(0, 0.5, 0), leather); this.reinR = this.reinL.clone(); this.root.add(this.reinL, this.reinR);
     this.tmpA = new THREE.Vector3(); this.tmpB = new THREE.Vector3(); this.tmpQ = new THREE.Quaternion();
     this.mixer = new THREE.AnimationMixer(model);
