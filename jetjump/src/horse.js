@@ -4,6 +4,7 @@
 // Crin y cola son tarjetas de pelo con alfa. Las patas y la cola son cadenas articuladas.
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
 import { footOffsets, DUTY, strideFreq } from './sim.js';
 
 const TAU = Math.PI * 2;
@@ -548,8 +549,56 @@ export class HorseGLB {
     box = new THREE.Box3().setFromObject(model);
     const c = box.getCenter(new THREE.Vector3());
     model.position.set(-c.x + (cfg.offsetX ?? 0.05), -box.min.y, -c.z);
-    model.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; o.frustumCulled = false; if (o.material) { o.material.envMapIntensity = 0.8; } } });
+    const coat = COATS[look.coat] || COATS.bay;
+    const smooth = cfg.smooth ?? true;
+    const fur = furTexture();
+    const bodyCol = new THREE.Color(coat.body), maneCol = new THREE.Color(coat.mane), pointsCol = new THREE.Color(coat.points);
+    model.traverse((o) => {
+      if (!o.isMesh) return;
+      o.castShadow = true; o.receiveShadow = true; o.frustumCulled = false;
+      if (!smooth) { if (o.material) o.material.envMapIntensity = 0.8; return; }
+      // zonas de color: leer la paleta original por UV para distinguir crin/cola/cascos del cuerpo
+      const srcMap = o.material && o.material.map;
+      let sample = null;
+      if (srcMap && srcMap.image && srcMap.image.width) {
+        try { const c = document.createElement('canvas'); c.width = srcMap.image.width; c.height = srcMap.image.height; const g = c.getContext('2d'); g.drawImage(srcMap.image, 0, 0); const d = g.getImageData(0, 0, c.width, c.height).data; sample = (u, v) => { const x = Math.min(c.width - 1, Math.max(0, Math.floor((u % 1 + 1) % 1 * c.width))), y = Math.min(c.height - 1, Math.max(0, Math.floor((1 - (v % 1 + 1) % 1) * c.height))); const i = (y * c.width + x) * 4; return (d[i] * 0.3 + d[i + 1] * 0.59 + d[i + 2] * 0.11) / 255; }; } catch { sample = null; }
+      }
+      let geo = o.geometry;
+      try { geo = BufferGeometryUtils.mergeVertices(geo, 1e-4); geo.computeVertexNormals(); } catch { /* geometría no fusionable */ }
+      const pos = geo.getAttribute('position'), uv = geo.getAttribute('uv'), n = pos.count, col = new Float32Array(n * 3);
+      for (let i = 0; i < n; i++) {
+        let c = bodyCol;
+        if (sample && uv) { const l = sample(uv.getX(i), uv.getY(i)); if (l < 0.22) c = maneCol; else if (l < 0.4) c = pointsCol; }
+        const k = 0.94 + 0.12 * vnoise(pos.getX(i) * 3, pos.getY(i) * 3, pos.getZ(i) * 3);
+        col[i * 3] = c.r * k; col[i * 3 + 1] = c.g * k; col[i * 3 + 2] = c.b * k;
+      }
+      geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+      o.geometry = geo;
+      o.material = new THREE.MeshPhysicalMaterial({ color: 0xffffff, vertexColors: true, roughness: 0.5, sheen: 1, sheenRoughness: 0.35, sheenColor: new THREE.Color(coat.sheen).multiplyScalar(0.5), clearcoat: 0.1, clearcoatRoughness: 0.6, bumpMap: fur, bumpScale: 0.004, envMapIntensity: 0.8 });
+    });
     this.body.add(model);
+    model.updateMatrixWorld(true);
+    const bone = (re) => { let b = null; model.traverse((o) => { if (!b && o.isBone && re.test(o.name)) b = o; }); return b; };
+    this.seatBone = bone(/spine_?3|spine_?4|spine\.?003/i);
+    this.mouthBone = bone(/mouth|jaw|nose|head/i);
+    const hoofNames = [/front.*foot.*l|front.*hoof.*l|foot_?l$|hoof_?l$/i, /front.*foot.*r|front.*hoof.*r/i, /back.*foot.*l|hind.*foot.*l|back.*hoof.*l/i, /back.*foot.*r|hind.*foot.*r|back.*hoof.*r/i];
+    this.hooves = hoofNames.map((re) => bone(re)).filter(Boolean);
+    // montura y cincha que siguen al lomo
+    const leather = new THREE.MeshStandardMaterial({ color: 0x2b170c, roughness: 0.38, metalness: 0.05 });
+    const steel = new THREE.MeshStandardMaterial({ color: 0xc8c8cc, roughness: 0.25, metalness: 1 });
+    this.tack = new THREE.Group(); this.body.add(this.tack);
+    const padGeo = new THREE.BoxGeometry(0.64, 0.02, 0.66, 1, 1, 10); bendAround(padGeo, 0.4);
+    const pad = new THREE.Mesh(padGeo, new THREE.MeshStandardMaterial({ color: look.pad ?? 0xf4f4f0, roughness: 0.85 })); pad.position.set(0.02, -0.02, 0); pad.castShadow = true; this.tack.add(pad);
+    const seatGeo = new THREE.SphereGeometry(0.25, 24, 14); seatGeo.scale(1.2, 0.3, 0.72);
+    const seat = new THREE.Mesh(seatGeo, leather); seat.position.set(0, 0.03, 0); seat.castShadow = true; this.tack.add(seat);
+    const pommel = new THREE.Mesh(new THREE.SphereGeometry(0.07, 12, 8), leather); pommel.scale.set(0.8, 0.7, 1.4); pommel.position.set(0.2, 0.08, 0); this.tack.add(pommel);
+    const cantle = new THREE.Mesh(new THREE.SphereGeometry(0.08, 12, 8), leather); cantle.scale.set(0.6, 0.9, 1.6); cantle.position.set(-0.23, 0.08, 0); this.tack.add(cantle);
+    for (const sd of [-1, 1]) { const flap = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.38, 0.015), leather); flap.position.set(0.08, -0.17, sd * 0.32); flap.rotation.x = sd * 0.22; flap.castShadow = true; this.tack.add(flap); }
+    const girth = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.028, 6, 40), new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.6 })); girth.position.set(0.12, -0.42, 0); girth.scale.set(0.8, 0.86, 0.84); girth.rotation.y = Math.PI / 2; this.tack.add(girth);
+    this.stirrups = [];
+    for (const sd of [-1, 1]) { const st = new THREE.Group(); st.position.set(0.12, -0.08, sd * 0.28); const ls = new THREE.Mesh(new THREE.BoxGeometry(0.025, 0.5, 0.008), leather); ls.position.y = -0.25; st.add(ls); const iron = new THREE.Mesh(new THREE.TorusGeometry(0.05, 0.007, 6, 14), steel); iron.position.y = -0.52; iron.rotation.y = Math.PI / 2; st.add(iron); this.tack.add(st); this.stirrups.push(st); }
+    this.reinL = new THREE.Mesh(new THREE.CylinderGeometry(0.007, 0.007, 1, 5).translate(0, 0.5, 0), leather); this.reinR = this.reinL.clone(); this.root.add(this.reinL, this.reinR);
+    this.tmpA = new THREE.Vector3(); this.tmpB = new THREE.Vector3(); this.tmpQ = new THREE.Quaternion();
     this.mixer = new THREE.AnimationMixer(model);
     const clips = gltf.animations || [];
     const find = (re) => clips.find((k) => re.test(k.name));
@@ -569,6 +618,7 @@ export class HorseGLB {
     this.rider = new Rider(look.rider);
     this.body.add(this.rider.root);
     this.rider.root.position.set(0.08, this.backY + 0.05, 0);
+    this.followSeat();
     this.t = 0; this.tmp = new THREE.Vector3();
   }
   update(pose, dt) {
@@ -589,10 +639,37 @@ export class HorseGLB {
     this.body.position.y = (pose.y - 1.12) * jw;
     this.body.rotation.z = pose.pitch * jw;
     this.body.rotation.x = pose.roll;
+    this.followSeat();
     this.rider.update(pose, dt, 0, 0);
+    this.root.updateMatrixWorld(true);
+    if (this.mouthBone) {
+      for (const [rein, sd] of [[this.reinL, -1], [this.reinR, 1]]) {
+        const hand = this.rider.handWorld(sd, this.tmpA);
+        this.mouthBone.getWorldPosition(this.tmpB).add(new THREE.Vector3(0, 0, sd * 0.07).applyQuaternion(this.root.getWorldQuaternion(this.tmpQ)));
+        this.root.worldToLocal(hand); this.root.worldToLocal(this.tmpB);
+        const d = this.tmpB.clone().sub(hand);
+        rein.position.copy(hand); rein.scale.set(1, d.length(), 1);
+        rein.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.normalize());
+      }
+    }
+  }
+  followSeat() {
+    if (!this.seatBone) return;
+    this.model.updateMatrixWorld(true);
+    const wp = this.seatBone.getWorldPosition(this.tmpA); this.body.worldToLocal(wp);
+    if (this.restSeat == null) {
+      // medir el lomo en reposo: tope de la malla sobre el hueso del asiento
+      this.restSeat = wp.clone();
+      let top = -Infinity;
+      this.model.traverse((o) => { if (!o.isMesh) return; const pz = o.geometry.getAttribute('position'); const v = new THREE.Vector3(); for (let i = 0; i < pz.count; i += 2) { v.fromBufferAttribute(pz, i); o.localToWorld(v); this.body.worldToLocal(v); if (Math.abs(v.x - wp.x) < 0.12 && Math.abs(v.z) < 0.08) top = Math.max(top, v.y); } });
+      this.backTop = top > -Infinity ? top : wp.y + 0.12;
+    }
+    const dy = wp.y - this.restSeat.y, dx = wp.x - this.restSeat.x;
+    this.tack.position.set(this.restSeat.x + 0.04 + dx, this.backTop - 0.03 + dy, 0);
+    this.rider.root.position.set(this.restSeat.x + 0.08 + dx, this.backTop + 0.03 + dy, 0);
   }
   hoofWorld(i, out) {
-    if (this.hooves.length >= 4) return this.hooves[i % this.hooves.length].getWorldPosition(out);
+    if (this.hooves.length >= 4) return this.hooves[i].getWorldPosition(out);
     const sx = i < 2 ? 0.45 : -0.6, sz = (i % 2 ? 1 : -1) * 0.18;
     return this.root.localToWorld(out.set(sx, 0.02, sz));
   }
