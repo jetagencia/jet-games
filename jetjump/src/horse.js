@@ -451,52 +451,85 @@ function bendAround(geo, r) {
 // ---------------------------------------------------------------------------
 export class Rider {
   constructor(look = {}) {
-    this.look = { jacket: 0x14204a, breeches: 0xf5f3ee, helmet: 0x101418, skin: 0xd9a27e, collar: 0xffffff, hair: 0x3a2518, ...look };
+    this.look = { jacket: 0x14204a, breeches: 0xf5f3ee, helmet: 0x101418, skin: 0xd9a27e, collar: 0xffffff, hair: 0x3a2518, number: '', ...look };
     const M = (c, r = 0.6, extra = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: r, ...extra });
-    const jacket = new THREE.MeshPhysicalMaterial({ color: this.look.jacket, roughness: 0.7, sheen: 0.5, sheenColor: 0x8899cc });
-    const breeches = M(this.look.breeches, 0.75);
-    const boots = new THREE.MeshPhysicalMaterial({ color: 0x0b0b0c, roughness: 0.22, clearcoat: 0.9, clearcoatRoughness: 0.15 });
-    const helmet = new THREE.MeshPhysicalMaterial({ color: this.look.helmet, roughness: 0.3, clearcoat: 0.7 });
-    const skin = M(this.look.skin, 0.65);
-    const gloves = M(0x1a1a1a, 0.6);
-    const cap = (r, len, mat, sx = 1, sz = 1) => { const g = new THREE.CapsuleGeometry(r, len, 6, 14); g.translate(0, -len / 2 - r * 0.2, 0); g.scale(sx, 1, sz); const m = new THREE.Mesh(g, mat); m.castShadow = true; return m; };
+    const jacket = new THREE.MeshPhysicalMaterial({ color: this.look.jacket, roughness: 0.72, sheen: 0.6, sheenRoughness: 0.5, sheenColor: 0x8899cc });
+    const trim = new THREE.MeshPhysicalMaterial({ color: new THREE.Color(this.look.jacket).multiplyScalar(0.55), roughness: 0.7 });
+    const breeches = M(this.look.breeches, 0.8);
+    const boots = new THREE.MeshPhysicalMaterial({ color: 0x0b0b0c, roughness: 0.2, clearcoat: 1, clearcoatRoughness: 0.12 });
+    const helmet = new THREE.MeshPhysicalMaterial({ color: this.look.helmet, roughness: 0.28, clearcoat: 0.8, clearcoatRoughness: 0.1 });
+    const skin = M(this.look.skin, 0.62);
+    const gloves = M(0x1a1a1a, 0.55);
+    const white = M(this.look.collar, 0.5);
+    const gold = new THREE.MeshStandardMaterial({ color: 0xd9b35b, roughness: 0.3, metalness: 0.9 });
+    const mesh = (g, m) => { const o = new THREE.Mesh(g, m); o.castShadow = true; return o; };
 
     this.root = new THREE.Group();
     this.pelvis = new THREE.Group(); this.root.add(this.pelvis);
-    const hips = new THREE.Mesh(new THREE.SphereGeometry(0.14, 16, 12), breeches); hips.scale.set(1.0, 0.7, 1.2); hips.castShadow = true; this.pelvis.add(hips);
-    this.torso = new THREE.Group(); this.torso.position.y = 0.05; this.pelvis.add(this.torso);
-    const chestGeo = new THREE.CapsuleGeometry(0.14, 0.3, 8, 16); chestGeo.translate(0, 0.3, 0);
-    { const p = chestGeo.getAttribute('position'); for (let i = 0; i < p.count; i++) { const y = p.getY(i); const k = 0.82 + 0.4 * clamp((y - 0.1) / 0.4, 0, 1); p.setZ(i, p.getZ(i) * k); p.setX(i, p.getX(i) * (0.78 + 0.1 * clamp((y - 0.1) / 0.4, 0, 1))); } chestGeo.computeVertexNormals(); }
-    const chest = new THREE.Mesh(chestGeo, jacket); chest.castShadow = true; this.torso.add(chest);
+    const hips = mesh(new THREE.SphereGeometry(1, 18, 12), breeches); hips.scale.set(0.17, 0.11, 0.19); hips.position.y = 0.02; this.pelvis.add(hips);
+    const belt = mesh(new THREE.TorusGeometry(0.165, 0.012, 6, 24), trim); belt.rotation.x = Math.PI / 2; belt.position.y = 0.09; belt.scale.set(1, 1.15, 1); this.pelvis.add(belt);
+    this.torso = new THREE.Group(); this.torso.position.y = 0.08; this.pelvis.add(this.torso);
+    // tronco: cintura → pecho → hombros (loft vertical)
+    const tSt = [
+      { p: new THREE.Vector3(0, 0.0, 0), w: 0.15, ht: 0.095, hb: 0.1, e: 2.4 },
+      { p: new THREE.Vector3(0, 0.14, 0), w: 0.165, ht: 0.11, hb: 0.105, e: 2.4 },
+      { p: new THREE.Vector3(0, 0.3, 0), w: 0.2, ht: 0.12, hb: 0.11, e: 2.6 },
+      { p: new THREE.Vector3(0, 0.42, 0), w: 0.215, ht: 0.11, hb: 0.1, e: 2.6 },
+      { p: new THREE.Vector3(0, 0.5, 0), w: 0.17, ht: 0.085, hb: 0.08, e: 2.2 },
+      { p: new THREE.Vector3(0, 0.55, 0), w: 0.08, ht: 0.05, hb: 0.05, e: 2.0 },
+    ].map(st => ({ ...st, t: new THREE.Vector3(0, 1, 0) }));
+    const chest = mesh(loft(tSt, 28), jacket); this.torso.add(chest);
+    // faldón de la chaqueta
     const tailsMat = jacket.clone(); tailsMat.side = THREE.DoubleSide;
-    const tails = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.19, 0.18, 16, 1, true), tailsMat); tails.position.set(-0.03, 0.02, 0); this.torso.add(tails);
-    const collar = new THREE.Mesh(new THREE.CylinderGeometry(0.058, 0.07, 0.06, 12), M(this.look.collar, 0.5)); collar.position.y = 0.6; this.torso.add(collar);
-    const bib = new THREE.Mesh(new THREE.PlaneGeometry(0.12, 0.16), M(0xffffff, 0.6)); bib.position.set(0.15, 0.42, 0); bib.rotation.y = Math.PI / 2; this.torso.add(bib);
-    this.headJ = new THREE.Group(); this.headJ.position.y = 0.62; this.torso.add(this.headJ);
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.098, 18, 14), skin); head.scale.set(1.0, 1.18, 0.92); head.position.y = 0.1; head.castShadow = true; this.headJ.add(head);
-    const hair = new THREE.Mesh(new THREE.SphereGeometry(0.1, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.6), M(this.look.hair, 0.9)); hair.position.set(-0.01, 0.11, 0); hair.scale.set(1.02, 1.1, 0.95); this.headJ.add(hair);
-    const hel = new THREE.Mesh(new THREE.SphereGeometry(0.118, 20, 14, 0, Math.PI * 2, 0, Math.PI * 0.55), helmet); hel.position.y = 0.135; hel.scale.set(1, 0.95, 1.02); hel.castShadow = true; this.headJ.add(hel);
-    const visor = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, 0.01, 18, 1, false, -1.0, 2.0), helmet); visor.position.set(0.035, 0.125, 0); visor.rotation.z = -0.3; this.headJ.add(visor);
-    const strapH = new THREE.Mesh(new THREE.TorusGeometry(0.095, 0.006, 6, 20, Math.PI), M(0x111111)); strapH.position.set(0, 0.09, 0); strapH.rotation.set(0, Math.PI / 2, Math.PI); this.headJ.add(strapH);
+    const tails = mesh(new THREE.CylinderGeometry(0.16, 0.2, 0.2, 20, 1, true), tailsMat); tails.position.set(-0.02, -0.02, 0); tails.scale.set(0.75, 1, 1.1); this.torso.add(tails);
+    // camisa, corbatín y solapas
+    const shirt = mesh(new THREE.PlaneGeometry(0.1, 0.17), white); shirt.position.set(0.112, 0.43, 0); shirt.rotation.y = Math.PI / 2; this.torso.add(shirt);
+    const tie = mesh(new THREE.BoxGeometry(0.01, 0.1, 0.035), M(0xf5f0e6, 0.4)); tie.position.set(0.118, 0.44, 0); this.torso.add(tie);
+    for (const sd of [-1, 1]) { const lap = mesh(new THREE.BoxGeometry(0.012, 0.18, 0.055), trim); lap.position.set(0.112, 0.4, sd * 0.055); lap.rotation.x = sd * 0.35; lap.rotation.y = sd * 0.25; this.torso.add(lap); }
+    for (let i = 0; i < 3; i++) { const bt = mesh(new THREE.SphereGeometry(0.009, 8, 6), gold); bt.position.set(0.118, 0.33 - i * 0.07, 0.012); this.torso.add(bt); }
+    const collar = mesh(new THREE.CylinderGeometry(0.06, 0.07, 0.05, 14), white); collar.position.y = 0.57; this.torso.add(collar);
+    const jacketCollar = mesh(new THREE.TorusGeometry(0.075, 0.016, 8, 20, Math.PI * 1.5), trim); jacketCollar.rotation.x = Math.PI / 2; jacketCollar.rotation.z = Math.PI * 0.75; jacketCollar.position.y = 0.55; this.torso.add(jacketCollar);
+    // número de dorsal en la espalda
+    if (this.look.number) {
+      const c = document.createElement('canvas'); c.width = 128; c.height = 128; const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, 128, 128); g.fillStyle = '#111'; g.font = 'bold 84px Poppins, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(String(this.look.number), 64, 70);
+      const bib = mesh(new THREE.PlaneGeometry(0.12, 0.12), new THREE.MeshStandardMaterial({ map: new THREE.CanvasTexture(c), roughness: 0.7 })); bib.position.set(-0.108, 0.36, 0); bib.rotation.y = -Math.PI / 2; this.torso.add(bib);
+    }
+    // cabeza
+    this.headJ = new THREE.Group(); this.headJ.position.y = 0.57; this.torso.add(this.headJ);
+    const head = mesh(new THREE.SphereGeometry(1, 20, 16), skin); head.scale.set(0.092, 0.108, 0.088); head.position.y = 0.105; this.headJ.add(head);
+    const jaw = mesh(new THREE.SphereGeometry(1, 14, 10), skin); jaw.scale.set(0.075, 0.06, 0.07); jaw.position.set(0.012, 0.06, 0); this.headJ.add(jaw);
+    const nose = mesh(new THREE.SphereGeometry(0.016, 8, 6), skin); nose.scale.set(1.2, 1.2, 0.8); nose.position.set(0.092, 0.095, 0); this.headJ.add(nose);
+    for (const sd of [-1, 1]) { const ear = mesh(new THREE.SphereGeometry(0.02, 8, 6), skin); ear.scale.set(0.6, 1, 1); ear.position.set(0.0, 0.1, sd * 0.088); this.headJ.add(ear); const eye = mesh(new THREE.SphereGeometry(0.009, 8, 6), M(0x1a1008, 0.1)); eye.position.set(0.078, 0.115, sd * 0.03); this.headJ.add(eye); }
+    const hair = mesh(new THREE.SphereGeometry(0.095, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.62), M(this.look.hair, 0.9)); hair.position.set(-0.012, 0.11, 0); hair.scale.set(1.0, 1.08, 1.0); this.headJ.add(hair);
+    const hel = mesh(new THREE.SphereGeometry(0.117, 24, 16, 0, Math.PI * 2, 0, Math.PI * 0.56), helmet); hel.position.y = 0.128; hel.scale.set(1.04, 0.95, 1); this.headJ.add(hel);
+    const brim = mesh(new THREE.CylinderGeometry(0.125, 0.125, 0.012, 24, 1, false, -1.1, 2.2), helmet); brim.position.set(0.02, 0.122, 0); brim.rotation.z = -0.28; this.headJ.add(brim);
+    const vent = mesh(new THREE.TorusGeometry(0.1, 0.007, 6, 24), trim); vent.rotation.x = Math.PI / 2; vent.position.y = 0.17; vent.scale.set(1, 0.8, 1); this.headJ.add(vent);
+    for (const sd of [-1, 1]) { const strap = mesh(new THREE.TorusGeometry(0.06, 0.005, 6, 16, Math.PI * 0.9), M(0x111111)); strap.position.set(0.01, 0.075, sd * 0.07); strap.rotation.set(0, Math.PI / 2, Math.PI * 1.05); this.headJ.add(strap); }
     this.eyeCam = new THREE.Object3D(); this.eyeCam.position.set(0.1, 0.12, 0); this.headJ.add(this.eyeCam);
 
     this.arms = []; this.legsR = [];
-    for (const s of [-1, 1]) {
-      const sh = new THREE.Group(); sh.position.set(0.0, 0.5, s * 0.2); this.torso.add(sh);
-      sh.add(cap(0.05, 0.22, jacket));
-      const el = new THREE.Group(); el.position.y = -0.3; sh.add(el);
-      el.add(cap(0.042, 0.2, jacket));
-      const hand = new THREE.Mesh(new THREE.SphereGeometry(0.04, 10, 8), gloves); hand.position.y = -0.29; hand.scale.set(1, 1.2, 0.8); el.add(hand);
-      const handPt = new THREE.Object3D(); handPt.position.y = -0.3; el.add(handPt);
-      this.arms.push({ sh, el, handPt, s });
-      const hip = new THREE.Group(); hip.position.set(0.02, -0.02, s * 0.12); this.pelvis.add(hip);
-      hip.add(cap(0.075, 0.32, breeches, 1, 0.9));
+    for (const sd of [-1, 1]) {
+      const sh = new THREE.Group(); sh.position.set(0.0, 0.47, sd * 0.215); this.torso.add(sh);
+      const shoulder = mesh(new THREE.SphereGeometry(0.058, 12, 10), jacket); shoulder.scale.set(1, 0.9, 1); sh.add(shoulder);
+      sh.add(mesh(limbGeo(0.29, 0.052, 0.042, 0.1, 14, 1), jacket));
+      const el = new THREE.Group(); el.position.y = -0.29; sh.add(el);
+      el.add(mesh(new THREE.SphereGeometry(0.04, 10, 8), jacket));
+      el.add(mesh(limbGeo(0.26, 0.04, 0.034, 0.08, 14, 1), jacket));
+      const cuff = mesh(new THREE.CylinderGeometry(0.036, 0.036, 0.025, 12), white); cuff.position.y = -0.255; el.add(cuff);
+      const hand = mesh(new THREE.SphereGeometry(0.04, 10, 8), gloves); hand.scale.set(0.7, 1.1, 0.85); hand.position.y = -0.3; el.add(hand);
+      const handPt = new THREE.Object3D(); handPt.position.y = -0.31; el.add(handPt);
+      this.arms.push({ sh, el, handPt, s: sd });
+
+      const hip = new THREE.Group(); hip.position.set(0.02, 0.0, sd * 0.11); this.pelvis.add(hip);
+      hip.add(mesh(limbGeo(0.44, 0.085, 0.062, 0.05, 16, 0.95), breeches));
       const knee = new THREE.Group(); knee.position.y = -0.44; hip.add(knee);
-      knee.add(cap(0.056, 0.32, boots));
-      const kneePad = new THREE.Mesh(new THREE.SphereGeometry(0.06, 10, 8), breeches); knee.add(kneePad);
+      const kneePad = mesh(new THREE.SphereGeometry(0.062, 12, 10), breeches); kneePad.scale.set(1, 0.9, 0.9); knee.add(kneePad);
+      knee.add(mesh(limbGeo(0.43, 0.06, 0.047, 0.0, 16, 0.95), boots));
+      const top = mesh(new THREE.TorusGeometry(0.058, 0.012, 8, 20), boots); top.rotation.x = Math.PI / 2; top.position.y = -0.04; knee.add(top);
       const ankle = new THREE.Group(); ankle.position.y = -0.43; knee.add(ankle);
-      const foot = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.06, 0.08), boots); foot.position.set(0.06, -0.02, 0); ankle.add(foot);
-      this.legsR.push({ hip, knee, ankle, s });
+      const foot = mesh(new THREE.BoxGeometry(0.25, 0.06, 0.085), boots); foot.position.set(0.06, -0.02, 0); ankle.add(foot);
+      const spur = mesh(new THREE.TorusGeometry(0.035, 0.004, 6, 14, Math.PI), new THREE.MeshStandardMaterial({ color: 0xcccccc, metalness: 1, roughness: 0.3 })); spur.position.set(-0.06, -0.01, 0); spur.rotation.set(0, 0, Math.PI / 2); ankle.add(spur);
+      this.legsR.push({ hip, knee, ankle, s: sd });
     }
     this.lean = 0; this.legSwing = 0; this.seatV = 0; this.seatY = 0;
   }
