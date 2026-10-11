@@ -397,7 +397,7 @@ export class World {
     g.add(crowd); g.add(heads); g.add(legs);
     // techo de la tribuna: marquesina clara, solo sobre las filas traseras
     const roofDepth = rows * 1.1 * 0.7;
-    const roof = new THREE.Mesh(new THREE.BoxGeometry(len + 2, 0.1, roofDepth), new THREE.MeshStandardMaterial({ color: indoor ? 0x2a2f3a : 0xf1ebe0, roughness: 0.55, metalness: 0.1, side: THREE.DoubleSide }));
+    const roof = new THREE.Mesh(new THREE.BoxGeometry(len + 2, 0.1, roofDepth), new THREE.MeshStandardMaterial({ color: indoor ? 0x2a2f3a : 0xf1ebe0, roughness: 0.55, metalness: 0.0, side: THREE.DoubleSide, emissive: indoor ? 0x000000 : 0xb8ad9c, emissiveIntensity: 0.55 }));
     roof.position.set(0, rows * 0.55 + 4.2, z0 - rows * 1.1 + roofDepth / 2 - 0.5); roof.rotation.x = 0.08; roof.castShadow = true; g.add(roof);
     const beam = new THREE.MeshStandardMaterial({ color: 0xd9b35b, roughness: 0.4, metalness: 0.6 });
     for (const x of [-len / 2, -len / 4, 0, len / 4, len / 2]) { const pcol = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, rows * 0.55 + 4.2, 10), beam); pcol.position.set(x, (rows * 0.55 + 4.2) / 2, z0 - rows * 1.1 + 0.2); g.add(pcol); }
