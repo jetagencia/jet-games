@@ -28,7 +28,7 @@ ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground)
 const grid = new THREE.GridHelper(10, 20, 0x444, 0x777); grid.position.y = 0.002; scene.add(grid);
 const t0 = performance.now();
 const look = { coat: q.get('coat') || 'bay', blaze: true, socks: [0, 1, 0, 1] };
-const horse = q.has('glb') ? new HorseGLB(await loadHorseAsset('../assets/models/horse.glb'), look) : new HorseModel(look);
+const horse = q.has('glb') ? new HorseGLB(await loadHorseAsset('../assets/models/horse.glb.wasm'), look) : new HorseModel(look);
 scene.add(horse.root);
 document.getElementById('i').textContent = `build ${(performance.now() - t0).toFixed(0)}ms`;
 const gait = +(q.get('gait') ?? 3);

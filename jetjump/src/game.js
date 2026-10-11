@@ -67,7 +67,7 @@ export class Game {
     if (this.horse) { this.world.scene.remove(this.horse.root); }
     let model = null;
     if ((this.settings.horseModel || 'auto') !== 'procedural') {
-      const gltf = await loadHorseAsset(new URL('../assets/models/horse.glb', import.meta.url).href);
+      const gltf = await loadHorseAsset(new URL('../assets/models/horse.glb.wasm', import.meta.url).href);
       if (gltf) model = new HorseGLB(gltf, look);
     }
     this.horse = model || new HorseModel(look); this.horseKey = key;
