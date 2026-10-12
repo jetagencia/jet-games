@@ -1,0 +1,20 @@
+{
+  "FileVersion": 3,
+  "Version": 1,
+  "VersionName": "0.1.0",
+  "FriendlyName": "JETJump Sim",
+  "Description": "Simulación de salto ecuestre de JETJump: aires, trancos, balística del salto, reglamento FEI, rivales. Portada del motor web calibrado.",
+  "Category": "Gameplay",
+  "CreatedBy": "JETCompany OÜ",
+  "CreatedByURL": "https://jetgames.fun",
+  "CanContainContent": false,
+  "IsBetaVersion": true,
+  "Installed": false,
+  "Modules": [
+    {
+      "Name": "JETJumpSim",
+      "Type": "Runtime",
+      "LoadingPhase": "Default"
+    }
+  ]
+}

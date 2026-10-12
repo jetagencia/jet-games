@@ -73,3 +73,8 @@ Sin dependencias de build: HTML + módulos ES. Los tests de calibración viven c
 
 ✅ Jugable de punta a punta: menú → carrera o modo rápido → reconocimiento → recorrido 3D → desempate → resultados → progresión.
 ⚠ Arte provisional: caballo y público procedurales. Para el acabado fotorrealista se necesita un modelo de caballo con esqueleto y licencia comercial (ver diseño, sección "Pipeline de assets").
+
+
+## Unreal Engine 5
+
+En `unreal/JETJumpSim` está la simulación completa portada a C++ como plugin de UE5 (Pawn con cámaras, GameMode, HUD, pista con barras físicas, rivales). Instrucciones en `unreal/README.md`.
