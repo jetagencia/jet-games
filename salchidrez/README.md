@@ -1,4 +1,4 @@
-# Salchidrez. Prototipo v0.5
+# Salchidrez. Prototipo v0.6
 
 Ajedrez de perros salchicha. Reglas completas del ajedrez, pero cada pieza es un salchicha disfrazado de lo que representa. Cuando se mueve, el perro estira el cuerpo hasta la casilla destino y después la cola lo alcanza. El caballero salta.
 
@@ -33,7 +33,7 @@ Para subirlo a Hostinger alcanza con `index.html`, `manifest.json`, `sw.js` y `c
 | Caballo | Caballero | yelmo con penacho, armadura y caballito de palo; salta en vez de estirarse |
 | Peón | Cachorro | pañuelo, el más chiquito |
 
-Opcional: símbolo clásico (♔♕♖♗♘♙) en la esquina de cada casilla, se activa desde el menú.
+Tablero de pasto en tonos medios para que contrasten los perros claros y los oscuros. Cada perro tiene una base del color de su equipo y una medallita con el símbolo clásico (♔ contorno para Crema, ♚ relleno para Chocolate). La medallita se puede ocultar desde el menú.
 
 ## Música
 

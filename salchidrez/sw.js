@@ -1,5 +1,5 @@
 // Salchidrez Service Worker
-const CACHE_NAME = 'salchidrez-v0.5.1';
+const CACHE_NAME = 'salchidrez-v0.6.0';
 const ASSETS = ['./', './index.html', './manifest.json', './card.png'];
 
 self.addEventListener('install', e => {

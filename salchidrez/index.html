@@ -256,7 +256,7 @@
       <button class="link" id="btn-legend">Quién es quién</button>
       <label class="link" for="opt-glyphs"><input type="checkbox" id="opt-glyphs"> Símbolos clásicos</label>
     </div>
-    <p class="foot">JETCompany OÜ · Salchidrez v0.5<br><span id="wins-label"></span></p>
+    <p class="foot">JETCompany OÜ · Salchidrez v0.6<br><span id="wins-label"></span></p>
   </div>
 </div>
 
@@ -316,12 +316,12 @@ const PAL = {
 
 // Proporciones por pieza (relativas al tamaño de casilla): radio del cuerpo y largo
 const DOG = {
-  p: { r: 0.15,  len: 0.26 },
-  n: { r: 0.165, len: 0.30 },
-  b: { r: 0.165, len: 0.31 },
-  r: { r: 0.17,  len: 0.32 },
-  q: { r: 0.17,  len: 0.34 },
-  k: { r: 0.175, len: 0.35 },
+  p: { r: 0.17,  len: 0.25 },
+  n: { r: 0.19,  len: 0.28 },
+  b: { r: 0.19,  len: 0.29 },
+  r: { r: 0.195, len: 0.30 },
+  q: { r: 0.195, len: 0.31 },
+  k: { r: 0.2,   len: 0.32 },
 };
 
 const NAMES = {
@@ -677,7 +677,7 @@ function dogAnchors(type, cx, cy, s, dir) {
   const d = DOG[type];
   const r = d.r * s, len = d.len * s;
   const off = (len + 0.65 * r) / 2;
-  const y = cy + s * 0.13;
+  const y = cy + s * 0.17;
   const ox = cx - dir * off;
   return { ox, oy: y, fx: ox + dir * len, fy: y, r };
 }
@@ -704,11 +704,13 @@ function drawDog(g, type, color, ox, oy, fx, fy, r, opts) {
   // Sombra / glow de equipo
   if (!opts.noShadow) {
     g.save();
-    g.fillStyle = pal.team;
-    g.globalAlpha *= 0.28;
     g.beginPath();
-    g.ellipse(len / 2 + r * 0.3, r * 1.5, len / 2 + r * 1.1, r * 0.38, 0, 0, Math.PI * 2);
+    g.ellipse(len / 2 + r * 0.3, r * 1.5, len / 2 + r * 1.1, r * 0.4, 0, 0, Math.PI * 2);
+    g.fillStyle = color === 'w' ? 'rgba(255, 255, 255, 0.6)' : 'rgba(40, 14, 4, 0.5)';
     g.fill();
+    g.lineWidth = Math.max(1.5, r * 0.14);
+    g.strokeStyle = pal.team;
+    g.stroke();
     g.restore();
   }
 
@@ -868,11 +870,12 @@ function drawDog(g, type, color, ox, oy, fx, fy, r, opts) {
 
   // Sombreros
   const topY = hy - r * 0.7;
-  if (type === 'k') drawCrown(g, hx, topY, r, pal, lw);
-  if (type === 'q') drawCoronet(g, hx, topY, r, pal, lw);
-  if (type === 'b') drawMitre(g, hx, topY, r, color, pal, lw);
-  if (type === 'r') drawTowerHat(g, hx, topY, r, pal, lw);
-  if (type === 'n') drawHelmet(g, hx, hy - r * 0.78, r, pal, lw, time);
+  const hat = (fn, y, k) => { g.save(); g.translate(hx, y); g.scale(k, k); g.translate(-hx, -y); fn(y); g.restore(); };
+  if (type === 'k') hat(y => drawCrown(g, hx, y, r, pal, lw), topY + r * 0.15, 1.3);
+  if (type === 'q') hat(y => drawCoronet(g, hx, y, r, pal, lw), topY + r * 0.15, 1.3);
+  if (type === 'b') hat(y => drawMitre(g, hx, y, r, color, pal, lw), topY + r * 0.2, 1.25);
+  if (type === 'r') hat(y => drawTowerHat(g, hx, y, r, pal, lw), topY + r * 0.2, 1.3);
+  if (type === 'n') hat(y => drawHelmet(g, hx, y, r, pal, lw, time), hy - r * 0.78, 1.15);
   if (type === 'q' && blink === 1 && !mood) drawLashes(g, ex, ey, r, lw);
 
   // Caballito de palo, delante del pecho
@@ -1176,11 +1179,14 @@ function drawBone(g, x, y, s, alpha) {
   g.globalAlpha = alpha;
   g.translate(x, y);
   g.rotate(-0.5);
-  g.fillStyle = C.bone;
-  g.fillRect(-w / 2, -k * 0.7, w, k * 1.4);
+  g.fillStyle = '#fffaf0';
+  g.strokeStyle = 'rgba(40, 60, 20, 0.7)';
+  g.lineWidth = Math.max(1.5, k * 0.35);
   for (const sx of [-1, 1]) for (const sy of [-1, 1]) {
-    g.beginPath(); g.arc(sx * w / 2, sy * k * 0.75, k, 0, Math.PI * 2); g.fill();
+    g.beginPath(); g.arc(sx * w / 2, sy * k * 0.75, k, 0, Math.PI * 2); g.fill(); g.stroke();
   }
+  g.beginPath(); g.rect(-w / 2, -k * 0.7, w, k * 1.4); g.fill();
+  g.beginPath(); g.moveTo(-w / 2, -k * 0.7); g.lineTo(w / 2, -k * 0.7); g.moveTo(-w / 2, k * 0.7); g.lineTo(w / 2, k * 0.7); g.stroke();
   g.restore();
 }
 
@@ -1192,12 +1198,12 @@ let W = 0, H = 0, DPR = 1;
 let L = { bx: 0, by: 0, s: 0, cardH: 64, topCardY: 0, botCardY: 0 };
 
 const BOARD = {
-  light: '#5a4796',
-  dark: '#34286c',
+  light: '#a9cf7e',
+  dark: '#77a95a',
   frameTop: '#4a3592',
   frameBot: '#241656',
   stitch: 'rgba(255, 255, 255, 0.28)',
-  label: 'rgba(246, 240, 255, 0.55)',
+  label: 'rgba(30, 60, 20, 0.75)',
 };
 
 const PIECE = { k: 'el Rey', q: 'la Reina', r: 'la Torre', b: 'el Obispo', n: 'el Caballero', p: 'un Cachorro' };
@@ -1235,7 +1241,7 @@ const AI_SAY = {
 const MOOD_TXT = { happy: 'Muy confiada', angry: 'Enojada', scared: 'Asustada' };
 const pickOne = a => a[Math.floor(Math.random() * a.length)];
 
-const opts = { mode: 'ai', level: 1, color: 'w', glyphs: loadPref('salchidrez-glyphs', false) ? 'on' : 'off' };
+const opts = { mode: 'ai', level: 1, color: 'w', glyphs: loadPref('salchidrez-glyphs2', true) ? 'on' : 'off' };
 let soundOn = loadPref('salchidrez-sfx', true);
 let musicOn = loadPref('salchidrez-music', true);
 
@@ -1821,8 +1827,8 @@ function render(now) {
   drawBoard(now);
 
   const hl = (sq, col) => { const p = sqXY(sq); ctx.fillStyle = col; ctx.fillRect(p.x - s / 2, p.y - s / 2, s, s); };
-  if (lastMove) { hl(lastMove.from, 'rgba(0, 229, 245, 0.16)'); hl(lastMove.to, 'rgba(0, 229, 245, 0.24)'); }
-  if (selected >= 0) hl(selected, 'rgba(255, 209, 102, 0.42)');
+  if (lastMove) { hl(lastMove.from, 'rgba(255, 240, 130, 0.35)'); hl(lastMove.to, 'rgba(255, 240, 130, 0.5)'); }
+  if (selected >= 0) hl(selected, 'rgba(255, 196, 60, 0.7)');
   const chk = inCheck(st, st.turn);
   if (chk) {
     const k = sqXY(kingSquare(st.b, st.turn));
@@ -1957,14 +1963,6 @@ function render(now) {
       else wag = 1.4;
     }
     if (sq === chkKing && !isKing) cx += Math.sin(now * 0.05) * s * 0.025;
-    if (opts.glyphs === 'on') {
-      ctx.save();
-      ctx.font = `700 ${Math.max(9, s * 0.2)}px 'DejaVu Sans', 'Segoe UI Symbol', serif`;
-      ctx.textAlign = 'right'; ctx.textBaseline = 'top';
-      ctx.fillStyle = PAL[col].team; ctx.globalAlpha = 0.8;
-      ctx.fillText(GLYPH[t] + '︎', P.x + s / 2 - 2, P.y - s / 2 + 1);
-      ctx.restore();
-    }
     const a = dogAnchors(t, cx, cy, s * grow, facing[sq] || 1);
     if (lunge > 0) {
       // Se estira hacia el rey al ladrar
@@ -1975,6 +1973,7 @@ function render(now) {
     const blink = ((now + blinkSeeds[sq]) % 4200) < 120;
     drawDog(ctx, t, col, a.ox, a.oy, a.fx, a.fy + sniff * a.r * 0.25, a.r, { time: now, seed: sq, wag, blink, mood, mouth });
     if (sq === chkKing) drawSweat(ctx, a, now);
+    if (opts.glyphs === 'on') drawPieceBadge(ctx, P.x + s * 0.36, P.y - s * 0.36, Math.max(8, s * 0.14), t, col);
     if (isKing) {
       const ct = now - checkFx.start;
       if (ct > 150 && ct < 1100) {
@@ -2172,7 +2171,7 @@ function drawBoard(now) {
     ctx.fillRect(x + c * s, y + r * s, s, s);
   }
   const v = ctx.createRadialGradient(x + n / 2, y + n * 0.4, n * 0.2, x + n / 2, y + n / 2, n * 0.75);
-  v.addColorStop(0, 'rgba(255,255,255,0.05)'); v.addColorStop(1, 'rgba(0,0,0,0.22)');
+  v.addColorStop(0, 'rgba(255,255,255,0.04)'); v.addColorStop(1, 'rgba(0,0,0,0.12)');
   ctx.fillStyle = v; ctx.fillRect(x, y, n, n);
   ctx.restore();
 
@@ -2186,6 +2185,39 @@ function drawBoard(now) {
     ctx.textAlign = 'left'; ctx.textBaseline = 'top';
     ctx.fillText(String(rank), x + 3, y + i * s + 2);
   }
+}
+
+// Medallita con el símbolo clásico: contorno para Crema (blancas), relleno para Chocolate (negras)
+function drawPieceBadge(g, x, y, rad, t, col) {
+  const light = col === 'w';
+  g.save();
+  g.beginPath(); g.arc(x, y, rad, 0, Math.PI * 2);
+  g.fillStyle = '#ffffff';
+  g.fill();
+  g.lineWidth = Math.max(2, rad * 0.22);
+  g.strokeStyle = light ? '#00b8c8' : '#5a2e17';
+  g.stroke();
+  g.fillStyle = '#1a0f3a';
+  g.strokeStyle = '#1a0f3a';
+  if (t === 'p') {
+    // Peón dibujado (el símbolo de texto se ve como emoji en algunos teléfonos)
+    g.lineWidth = Math.max(1.2, rad * 0.12);
+    g.beginPath(); g.arc(x, y - rad * 0.28, rad * 0.22, 0, Math.PI * 2);
+    light ? g.stroke() : g.fill();
+    g.beginPath();
+    g.moveTo(x - rad * 0.18, y - rad * 0.04); g.lineTo(x + rad * 0.18, y - rad * 0.04);
+    g.lineTo(x + rad * 0.34, y + rad * 0.45); g.lineTo(x - rad * 0.34, y + rad * 0.45);
+    g.closePath();
+    light ? g.stroke() : g.fill();
+  } else {
+    const glyph = (light
+      ? { k: '♔', q: '♕', r: '♖', b: '♗', n: '♘' }
+      : { k: '♚', q: '♛', r: '♜', b: '♝', n: '♞' })[t];
+    g.font = `${Math.round(rad * 1.45)}px 'DejaVu Sans', 'Segoe UI Symbol', 'Noto Sans Symbols 2', serif`;
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText(glyph + '︎', x, y + rad * 0.08);
+  }
+  g.restore();
 }
 
 function drawPaw(g, x, y, size, ang, color, alpha) {
@@ -2906,7 +2938,7 @@ function init() {
   glyphs.checked = opts.glyphs === 'on';
   glyphs.addEventListener('change', () => {
     opts.glyphs = glyphs.checked ? 'on' : 'off';
-    savePref('salchidrez-glyphs', glyphs.checked);
+    savePref('salchidrez-glyphs2', glyphs.checked);
   });
 
   document.getElementById('btn-start').addEventListener('click', () => {
