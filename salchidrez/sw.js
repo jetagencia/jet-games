@@ -1,6 +1,6 @@
 // Salchidrez Service Worker
-const CACHE_NAME = 'salchidrez-v0.5.0';
-const ASSETS = ['./', './index.html', './manifest.json'];
+const CACHE_NAME = 'salchidrez-v0.5.1';
+const ASSETS = ['./', './index.html', './manifest.json', './card.png'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));

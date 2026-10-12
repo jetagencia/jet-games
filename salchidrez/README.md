@@ -12,7 +12,7 @@ python3 -m http.server 8000
 
 y abrir `http://localhost:8000` en Chrome móvil o devtools mobile.
 
-Para subirlo a Hostinger alcanza con `index.html`, `manifest.json` y `sw.js`, más `musica.mp3` si se suma música.
+Para subirlo a Hostinger alcanza con `index.html`, `manifest.json`, `sw.js` y `card.png` (imagen para la tarjeta de la home y para compartir el link), más `musica.mp3` si se suma música.
 
 ## Cómo se juega
 
