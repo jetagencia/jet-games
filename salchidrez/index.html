@@ -315,14 +315,16 @@ const PAL = {
 };
 
 // Proporciones por pieza (relativas al tamaño de casilla): radio del cuerpo y largo
+// r = grosor del cuerpo, len = largo. Cuanto más importante la pieza, más larga la salchicha.
 const DOG = {
-  p: { r: 0.17,  len: 0.25 },
-  n: { r: 0.19,  len: 0.28 },
-  b: { r: 0.19,  len: 0.29 },
-  r: { r: 0.195, len: 0.30 },
-  q: { r: 0.195, len: 0.31 },
-  k: { r: 0.2,   len: 0.32 },
+  p: { r: 0.12,  len: 0.40 },
+  n: { r: 0.125, len: 0.48 },
+  b: { r: 0.125, len: 0.50 },
+  r: { r: 0.13,  len: 0.54 },
+  q: { r: 0.13,  len: 0.56 },
+  k: { r: 0.135, len: 0.58 },
 };
+const HEAD_SCALE = 1.35;
 
 const NAMES = {
   k: ['Rey Salchichón', 'corona con cruz y capa de armiño'],
@@ -676,7 +678,7 @@ function fillStroke(g, fill, outline, lw) {
 function dogAnchors(type, cx, cy, s, dir) {
   const d = DOG[type];
   const r = d.r * s, len = d.len * s;
-  const off = (len + 0.65 * r) / 2;
+  const off = (len + (2.5 * HEAD_SCALE - 0.6) * r) / 2;
   const y = cy + s * 0.17;
   const ox = cx - dir * off;
   return { ox, oy: y, fx: ox + dir * len, fy: y, r };
@@ -720,8 +722,8 @@ function drawDog(g, type, color, ox, oy, fx, fy, r, opts) {
   // Cola
   const wag = Math.sin(time * 0.012 * (1 + wagAmt * 2) + seed) * wagAmt;
   g.beginPath();
-  g.moveTo(r * 0.3, -r * 0.4);
-  g.quadraticCurveTo(-r * 0.5, -r * 0.6, -r * 1.0, -r * (1.25 + wag * 1.6));
+  g.moveTo(r * 0.35, -r * 0.5);
+  g.quadraticCurveTo(-r * 0.35, -r * 0.8, -r * (0.45 + wag * 0.5), -r * (1.75 + wag * 0.3));
   g.strokeStyle = pal.outline; g.lineWidth = r * 0.38 + lw * 2; g.stroke();
   g.strokeStyle = pal.body; g.lineWidth = r * 0.38; g.stroke();
 
@@ -756,8 +758,11 @@ function drawDog(g, type, color, ox, oy, fx, fy, r, opts) {
   if (type === 'b') drawClericalCollar(g, len - r * 0.35, -r * 0.3, r, lw);
   if (type === 'q') drawPearls(g, len - r * 0.35, -r * 0.25, r, lw);
 
-  // Cabeza
-  const hx = len - r * 0.05, hy = -r * 1.0;
+  // Cabeza: más grande que el cuerpo (estilo dibujito) para que el sombrero se lea;
+  // el cuerpo queda fino y largo, que es la gracia de la salchicha
+  const rBody = r;
+  r = r * HEAD_SCALE;
+  const hx = len - r * 0.05, hy = -rBody * 1.05;
   // Expresión: mood = 'angry' | 'scared' | 'ko'; mouth = 0..1 (ladrido)
   const mood = opts.mood;
   const mo = Math.max(0, Math.min(1, opts.mouth || 0));
