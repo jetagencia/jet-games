@@ -33,7 +33,31 @@ tasas de llegadas, limpias, barras y rehúses).
 4. Abrí el `.sln`, configuración **Development Editor / Win64**, compilá (Ctrl+Shift+B). Abrí el proyecto.
 5. En **Edit → Plugins** verificá que *JETJump Sim* esté activo.
 
-## Conectar el caballo que ya tenés (sin tocar la malla)
+## Configuración automática (recomendada)
+
+1. **Edit → Plugins** → activar *Python Editor Script Plugin* (viene con el motor) → reiniciar el editor.
+2. Abrir el mapa del juego. **Tools → Execute Python Script** → elegir `Setup_JETJump.py` (está al lado de la carpeta del plugin).
+3. Play.
+
+El script busca el Skeletal Mesh del caballo y sus clips (idle, walk, trot, canter, gallop, jump), crea
+`BP_JetCaballo` y `BP_JetGameMode` en `/Game/JETJump`, pone el GameMode en el mapa y agrega un Player Start
+si falta. Lo que encontró y lo que no queda en el *Output Log* con el prefijo `[JETJump]`. Si eligió mal un
+clip, abrí `BP_JetCaballo` y cambialo en la categoría *Animacion simple*.
+
+## Animación sin Animation Blueprint (modo simple)
+
+Si el Mesh no tiene Anim Class, o si `Force Simple Animation` está activo, el Pawn reproduce los clips
+asignados en *Animacion simple* según la simulación:
+
+- el ciclo de cada aire corre a la frecuencia real del tranco (`Strides Per Clip` dice cuántos trancos trae cada clip),
+- el clip de salto se recorre siguiendo la parábola (batida, ápice, recepción), con `Jump Clip Air Start/End`
+  marcando qué parte del clip es vuelo,
+- si falta un clip se usa el más parecido (por ejemplo galope por galope largo).
+
+Con eso el caballo del proyecto se mueve bien sin abrir el Animation Blueprint. Para transiciones suaves
+entre aires, usar el modo con AnimBP de abajo.
+
+## Conectar el caballo a mano (sin tocar la malla)
 
 1. **Pawn**: Content Browser → click derecho → Blueprint Class → buscar `JetHorsePawn` → `BP_Caballo`.
    - En el componente `Mesh` asigná tu Skeletal Mesh y tu Anim Class.

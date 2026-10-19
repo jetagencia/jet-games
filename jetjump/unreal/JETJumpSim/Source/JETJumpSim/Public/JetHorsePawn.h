@@ -11,6 +11,7 @@
 class USkeletalMeshComponent;
 class USpringArmComponent;
 class UCameraComponent;
+class UAnimSequence;
 
 UENUM(BlueprintType)
 enum class EJetCamera : uint8
@@ -46,10 +47,31 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "JETJump") float MeshZOffset = 0.f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "JETJump") EJetCamera CameraMode = EJetCamera::Chase;
 
+	// ---- Animación simple: sin Animation Blueprint. Asignar los clips del caballo y el Pawn los reproduce
+	// según la simulación (ritmo sincronizado con el tranco, salto sincronizado con la parábola).
+	// Se activa sola si el Mesh no tiene Anim Class, o siempre con bForceSimpleAnimation.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "JETJump|Animacion simple") bool bForceSimpleAnimation = false;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "JETJump|Animacion simple") UAnimSequence* IdleAnim = nullptr;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "JETJump|Animacion simple") UAnimSequence* WalkAnim = nullptr;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "JETJump|Animacion simple") UAnimSequence* TrotAnim = nullptr;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "JETJump|Animacion simple") UAnimSequence* CanterAnim = nullptr;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "JETJump|Animacion simple") UAnimSequence* GallopAnim = nullptr;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "JETJump|Animacion simple") UAnimSequence* JumpAnim = nullptr;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "JETJump|Animacion simple") UAnimSequence* RefuseAnim = nullptr;
+	/** Trancos completos que contiene cada clip de ciclo (1 si el clip es un solo tranco). */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "JETJump|Animacion simple") float WalkStridesPerClip = 1.f;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "JETJump|Animacion simple") float TrotStridesPerClip = 1.f;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "JETJump|Animacion simple") float CanterStridesPerClip = 1.f;
+	/** Parte del clip de salto que corresponde al vuelo (inicio y fin, 0..1); el resto es batida y recepción. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "JETJump|Animacion simple") float JumpClipAirStart = 0.2f;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "JETJump|Animacion simple") float JumpClipAirEnd = 0.8f;
+	UPROPERTY(BlueprintReadOnly, Category = "JETJump|Animacion simple") bool bSimpleAnimation = false;
+
 	UFUNCTION(BlueprintCallable, Category = "JETJump") void SetCameraMode(EJetCamera Mode);
 	UFUNCTION(BlueprintCallable, Category = "JETJump") void CycleCamera();
 
 	virtual void Tick(float DeltaTime) override;
+	virtual void BeginPlay() override;
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 
 private:
@@ -66,7 +88,10 @@ private:
 	void OnAxisSteer(float V) { AxisSteer = V; }
 	void OnAxisPace(float V) { AxisPace = -V; }
 	void ApplyCamera(float DeltaTime);
+	void ApplySimpleAnimation(float DeltaTime);
 	FVector TVLocation = FVector::ZeroVector;
+	UAnimSequence* CurrentAnim = nullptr;
+	float SimplePhase = 0.f;
 };
 
 /** Reparentar el Animation Blueprint del caballo a esta clase: las variables quedan disponibles en el AnimGraph. */

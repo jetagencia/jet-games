@@ -1,5 +1,6 @@
 ﻿#include "JetHorsePawn.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "Animation/AnimSequence.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Components/InputComponent.h"
@@ -65,6 +66,17 @@ void AJetHorsePawn::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 	PlayerInputComponent->BindAxisKey(EKeys::Gamepad_LeftY, this, &AJetHorsePawn::OnAxisPace);
 }
 
+void AJetHorsePawn::BeginPlay()
+{
+	Super::BeginPlay();
+	bSimpleAnimation = bForceSimpleAnimation || (Mesh && Mesh->GetAnimClass() == nullptr);
+	if (bSimpleAnimation && Mesh)
+	{
+		Mesh->SetAnimationMode(EAnimationMode::AnimationSingleNode);
+		CurrentAnim = nullptr;
+	}
+}
+
 void AJetHorsePawn::OnLeft(bool b) { bLeft = b; }
 void AJetHorsePawn::OnRight(bool b) { bRight = b; }
 void AJetHorsePawn::OnUp(bool b) { bUp = b; }
@@ -105,7 +117,50 @@ void AJetHorsePawn::Tick(float DeltaTime)
 		Mesh->SetRelativeRotation(FRotator(PitchDeg, MeshYawOffset, RollDeg));
 		Mesh->SetRelativeLocation(FVector(0.f, 0.f, MeshZOffset));
 	}
+	if (bSimpleAnimation) ApplySimpleAnimation(DeltaTime);
 	ApplyCamera(DeltaTime);
+}
+
+void AJetHorsePawn::ApplySimpleAnimation(float DeltaTime)
+{
+	if (!Mesh || !Ride) return;
+	// elegir clip: salto > rehúse > aire; con reemplazos si falta alguno
+	UAnimSequence* Cycle = nullptr; float StridesPerClip = 1.f;
+	switch (Ride->Gait)
+	{
+	case EJetGait::Walk: Cycle = WalkAnim ? WalkAnim : TrotAnim; StridesPerClip = WalkAnim ? WalkStridesPerClip : TrotStridesPerClip; break;
+	case EJetGait::Trot: Cycle = TrotAnim ? TrotAnim : (CanterAnim ? CanterAnim : WalkAnim); StridesPerClip = TrotAnim ? TrotStridesPerClip : CanterStridesPerClip; break;
+	case EJetGait::Canter: Cycle = CanterAnim ? CanterAnim : (GallopAnim ? GallopAnim : TrotAnim); StridesPerClip = CanterStridesPerClip; break;
+	case EJetGait::Gallop: Cycle = GallopAnim ? GallopAnim : (CanterAnim ? CanterAnim : TrotAnim); StridesPerClip = CanterStridesPerClip; break;
+	default: Cycle = IdleAnim ? IdleAnim : WalkAnim; break;
+	}
+	UAnimSequence* Want = Cycle;
+	bool bLoop = true;
+	if (Ride->bJumping && JumpAnim) { Want = JumpAnim; bLoop = false; }
+	else if (Ride->bRefusing && RefuseAnim) { Want = RefuseAnim; bLoop = false; }
+	if (!Want) return;
+	if (Want != CurrentAnim)
+	{
+		Mesh->PlayAnimation(Want, bLoop);
+		CurrentAnim = Want;
+		if (Want == Cycle) Mesh->SetPosition(FMath::Fmod(SimplePhase, 1.f) * Want->GetPlayLength(), false);
+	}
+	const float Len = FMath::Max(Want->GetPlayLength(), 0.05f);
+	if (Want == JumpAnim && Ride->bJumping)
+	{
+		// el clip de salto sigue la parábola: 0 batida, 0.5 ápice, 1 recepción
+		const float P = FMath::Lerp(JumpClipAirStart, JumpClipAirEnd, Ride->JumpProgress);
+		Mesh->SetPlayRate(0.f);
+		Mesh->SetPosition(P * Len, false);
+	}
+	else if (Want == Cycle)
+	{
+		// ciclo sincronizado con el tranco: avanza con la frecuencia real del caballo
+		const float Freq = Ride->Gait == EJetGait::Halt ? (1.f / Len) : Ride->StrideFrequency / FMath::Max(StridesPerClip, 0.1f);
+		Mesh->SetPlayRate(FMath::Max(Freq * Len, 0.01f));
+		SimplePhase += Freq * DeltaTime;
+	}
+	else Mesh->SetPlayRate(1.f);
 }
 
 void AJetHorsePawn::ApplyCamera(float DeltaTime)
