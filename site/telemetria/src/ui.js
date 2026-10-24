@@ -14,7 +14,10 @@
   function lset(k, v) { try { localStorage.setItem(PFX + k, JSON.stringify(v)); } catch (e) {} }
   function ldel(k) { try { localStorage.removeItem(PFX + k); } catch (e) {} }
 
-  var PDEF = { v: 1, music: true, musicVol: 0.7, sfx: true, sfxVol: 0.85, vib: true, lang: null, pct: false, ora: true, rm: null, hc: false, dbl: false };
+  // PLAY-TELEMETRIA-01: los porcentajes se muestran por defecto (una preferencia guardada sigue mandando)
+  var PDEF = { v: 1, music: true, musicVol: 0.7, sfx: true, sfxVol: 0.85, vib: true, lang: null, pct: true, ora: true, rm: null, hc: false, dbl: false };
+  // Umbrales vigentes (ui.js 839) y regla de apertura de capítulos (capAbierto): se leen desde acá para que texto y cálculo nunca diverjan
+  var UMBRAL_EST = { 2: 80, 3: 95 }, GANAR_PARA_ABRIR = 4, MAX_EST_PISTA = 2;
   var P = Object.assign({}, PDEF, lget('prefs', {}));
   /* Idioma: una sola elección para todo jetgames.fun (src/jet-idioma.js). El idioma propio que guardaba este juego
      (P.lang) se migró a jet_lang en index.html y ya no se usa. */
@@ -24,7 +27,7 @@
   function guardarPrefs() { lset('prefs', P); }
   function t(k, v) {
     var s = T[L][k]; if (s === undefined) s = T.es[k];
-    if (typeof s === 'string' && v) s = s.replace(/\{(\w+)\}/g, function (m, x) { return v[x] != null ? v[x] : m; });
+    if (typeof s === 'string' && v) s = s.replace(/\{([^{}]+)\}/g, function (m, x) { return v[x] != null ? v[x] : m; });
     return s;
   }
   window.TXT = function (k) { return T[L][k]; };
@@ -87,7 +90,7 @@
     return { modo: 'diario', id: 'D' + num, tpl: tpl.id, s: e[0], a: e[1], num: num, fecha: f };
   }
   function ganados(cap) { return CASOS.capitulo(cap).filter(function (x) { return (PR.est[x.id] || 0) > 0; }).length; }
-  function capAbierto(cap) { return cap === 1 || (cap === 9 ? ganados(8) >= 4 : ganados(cap - 1) >= 4); }
+  function capAbierto(cap) { return cap === 1 || (cap === 9 ? ganados(8) >= GANAR_PARA_ABRIR : ganados(cap - 1) >= GANAR_PARA_ABRIR); }
   function vetAbierto() { return ganados(4) >= 4; }
   function estrellasTot() { var s = 0; for (var k in PR.est) s += PR.est[k] || 0; return s; }
   function capActual() { for (var c = 8; c >= 1; c--) if (capAbierto(c)) return c; return 1; }
@@ -125,11 +128,14 @@
     document.documentElement.lang = L;
     AUDIO.setPrefs({ music: P.music, musicVol: P.musicVol, sfx: P.sfx, sfxVol: P.sfxVol });
     $$('[data-t]').forEach(function (el) { el.textContent = t(el.getAttribute('data-t')); });
+    $$('[data-ta]').forEach(function (el) { el.setAttribute('aria-label', t(el.getAttribute('data-ta'))); el.title = t(el.getAttribute('data-ta')); });
     $('#bAjustes').setAttribute('aria-label', t('settings'));
     $('#bPausa').setAttribute('aria-label', t('pause'));
     $('#bFs').setAttribute('aria-label', enFS() ? t('exitFullscreen') : t('fullscreen'));
+    $('#back').setAttribute('aria-label', t('back'));
     $('#bLog').setAttribute('aria-label', t('log')); $('#bPista').setAttribute('aria-label', t('hint'));
-    $('#s-inicio').setAttribute('aria-label', t('home'));
+    $('#s-inicio').setAttribute('aria-label', t('title'));
+    $('#gAire').title = t('airRule');
     document.title = t('title') + ' · ' + t('tagline').replace(/\.$/, '');
   }
 
@@ -185,15 +191,75 @@
     if (id !== 'juego') { cerrarHoja(); MUSICA.respirar(false); }
     MUSICA.tema(id === 'juego' ? 'juego' : 'menu');
     var s = $('#s-' + id); if (s) s.scrollTop = 0;
-    setTimeout(function () { var f = $('#s-' + id + ' .btn.pri, #s-' + id + ' button'); if (f && document.activeElement === document.body && !matchMedia('(pointer:coarse)').matches) f.focus({ preventScroll: true }); }, 60);
+    // RSP-MODALS-01: si el foco quedó en el cuerpo (el control anterior desapareció), va al primer control lógico de la pantalla revelada,
+    // sin condicionarlo al tipo de puntero (un táctil puede tener teclado)
+    setTimeout(function () { var f = $('#s-' + id + ' [data-foco]') || $('#s-' + id + ' .btn.pri, #s-' + id + ' button'); if (f && (document.activeElement === document.body || !visibleEl(document.activeElement))) f.focus({ preventScroll: true }); }, 60);
     dibujar(true);
   }
-  function abrirOv(id) {
+  /* ---------- RSP-MODALS-01: superposiciones con activador, fondo inerte, nombre, ciclo de Tab y retorno de foco ---------- */
+  var ovPila = []; // una entrada por capa abierta: { id, act (elemento activador), actId }
+  var FOCUSABLE = 'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
+  function visibleEl(n) { return !!n && n.isConnected && !n.closest('[hidden]') && n.getClientRects().length > 0 && !n.closest('[inert]'); }
+  function focusables(raiz) { return $$(FOCUSABLE, raiz).filter(function (n) { return visibleEl(n) && n.getAttribute('aria-hidden') !== 'true'; }); }
+  function fondoInerte() {
+    var on = !!ovAbierto, hoja = $('#sheet').classList.contains('on');
+    ['#hdr', '#s-inicio', '#s-mapa', '#s-practica', '#s-brief', '#s-juego', '#s-res', '#carga'].forEach(function (s) { var e = $(s); if (e) e.inert = on || hoja; });
+    $('#sheet').inert = on; // la hoja del registro queda detrás de pausa/ajustes
+  }
+  function nombrarDialogo(ov) {
+    var h = $('h2,h3', ov); if (!h) { ov.removeAttribute('aria-labelledby'); return; }
+    if (!h.id) h.id = ov.id + '-t';
+    ov.setAttribute('aria-labelledby', h.id);
+  }
+  function abrirOv(id, activador) {
+    var act = activador || document.activeElement, ov = $('#ov-' + id);
+    var top = ovPila[ovPila.length - 1];
+    // se reabre la misma capa (Ajustes vuelve a Pausa): se conserva su activador original
+    if (!top || top.id !== id) ovPila.push({ id: id, act: (act && act !== document.body && !ov.contains(act)) ? act : null, actId: act && act.id });
     $$('.ov').forEach(function (o) { o.classList.toggle('on', o.id === 'ov-' + id); });
     ovAbierto = id; sfx('panel');
-    setTimeout(function () { var f = $('#ov-' + id + ' .btn.pri') || $('#ov-' + id + ' button'); if (f) f.focus({ preventScroll: true }); }, 40);
+    nombrarDialogo(ov); fondoInerte();
+    setTimeout(function () {
+      if (ovAbierto !== id || ov.contains(document.activeElement)) return;
+      var f = $('[data-foco]', ov) || $('.btn.pri', ov) || $('button', ov) || ov;
+      if (f === ov) ov.tabIndex = -1;
+      f.focus({ preventScroll: true });
+    }, 40);
   }
-  function cerrarOv() { $$('.ov').forEach(function (o) { o.classList.remove('on'); }); ovAbierto = null; sfx('panel'); }
+  function cerrarOv() {
+    if (!ovAbierto) return;
+    var e = ovPila.pop();
+    $$('.ov').forEach(function (o) { o.classList.remove('on'); }); ovAbierto = null; sfx('panel');
+    fondoInerte();
+    // el foco vuelve al activador en el siguiente tick: quien cierra puede reabrir otra capa (Ajustes → Pausa)
+    setTimeout(function () {
+      if (!e) return;
+      if (ovAbierto) { var b = e.actId && $('#' + e.actId); if (b && visibleEl(b) && $('#ov-' + ovAbierto).contains(b)) b.focus({ preventScroll: true }); return; }
+      var dest = (e.act && visibleEl(e.act)) ? e.act : (e.actId && visibleEl($('#' + e.actId)) ? $('#' + e.actId) : null);
+      if (dest) dest.focus({ preventScroll: true });
+      else if (pantalla) { var f = $('#s-' + pantalla + ' .btn.pri, #s-' + pantalla + ' button'); if (f && visibleEl(f)) f.focus({ preventScroll: true }); }
+    }, 0);
+  }
+  // Tab y Shift+Tab recorren sólo la capa superior (aria-modal no reemplaza el control de foco)
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Tab') return;
+    var capa = ovAbierto ? $('#ov-' + ovAbierto) : ($('#sheet').classList.contains('on') ? $('#sheet') : null);
+    if (!capa) return;
+    var f = focusables(capa);
+    if (!f.length) { e.preventDefault(); return; }
+    var first = f[0], last = f[f.length - 1], act = document.activeElement;
+    if (e.shiftKey && (act === first || !capa.contains(act))) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && (act === last || !capa.contains(act))) { e.preventDefault(); first.focus(); }
+  }, true);
+  // confirmación explícita y cancelable (SRC-G04): Cancelar con el foco inicial, botón peligro aparte
+  function confirmar(o) {
+    var ov = $('#ov-confirm');
+    ov.innerHTML = '<div class="card"><h2 style="font-size:20px;font-weight:700">' + esc(o.titulo) + '</h2><p class="muted" style="margin:10px 0 16px;font-size:14.5px;line-height:1.45">' + esc(o.texto) + '</p>' +
+      '<div class="row2"><button class="btn" id="cfNo" type="button" data-foco>' + esc(t('cancel')) + '</button><button class="btn red" id="cfSi" type="button">' + esc(o.boton) + '</button></div></div>';
+    abrirOv('confirm');
+    $('#cfNo').onclick = function () { sfx('boton'); cerrarOv(); if (o.cancelar) o.cancelar(); };
+    $('#cfSi').onclick = function () { sfx('boton'); cerrarOv(); o.ok(); };
+  }
   function toast(msg, ms) { var el = $('#toast'); el.textContent = msg; el.classList.add('on'); clearTimeout(toast.tm); toast.tm = setTimeout(function () { el.classList.remove('on'); }, ms || 2200); }
   function anunciar(msg) { var a = $('#aria'); a.textContent = ''; setTimeout(function () { a.textContent = msg; }, 30); }
 
@@ -242,12 +308,13 @@
     for (var c = 1; c <= 9; c++) {
       var ab = capAbierto(c), lista = c === 9 ? [CASOS.porId.F] : CASOS.capitulo(c);
       html += '<div class="est' + (ab ? '' : ' lock') + (c === 9 ? ' fin' : '') + '"><h3><span>' + (c === 9 ? 'FINAL' : (L === 'es' ? 'CAP ' : 'CH ') + c) + '</span>' + esc(t('caps')[c - 1]) + '</h3>';
-      if (!ab) html += '<div class="lk">🔒 ' + esc(c === 9 ? t('lockedFinal') : t('locked')) + '</div>';
+      // PLAY-TELEMETRIA-06: requisito legible, con la cantidad real de la regla de apertura
+      if (!ab) html += '<div class="lk">🔒 ' + esc(t(c === 9 ? 'lockedFinal' : 'locked', { cantidad: GANAR_PARA_ABRIR })) + '</div>';
       html += '<div class="casos">';
       lista.forEach(function (x) {
         var e = (PR.vet && va ? PR.estV[x.id] : PR.est[x.id]) || 0, st = '';
         for (var k = 0; k < 3; k++) st += k < e ? '<b>★</b>' : '★';
-        html += '<button class="cb' + (x.id === cur ? ' cur' : '') + '" type="button" data-id="' + x.id + '"' + (ab ? '' : ' disabled') + ' aria-label="' + esc(t('caseN', { c: x.id === 'F' ? t('finalCase') : x.id })) + ', ' + e + ' ★">' + (x.id === 'F' ? esc(t('finalCase')) : x.n) + '<span class="s">' + st + '</span></button>';
+        html += '<button class="cb' + (x.id === cur ? ' cur' : '') + '" type="button" data-id="' + x.id + '"' + (ab ? '' : ' disabled') + ' aria-label="' + esc(t('caseN', { c: x.id === 'F' ? t('finalCase') : x.id })) + ', ' + esc(t('earnedStars', { estrellas: e })) + '">' + (x.id === 'F' ? esc(t('finalCase')) : x.n) + '<span class="s" aria-hidden="true">' + st + '</span></button>';
       });
       html += '</div></div>';
     }
@@ -296,7 +363,7 @@
     var html = '<div class="card"><div class="top"><h2>' + esc(t('daily', { n: NUCLEO.numeroDiario(hoy()) })) + '</h2><button class="x" id="dX" type="button" aria-label="' + esc(t('close')) + '">×</button></div>' +
       '<p class="muted" style="font-size:14.5px">' + esc(t('dailyDone', { t: '' }).replace(/\s*$/, '')) + '</p><div class="cuenta" id="dCta">' + cuentaAtras() + '</div>' +
       '<div class="lineas"><div><span>' + esc(r.fin === 'win' ? t('win') : t('lose')) + '</span><b class="' + (r.fin === 'win' ? 'pos' : 'neg') + '">' + esc(t('air')) + ' ' + (r.aire || 0) + '/' + (r.aire0 || 0) + '</b></div>' +
-      (r.prec != null ? '<div><span>' + esc(t('accuracy')) + '</span><b>' + r.prec + (L === 'es' ? ' %' : '%') + '</b></div>' : '') +
+      (r.prec != null ? '<div><span>' + esc(t('accuracy')) + '</span><b>' + r.prec + '/100</b></div>' : '') +
       '<div><span>' + esc(t('streak', { n: '' }).trim()) + '</span><b>🔥 ' + rachaVis() + '</b></div></div>' +
       '<div class="res-btns"><button class="btn pri" id="dSh" type="button">' + esc(t('share')) + '</button><button class="btn" id="dPr" type="button">' + esc(t('practiceThis')) + '</button></div></div>';
     $('#ov-diario').innerHTML = html;
@@ -321,7 +388,9 @@
     add('', '\n' + t('symptom').toUpperCase() + ': '); add('w', t('sintomas')[caso.sintoma] + '\n');
     add('', t('faults', { n: caso.nF }) + '\n');
     add('', t('airStart').toUpperCase() + ': '); add('w', caso.aire0 + ' MIN\n');
-    add('', t('repairCost').toUpperCase() + ': '); add('', t('repairCostV', { r: caso.R, x: caso.R + caso.Rx }) + '\n');
+    add('k', t('airRule') + '\n');
+    // SRC-TE01: dos costes TOTALES alternativos (caso.R / caso.R + caso.Rx), nunca el error como «minutos adicionales»
+    add('', t('repairCost').toUpperCase() + ': '); add('', t('repairCostBrief', { coste_acierto: caso.R, coste_error: caso.R + caso.Rx }) + '\n');
     add('', t('systems').toUpperCase() + ' (' + caso.N + '): '); add('k', caso.sis.map(function (s, q) { return nombreSis(caso, q); }).join(' · ') + '\n');
     if (caso.bitacora.length) { add('', '\n' + t('logbook').toUpperCase() + '\n'); caso.bitacora.forEach(function (b) { add('w', '· ' + t('logbookLine', { s: nombreSis(caso, b.i), n: b.veces }) + '\n'); }); }
     caso.sensores.forEach(function (s) { if (s.dudoso) add('w', '\n⚠ ' + t('doubtful', { s: nomSen(s.k) }) + '\n'); });
@@ -395,15 +464,16 @@
     $('#nodos').innerHTML = c.sis.map(function (s, q) { return '<button class="nodo" type="button" data-i="' + q + '" aria-label="' + esc(nombreSis(c, q)) + '"><i class="halo"></i>' + svg(s.k) + '</button>'; }).join('');
     var zs = $('#zonas'); zs.hidden = !c.hayZonas;
     zs.innerHTML = c.hayZonas ? [2, 1, 0].filter(function (z) { return c.zonas[z]; }).map(function (z) { return '<button class="zb" type="button" data-z="' + z + '">' + esc(t('zones')[z]) + '<span class="chips"></span></button>'; }).join('') : '';
+    // PLAY-TELEMETRIA-07: selección exclusiva como radiogroup (un solo sistema anunciado como seleccionado)
     $('#filas').innerHTML = c.sis.map(function (s, q) {
-      return '<div class="fila" role="button" tabindex="0" data-i="' + q + '"><span class="ico">' + svg(s.k) + '</span><span class="nom"><span class="nt">' + esc(nombreSis(c, q)) + '</span></span>' +
+      return '<div class="fila" role="radio" aria-checked="false" tabindex="0" data-i="' + q + '"><span class="ico">' + svg(s.k) + '</span><span class="nom"><span class="nt">' + esc(nombreSis(c, q)) + '</span></span>' +
         '<span class="barra"><i class="gh"></i><i class="f"></i><i class="pv a"></i><i class="pv n"></i></span><span class="st" hidden></span><span class="chips"></span><span class="pct"></span><span class="lamp"></span></div>';
     }).join('');
     $('#sensores').innerHTML = st.sens.map(function (s, q) {
       var k = c.sensores[q].k;
       return '<button class="sen" type="button" data-s="' + q + '"><span class="n"><span>' + esc(t('senShort')[k]) + '</span><i>' + s.coste + ' MIN</i></span><span class="dw"></span><span class="d"></span></button>';
     }).join('');
-    $('#filas').setAttribute('role', 'group');
+    $('#filas').setAttribute('role', 'radiogroup'); $('#filas').setAttribute('aria-label', t('selectSystem'));
     G.shown = NUCLEO.marginales(st);
     $('#bPista').classList.toggle('used', G.pista);
     document.body.classList.toggle('vet', G.vet);
@@ -438,27 +508,34 @@
       if (anim && Math.abs(old - v) > 0.004 && !rmActivo()) {
         gh.style.transition = 'none'; gh.style.width = (old * 100) + '%'; gh.style.opacity = '1';
         void gh.offsetWidth; gh.style.transition = '';
-        setTimeout(function () { gh.style.opacity = '0'; }, 400);
+        setTimeout(function () { gh.style.opacity = '0'; }, 350); // VIS-TELEMETRIA-02: fantasma anterior de 350 ms
         if (v - old > 0.25) { fi.classList.remove('flash'); void fi.offsetWidth; fi.classList.add('flash'); }
       }
       fi.style.width = (v * 100).toFixed(2) + '%';
       var nom = $('.nom', f), em = $('em', nom);
-      var lik = v >= 0.8 && !rep && !desc;
-      if (lik && !em) nom.insertAdjacentHTML('beforeend', '<em>' + esc(t('likely')) + '</em>');
-      if (!lik && em) em.remove();
-      if (!!lik !== !!em) ajustarProbable(f);
+      // VIS-TELEMETRIA-01: el estado «top» (ya expuesto por la barra ámbar) se rotula «Mayor probabilidad»; PROBABLE queda para >= 80 % sin ser el máximo
+      var esTop = q === top && tv >= 0.5 && !rep, lik = esTop || (v >= 0.8 && !rep && !desc);
+      var emTxt = esTop ? t('highestProb') : t('likely');
+      if (lik && !em) { nom.insertAdjacentHTML('beforeend', '<em>' + esc(emTxt) + '</em>'); em = $('em', nom); }
+      if (!lik && em) { em.remove(); em = null; }
+      if (em && em.textContent !== emTxt) em.textContent = emTxt;
+      if (!!lik !== !!em || (em && em.dataset.t !== emTxt)) { if (em) em.dataset.t = emTxt; ajustarProbable(f); }
       $('.pct', f).textContent = (rep || desc) ? '' : pct(v);
       var mis = lect.filter(function (a) { return a.T === q; }), n = G.vet ? 6 : 3;
       var ch = $('.chips', f), html = mis.slice(-n).map(function (a, k, arr) { return '<span class="chip ' + a.o + (anim && k === arr.length - 1 && a === lect[lect.length - 1] ? ' nw' : '') + '">' + (a.o === 'A' ? '▲' : '○') + '</span>'; }).join('');
       if (ch.innerHTML !== html) ch.innerHTML = html;
-      f.setAttribute('aria-label', nombreSis(c, q) + '. ' + (rep ? t('repaired') : desc ? t('discarded') : pct(v)) + (mis.length ? '. ' + mis.slice(-3).map(function (a) { return a.o === 'A' ? t('alert') : t('normal'); }).join(', ') : ''));
-      f.setAttribute('aria-pressed', !!(G.sel && G.sel.T === q));
+      // PLAY-TELEMETRIA-01: probabilidad acumulada (según las lecturas) separada de la última lectura; en Veterano no se anuncia la probabilidad oculta
+      var ult = mis.length ? mis[mis.length - 1] : null;
+      var estadoTxt = rep ? t('repaired') : desc ? t('discarded') : (G.vet ? '' : t('readingProb', { porcentaje: Math.round(v * 100) }) + (esTop ? '. ' + t('highestProb') : ''));
+      f.setAttribute('aria-label', nombreSis(c, q) + (estadoTxt ? '. ' + estadoTxt : '') + (ult ? '. ' + t('lastReading', { resultado: ult.o === 'A' ? t('alert') : t('normal') }) : ''));
+      f.setAttribute('aria-checked', !!(G.sel && G.sel.T === q));
     });
     G.shown = m.slice();
     $$('#nodos .nodo').forEach(function (b) {
       var q = +b.getAttribute('data-i'), rep = (st.rep >> q) & 1, desc = (st.desc >> q) & 1;
       b.classList.toggle('sel', !!(G.sel && G.sel.T === q)); b.classList.toggle('rep', !!rep); b.classList.toggle('desc', !!desc);
       b.classList.toggle('top', q === top && tv >= 0.5 && !rep);
+      b.setAttribute('aria-pressed', !!(G.sel && G.sel.T === q));
       $('.halo', b).style.setProperty('--s', (rep || desc) ? 0 : (m[q] * 0.85).toFixed(3));
     });
     $$('#zonas .zb').forEach(function (b) {
@@ -488,18 +565,35 @@
       if (dw.innerHTML !== html) dw.innerHTML = html;
       var d = k === 'ALARMISTA' ? t('jumpy') : k === 'PRUDENTE' ? t('cautious') : k === 'ZONA' ? t('zoneDesc') : t('reliab', { k: Math.round(s.sens * 10) });
       $('.d', b).textContent = d;
-      b.setAttribute('aria-label', nomSen(k) + '. ' + s.coste + ' ' + t('minShort') + '. ' + d + (s.danado ? ' ' + t('damagedTag') : '') + (s.coste >= st.aire ? '. ' + t('noAir') : ''));
+      // SRC-TE01: coste del sensor vigente y motivo real de deshabilitación (sin revelar la avería)
+      b.setAttribute('aria-label', nomSen(k) + '. ' + t('measure', { c: s.coste }) + '. ' + d + (s.danado ? ' ' + t('damagedTag') : '') + (s.coste >= st.aire ? '. ' + t('insufficient') : (G.sel && !ok ? '. ' + (s.tipo === 'z' ? t('sensorWrongZone') : t('sensorWrongPoint')) : '')));
     });
-    // reparar
+    // objetivo seleccionado (PLAY-TELEMETRIA-02)
+    var selInfo = $('#selInfo');
+    var selTxt = !G.sel ? t('selectSystem') : G.sel.T >= 100 ? t('selectedTarget', { objetivo: t('zoneNames')[G.sel.T - 100] }) : t('selectedSystem', { sistema: nombreSis(c, G.sel.T) });
+    if (selInfo.textContent !== selTxt) selInfo.textContent = selTxt;
+    selInfo.classList.toggle('vacio2', !G.sel);
+    // reparar — PLAY-TELEMETRIA-03/04 · SRC-TE01: los dos costes TOTALES alternativos (acierto = caso.R; error = caso.R + caso.Rx, se resta una sola vez)
+    // y los dos saldos hipotéticos, calculados sólo con el aire visible y los costes del caso: nunca se consulta st.real.
     var selSis = G.sel && G.sel.T < 100 ? G.sel.T : -1, valido = selSis >= 0 && ((cand >> selSis) & 1);
+    var costeOk = c.R, costeErr = c.R + c.Rx, aireOk = Math.max(0, st.aire - costeOk), aireErr = Math.max(0, st.aire - costeErr);
+    var riesgo = valido && st.aire <= costeOk; // cualquier rama pública agota el aire
     var bR = $('#bRep');
-    bR.classList.toggle('off', !valido); bR.classList.toggle('warn', valido && c.R >= st.aire);
-    var repL = esc(t('repair').toUpperCase()) + '<span class="rc"> · ' + c.R + ' MIN</span>';
-    var repS = !valido ? esc(t('pickRepair')) : c.R >= st.aire ? esc(t('noAir')) : G.armado ? esc(t('repairDouble')) :
-      '<span class="rh">' + esc(P.dbl ? t('repairDouble') : t('repairHold')) + ' · </span>' + esc(t('repairMiss', { x: c.R + c.Rx }));
+    bR.classList.toggle('off', !valido); bR.classList.toggle('warn', riesgo);
+    var repL = esc(valido ? t('repairTarget', { sistema: nombreSis(c, selSis) }) : t('repair'));
+    var repS = !valido ? esc(t('pickRepair')) : G.armado ? esc(t('repairDouble')) : esc(P.dbl ? t('repairDouble') : t('holdConfirm'));
     if ($('#repL').innerHTML !== repL) $('#repL').innerHTML = repL;
     if ($('#repS').innerHTML !== repS) $('#repS').innerHTML = repS;
-    bR.setAttribute('aria-label', t('repair') + (valido ? ' ' + nombreSis(c, selSis) : '') + ', ' + c.R + ' ' + t('minShort') + '. ' + $('#repS').textContent);
+    var repInfo = $('#repInfo'), infoTxt = '', infoHtml = '';
+    if (valido && !st.fin) {
+      var tC = t('repairCosts', { coste_acierto: costeOk, coste_error: costeErr }), tS = t('airScenarios', { aire_final_acierto: aireOk, aire_final_error: aireErr }) + (riesgo ? ' ' + t('airRiskEven') : '');
+      infoTxt = tC + ' ' + tS;
+      // en teléfonos verticales bajos la segunda frase se oculta visualmente (CSS .ri-s); el nombre accesible de Reparar la conserva íntegra
+      infoHtml = '<span class="ri-c">' + esc(tC) + '</span> <span class="ri-s">' + esc(tS) + '</span>';
+    }
+    repInfo.hidden = !infoTxt; repInfo.classList.toggle('riesgo', riesgo);
+    if (repInfo.dataset.txt !== infoTxt) { repInfo.dataset.txt = infoTxt; repInfo.innerHTML = infoHtml; }
+    bR.setAttribute('aria-label', (valido ? t('repairTarget', { sistema: nombreSis(c, selSis) }) : t('repair')) + '. ' + (valido ? infoTxt + ' ' : '') + $('#repS').textContent);
     // información de la nave
     var nRep = NUCLEO.bitcount(st.rep);
     $('#naveInfo').innerHTML = c.nF === 2 ? esc(t('faultsLeft', { n: 2, r: nRep })) : esc(t('faults', { n: 1 }));
@@ -555,7 +649,7 @@
     if (!G || G.bloq || G.st.fin) return;
     var sen = G.st.sens[s], el = $('#sensores .sen[data-s="' + s + '"]');
     if (!sen) return;
-    if (!G.sel) { tiembla(el); sfx('error'); avisoBreve(sen.tipo === 'z' ? t('pickZone') : t('pick')); return; }
+    if (!G.sel) { tiembla(el); sfx('error'); avisoBreve(sen.tipo === 'z' ? t('pickZone') : t('chooseTarget')); return; }
     var T = G.sel.T;
     if (sen.tipo === 'z' && T < 100) { tiembla(el); sfx('error'); avisoBreve(t('sensorWrongZone')); return; }
     if (sen.tipo === 'p' && T >= 100) { tiembla(el); sfx('error'); avisoBreve(t('sensorWrongPoint')); return; }
@@ -685,18 +779,22 @@
   function oraDecir(txt, o) {
     o = o || {};
     if (!o.tut && !o.ev && !o.forzar && !P.ora) return;
-    var el = $('#ora'), tt = $('#oraT'), b = $('#oraB');
+    var el = $('#ora'), tt = $('#oraT'), b = $('#oraB'), todo = $('#oraTodo');
     el.hidden = false; el.classList.toggle('ev', !!o.ev);
     G && (G.oraTipo = o.tipo || (o.tut ? 'tut' : 'msg'));
     clearInterval(oraDecir.tm);
     b.hidden = !o.btn;
     if (o.btn) { b.textContent = o.btn.label; b.onclick = function () { sfx('boton'); o.btn.fn(); }; }
-    if (rmActivo()) tt.textContent = txt;
-    else { var k = 0; tt.textContent = ''; oraDecir.tm = setInterval(function () { k += 2; tt.textContent = txt.slice(0, k); if (k >= txt.length) clearInterval(oraDecir.tm); }, 22); }
+    // PLAY-TELEMETRIA-02: la animación nunca obliga a esperar; «Mostrar todo» (o tocar el texto) revela el consejo completo
+    var completar = function () { clearInterval(oraDecir.tm); tt.textContent = txt; todo.hidden = true; };
+    if (rmActivo()) { tt.textContent = txt; todo.hidden = true; }
+    else { var k = 0; tt.textContent = ''; todo.hidden = false; oraDecir.tm = setInterval(function () { k += 2; tt.textContent = txt.slice(0, k); if (k >= txt.length) completar(); }, 22); }
+    todo.onclick = function () { sfx('boton'); completar(); };
+    tt.onclick = completar;
     sfx('ora');
     anunciar(t('ora') + ': ' + txt);
   }
-  function ocultarOra() { clearInterval(oraDecir.tm); $('#ora').hidden = true; if (G) G.oraTipo = null; }
+  function ocultarOra() { clearInterval(oraDecir.tm); $('#ora').hidden = true; $('#oraTodo').hidden = true; if (G) G.oraTipo = null; }
   function avisoBreve(txt) {
     var d = tutDef(); if (d && !d[Math.min(G.tutStep, d.length - 1)].libre) return;
     oraDecir(txt, { forzar: true, tipo: 'aviso' });
@@ -785,8 +883,23 @@
     $('#logSheet').innerHTML = html; $('#logInline').innerHTML = html;
     var li = $('#logInline'); li.scrollTop = li.scrollHeight;
   }
-  function abrirHoja() { renderLog(); $('#sheet').classList.add('on'); sfx('panel'); var l = $('#logSheet'); l.scrollTop = l.scrollHeight; }
-  function cerrarHoja() { var s = $('#sheet'); if (s.classList.contains('on')) { s.classList.remove('on'); sfx('panel'); } }
+  // PLAY-TELEMETRIA-07: la hoja del registro gestiona su foco, vuelve inerte el fondo y devuelve el foco a quien la abrió
+  var hojaAct = null;
+  function abrirHoja() {
+    renderLog(); hojaAct = document.activeElement;
+    $('#sheet').classList.add('on'); sfx('panel'); var l = $('#logSheet'); l.scrollTop = l.scrollHeight;
+    $('#bLog').setAttribute('aria-expanded', 'true');
+    fondoInerte();
+    setTimeout(function () { $('#sheetX').focus({ preventScroll: true }); }, 40);
+  }
+  function cerrarHoja() {
+    var s = $('#sheet'); if (!s.classList.contains('on')) return;
+    s.classList.remove('on'); sfx('panel');
+    $('#bLog').setAttribute('aria-expanded', 'false');
+    fondoInerte();
+    var a = hojaAct; hojaAct = null;
+    if (a && visibleEl(a)) a.focus({ preventScroll: true }); else if (visibleEl($('#bLog'))) $('#bLog').focus({ preventScroll: true });
+  }
 
   /* ---------- Pausa ---------- */
   function pausar() {
@@ -802,11 +915,12 @@
     abrirOv('pausa');
     MUSICA.capas({ decision: 1 });
     $('#pzC').onclick = continuar;
+    // SRC-G03/G04: reiniciar pierde el intento actual → confirmación explícita y cancelable, sin doble toque temporal
     if ($('#pzR')) $('#pzR').onclick = function () {
-      var b = $('#pzR');
-      if (b.dataset.arm === '1') { cerrarOv(); MUSICA.capas({ decision: 0 }); var d = G.desc.modo === 'campana' ? descCampana(G.desc.id) : G.desc; G = null; ldel('partida'); iniciarJuego(d, [], {}); return; }
-      b.dataset.arm = '1'; b.textContent = t('restartSure'); b.classList.add('red'); sfx('error');
-      setTimeout(function () { if (b.isConnected) { b.dataset.arm = ''; b.textContent = t('restart'); b.classList.remove('red'); } }, 3000);
+      sfx('boton');
+      confirmar({ titulo: t('restart'), texto: t('restartSure'), boton: t('restart'),
+        ok: function () { ovPila.length = 0; MUSICA.capas({ decision: 0 }); var d = G.desc.modo === 'campana' ? descCampana(G.desc.id) : G.desc; G = null; ldel('partida'); iniciarJuego(d, [], {}); },
+        cancelar: function () { pausar(); } });
     };
     $('#pzA').onclick = function () { abrirAjustes('pausa'); };
     $('#pzS').onclick = function () { guardar(); cerrarOv(); MUSICA.capas({ decision: 0 }); MUSICA.respirar(false); G = null; renderInicio(); mostrar('inicio'); };
@@ -836,8 +950,9 @@
         var norm = Math.max(8, ini.V - ini.hoja);
         var prec = Math.max(0, Math.min(100, Math.round(100 * (1 - arr / norm))));
         var E = Math.round(ini.esperado != null ? ini.esperado : Math.max(0, ini.V)), Lo = Math.round(arr), U = G.res.aire - (E - Lo);
-        var est = win ? (prec >= 95 ? 3 : prec >= 80 ? 2 : 1) : 0;
-        if (G.pista) est = Math.min(est, 2);
+        // Regla vigente (decisión 6): victoria → 3 con prec >= 95, 2 con prec >= 80, 1 en el resto; derrota → 0; pista limita a 2 (Math.min), no resta una
+        var est = win ? (prec >= UMBRAL_EST[3] ? 3 : prec >= UMBRAL_EST[2] ? 2 : 1) : 0;
+        if (G.pista) est = Math.min(est, MAX_EST_PISTA);
         Object.assign(G.res, { prec: prec, E: E, Lo: Lo, U: U, est: est, pasos: pasos, quick: G.quick });
         registrarProgreso(G, false);
         renderRes(true);
@@ -875,28 +990,40 @@
     var url = 'https://jetgames.fun/telemetria/' + (g.desc.modo === 'diario' ? '?diario' : '');
     return cab + '\n' + em + '\n' + lin + (g.desc.modo === 'diario' && rachaVis() ? '\n' + t('shareStreak') + ' 🔥' + rachaVis() : '') + '\n' + url;
   }
+  // SRC-G06: compartir sólo por acción del jugador; cancelar el diálogo nativo no muestra nada; éxito sólo tras confirmar el copiado;
+  // si no se puede copiar, el texto íntegro queda seleccionable (patrón de Señal) con «Copiar texto» y «Cerrar».
   function compartir(txt) {
     sfx('boton');
-    var copiar = function () {
-      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(function () { toast(t('copied')); }, mostrarTexto);
-      else mostrarTexto();
-    };
-    function mostrarTexto() {
-      // sin API de portapapeles: copia clásica y, si tampoco se puede, un cuadro con el texto ya seleccionado
+    var activador = document.activeElement; // la copia clásica mueve el foco a un textarea temporal: el retorno debe ir al botón real
+    var copiarClasico = function () {
       var ta = document.createElement('textarea'), ok = false;
       ta.value = txt; ta.setAttribute('readonly', ''); ta.style.cssText = 'position:fixed;left:-9999px;top:0;opacity:0';
       document.body.appendChild(ta); ta.select();
       try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
-      ta.remove();
-      if (ok) { toast(t('copied')); return; }
+      ta.remove(); return ok;
+    };
+    var copiar = function () {
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(function () { toast(t('copied')); }, function () { if (copiarClasico()) toast(t('copied')); else mostrarTexto(); });
+      else if (copiarClasico()) toast(t('copied'));
+      else mostrarTexto();
+    };
+    function mostrarTexto() {
       var ov = $('#ov-copiar');
       if (!ov) { ov = document.createElement('div'); ov.className = 'ov'; ov.id = 'ov-copiar'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); document.body.appendChild(ov); ov.addEventListener('click', function (e) { if (e.target === ov) $('#cpX').click(); }); }
       var volver = ovAbierto;
-      ov.innerHTML = '<div class="card"><div class="top"><h2>' + esc(t('share')) + '</h2><button class="x" id="cpX" type="button" aria-label="' + esc(t('close')) + '">×</button></div>' +
-        '<p class="muted" style="font-size:14px">' + esc(t('copyFail')) + '</p><textarea id="cpT" class="cpt" readonly rows="6" aria-label="' + esc(t('share')) + '">' + esc(txt) + '</textarea></div>';
-      abrirOv('copiar');
-      $('#cpX').onclick = function () { cerrarOv(); if (volver === 'diario') { renderDiarioHecho(); abrirOv('diario'); } };
+      ov.innerHTML = '<div class="card"><div class="top"><h2 id="cpH">' + esc(t('share')) + '</h2><button class="x" id="cpX" type="button" aria-label="' + esc(t('close')) + '">×</button></div>' +
+        '<p class="muted" style="font-size:14px">' + esc(t('copyFail')) + '</p><textarea id="cpT" class="cpt" readonly rows="6" aria-labelledby="cpH" data-foco>' + esc(txt) + '</textarea>' +
+        '<div class="row2" style="margin-top:12px"><button class="btn pri" id="cpC" type="button">' + esc(t('copyText')) + '</button><button class="btn" id="cpX2" type="button">' + esc(t('close')) + '</button></div></div>';
+      abrirOv('copiar', activador);
+      var cerrar = function () { cerrarOv(); if (volver === 'diario') { renderDiarioHecho(); abrirOv('diario'); } };
+      $('#cpX').onclick = cerrar; $('#cpX2').onclick = cerrar;
       var area = $('#cpT'); setTimeout(function () { area.focus(); area.select(); }, 60);
+      $('#cpC').onclick = function () {
+        area.focus(); area.select();
+        var fin = function (ok) { if (ok) toast(t('copied')); else toast(t('copyFail'), 3000); };
+        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(function () { fin(true); }, function () { fin(copiarClasico()); });
+        else fin(copiarClasico());
+      };
     }
     if (navigator.share) navigator.share({ text: txt }).catch(function (e) { if (!e || e.name !== 'AbortError') copiar(); });
     else copiar();
@@ -925,16 +1052,29 @@
     var g = G, r = g.res, c = g.caso, win = r.fin === 'win', tut = g.tpl.tut === 1 || g.tpl.tut === 2;
     var rotos = c.F.map(function (q) { return nombreSis(c, q); });
     var circ = 238.76, prec = r.prec;
+    // PLAY-TELEMETRIA-04: reparación correcta seguida de agotamiento del aire (precedencia vigente de NUCLEO.aplicar: aire <= 0 antes que real === 0)
+    var ultima = g.st.acciones[g.st.acciones.length - 1];
+    var subExtra = (!win && ultima && ultima.t === 'R' && ultima.ok) ? ' · ' + t('repairNoAir', { sistema: nombreSis(c, ultima.i) }) : '';
     var html = '<div class="card wide"><div class="kick" style="text-align:center">' + esc(etiquetaCaso(g.desc)) + '</div>' +
-      '<h2 class="res-h ' + (win ? 'win' : 'lose') + '" style="margin-top:6px">' + esc(win ? t('win') : t('lose')) + '</h2>' +
-      '<p class="res-sub">' + esc(rotos.length > 1 ? t('wereBroken', { s: rotos.join(' · ') }) : t('wasBroken', { s: rotos[0] })) + (win && g.desc.id === 'F' ? ' · ' + esc(t('homeArrived')) : '') + '</p>' +
+      '<h2 class="res-h ' + (win ? 'win' : 'lose') + '" style="margin-top:6px" id="resT">' + esc(win ? t('win') : t('lose')) + '</h2>' +
+      '<p class="res-sub">' + esc(rotos.length > 1 ? t('wereBroken', { s: rotos.join(' · ') }) : t('wasBroken', { s: rotos[0] })) + esc(subExtra) + (win && g.desc.id === 'F' ? ' · ' + esc(t('homeArrived')) : '') + '</p>' +
       '<div class="res-main"><div class="res-air"><b id="rAir">' + (actualizar ? r.aire : 0) + '</b><span>' + esc(t('finalAir').toUpperCase()) + ' · ' + esc(t('min')) + '</span></div>' +
-      '<div class="stars" id="rStars">' + STAR + STAR + STAR + '</div>' +
-      (tut ? '' : '<div class="acc"><svg viewBox="0 0 86 86"><circle class="bgc" cx="43" cy="43" r="38"/><circle class="fg" id="rRing" cx="43" cy="43" r="38" stroke-dasharray="' + circ + '" stroke-dashoffset="' + circ + '"/></svg><b>' + (prec == null ? '…' : prec) + '</b><small>' + esc(t('accuracy').toUpperCase()) + '</small></div>') + '</div>';
+      // PLAY-TELEMETRIA-06: estrellas reales del resultado, visibles y accesibles; mientras el análisis está pendiente no se anuncian como definitivas
+      '<div class="stars-w"><div class="stars" id="rStars" role="img" aria-label="' + esc(t('earnedStars', { estrellas: r.est })) + '">' + STAR + STAR + STAR + '</div><p class="stars-txt" id="rStarsTxt">' + esc(t('earnedStars', { estrellas: r.est })) + (!tut && prec == null ? ' · ' + esc(t('decScorePending')) : '') + '</p></div>' +
+      (tut ? '' : '<div class="acc" role="img" aria-label="' + esc(prec == null ? t('decScorePending') : t('decScore', { prec: prec })) + '"><svg viewBox="0 0 86 86" aria-hidden="true"><circle class="bgc" cx="43" cy="43" r="38"/><circle class="fg" id="rRing" cx="43" cy="43" r="38" stroke-dasharray="' + circ + '" stroke-dashoffset="' + circ + '"/></svg><b aria-hidden="true">' + (prec == null ? '…' : prec) + '</b><small aria-hidden="true">' + esc(t('accuracy').toUpperCase()) + '</small></div>') + '</div>';
     if (!win && prec != null && prec >= 95) html += '<span class="badge">' + esc(t('unluckyBadge')) + '</span>';
+    // explicación de la métrica y de los umbrales reales (rama tutorial 1/2 aparte)
+    html += '<div class="est-ayuda">';
+    if (tut) html += '<p>' + esc(t('tutStars')) + '</p>';
+    else {
+      html += '<p><b>' + esc(prec == null ? t('decScorePending') : t('decScore', { prec: prec })) + '</b> ' + esc(t('decScoreHelp')) + '</p>';
+      html += '<ul><li>' + esc(t('oneStar')) + '</li><li>' + esc(t('starThreshold', { objetivo: 2, umbral_precision: UMBRAL_EST[2] })) + '</li>' +
+        (g.pista ? '<li>' + esc(t('hintCost')) + '</li>' : '<li>' + esc(t('starThreshold', { objetivo: 3, umbral_precision: UMBRAL_EST[3] })) + '</li>') + '</ul>';
+    }
+    html += '</div>';
     if (!tut) {
       html += '<div class="lineas">';
-      if (prec == null) html += '<div><span class="calc">' + esc(t('calc')) + '</span></div>';
+      if (prec == null) html += '<div><span class="calc">' + esc(t('decScorePending')) + '</span></div>';
       else {
         html += '<div><span>' + esc(t('ref')) + '</span><b>' + r.E + ' ' + esc(t('minShort')) + '</b></div>' +
           '<div><span>' + esc(t('lostDec')) + '</span><b class="' + (r.Lo > 0 ? 'neg' : '') + '">' + (r.Lo > 0 ? '−' : '') + r.Lo + ' ' + esc(t('minShort')) + '</b></div>' +
@@ -942,27 +1082,39 @@
         if (r.quick) html += '<div><span class="calc">' + esc(t('quick')) + '</span></div>';
       }
       html += '</div>';
+      // SRC-TE02: «Ver análisis de decisiones» despliega la repetición comentada (estimación, no certeza)
       if (prec != null && g.st.acciones.length) {
-        html += '<div class="repl"><h4>' + esc(t('replay').toUpperCase()) + '</h4><p class="h">' + esc(t('replayHint')) + '</p><div class="tl" id="rTl">' +
+        html += '<button class="btn" id="rAna" type="button" aria-expanded="' + (!!r.anaAbierto) + '" aria-controls="rRepl">' + esc(t('analysis')) + '</button>' +
+          '<div class="repl" id="rRepl"' + (r.anaAbierto ? '' : ' hidden') + '><h4>' + esc(t('replay').toUpperCase()) + '</h4><p class="h">' + esc(t('replayHint')) + '</p><div class="tl" id="rTl">' +
           g.st.acciones.map(function (a, k) { var p = r.pasos[k]; var ab = a.t === 'L' ? (a.T >= 100 ? t('zones')[a.T - 100].slice(0, 3) : nombreSis(c, a.T).slice(0, 3).toUpperCase()) : nombreSis(c, a.i).slice(0, 3).toUpperCase(); return '<button class="tc' + (p && p.arrep > 2 ? ' warn' : '') + '" type="button" data-k="' + k + '" aria-label="' + esc(accTexto(c, a)) + '">' + icoPaso(a) + '' + esc(ab) + '</button>'; }).join('') +
           '</div><div class="det" id="rDet"></div></div>';
       }
       if (g.desc.id === '1-3' && prec != null && r.pasos.some(function (p, k) { return g.st.acciones[k].t === 'L' && p.arrep > 2; })) html += '<div class="ora" style="margin-top:12px"><b>ORA</b><span class="t">' + esc(t('oraRisk')) + '</span></div>';
     }
-    // botones
+    // botones — PLAY-TELEMETRIA-05 / SRC-TE02: en derrota, «Reintentar caso» es la acción primaria y enfocada; en victoria, «Siguiente caso».
+    // «Elegir otro caso» (campaña) lleva al mapa; «Volver al menú» siempre disponible. El caso fallido nunca se presenta como superado.
     var d = g.desc, nx = null;
     if (d.modo === 'campana') {
       var i = CASOS.CAMPANA.findIndex(function (x) { return x.id === d.id; }), sig = CASOS.CAMPANA[i + 1];
       if (sig && capAbierto(sig.cap)) nx = sig.id;
     }
+    var puedeRepetir = d.modo !== 'diario';
     html += '<div class="res-btns">';
-    if (d.luego === 'diario') html += '<button class="btn pri big" id="rNext" type="button">' + esc(t('dailyShort')) + '</button>';
-    else if (d.modo === 'campana') html += nx ? '<button class="btn pri big" id="rNext" type="button">' + esc(t('next')) + '<small>' + esc(t('caseN', { c: nx === 'F' ? t('finalCase') : nx })) + '</small></button>' : '<button class="btn pri big" id="rMap" type="button">' + esc(t('map')) + '</button>';
-    else if (d.modo === 'practica' || d.modo === 'prueba') html += '<button class="btn pri big" id="rNext" type="button">' + esc(t('next')) + '</button>';
-    else html += '<button class="btn pri big" id="rShare" type="button">' + esc(t('share')) + '</button>';
-    if (d.modo === 'diario') html += '<div class="row2"><button class="btn" id="rPrac" type="button">' + esc(t('practiceThis')) + '</button><button class="btn" id="rHome" type="button">' + esc(t('home')) + '</button></div><p class="muted" style="text-align:center;font-size:13px">' + esc(t('dailyDone', { t: cuentaAtras() })) + '</p>';
-    else html += '<div class="row2"><button class="btn" id="rAgain" type="button">' + esc(t('again')) + '</button><button class="btn" id="rShare2" type="button">' + esc(t('share')) + '</button></div>' +
-      (d.modo === 'campana' && !nx ? '<button class="btn" id="rHome" type="button">' + esc(t('home')) + '</button>' : '<div class="row2"><button class="btn" id="rMap2" type="button">' + esc(t('map')) + '</button><button class="btn" id="rHome" type="button">' + esc(t('home')) + '</button></div>');
+    if (!win && puedeRepetir) {
+      html += '<button class="btn pri big" id="rAgain" type="button" data-foco>' + esc(t('retry')) + '</button>';
+      if (d.luego === 'diario') html += '<button class="btn" id="rNext" type="button">' + esc(t('dailyShort')) + '</button>';
+      else if (d.modo === 'campana') html += '<div class="row2"><button class="btn" id="rMap2" type="button">' + esc(t('otherCase')) + '</button><button class="btn" id="rShare2" type="button">' + esc(t('share')) + '</button></div>';
+      else html += '<div class="row2"><button class="btn" id="rNext" type="button">' + esc(t('next')) + '</button><button class="btn" id="rShare2" type="button">' + esc(t('share')) + '</button></div>';
+      html += '<button class="btn" id="rHome" type="button">' + esc(t('home')) + '</button>';
+    } else {
+      if (d.luego === 'diario') html += '<button class="btn pri big" id="rNext" type="button" data-foco>' + esc(t('dailyShort')) + '</button>';
+      else if (d.modo === 'campana') html += nx ? '<button class="btn pri big" id="rNext" type="button" data-foco>' + esc(t('next')) + '<small>' + esc(t('caseN', { c: nx === 'F' ? t('finalCase') : nx })) + '</small></button>' : '<button class="btn pri big" id="rMap" type="button" data-foco>' + esc(t('campaign2')) + '</button>';
+      else if (d.modo === 'practica' || d.modo === 'prueba') html += '<button class="btn pri big" id="rNext" type="button" data-foco>' + esc(t('next')) + '</button>';
+      else html += '<button class="btn pri big" id="rShare" type="button" data-foco>' + esc(t('share')) + '</button>';
+      if (d.modo === 'diario') html += '<div class="row2"><button class="btn" id="rPrac" type="button">' + esc(t('practiceThis')) + '</button><button class="btn" id="rHome" type="button">' + esc(t('home')) + '</button></div><p class="muted" style="text-align:center;font-size:13px">' + esc(t('dailyDone', { t: cuentaAtras() })) + '</p>';
+      else html += '<div class="row2"><button class="btn" id="rAgain" type="button">' + esc(t('replayCase')) + '</button><button class="btn" id="rShare2" type="button">' + esc(t('share')) + '</button></div>' +
+        (d.modo === 'campana' && !nx ? '<button class="btn" id="rHome" type="button">' + esc(t('home')) + '</button>' : '<div class="row2"><button class="btn" id="rMap2" type="button">' + esc(t('campaign2')) + '</button><button class="btn" id="rHome" type="button">' + esc(t('home')) + '</button></div>');
+    }
     html += '</div></div>';
     $('#s-res').innerHTML = html;
     var on = function (id, f) { var e = $('#' + id); if (e) e.onclick = function () { sfx('boton'); f(); }; };
@@ -977,6 +1129,7 @@
     on('rShare', function () { compartir(textoCompartir(g)); });
     on('rShare2', function () { compartir(textoCompartir(g)); });
     on('rPrac', function () { var dd = Object.assign({}, d, { modo: 'practica', id: 'P' }); G = null; iniciarBrief(dd); });
+    on('rAna', function () { var b = $('#rAna'), p = $('#rRepl'); r.anaAbierto = !r.anaAbierto; b.setAttribute('aria-expanded', r.anaAbierto); p.hidden = !r.anaAbierto; if (r.anaAbierto) p.scrollIntoView({ block: 'nearest', behavior: rmActivo() ? 'auto' : 'smooth' }); });
     $$('#rTl .tc').forEach(function (b) { b.onclick = function () { verPaso(+b.getAttribute('data-k')); }; });
     // animaciones de entrada
     var stars = $$('#rStars svg');
@@ -1064,25 +1217,22 @@
     $('#aSv').oninput = function (e) { P.sfxVol = +e.target.value; AUDIO.setPrefs({ sfxVol: P.sfxVol }); };
     $('#aSv').onchange = function () { guardarPrefs(); sfx('alerta'); }; $('#aMv').onchange = guardarPrefs;
     $('#aEs').onclick = function () { cambiarIdioma('es'); }; $('#aEn').onclick = function () { cambiarIdioma('en'); };
+    // SRC-G04: confirmación explícita (sin doble toque ni pulsación larga), Cancelar enfocado, enumeración de lo que se borra.
+    // Las preferencias (audio, porcentajes, contraste…) y el idioma del sitio no se tocan: borrarTodo sólo elimina progreso, diario y partida.
     var bB = $('#aB');
     bB.onclick = function () {
-      if (bB.dataset.arm !== '1') { bB.dataset.arm = '1'; bB.textContent = t('eraseAll'); sfx('error'); setTimeout(function () { if (bB.isConnected && bB.dataset.arm === '1') { bB.dataset.arm = ''; bB.textContent = t('erase'); } }, 4000); return; }
-      bB.dataset.arm = '2';
-      bB.outerHTML = '<button class="btn red holdbtn" id="aB2" type="button"><i class="hf"></i><span>' + esc(t('eraseHold')) + '</span></button>';
-      var b2 = $('#aB2'), hold = null;
-      var ini = function (e) { e.preventDefault(); var t0 = performance.now(); (function f() { var p = Math.min(1, (performance.now() - t0) / 2000); $('.hf', b2).style.transform = 'scaleX(' + p + ')'; if (p >= 1) { hold = null; borrarTodo(); return; } hold = requestAnimationFrame(f); })(); };
-      var fin = function () { if (hold) { cancelAnimationFrame(hold); hold = null; $('.hf', b2).style.transform = 'scaleX(0)'; } };
-      b2.addEventListener('pointerdown', ini); ['pointerup', 'pointerleave', 'pointercancel'].forEach(function (ev) { b2.addEventListener(ev, fin); });
-      b2.addEventListener('keydown', function (e) { if ((e.key === 'Enter' || e.key === ' ') && !e.repeat && !hold) ini(e); });
-      b2.addEventListener('keyup', function (e) { if (e.key === 'Enter' || e.key === ' ') fin(); });
-      b2.focus();
+      sfx('boton');
+      var volver = volverAjustes;
+      confirmar({ titulo: t('eraseTitle', { juego: t('title') }), texto: t('eraseBody', { datos: t('eraseData') }), boton: t('erase'),
+        ok: function () { borrarTodo(); },
+        cancelar: function () { abrirAjustes(volver); } });
     };
   }
   function borrarTodo() {
     ldel('progreso'); ldel('diario'); ldel('partida');
     PR = { v: 1, est: {}, estV: {}, prec: {}, int: {}, tut3: false, vet: false, jugado: false };
     DI = { v: 1, fecha: null, empezado: false, terminado: false, res: null, racha: 0, ultimo: null };
-    G = null; cerrarOv(); toast(t('erased')); sfx('ko'); renderInicio(); mostrar('inicio');
+    G = null; ovPila.length = 0; cerrarOv(); $$('.ov').forEach(function (o) { o.classList.remove('on'); }); ovAbierto = null; fondoInerte(); toast(t('erased')); sfx('ko'); renderInicio(); mostrar('inicio');
   }
   /* Cambio de idioma en vivo (desde el inicio, Ajustes o window.JETIdioma.set): repinta todo sin tocar la partida. */
   window.addEventListener('jet-idioma', function (e) {
@@ -1201,9 +1351,9 @@
   $('#bAjustes').onclick = function () { sfx('boton'); if (pantalla === 'juego' && G && !G.st.fin) { pausar(); abrirAjustes('pausa'); } else abrirAjustes(null); };
   $('#bFs').onclick = alternarFS;
   $('#back').addEventListener('click', function () { if (G && pantalla === 'juego') guardar(); });
-  $$('.ov').forEach(function (o) { o.addEventListener('click', function (e) { if (e.target !== o) return; if (ovAbierto === 'pausa') continuar(); else if (ovAbierto === 'ajustes') $('#aX').click(); else cerrarOv(); }); });
-  document.addEventListener('dblclick', function (e) { e.preventDefault(); }, { passive: false });
-  document.addEventListener('gesturestart', function (e) { e.preventDefault(); });
+  // la confirmación (alertdialog) no se cierra tocando el fondo: sólo Cancelar o Escape
+  $$('.ov').forEach(function (o) { o.addEventListener('click', function (e) { if (e.target !== o) return; if (ovAbierto === 'pausa') continuar(); else if (ovAbierto === 'ajustes') $('#aX').click(); else if (ovAbierto === 'confirm') { var c = $('#cfNo'); if (c) c.click(); } else cerrarOv(); }); });
+  // RSP-GLOBAL-01: sin bloqueos globales de doble clic ni de gesto de zoom; el control de puntero queda sólo en Reparar (.rep) y el rango
 
   /* ================= Teclado ================= */
   var sensKeys = ['q', 'w', 'e', 'a', 's'];
@@ -1212,12 +1362,13 @@
     var k = e.key.toLowerCase();
     if (k === 'm') { P.music = P.sfx = !(P.music || P.sfx); guardarPrefs(); aplicarPrefs(); toast((P.music ? '🔊 ' : '🔇 ') + t('music') + ' / ' + t('sfx')); return; }
     if (ovAbierto) {
-      if (k === 'escape') { e.preventDefault(); if (ovAbierto === 'pausa') continuar(); else if (ovAbierto === 'ajustes') $('#aX').click(); else if (ovAbierto === 'copiar') $('#cpX').click(); else cerrarOv(); }
+      if (k === 'escape') { e.preventDefault(); if (ovAbierto === 'pausa') continuar(); else if (ovAbierto === 'ajustes') $('#aX').click(); else if (ovAbierto === 'copiar') $('#cpX').click(); else if (ovAbierto === 'confirm') { var cn = $('#cfNo'); if (cn) cn.click(); } else cerrarOv(); }
       else if (ovAbierto === 'como' && (k === 'arrowright' || k === 'arrowleft')) { var bt = $(k === 'arrowright' ? '#cN' : '#cP'); if (bt && !bt.disabled) bt.click(); }
       return;
     }
     if (pantalla === 'juego' && G) {
-      if ($('#sheet').classList.contains('on') && k === 'escape') { cerrarHoja(); return; }
+      // con la hoja del registro abierta, el fondo es inerte: ninguna tecla de la cabina actúa detrás
+      if ($('#sheet').classList.contains('on')) { if (k === 'escape' || k === 'l') { e.preventDefault(); cerrarHoja(); } return; }
       if (k === 'escape' || k === 'p') { e.preventDefault(); pausar(); return; }
       if (G.st.fin) return;
       if (/^[0-9]$/.test(k)) { var n = k === '0' ? 9 : +k - 1; if (n < G.caso.N) seleccionar(n); return; }
@@ -1241,7 +1392,8 @@
       else if (pantalla === 'res') { var h = $('#rHome'); if (h) h.click(); }
       return;
     }
-    if (k === 'enter' && document.activeElement === document.body) { var p = $('#s-' + pantalla + ' .btn.pri'); if (p) { e.preventDefault(); p.click(); } }
+    // PLAY-TELEMETRIA-05: en el resultado, Enter sólo actúa sobre el botón enfocado (nunca avanza de caso por un atajo global)
+    if (k === 'enter' && document.activeElement === document.body && pantalla !== 'res') { var p = $('#s-' + pantalla + ' .btn.pri'); if (p) { e.preventDefault(); p.click(); } }
   });
   document.addEventListener('keyup', function (e) { if (e.key.toLowerCase() === 'r' && pantalla === 'juego') finMantener(false); });
 
@@ -1332,4 +1484,6 @@
     var p = partidaGuardada();
     if (p && QS.has('continuar')) reanudar(p);
   })();
+  // SRC-G05: el juego quedó listo; el estado de carga del HTML pasa a «listo» (loading/error/ready excluyentes)
+  if (window.JETCarga) window.JETCarga.listo();
 })();

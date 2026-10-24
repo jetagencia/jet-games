@@ -35,6 +35,21 @@
       if (conLetras) s += '<text class="pz-letra" x="50" y="' + (f === 1 ? 74 : 64) + '" text-anchor="middle" font-family="JetBrains Mono,monospace" font-weight="800" font-size="' + (f === 1 ? 30 : 34) + '" fill="#fff" stroke="#0a0418" stroke-width="6" paint-order="stroke">' + LETRA[c] + '</text>';
       s += '</g></symbol>';
     }
+    // VIS-SENAL-01 — variante de detalle para renders <= 28 px CSS: misma silueta, misma escala .58 para la pieza pequeña,
+    // sin brillo ovalado, un solo contorno y patrón proporcional (>= 3 rayas / 3 puntos dentro de la pieza pequeña).
+    s += '<pattern id="pzRayasM" patternUnits="userSpaceOnUse" width="14" height="14" patternTransform="rotate(45)"><rect width="14" height="14" fill="none"/><rect width="5.5" height="14" fill="rgba(0,60,52,.5)"/></pattern>';
+    s += '<pattern id="pzPuntosM" patternUnits="userSpaceOnUse" width="14" height="14"><circle cx="7" cy="7" r="3.6" fill="rgba(110,52,0,.55)"/></pattern>';
+    for (let id = 0; id < 18; id++) {
+      const f = R.PF[id], c = R.PC[id], t = R.PT[id];
+      const tr = t ? ' transform="translate(50 92) scale(.58) translate(-50 -92)"' : '';
+      s += '<symbol id="pzs' + id + '" viewBox="0 0 100 100"><g' + tr + '>';
+      s += '<path d="' + FORMA[f] + '" fill="' + COL[c] + '"/>';
+      if (c === 1) s += '<path d="' + FORMA[f] + '" fill="url(#pzRayasM)"/>';
+      if (c === 2) s += '<path d="' + FORMA[f] + '" fill="url(#pzPuntosM)"/>';
+      s += '<path d="' + FORMA[f] + '" fill="none" stroke="rgba(8,3,20,.75)" stroke-width="' + (t ? 6 : 4) + '"/>';
+      if (conLetras) s += '<text class="pz-letra" x="50" y="' + (f === 1 ? 76 : 66) + '" text-anchor="middle" font-family="JetBrains Mono,monospace" font-weight="800" font-size="' + (f === 1 ? 36 : 42) + '" fill="#fff" stroke="#0a0418" stroke-width="8" paint-order="stroke">' + LETRA[c] + '</text>';
+      s += '</g></symbol>';
+    }
     // íconos de los chips
     s += '<symbol id="icF0" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2.4"/></symbol>';
     s += '<symbol id="icF1" viewBox="0 0 24 24"><path d="M12 3.5L21 19.5H3Z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/></symbol>';
@@ -46,6 +61,8 @@
     return s;
   }
   const svg = (id, cls) => '<svg class="pz-svg' + (cls ? ' ' + cls : '') + '" viewBox="0 0 100 100" aria-hidden="true" focusable="false"><use href="#pz' + id + '"/></svg>';
+  // misma pieza lógica (mismo id, mismo nombre accesible) en su variante de detalle para tamaños pequeños
+  const svgMini = (id, cls) => '<svg class="pz-svg pz-mini' + (cls ? ' ' + cls : '') + '" viewBox="0 0 100 100" aria-hidden="true" focusable="false"><use href="#pzs' + id + '"/></svg>';
   const icono = (ref) => '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#' + ref + '"/></svg>';
   function nombre(id, lang, T) {
     const f = R.PF[id], c = R.PC[id], t = R.PT[id];
@@ -53,5 +70,5 @@
     const tam = t ? 'pequeño' : 'grande';
     return T.formasN[f] + ' ' + T.coloresN[c] + ' ' + tam;
   }
-  G.Piezas = { defs, svg, icono, nombre, COL, COL_CLARO };
+  G.Piezas = { defs, svg, svgMini, icono, nombre, COL, COL_CLARO };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

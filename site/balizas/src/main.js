@@ -47,21 +47,39 @@ I.lang = window.JETIdioma ? window.JETIdioma.get() : I.lang;
 function tx(el, key, vars) { el.setAttribute('data-t', key); if (vars) el.setAttribute('data-tv', JSON.stringify(vars)); else el.removeAttribute('data-tv'); el.textContent = t(key, vars); }
 
 /* ---------------- pantallas ---------------- */
-const SCREENS = ['home', 'day', 'pause', 'result', 'rate', 'table', 'logs', 'arch', 'help', 'settings'];
+const SCREENS = ['home', 'day', 'pause', 'result', 'rate', 'tutEnd', 'confirm', 'shareFb', 'table', 'logs', 'arch', 'help', 'settings'];
+const HEAD_FOCUS = { result: 'resTitle', rate: 'rateTitle', tutEnd: 'teTitle' }; // PLAY-BALIZAS-02: el foco entra por el encabezado, no por el CTA que salta pasos
 let overlayStack = [];
 function show(id, keepStack) {
   SCREENS.forEach(s => $(s).classList.toggle('on', s === id)); R.menuPos = null; setTimeout(menuShipPos, 0); setTimeout(syncOffline, 0);
-  ST.scene = id === null ? 'flight' : id; document.body.classList.toggle('res', id === 'result' || id === 'rate');
+  ST.scene = id === null ? 'flight' : id; document.body.classList.toggle('res', id === 'result' || id === 'rate' || id === 'tutEnd');
   const inFlight = ST.scene === 'flight' || id === 'pause';
   $('back').classList.toggle('on', !inFlight);
   $('topR').style.display = (ST.scene === 'flight' || id === 'pause') ? 'none' : 'flex';
   $('fsBtn').style.display = ST.fsAPI && (id === 'home') ? '' : 'none';
   if (!keepStack) overlayStack = [];
-  const el = id && $(id); if (el) { el.scrollTop = 0; const f = el.querySelector('.btn.pri:not([hidden])') || el.querySelector('.btn:not([hidden]), button:not([hidden])'); if (f && !ST.touch) setTimeout(() => { try { f.focus({ preventScroll: true }); } catch (e) {} }, 30); }
+  // PLAY-BALIZAS-02/04: al cambiar de estado se sueltan las entradas, se retiran avisos efímeros y una tecla aún pulsada no activa el control recién enfocado
+  releaseStick(); IN.keys = {}; IN.brakeKey = 0; ST.keyGuard = true; clearToast(); if (id !== null) { $('tutLine').hidden = true; showBigMap(false); }
+  $('modeTag').hidden = !(ST.fl && ST.fl.mode === 'tutorial' && !ST.fl.ended && ST.scene === 'flight');
+  const el = id && $(id); if (el) { el.scrollTop = 0; const h = HEAD_FOCUS[id] && $(HEAD_FOCUS[id]); const f = id === 'confirm' ? $('cfCancel') : h || el.querySelector('.btn.pri:not([hidden])') || el.querySelector('.btn:not([hidden]), button:not([hidden])'); if (f && (!ST.touch || id === 'confirm')) setTimeout(() => { try { f.focus({ preventScroll: true }); } catch (e) {} }, 30); }
 }
-function openOver(id) { overlayStack.push(ST.scene); show(id, true); }
+function openOver(id) {
+  const from = ST.scene; overlayStack.push(from); show(id, true);
+  // PLAY-BALIZAS-06: la etiqueta del botón de volver nombra su destino real
+  const el = $(id); el.querySelectorAll('[data-close]').forEach(b => { const k = from === 'help' ? 'back_help' : (from === 'pause' || from === 'flight') ? 'back_pause' : 'go_home'; b.setAttribute('data-ta', k); b.setAttribute('aria-label', t(k)); b.title = t(k); });
+}
+// una tecla mantenida desde el vuelo (Espacio/Enter) no debe activar el control enfocado de la pantalla recién abierta
+window.addEventListener('keydown', e => { if (!ST.keyGuard || (e.code !== 'Space' && e.code !== 'Enter')) return; if (e.repeat) { e.preventDefault(); e.stopImmediatePropagation(); } else ST.keyGuard = false; }, true);
+window.addEventListener('keyup', e => { if (!ST.keyGuard || (e.code !== 'Space' && e.code !== 'Enter')) return; e.preventDefault(); e.stopImmediatePropagation(); ST.keyGuard = false; }, true);
+// diálogo de confirmación genérico (SRC-G04 / SRC-BA01): Cancelar enfocado; confirmar es la acción peligrosa
+function confirmDlg(o) { ST.confirmSpec = o; $('cfTitle').textContent = o.title; $('cfBody').textContent = o.body; $('cfKeep').hidden = !o.keep; $('cfKeep').textContent = o.keep || ''; $('cfOk').textContent = o.okLabel; openOver('confirm'); }
+$('cfCancel').addEventListener('click', () => { sfx('ui_back'); ST.confirmSpec = null; closeOver(); });
+$('cfOk').addEventListener('click', () => { const o = ST.confirmSpec; ST.confirmSpec = null; if (o && o.onOk) o.onOk(); });
 function closeOver() { const prev = overlayStack.pop(); if (prev === 'flight' || prev === 'pause') { show('pause'); return; } if (prev) show(prev, true); else goHome(); }
 document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', () => { sfx('ui_back'); if (b.dataset.close === 'day') goHome(); else closeOver(); }));
+// insets reales de la pantalla (RSP-BALIZAS-02): se miden con un elemento sonda con padding env()
+function safeInsets() { let s = $('sonda'); if (!s) { s = document.createElement('div'); s.id = 'sonda'; s.style.cssText = 'position:fixed;left:0;top:0;visibility:hidden;pointer-events:none;padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)'; document.body.appendChild(s); } const cs = getComputedStyle(s); return { t: parseFloat(cs.paddingTop) || 0, r: parseFloat(cs.paddingRight) || 0, b: parseFloat(cs.paddingBottom) || 0, l: parseFloat(cs.paddingLeft) || 0 }; }
+function keysLine(mode) { return t('keys_steer') + ' · ' + t(mode === 'oficial' || mode === 'tutorial' ? 'keys_act' : 'keys_map_pause'); }
 
 /* ---------------- tamaño, pantalla completa, giro ---------------- */
 let lastAspect = null;
@@ -238,7 +256,7 @@ function paintDay(mode, fecha, resume, intro) {
   const tr = ST.set.trails == null ? ST.prof.flights > 0 : !!ST.set.trails; setTog($('trailTog'), tr);
   // peligro nuevo de la semana (una vez por tipo)
   const nh = newHazard(f); $('dayHaz').hidden = !nh; if (nh) { $('hazTxt').textContent = t('new_hazard_' + nh); animHaz(nh); }
-  $('dayKeys').hidden = ST.touch;
+  $('dayKeys').hidden = ST.touch; $('dayKeys').textContent = keysLine(mode);
   $('takeoffBtn').textContent = resume ? t('continue_run') : intro ? t('play_today') : t('takeoff');
   $('dayIntro').hidden = !intro; if (intro) $('dayIntro').textContent = t('tut_6');
 }
@@ -276,12 +294,14 @@ function startFlight(mode, fecha, resume) {
   }
   R.setField(S.f, S.ct); R.reveal = 0; R.zoomOut = 0; R.parts.length = 0;
   R.opts.contrast = ST.set.contrast; R.opts.shake = ST.set.shake; R.opts.reduced = reducedMQ.matches;
+  clearUndo();
   $('hud').hidden = false; show(null); onResize(); layoutControls(); updateHud(true);
   $('mini').hidden = !ST.set.mini; $('hBeacWrap').hidden = $('beaconBtn').hidden = mode === 'archivo' || mode === 'libre';
+  $('modeTag').hidden = mode !== 'tutorial'; $('modeTag').textContent = t('tut_local');
   $('ghost').hidden = !(ST.touch && ST.prof.flights < 3 && mode !== 'archivo'); fl.ghost = !$('ghost').hidden; $('ghost').querySelector('span').hidden = mode === 'tutorial';
   A.play('juego'); A.final2 = 0;
   if (fl.tut) tutStep(fl.tut.step, true);
-  countdown(resume ? 1.5 : 1.5);
+  countdown(1.5);
 }
 function buildTrails(fl) {
   if (fl.mode === 'tutorial') return [];
@@ -294,18 +314,19 @@ function buildTrails(fl) {
 function countdown(dur) {
   const fl = ST.fl; fl.count = dur; fl.countN = -1; $('count').hidden = false;
 }
-function endFlightView() { if (ST.fl) { ST.fl.ended = true; } $('beaconBtn').classList.remove('hint'); $('hud').hidden = true; closeSelector(true); A.loopsOff(); A.duck(0); R.reveal = 0; R.zoomOut = 0; $('cv').style.filter = ''; }
+function endFlightView() { if (ST.fl) { ST.fl.ended = true; } $('beaconBtn').classList.remove('hint'); $('hud').hidden = true; $('modeTag').hidden = true; clearUndo(); $('tutLine').hidden = true; tutLine.key = null; clearToast(); closeSelector(true); A.loopsOff(); A.duck(0); R.reveal = 0; R.zoomOut = 0; $('cv').style.filter = ''; }
 function pauseFlight(why) {
   const fl = ST.fl; if (!fl || fl.ended || fl.arriving || ST.scene !== 'flight') return;
   fl.paused = true; releaseStick(); closeSelector(true); A.loopsOff(); A.duck(1); saveFlight();
   $('restartBtn').hidden = !(fl.mode === 'libre' || fl.mode === 'archivo');
-  const ab = $('abandonBtn'); ab.classList.remove('arm'); ab.hidden = fl.mode === 'tutorial' && fl.tut.step < 2;
+  const ab = $('abandonBtn'); ab.hidden = fl.mode === 'tutorial' && fl.tut.step < 2;
   paintPause(fl);
   show('pause'); sfx('ui_back');
 }
 function paintPause(fl) {
-  const ab = $('abandonBtn'); ab.textContent = fl.mode === 'tutorial' ? t('tut_skip') : t(ab.classList.contains('arm') ? 'abandon_confirm' : 'abandon');
-  $('pauseInfo').textContent = (fl.mode === 'oficial' ? t('official') : fl.mode === 'libre' ? t('free') : fl.mode === 'tutorial' ? t('tut_title') : t('archive_flight', { d: fmtDate(fl.fecha) })) + ' · ' + fmtTime(fl.S.t + fl.S.pen, true);
+  const ab = $('abandonBtn'); ab.textContent = fl.mode === 'tutorial' ? t('tut_skip') : t('abandon');
+  $('pauseInfo').textContent = (fl.mode === 'oficial' ? t('official') : fl.mode === 'libre' ? t('free') : fl.mode === 'tutorial' ? t('tut_local') : t('archive_flight', { d: fmtDate(fl.fecha) })) + ' · ' + fmtTime(fl.S.t + fl.S.pen, true);
+  $('pauseKeys').hidden = ST.touch; $('pauseKeys').textContent = keysLine(fl.mode); // PLAY-BALIZAS-04: leyenda consultable durante el vuelo
 }
 function resumeFlight() { const fl = ST.fl; if (!fl) return; show(null); fl.paused = false; A.duck(0); A.resume(); countdown(1.5); sfx('ui_tap'); onResize(); }
 $('pauseBtn').addEventListener('click', () => pauseFlight('btn'));
@@ -313,12 +334,12 @@ $('resumeBtn').addEventListener('click', resumeFlight);
 $('restartBtn').addEventListener('click', () => { const fl = ST.fl; if (!fl) return; sfx('ui_tap'); startFlight(fl.mode, fl.fecha, false); });
 $('pHow').addEventListener('click', () => { sfx('ui_tap'); openHelp(true); });
 $('pSet').addEventListener('click', () => { sfx('ui_tap'); openSettings(true); });
-let abTimer = 0;
+// SRC-BA01: abandonar exige una decisión nueva en un diálogo que describe la consecuencia real del modo
 $('abandonBtn').addEventListener('click', () => {
-  const b = $('abandonBtn'), fl = ST.fl; if (!fl) return;
+  const fl = ST.fl; if (!fl) return;
   if (fl.mode === 'tutorial') { finishTutorial(true); return; }
-  if (!b.classList.contains('arm')) { b.classList.add('arm'); b.textContent = t('abandon_confirm'); sfx('ui_error'); clearTimeout(abTimer); abTimer = setTimeout(() => { b.classList.remove('arm'); b.textContent = t('abandon'); }, 3000); return; }
-  clearTimeout(abTimer); b.classList.remove('arm'); abandonFlight();
+  sfx('ui_tap');
+  confirmDlg({ title: t('abandon_title'), body: t('abandon_effects', { consecuencias: t(fl.mode === 'oficial' ? 'cons_oficial' : 'cons_libre') }), okLabel: t('abandon'), onOk: () => { sfx('ui_back'); abandonFlight(); } });
 });
 function saveFlight() {
   const fl = ST.fl; if (!fl || fl.ended) return;
@@ -425,6 +446,7 @@ function updateHud(force) {
   const h = Math.round(S.hull); setText('hHull', h + '%'); $('hHull').classList.toggle('low', h < 30);
   setText('hTre', '◆ ' + S.tre.reduce((a, b) => a + b, 0) + '/' + S.tre.length);
   const left = Sm.K.MAX_BEACONS - S.placed.length; setText('hBeac', String(left)); setText('beaconN', String(left));
+  if (hudLast.avail !== left) { hudLast.avail = left; const lb = t('beacons_available', { cantidad: left }); $('hBeacWrap').setAttribute('aria-label', lb); $('beaconBtn').setAttribute('aria-label', t('beacon') + ' · ' + lb); }
   const why = Sm.canPlace(S), bb = $('beaconBtn'); bb.classList.toggle('dim', !!why && why !== 'too_fast' || left <= 0);
   $('progDot').style.bottom = (Math.max(0, Math.min(1, S.y / S.f.H)) * 100).toFixed(1) + '%';
 }
@@ -433,9 +455,13 @@ function drawBigMap(fl) { const cv = $('mapBigCv'), S = fl.S, { w, h } = vp(), d
 function showBigMap(v) { if (!ST.fl || ST.fl.ended) v = false; ST.mapHeld = v; $('mapBig').hidden = !v; }
 $('mini').addEventListener('pointerdown', e => { e.preventDefault(); showBigMap(true); });
 ['pointerup', 'pointercancel', 'pointerleave'].forEach(ev => $('mini').addEventListener(ev, () => showBigMap(false)));
+// PLAY-BALIZAS-03: el minimapa tiene nombre y se amplía también con teclado (Enter/Espacio alternan; Escape cierra); no revela zonas sin explorar
+$('mini').addEventListener('keydown', e => { if (e.code === 'Enter' || e.code === 'Space') { e.preventDefault(); e.stopPropagation(); showBigMap(!ST.mapHeld); } else if (e.code === 'Escape' && ST.mapHeld) { e.preventDefault(); e.stopPropagation(); showBigMap(false); } });
+$('mini').title = t('enlarge_map');
 
 let toastT = 0;
-function toast(msg, kind, ms) { const el = $('toast'); el.textContent = msg; el.className = 'toast on ' + (kind || ''); clearTimeout(toastT); toastT = setTimeout(() => { el.className = 'toast'; }, ms || 2000); }
+function toast(msg, kind, ms) { const el = $('toast'); el.textContent = msg; el.className = 'toast on ' + (kind || ''); clearTimeout(toastT); toastT = setTimeout(() => { el.className = 'toast'; el.textContent = ''; }, ms || 2000); }
+function clearToast() { const el = $('toast'); clearTimeout(toastT); el.className = 'toast'; el.textContent = ''; }
 
 /* ---------------- controles ---------------- */
 const IN = { kx: 0, ky: 0, keys: {}, stick: null, one: new Map(), mouse: { l: 0, r: 0, x: 0, y: 0 }, brakeBtn: 0, brakeKey: 0, gp: { ax: 0, ay: 0, br: 0 } };
@@ -503,6 +529,7 @@ window.addEventListener('keydown', e => {
   const fl = ST.fl, flying = fl && !fl.ended && ST.scene === 'flight';
   if (ST.dial && flying) { dialKey(e); return; }
   if (ST.sel && flying) { selKey(e); return; }
+  if (flying && document.activeElement === $('mini')) return; // el minimapa gestiona sus propias teclas
   if (flying) {
     if (GAME_KEYS.includes(e.code)) e.preventDefault();
     if (e.code === 'Escape' || e.code === 'KeyP') { if (!e.repeat) pauseFlight('key'); return; }
@@ -512,7 +539,7 @@ window.addEventListener('keydown', e => {
     IN.keys[e.code] = 1; return;
   }
   if (ST.scene === 'pause' && (e.code === 'Escape' || e.code === 'KeyP') && !e.repeat) { e.preventDefault(); resumeFlight(); return; }
-  if (e.code === 'Escape' && ['table', 'logs', 'arch', 'help', 'settings', 'day'].includes(ST.scene)) { e.preventDefault(); sfx('ui_back'); if (ST.scene === 'day') goHome(); else closeOver(); }
+  if (e.code === 'Escape' && ['table', 'logs', 'arch', 'help', 'settings', 'day', 'confirm', 'shareFb'].includes(ST.scene)) { e.preventDefault(); sfx('ui_back'); if (ST.scene === 'confirm') ST.confirmSpec = null; if (ST.scene === 'day') goHome(); else closeOver(); }
 });
 window.addEventListener('keyup', e => {
   IN.keys[e.code] = 0;
@@ -542,33 +569,48 @@ function openSelector(e) {
   if (why) { const b = $('beaconBtn'); b.classList.remove('shake'); void b.offsetWidth; b.classList.add('shake'); sfx('ui_error'); toast(t(WHY_KEY[why] || 'slow_to_mark'), 'warn', 1500); vib(15); return; }
   fl.S.autoBrake = 1; sfx('beacon_open');
   const sel = $('sel'), c = $('selC'); c.innerHTML = '';
-  ORDER.forEach((s, i) => { const b = document.createElement('button'); b.className = 'sym'; b.dataset.s = s; b.style.animationDelay = (i * 30) + 'ms'; b.setAttribute('aria-label', t('sym_' + s)); b.innerHTML = R.glyphSVG(s, 0) + '<span>' + t('sym_' + s) + '</span>' + (ST.touch ? '' : '<kbd>' + (i + 1) + '</kbd>'); if (fl.tut && fl.tut.step === 4 && s === 'noporaqui') b.classList.add('rec'); c.appendChild(b); });
-  sel.hidden = false; document.body.classList.add('selecting'); ST.sel = { pid: e ? e.pointerId : null, hi: -1, sx: e ? e.clientX : 0, sy: e ? e.clientY : 0, moved: false };
+  ORDER.forEach((s, i) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'sym'; b.dataset.s = s; b.style.animationDelay = (i * 30) + 'ms'; b.setAttribute('aria-label', t('place_sym', { 'símbolo': t('sym_' + s) })); b.innerHTML = R.glyphSVG(s, 0) + '<span>' + t('sym_' + s) + '</span>' + (ST.touch ? '' : '<kbd aria-hidden="true">' + (i + 1) + '</kbd>'); if (fl.tut && fl.tut.step === 4 && s === 'noporaqui') b.classList.add('rec'); c.appendChild(b); });
+  $('selT').textContent = t('choose_symbol') + ' · ' + t('beacons_available', { cantidad: Sm.K.MAX_BEACONS - fl.S.placed.length });
+  sel.hidden = false; document.body.classList.add('selecting'); ST.sel = { pid: e ? e.pointerId : null, hi: -1, sx: e ? e.clientX : 0, sy: e ? e.clientY : 0, moved: false, opener: document.activeElement };
   positionSelector();
   if (!e && !ST.touch) setTimeout(() => { const f = c.querySelector('.sym'); if (f) f.focus(); }, 20);
 }
+// RSP-BALIZAS-02: rectángulo útil con insets reales; radio acotado y reserva de crecimiento; cuadrícula si no cabe
+function usableRect() { const { w, h } = vp(), ins = safeInsets(); return { L: ins.l + 12, R: w - ins.r - 12, T: ins.t + 64, B: h - ins.b - 12 }; }
 function positionSelector() {
-  const S = ST.fl.S, q = R.W2S(S.x, S.y), { w, h } = vp(), rad = Math.min(w, h) < 500 ? 96 : 112;
-  const cx = Math.max(rad + 40, Math.min(w - rad - 40, q[0])), cy = Math.max(rad + 90, Math.min(h - rad - 40, q[1]));
-  const box = ST.sel ? $('selC') : null; if (!box) return; box.style.left = cx + 'px'; box.style.top = cy + 'px';
+  const box = ST.sel ? $('selC') : null; if (!box) return;
+  const S = ST.fl.S, q = R.W2S(S.x, S.y), U = usableRect(), uw = U.R - U.L, uh = U.B - U.T;
+  const rad = Math.min(112, (uw - 84) / 2, (uh - 84) / 2);
+  if (rad < 52) { box.classList.add('grid'); box.style.left = (U.L + uw / 2) + 'px'; box.style.top = (U.T + uh / 2) + 'px'; box.querySelectorAll('.sym').forEach(b => { b.style.left = ''; b.style.top = ''; }); return; }
+  box.classList.remove('grid');
+  const half = rad + 42; const cx = Math.max(U.L + half, Math.min(U.R - half, q[0])), cy = Math.max(U.T + half, Math.min(U.B - half - 56, q[1]));
+  box.style.left = cx + 'px'; box.style.top = cy + 'px';
   box.querySelectorAll('.sym').forEach((b, i) => { const a = -Math.PI / 2 + i * 2 * Math.PI / 5; b.style.left = (Math.cos(a) * rad) + 'px'; b.style.top = (Math.sin(a) * rad) + 'px'; });
 }
-function closeSelector(silent) { document.body.classList.remove('selecting'); if (ST.sel) { $('sel').hidden = true; ST.sel = null; } if (ST.dial) { $('dial').hidden = true; ST.dial = null; } if (ST.fl) ST.fl.S.autoBrake = 0; if (!silent) sfx('ui_back'); }
+function closeSelector(silent) {
+  const inside = (ST.sel || ST.dial) && (document.activeElement && (($('sel').contains(document.activeElement)) || $('dial').contains(document.activeElement)));
+  document.body.classList.remove('selecting'); if (ST.sel) { $('sel').hidden = true; ST.sel = null; } if (ST.dial) { $('dial').hidden = true; ST.dial = null; } if (ST.fl) ST.fl.S.autoBrake = 0; if (!silent) sfx('ui_back');
+  if (inside) { const bb = $('beaconBtn'); const visible = !bb.hidden && bb.offsetParent !== null; if (visible && ST.fl && !ST.fl.ended) { try { bb.focus({ preventScroll: true }); } catch (e) {} } else { try { $('cv').focus({ preventScroll: true }); } catch (e) {} } }
+}
+$('selCancel').addEventListener('click', () => closeSelector());
+$('dialCancel').addEventListener('click', () => closeSelector());
 function selHi(i) { const els = $('selC').querySelectorAll('.sym'); els.forEach((b, k) => b.classList.toggle('hi', k === i)); if (ST.sel && ST.sel.hi !== i && i >= 0) sfx('beacon_pick', { s: ORDER[i] }); if (ST.sel) ST.sel.hi = i; }
 function symAt(x, y) { let best = -1, bd = 70; $('selC').querySelectorAll('.sym').forEach((b, i) => { const r = b.getBoundingClientRect(), d = Math.hypot(x - (r.left + r.width / 2), y - (r.top + r.height / 2)); if (d < bd) { bd = d; best = i; } }); return best; }
-$('sel').addEventListener('pointerdown', e => { if (!ST.sel) return; const i = symAt(e.clientX, e.clientY); if (i < 0) { closeSelector(); return; } e.preventDefault(); selHi(i); ST.sel.pid = e.pointerId; ST.sel.tap = true; });
+$('sel').addEventListener('pointerdown', e => { if (!ST.sel) return; if (e.target.closest('#selCancel')) return; const i = symAt(e.clientX, e.clientY); if (i < 0) { closeSelector(); return; } e.preventDefault(); selHi(i); ST.sel.pid = e.pointerId; ST.sel.tap = true; });
 window.addEventListener('pointermove', e => { if (!ST.sel || ST.sel.pid !== e.pointerId) return; if (Math.hypot(e.clientX - ST.sel.sx, e.clientY - ST.sel.sy) > 18) ST.sel.moved = true; const i = symAt(e.clientX, e.clientY); if (i !== ST.sel.hi) selHi(i); if (ST.dial && ST.dial.pid === e.pointerId) dialMove(e); });
 window.addEventListener('pointerup', e => {
   if (ST.sel && ST.sel.pid === e.pointerId) { const i = ST.sel.hi; if (i >= 0 && (ST.sel.moved || ST.sel.tap)) { pickSymbol(ORDER[i]); return; } ST.sel.pid = null; }
 });
 $('selC').addEventListener('click', e => { const b = e.target.closest('.sym'); if (b && ST.sel && e.detail === 0) pickSymbol(b.dataset.s); }); // teclado (Enter sobre el botón)
+// RSP-BALIZAS-02: solo se capturan flechas, dígitos, E y Escape; Tab recorre símbolos y Cancelar; Enter/Espacio activan el botón enfocado de forma nativa
 function selKey(e) {
-  e.preventDefault(); const n = ORDER.length;
-  if (e.code === 'Escape') { closeSelector(); return; }
-  if (/^Digit[1-5]$/.test(e.code)) { pickSymbol(ORDER[+e.code.slice(5) - 1]); return; }
-  if (['ArrowRight', 'ArrowDown', 'KeyD', 'KeyS'].includes(e.code)) { const i = ((ST.sel.hi < 0 ? -1 : ST.sel.hi) + 1) % n; selHi(i); $('selC').children[i].focus(); }
-  if (['ArrowLeft', 'ArrowUp', 'KeyA', 'KeyW'].includes(e.code)) { const i = ((ST.sel.hi < 0 ? 0 : ST.sel.hi) - 1 + n) % n; selHi(i); $('selC').children[i].focus(); }
-  if (e.code === 'Enter' || e.code === 'Space' || e.code === 'KeyE') { const i = ST.sel.hi >= 0 ? ST.sel.hi : ORDER.indexOf((document.activeElement && document.activeElement.dataset.s) || ''); if (i >= 0) pickSymbol(ORDER[i]); }
+  const n = ORDER.length; if (e.ctrlKey || e.metaKey || e.altKey) return;
+  if (e.code === 'Escape') { e.preventDefault(); closeSelector(); return; }
+  if (/^Digit[1-5]$/.test(e.code)) { e.preventDefault(); pickSymbol(ORDER[+e.code.slice(5) - 1]); return; }
+  if (['ArrowRight', 'ArrowDown', 'KeyD', 'KeyS'].includes(e.code)) { e.preventDefault(); const i = ((ST.sel.hi < 0 ? -1 : ST.sel.hi) + 1) % n; selHi(i); $('selC').children[i].focus(); return; }
+  if (['ArrowLeft', 'ArrowUp', 'KeyA', 'KeyW'].includes(e.code)) { e.preventDefault(); const i = ((ST.sel.hi < 0 ? 0 : ST.sel.hi) - 1 + n) % n; selHi(i); $('selC').children[i].focus(); return; }
+  if (e.code === 'KeyE') { e.preventDefault(); const i = ST.sel.hi >= 0 ? ST.sel.hi : ORDER.indexOf((document.activeElement && document.activeElement.dataset.s) || ''); if (i >= 0) pickSymbol(ORDER[i]); return; }
+  if ((e.code === 'Enter' || e.code === 'Space') && !(document.activeElement && document.activeElement.closest('#sel button'))) { e.preventDefault(); const i = ST.sel.hi; if (i >= 0) pickSymbol(ORDER[i]); }
 }
 function pickSymbol(s) {
   const fl = ST.fl; if (!fl) return; $('sel').hidden = true; ST.sel = null; document.body.classList.remove('selecting');
@@ -578,8 +620,9 @@ function pickSymbol(s) {
 function openDial(s) {
   const fl = ST.fl, S = fl.S, d0 = G.dirFrom(Math.cos(S.ang), Math.sin(S.ang));
   ST.dial = { s, dir: d0, pid: null }; const dl = $('dial'); dl.hidden = false; document.body.classList.add('selecting');
-  const q = R.W2S(S.x, S.y), { w, h } = vp(), cx = Math.max(120, Math.min(w - 120, q[0])), cy = Math.max(170, Math.min(h - 120, q[1]));
+  const q = R.W2S(S.x, S.y), U = usableRect(), half = 100 + 12; const cx = Math.max(U.L + half, Math.min(U.R - half, q[0])), cy = Math.max(U.T + half, Math.min(U.B - half - 56, q[1]));
   ST.dial.cx = cx; ST.dial.cy = cy;
+  if (!ST.touch) setTimeout(() => { try { $('dialOk').focus(); } catch (e) {} }, 20);
   const ring = $('dialRing'); ring.style.left = cx + 'px'; ring.style.top = cy + 'px'; ring.innerHTML = '';
   for (let i = 0; i < 8; i++) { const v = G.dirVec(i), k = document.createElement('i'); k.style.transform = 'translate(' + (v[0] * 100).toFixed(1) + 'px,' + (-v[1] * 100).toFixed(1) + 'px)'; ring.appendChild(k); }
   const ok = $('dialOk'); ok.style.left = cx + 'px'; ok.style.top = cy + 'px';
@@ -587,31 +630,35 @@ function openDial(s) {
 }
 function setDialDir(d) { const D = ST.dial; if (!D) return; if (D.dir !== d) sfx('beacon_pick', { s: D.s }); D.dir = d; const v = G.dirVec(d), a = $('dialArrow'); a.style.left = (D.cx + v[0] * 64) + 'px'; a.style.top = (D.cy - v[1] * 64) + 'px'; a.style.transform = 'rotate(' + (d * 45) + 'deg)'; }
 function dialMove(e) { const D = ST.dial; if (!D) return; const dx = e.clientX - D.cx, dy = -(e.clientY - D.cy); if (Math.hypot(dx, dy) > 24) setDialDir(G.dirFrom(dx, dy)); }
-$('dial').addEventListener('pointerdown', e => { if (!ST.dial || e.target === $('dialOk')) return; e.preventDefault(); ST.dial.pid = e.pointerId; dialMove(e); });
+$('dial').addEventListener('pointerdown', e => { if (!ST.dial || e.target === $('dialOk') || e.target.closest('#dialCancel')) return; e.preventDefault(); ST.dial.pid = e.pointerId; dialMove(e); });
 $('dial').addEventListener('pointermove', e => { if (ST.dial && (ST.dial.pid === e.pointerId || e.pointerType === 'mouse')) dialMove(e); });
 $('dial').addEventListener('pointerup', e => { if (ST.dial && ST.dial.pid === e.pointerId) placeBeacon(ST.dial.s, ST.dial.dir); });
 $('dialOk').addEventListener('click', () => { if (ST.dial) placeBeacon(ST.dial.s, ST.dial.dir); });
 function dialKey(e) {
-  e.preventDefault(); const D = ST.dial;
-  if (e.code === 'Escape') { closeSelector(); return; }
-  if (e.code === 'Enter' || e.code === 'Space' || e.code === 'KeyE') { placeBeacon(D.s, D.dir); return; }
-  if (['ArrowRight', 'KeyD'].includes(e.code)) setDialDir((D.dir + 1) % 8);
-  if (['ArrowLeft', 'KeyA'].includes(e.code)) setDialDir((D.dir + 7) % 8);
-  if (['ArrowUp', 'KeyW'].includes(e.code)) setDialDir(0);
-  if (['ArrowDown', 'KeyS'].includes(e.code)) setDialDir(4);
+  const D = ST.dial; if (e.ctrlKey || e.metaKey || e.altKey) return;
+  if (e.code === 'Escape') { e.preventDefault(); closeSelector(); return; }
+  if (e.code === 'KeyE') { e.preventDefault(); placeBeacon(D.s, D.dir); return; }
+  if ((e.code === 'Enter' || e.code === 'Space') && !(document.activeElement && document.activeElement.closest('#dial button'))) { e.preventDefault(); placeBeacon(D.s, D.dir); return; }
+  if (['ArrowRight', 'KeyD'].includes(e.code)) { e.preventDefault(); setDialDir((D.dir + 1) % 8); }
+  if (['ArrowLeft', 'KeyA'].includes(e.code)) { e.preventDefault(); setDialDir((D.dir + 7) % 8); }
+  if (['ArrowUp', 'KeyW'].includes(e.code)) { e.preventDefault(); setDialDir(0); }
+  if (['ArrowDown', 'KeyS'].includes(e.code)) { e.preventDefault(); setDialDir(4); }
 }
-let undoT = 0, undoB = null;
+// PLAY-BALIZAS-05: el plazo real de deshacer es UNDO_MS; el texto, la barra y la disponibilidad del botón usan la misma constante
+const UNDO_MS = 5000;
+let undoT = 0, undoB = null, undoHideT = 0;
+function clearUndo() { clearTimeout(undoT); clearTimeout(undoHideT); undoB = null; const ub = $('undoBar'); ub.hidden = true; ub.classList.remove('expired'); $('undoBtn').hidden = false; }
 function placeBeacon(s, dir) {
   const fl = ST.fl; closeSelector(true); if (!fl) return;
   const r = Sm.place(fl.S, s, dir);
   if (!r.ok) { sfx('ui_error'); toast(t(WHY_KEY[r.why] || 'slow_to_mark'), 'warn', 1500); return; }
   fl.waves.push({ x: r.b.x, y: r.b.y, age: 0 }); R.burst(r.b.x, r.b.y, 24, R.SYMCOL[s], 3, 0.8, 0.06); sfx('beacon_place'); vib(20); popHud('hBeac');
-  undoB = r.b; const ub = $('undoBar'); ub.hidden = false; const ti = $('undoTimer'); ti.style.transition = 'none'; ti.style.transform = 'scaleX(1)'; void ti.offsetWidth; ti.style.transition = 'transform 5s linear'; ti.style.transform = 'scaleX(0)';
-  clearTimeout(undoT); undoT = setTimeout(() => { ub.hidden = true; undoB = null; }, 5000);
+  clearUndo(); undoB = r.b; const ub = $('undoBar'); ub.hidden = false; $('undoTxt').textContent = t('beacon_placed'); $('undoDur').textContent = t('undo_dur', { segundos: UNDO_MS / 1000 }); const ti = $('undoTimer'); ti.style.transition = 'none'; ti.style.transform = 'scaleX(1)'; void ti.offsetWidth; ti.style.transition = 'transform ' + (UNDO_MS / 1000) + 's linear'; ti.style.transform = 'scaleX(0)';
+  undoT = setTimeout(() => { undoB = null; if (ub.hidden) return; $('undoBtn').hidden = true; ub.classList.add('expired'); $('undoTxt').textContent = t('undo_expired'); $('undoDur').textContent = ''; undoHideT = setTimeout(() => { ub.hidden = true; ub.classList.remove('expired'); $('undoBtn').hidden = false; }, 1800); }, UNDO_MS);
   if (fl.tut && fl.tut.step === 4) { $('beaconBtn').classList.remove('hint'); tutStep(5); }
   saveFlight();
 }
-$('undoBtn').addEventListener('click', () => { const fl = ST.fl; if (fl && undoB && Sm.undo(fl.S, undoB)) { sfx('beacon_undo'); $('undoBar').hidden = true; undoB = null; clearTimeout(undoT); saveFlight(); } });
+$('undoBtn').addEventListener('click', () => { const fl = ST.fl; if (fl && undoB && Sm.undo(fl.S, undoB)) { sfx('beacon_undo'); clearUndo(); updateHud(); saveFlight(); } });
 
 /* ---------------- TUTORIAL (6) ---------------- */
 function startTutorial() { ST.prof.tutStep = Math.max(1, ST.prof.tutStep || 1); saveProf(); startFlight('tutorial', 'tutorial', false); }
@@ -650,6 +697,20 @@ function finishTutorial(skipped) {
   ST.prof.tut = 1; ST.prof.tutStep = 0; saveProf(); endFlightView(); ST.fl = null;
   if (skipped) { goHome(); return; }
 }
+// PLAY-BALIZAS-01/07: cierre del tutorial con resumen real antes de la valoración opcional; ningún botón despega ni publica
+function showTutEnd(fl, rated) {
+  endFlightView(); ST.fl = fl; fl.ended = true; R.reveal = 1; R.zoomOut = 0.55;
+  ST.prof.tut = 1; ST.prof.tutStep = 0; saveProf();
+  const S = fl.S; $('teTitle').textContent = t(rated ? 'tut_done' : 'arrived');
+  $('teLines').innerHTML = ''; const row = (txt, cls) => { const d = document.createElement('div'); if (cls) d.className = cls; d.innerHTML = '<span>' + txt + '</span><b></b>'; $('teLines').appendChild(d); d.classList.add('on'); };
+  row(t('goal_done'), 'tot'); row(t('hull_pct', { porcentaje: Math.round(S.hull) })); row(t('tre_opt', { recogidos: S.tre.reduce((a, b) => a + b, 0), total: S.tre.length }));
+  const trap = fl.beacons.find(b => b.trap); $('teReview').hidden = !trap || !!rated;
+  show('tutEnd');
+}
+$('teReview').addEventListener('click', () => { sfx('ui_tap'); if (ST.fl) openRate(ST.fl); });
+$('teRepeat').addEventListener('click', () => { sfx('ui_tap'); ST.fl = null; ST.prof.tutStep = 1; saveProf(); startTutorial(); });
+$('teOfficial').addEventListener('click', () => { sfx('ui_tap'); ST.fl = null; tutFinal(); });
+$('teHome').addEventListener('click', () => { sfx('ui_back'); ST.fl = null; goHome(); });
 
 /* ---------------- LLEGADA Y RESULTADO (5.7) ---------------- */
 function arrive() {
@@ -690,7 +751,7 @@ function submitFlight(fl, estado) {
     .catch(e => { fl.sendErr = e; if (e && e.code === 'closed') { const d = loadDay(fl.fecha); d.closedLate = 1; saveDay(fl.fecha, d); } if (e && e.code === 'rate_limited') toast(t('rate_limited'), 'warn', 2500); return null; });
 }
 function showResult(fl) {
-  if (fl.mode === 'tutorial') { tutStep(5, true); openRate(fl); return; }
+  if (fl.mode === 'tutorial') { showTutEnd(fl, false); return; }
   endFlightView(); ST.fl = fl; fl.ended = true; R.reveal = 1; R.zoomOut = 0.55;
   const S = fl.S, sc = fl.score;
   const lines = $('resLines'); lines.innerHTML = '';
@@ -709,6 +770,7 @@ function showResult(fl) {
   $('rateBtn').hidden = !canRate; $('againBtn').hidden = !(fl.mode === 'libre' || fl.mode === 'archivo');
   if (!canRate && fl.mode !== 'oficial') { $('againBtn').classList.add('pri'); }
   $('shareBtn').hidden = fl.mode !== 'oficial';
+  $('resRoute').hidden = !(S.samples && S.samples.length > 1); // VIS-BALIZAS-04: leyenda solo cuando el recorrido es real
   show('result');
   drawResultMap(fl);
 }
@@ -745,10 +807,13 @@ $('shareBtn').addEventListener('click', () => { sfx('ui_tap'); share(ST.fl); });
 
 /* ---------------- VALORAR (3.8, 5.8) ---------------- */
 function openRate(fl) {
-  if (fl.mode === 'tutorial') { endFlightView(); ST.fl = fl; fl.ended = true; R.reveal = 1; }
+  const tut = fl.mode === 'tutorial';
+  if (tut) { endFlightView(); ST.fl = fl; fl.ended = true; R.reveal = 1; }
   const list = fl.rateList || rateCandidates(fl); fl.rateList = list; const box = $('rCards'); box.innerHTML = ''; const d = loadDay(fl.fecha);
-  $('rateEnd').hidden = true; let voted = 0;
-  if (fl.mode === 'tutorial') { const p = document.createElement('p'); p.className = 'note'; tx(p, 'tut_5'); box.appendChild(p); }
+  $('rateEnd').hidden = true; $('rateEnd').textContent = ''; let voted = 0;
+  // PLAY-BALIZAS-01: la valoración del tutorial se identifica como simulación local, nunca como voto público
+  tx($('rateTitle'), tut ? 'rate_practice_title' : 'rate_title'); $('rateSub').hidden = !tut; tx($('rateDone'), tut ? 'rate_finish' : 'done');
+  if (tut) { const p = document.createElement('p'); p.className = 'note'; tx(p, 'tut_5'); box.appendChild(p); }
   list.forEach((it, i) => {
     const b = it.b, card = document.createElement('div'); card.className = 'rcard';
     card.innerHTML = '<canvas width="192" height="192"></canvas><div class="rc-b"><div class="rc-h">' + R.glyphSVG(b.s, b.d) + '<span data-t="sym_' + b.s + '">' + t('sym_' + b.s) + '</span></div><div class="rc-s">' + (it.followed ? '<span class="rc-f" data-t="you_followed">' + t('you_followed') + '</span>' : '&nbsp;') + '</div><div class="row"><button class="btn vote-up" data-t="useful">' + t('useful') + '</button><button class="btn vote-dn" data-t="misleading">' + t('misleading') + '</button></div></div>';
@@ -759,7 +824,7 @@ function openRate(fl) {
       sfx(v > 0 ? 'vote_up' : 'vote_down'); vib(10); card.querySelector('.vote-up').classList.toggle('sel', v > 0); card.querySelector('.vote-dn').classList.toggle('sel', v < 0);
       if (!it.tut) { const dd = loadDay(fl.fecha); dd.votes[b.id] = v; saveDay(fl.fecha, dd); N.send('voto', { fecha: fl.fecha, jugador: PLAYER, baliza: +b.id, valor: v }, 'voto:' + fl.fecha + ':' + b.id).catch(e => { if (e && e.code === 'rate_limited') toast(t('rate_limited'), 'warn', 2500); }); }
       if (!card.dataset.v) { voted++; } card.dataset.v = v; tx($('rateProg'), 'of', { a: voted, b: list.length });
-      setTimeout(() => { card.classList.add('out'); setTimeout(() => { card.style.display = 'none'; if (voted >= list.length) { $('rateEnd').hidden = false; if (it.tut) tutStep(6, true); } }, 280); }, 260);
+      setTimeout(() => { card.classList.add('out'); setTimeout(() => { card.style.display = 'none'; if (voted >= list.length) { const re = $('rateEnd'); re.hidden = false; tx(re, it.tut ? 'rate_practice_fb' : 'rate_thanks'); } }, 280); }, 260);
     };
     card.querySelector('.vote-up').addEventListener('click', () => vote(1)); card.querySelector('.vote-dn').addEventListener('click', () => vote(-1));
   });
@@ -769,7 +834,7 @@ function openRate(fl) {
 }
 function rateClose() {
   const fl = ST.fl; sfx('ui_tap');
-  if (fl && fl.mode === 'tutorial') { ST.prof.tut = 1; ST.prof.tutStep = 0; saveProf(); ST.fl = null; tutFinal(); return; }
+  if (fl && fl.mode === 'tutorial') { showTutEnd(fl, true); return; } // vuelve al cierre del tutorial con destinos explícitos
   if (fl && fl.ended) show('result'); else goHome();
 }
 $('rateDone').addEventListener('click', rateClose); $('rateSkip').addEventListener('click', rateClose);
@@ -787,8 +852,16 @@ async function share(fl) {
   lines.push('jetgames.fun/balizas');
   const text = lines.join('\n');
   try { if (navigator.share) { await navigator.share({ text }); return; } } catch (e) { if (e && e.name === 'AbortError') return; }
-  try { await navigator.clipboard.writeText(text); toast(t('copied'), 'good'); } catch (e) { const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); toast(t('copied'), 'good'); } catch (er) {} ta.remove(); }
+  if (await copyText(text)) { toast(t('copied'), 'good'); return; }
+  // SRC-BA02 / SRC-G06: sin copia confirmada no se anuncia éxito; el texto íntegro queda seleccionable
+  $('sfTa').value = text; openOver('shareFb'); setTimeout(() => { const ta = $('sfTa'); try { ta.focus({ preventScroll: true }); ta.select(); } catch (e) {} }, 60);
 }
+async function copyText(text) {
+  try { await navigator.clipboard.writeText(text); return true; } catch (e) {}
+  try { const act = document.activeElement; const ta = document.createElement('textarea'); ta.value = text; ta.setAttribute('readonly', ''); ta.style.cssText = 'position:fixed;left:-9999px;top:0'; document.body.appendChild(ta); ta.select(); const ok = document.execCommand('copy') === true; ta.remove(); if (act && act.focus && act !== document.body) act.focus({ preventScroll: true }); return ok; } catch (e) { return false; }
+}
+$('sfCopy').addEventListener('click', async () => { const ta = $('sfTa'); if (await copyText(ta.value)) { closeOver(); toast(t('copied'), 'good'); } else { ta.focus(); ta.select(); } });
+$('sfClose').addEventListener('click', () => { sfx('ui_back'); closeOver(); }); $('sfX').addEventListener('click', () => { sfx('ui_back'); closeOver(); });
 
 /* ---------------- TABLA (5.9) ---------------- */
 let tabDay = 'today';
@@ -856,6 +929,9 @@ let helpRaf = 0;
 function openHelp(fromPause) {
   openOver('help'); renderLegend();
   $('replayTut').hidden = !!fromPause;
+  // PLAY-BALIZAS-04: la guía corresponde a las entradas disponibles; en escritorio no exige arrastrar
+  $('howKeys').hidden = ST.touch; $('howKeys').textContent = keysLine('oficial');
+  $('how1Cap').textContent = ST.touch ? t('touch_steer') + ' ' + t('how_1').split('. ').slice(1).join('. ') : t('how_1').replace(/^[^.]+\.\s*/, '');
   const cvs = [1, 2, 3].map(i => $('vg' + i)); const dpr = Math.min(2, devicePixelRatio || 1); cvs.forEach(c => { c.width = 300 * dpr; c.height = 190 * dpr; });
   const t0 = performance.now(); cancelAnimationFrame(helpRaf);
   (function fr(now) {
@@ -864,7 +940,12 @@ function openHelp(fromPause) {
     if (ST.scene === 'help') helpRaf = requestAnimationFrame(fr);
   })(t0);
 }
-function renderLegend() { const lg = $('legend'); lg.innerHTML = ''; ORDER.forEach(s => { const d = document.createElement('div'); d.innerHTML = R.glyphSVG(s, 0) + '<span>' + t('sym_' + s) + '</span>'; lg.appendChild(d); }); }
+function renderLegend() {
+  const lg = $('legend'); lg.innerHTML = ''; ORDER.forEach(s => { const d = document.createElement('div'); d.innerHTML = R.glyphSVG(s, 0) + '<span>' + t('sym_' + s) + '</span>'; lg.appendChild(d); });
+  // PLAY-BALIZAS-03: boya y peligro activo con forma propia, además del color
+  const extra = [['buoy_name', '<svg viewBox="-12 -12 24 24" aria-hidden="true"><circle r="9" fill="none" stroke="#00f2cf" stroke-width="2" stroke-dasharray="3 4"/><circle r="5" fill="none" stroke="#00f2cf" stroke-width="2"/><circle r="1.8" fill="#00f2cf"/></svg>'], ['hazard_name', '<svg viewBox="-12 -12 24 24" aria-hidden="true"><circle r="5.5" fill="#2a1830" stroke="#ff4466" stroke-width="1.6"/><path d="M0-8V-6M0 6v2M-8 0h2M6 0h2M-5.7-5.7l1.4 1.4M4.3 4.3l1.4 1.4M5.7-5.7l-1.4 1.4M-4.3 4.3l-1.4 1.4" stroke="#ff4466" stroke-width="1.6"/></svg>']];
+  extra.forEach(([k, svg]) => { const d = document.createElement('div'); d.innerHTML = svg + '<span>' + t(k) + '</span>'; lg.appendChild(d); });
+}
 function vignette(i, c, s) {
   const u = s % 4;
   if (i === 0) { // inercia y freno
@@ -897,7 +978,7 @@ function syncSettings() {
   $('ctlSeg').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.v === s.ctl));
   $('sideSeg').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.v === s.side));
   $('fsRow').hidden = !ST.fsAPI; $('vibRow').hidden = !navigator.vibrate; syncFsUI();
-  const rb = $('resetBtn'); rb.classList.remove('arm'); rb.textContent = t('reset_progress');
+  const rb = $('resetBtn'); rb.textContent = t('reset_progress');
 }
 function openSettings(fromPause) { openOver('settings'); syncSettings(); }
 function bindTog(id, key, after) { $(id).addEventListener('click', () => { ST.set[key] = ST.set[key] ? 0 : 1; if (key === 'trails') ST.set.trails = $(id).classList.contains('on') ? 0 : 1; saveSet(); syncSettings(); sfx('ui_toggle'); if (after) after(); }); }
@@ -924,17 +1005,21 @@ function relang() {
   if (has('table')) renderTable();
   if (has('logs')) { setRank(ST.prof.guided); renderLog(); }
   if (has('arch')) renderArchive();
-  if (has('help')) renderLegend();
+  if (has('help')) { renderLegend(); $('howKeys').textContent = keysLine('oficial'); $('how1Cap').textContent = ST.touch ? t('touch_steer') + ' ' + t('how_1').split('. ').slice(1).join('. ') : t('how_1').replace(/^[^.]+\.\s*/, ''); }
+  if (fl && fl.ended && fl.mode === 'tutorial' && has('tutEnd')) showTutEnd(fl, $('teReview').hidden);
+  if (has('confirm') && ST.confirmSpec) { const o = ST.confirmSpec; if (o.re) { const n = o.re(); Object.assign(o, n); } $('cfTitle').textContent = o.title; $('cfBody').textContent = o.body; $('cfKeep').textContent = o.keep || ''; $('cfOk').textContent = o.okLabel; }
+  if (fl && !fl.ended) { $('modeTag').textContent = t('tut_local'); if (fl.paused) paintPause(fl); }
+  $('mini').title = t('enlarge_map'); if (undoB) { $('undoTxt').textContent = t('beacon_placed'); $('undoDur').textContent = t('undo_dur', { segundos: UNDO_MS / 1000 }); }
 }
 $('ctlSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; ST.set.ctl = b.dataset.v; saveSet(); syncSettings(); sfx('ui_toggle'); });
 $('sideSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; ST.set.side = b.dataset.v; saveSet(); syncSettings(); layoutControls(); sfx('ui_toggle'); });
-let resetT = 0;
+// SRC-G04: borrado con confirmación explícita que enumera lo que se borra; ajustes e identificador se conservan
 $('resetBtn').addEventListener('click', () => {
-  const b = $('resetBtn');
-  if (!b.classList.contains('arm')) { b.classList.add('arm'); b.textContent = t('reset_confirm'); sfx('ui_error'); clearTimeout(resetT); resetT = setTimeout(() => { b.classList.remove('arm'); b.textContent = t('reset_progress'); }, 3000); return; }
-  clearTimeout(resetT);
-  try { for (let i = localStorage.length - 1; i >= 0; i--) { const k = localStorage.key(i); if (k && k.startsWith(P) && k !== P + 'id' && k !== P + 'ajustes') localStorage.removeItem(k); } } catch (e) {}
-  ST.prof = Object.assign({}, DEF_PROF); ST.fl = null; toast(t('reset_done'), 'good'); sfx('ui_back'); overlayStack = []; goHome();
+  sfx('ui_tap');
+  confirmDlg({ title: t('reset_title', { juego: 'JET//Balizas' }), body: t('reset_body', { 'datos concretos': t('reset_data') }), keep: t('reset_keep'), okLabel: t('reset_do'), onOk: () => {
+    try { for (let i = localStorage.length - 1; i >= 0; i--) { const k = localStorage.key(i); if (k && k.startsWith(P) && k !== P + 'id' && k !== P + 'ajustes') localStorage.removeItem(k); } } catch (e) {}
+    N.queue = []; ST.prof = Object.assign({}, DEF_PROF); ST.fl = null; ST.dia = {}; sfx('ui_back'); overlayStack = []; goHome(); toast(t('reset_done'), 'good');
+  } });
 });
 
 /* ---------------- ganchos de prueba ---------------- */
@@ -963,6 +1048,7 @@ function boot() {
   if (!ST.fsAPI) $('fsHome').hidden = true;
   goHome();
   requestAnimationFrame(t0 => { last = t0; requestAnimationFrame(loop); });
+  if (window.__balizasCarga) window.__balizasCarga.listo(); // SRC-G05: arrancó; se retira el estado de carga
   if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
 }
 boot();

@@ -9,7 +9,7 @@ import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 
 const GradeShader = {
-  uniforms: { tDiffuse: { value: null }, uTime: { value: 0 }, uGrain: { value: 0.035 }, uVig: { value: 0.32 }, uCA: { value: 0.0022 } },
+  uniforms: { tDiffuse: { value: null }, uTime: { value: 0 }, uGrain: { value: 0 }, uVig: { value: 0.16 }, uCA: { value: 0 } },
   vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
   fragmentShader: `
     uniform sampler2D tDiffuse; uniform float uTime, uGrain, uVig, uCA; varying vec2 vUv;
@@ -22,7 +22,7 @@ const GradeShader = {
       c.b = texture2D(tDiffuse, vUv - d * uCA * r2 * 4.0).b;
       float l = dot(c, vec3(0.2126, 0.7152, 0.0722));
       // saturación y tono partido: sombras frías, luces cálidas (como una cámara de cine con sol)
-      c = mix(vec3(l), c, 1.1);
+      c = mix(vec3(l), c, 1.0);   // VIS-JUMP-01: sin saturación añadida sobre texturas ya calibradas
       c *= mix(vec3(0.95, 0.99, 1.06), vec3(1.06, 1.0, 0.92), smoothstep(0.02, 1.0, l));
       // contraste suave en escala logarítmica
       c = pow(max(c, 0.0), vec3(1.04));
@@ -51,7 +51,7 @@ export class Post {
     this.ao.updatePdMaterial({ lumaPhi: 10, depthPhi: 2, normalPhi: 3, radius: 4, rings: 2, samples: quality.hd ? 16 : 8 });
     this.ao.blendIntensity = 0.9;
     this.composer.addPass(this.ao);
-    this.bloom = new UnrealBloomPass(new THREE.Vector2(size.x / 2, size.y / 2), 0.22, 0.6, 0.92);
+    this.bloom = new UnrealBloomPass(new THREE.Vector2(size.x / 2, size.y / 2), 0.16, 0.6, 0.92);
     this.composer.addPass(this.bloom);
     this.grade = new ShaderPass(GradeShader);
     this.composer.addPass(this.grade);

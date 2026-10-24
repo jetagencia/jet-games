@@ -176,7 +176,9 @@
   function rndSemilla(seed) { let s = (seed >>> 0) || 1; return () => ((s = (Math.imul(s, 1664525) + 1013904223) >>> 0) / 4294967296); }
 
   // Dibuja la escena en un lienzo propio de 1200×900 (se cachea por caso).
-  D.escenaFoto = function (datos, lang) {
+  // opts.post=false devuelve solo la evidencia (sin acabado de cámara) para comparar que el acabado no borra nada.
+  D.escenaFoto = function (datos, lang, opts) {
+    const post = !(opts && opts.post === false);
     const W = 1200, H = 900;
     const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
     const c = cv.getContext('2d');
@@ -275,25 +277,24 @@
       c.fillText(String(a.parche), px, py + 1);
     });
     G.TS = TS0;
-    // efectos de cámara: viñeta, grano, marca de tiempo
-    const vg = c.createRadialGradient(W / 2, H / 2, H * 0.3, W / 2, H / 2, H * 0.85);
-    vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.6)');
-    c.fillStyle = vg; c.fillRect(0, 0, W, H);
-    const img = c.getImageData(0, 0, W, H); const d = img.data;
-    for (let i = 0; i < d.length; i += 4) { const n2 = (R() - 0.5) * 22; d[i] += n2; d[i + 1] += n2; d[i + 2] += n2; }
-    c.putImageData(img, 0, 0);
-    // aberración cromática leve
-    const ab = document.createElement('canvas'); ab.width = W; ab.height = H; const ac = ab.getContext('2d');
-    ac.drawImage(cv, 0, 0);
-    c.globalCompositeOperation = 'screen'; c.globalAlpha = 0.07;
-    c.drawImage(ab, 3, 0); c.drawImage(ab, -3, 0);
-    c.globalCompositeOperation = 'source-over'; c.globalAlpha = 1;
+    // Acabado de cámara (VIS-CAJA-02): óptica limpia que no altera lo fotografiado.
+    // Usa un RNG visual propio (no consume el RNG de la evidencia): viñeta máxima .28, grano ±4, sin aberración cromática.
+    if (post) {
+      const RV = rndSemilla(((datos.semilla >>> 0) ^ 0x9e3779b9) >>> 0);
+      const vg = c.createRadialGradient(W / 2, H / 2, H * 0.3, W / 2, H / 2, H * 0.85);
+      vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.28)');
+      c.fillStyle = vg; c.fillRect(0, 0, W, H);
+      const img = c.getImageData(0, 0, W, H); const d = img.data;
+      for (let i = 0; i < d.length; i += 4) { const n2 = (RV() - 0.5) * 8; d[i] += n2; d[i + 1] += n2; d[i + 2] += n2; }
+      c.putImageData(img, 0, 0);
+    }
+    // Marca documental CAM 02 / REC (se conserva; el marco pierde peso decorativo)
     c.font = '700 24px JetBrains Mono, monospace'; c.textAlign = 'left'; c.textBaseline = 'alphabetic';
     c.fillStyle = 'rgba(245,240,255,.85)'; c.fillText('CAM 02 · ' + datos.reloj + ':' + String(7 + (datos.semilla % 50)).padStart(2, '0'), 34, H - 30);
     c.fillStyle = '#ff4466'; c.beginPath(); c.arc(W - 120, H - 38, 9, 0, 6.283); c.fill();
     c.fillStyle = 'rgba(245,240,255,.85)'; c.fillText('REC', W - 102, H - 30);
     // marcas de esquina
-    c.strokeStyle = 'rgba(245,240,255,.55)'; c.lineWidth = 3;
+    c.strokeStyle = 'rgba(245,240,255,.4)'; c.lineWidth = 2;
     for (const [x, y, sx, sy] of [[24, 24, 1, 1], [W - 24, 24, -1, 1], [24, H - 70, 1, -1], [W - 24, H - 70, -1, -1]]) { c.beginPath(); c.moveTo(x, y + sy * 40); c.lineTo(x, y); c.lineTo(x + sx * 40, y); c.stroke(); }
     return cv;
   };
@@ -353,42 +354,40 @@
     const L = 12, Rm = 14, T = 8, Bm = 30;
     const laneH = (h - T - Bm) / n;
     const x = (t) => L + ((t - datos.t0) / (datos.t1 - datos.t0)) * (w - L - Rm);
+    // Acabado técnico (VIS-CAJA-03): rejilla neutra a 1 px, curva sólida sin degradado ni relleno, rótulos 12 px mono.
+    const ART = { rejMayor: 'rgba(96,117,138,.22)', rejMenor: 'rgba(96,117,138,.10)', texto: '#CBD7E1', curva: '#83E1D1', cursor: '#ffd166', tipBg: 'rgba(22,32,44,.98)', tipBorde: 'rgba(255,209,102,.7)' };
     // rejilla temporal
-    c.font = '500 11px JetBrains Mono, monospace'; c.textBaseline = 'top'; c.textAlign = 'center';
+    c.font = '500 12px JetBrains Mono, monospace'; c.textBaseline = 'top'; c.textAlign = 'center';
+    c.lineWidth = 1;
     for (let t = Math.ceil(datos.t0 / 5) * 5; t <= datos.t1; t += 5) {
       const X = Math.round(x(t)) + 0.5;
-      c.strokeStyle = t % 10 === 0 ? 'rgba(181,168,216,.16)' : 'rgba(181,168,216,.07)';
+      c.strokeStyle = t % 10 === 0 ? ART.rejMayor : ART.rejMenor;
       c.beginPath(); c.moveTo(X, T); c.lineTo(X, h - Bm + 4); c.stroke();
-      if (t % 10 === 0) { c.fillStyle = 'rgba(181,168,216,.85)'; c.fillText(hhmm(t), X, h - Bm + 9); }
+      if (t % 10 === 0) { c.fillStyle = ART.texto; c.fillText(hhmm(t), X, h - Bm + 9); }
     }
     datos.series.forEach((s, i) => {
       const C = W.CANALES[s.canal];
       const y0 = T + i * laneH, y1 = y0 + laneH;
-      c.fillStyle = i % 2 ? 'rgba(255,255,255,.015)' : 'rgba(119,0,244,.05)';
-      c.fillRect(L, y0 + 2, w - L - Rm, laneH - 4);
+      if (i % 2) { c.fillStyle = 'rgba(255,255,255,.018)'; c.fillRect(L, y0 + 2, w - L - Rm, laneH - 4); }
       const lo = Math.min(C.base, C.fallo), hi = Math.max(C.base, C.fallo);
       const pad = (hi - lo) * 0.18;
       const top = y0 + 26, bot = y1 - 10;
       const Y = (v) => bot - ((v - (lo - pad)) / (hi - lo + 2 * pad)) * (bot - top);
-      // etiqueta del carril
+      // etiqueta del carril (el color de una marca del usuario sigue siendo su identidad)
       c.textAlign = 'left'; c.textBaseline = 'top';
-      c.font = '700 11.5px JetBrains Mono, monospace';
+      c.font = '600 12px JetBrains Mono, monospace';
       const et = etiquetas[i];
       const marc = marcadas && marcadas[i];
-      c.fillStyle = marc ? marc : '#e9e2ff';
+      c.fillStyle = marc ? marc : ART.texto;
       c.fillText(et.toUpperCase(), L + 8, y0 + 8);
-      c.fillStyle = 'rgba(181,168,216,.7)'; c.textAlign = 'right'; c.font = '500 11px JetBrains Mono, monospace';
+      c.fillStyle = ART.texto; c.globalAlpha = 0.8; c.textAlign = 'right'; c.font = '500 12px JetBrains Mono, monospace';
       c.fillText(C.u, w - Rm - 6, y0 + 8);
+      c.globalAlpha = 1;
       // curva
-      const grad = c.createLinearGradient(L, 0, w - Rm, 0);
-      grad.addColorStop(0, '#00f2cf'); grad.addColorStop(1, '#8f6bff');
-      c.strokeStyle = grad; c.lineWidth = 2; c.lineJoin = 'round';
+      c.strokeStyle = ART.curva; c.lineWidth = 2; c.lineJoin = 'round';
       c.beginPath();
       for (let t = datos.t0; t <= datos.t1; t++) { const X = x(t), YY = Y(D.valorSerie(datos, i, t)); if (t === datos.t0) c.moveTo(X, YY); else c.lineTo(X, YY); }
       c.stroke();
-      c.lineTo(x(datos.t1), bot); c.lineTo(x(datos.t0), bot); c.closePath();
-      const fill = c.createLinearGradient(0, top, 0, bot); fill.addColorStop(0, 'rgba(0,242,207,.12)'); fill.addColorStop(1, 'rgba(0,242,207,0)');
-      c.fillStyle = fill; c.fill();
     });
     if (cursor != null) {
       const X = Math.round(x(cursor)) + 0.5;
@@ -396,24 +395,30 @@
       c.beginPath(); c.moveTo(X, T); c.lineTo(X, h - Bm + 4); c.stroke();
       c.font = '700 12px JetBrains Mono, monospace';
       const filas = [hhmm(cursor)].concat(datos.series.map((s, i) => D.fmtValor(s.canal, D.valorSerie(datos, i, cursor), lang)));
+      const PX = 8, PY = 6, BH = 12 + PY * 2;
       datos.series.forEach((s, i) => {
         const C = W.CANALES[s.canal];
         const y0 = T + i * laneH, y1 = y0 + laneH;
         const lo = Math.min(C.base, C.fallo), hi = Math.max(C.base, C.fallo), pad = (hi - lo) * 0.18;
         const top = y0 + 26, bot = y1 - 10;
         const YY = bot - ((D.valorSerie(datos, i, cursor) - (lo - pad)) / (hi - lo + 2 * pad)) * (bot - top);
-        c.fillStyle = '#ffd166'; c.beginPath(); c.arc(X, YY, 4, 0, 6.283); c.fill();
+        // punto 4 px con centro oscuro 1.5 px
+        c.fillStyle = ART.cursor; c.beginPath(); c.arc(X, YY, 4, 0, 6.283); c.fill();
+        c.fillStyle = '#16202C'; c.beginPath(); c.arc(X, YY, 1.5, 0, 6.283); c.fill();
         const tx = filas[i + 1];
-        const tw = c.measureText(tx).width + 14;
-        const bx = X + 10 + tw > w - Rm ? X - 10 - tw : X + 10;
-        c.fillStyle = 'rgba(10,4,24,.92)'; rr(c, bx, YY - 12, tw, 22, 6); c.fill();
-        c.strokeStyle = 'rgba(255,209,102,.6)'; c.lineWidth = 1; c.stroke();
-        c.fillStyle = '#ffd166'; c.textAlign = 'left'; c.textBaseline = 'middle'; c.fillText(tx, bx + 7, YY);
+        const tw = c.measureText(tx).width + PX * 2;
+        // clamp bidireccional dentro del carril: nunca fuera del ancho ni encima del rótulo del carril
+        let bx = X + 10 + tw > w - Rm ? X - 10 - tw : X + 10;
+        bx = Math.max(L, Math.min(w - Rm - tw, bx));
+        const by = Math.max(y0 + 24, Math.min(y1 - 2 - BH, YY - BH / 2));
+        c.fillStyle = ART.tipBg; rr(c, bx, by, tw, BH, 4); c.fill();
+        c.strokeStyle = ART.tipBorde; c.lineWidth = 1; c.stroke();
+        c.fillStyle = ART.cursor; c.textAlign = 'left'; c.textBaseline = 'middle'; c.fillText(tx, bx + PX, by + BH / 2);
       });
       // hora en el eje
-      const tw = c.measureText(filas[0]).width + 14;
+      const tw = c.measureText(filas[0]).width + PX * 2;
       const bx = Math.min(w - Rm - tw, Math.max(L, X - tw / 2));
-      c.fillStyle = '#ffd166'; rr(c, bx, h - Bm + 4, tw, 22, 6); c.fill();
+      c.fillStyle = ART.cursor; rr(c, bx, h - Bm + 4, tw, 22, 4); c.fill();
       c.fillStyle = '#1a1200'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(filas[0], bx + tw / 2, h - Bm + 15);
     }
     return { x, xinv: (px) => datos.t0 + ((px - L) / (w - L - Rm)) * (datos.t1 - datos.t0) };

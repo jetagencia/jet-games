@@ -1,0 +1,156 @@
+[
+  {
+    "id": "RSP-CAJA-01",
+    "estado": "implementado",
+    "archivos": ["site/cajanegra/src/app.js", "site/cajanegra/src/i18n.js"],
+    "detalle": "cajanegra: se eliminó la intercepción global de Tab/Shift+Tab en el keydown de documento (recorría idsHuecos en círculo). Los campos del informe ya eran <button> nativos y quedan en orden DOM. Las flechas eligen ficha sólo con el foco dentro de #informe (closest('#informe')), nunca desde evidencia, fichas ni acciones; Enter/Espacio colocan ficha sólo en ese mismo caso. Ayuda de teclado ('ayuda.teclado' ES/EN) actualizada para describir el recorrido real. No se añadió atajo global nuevo.",
+    "verificacion": "Playwright 390px: 14 Tab consecutivos recorren pestañas → Ampliar registro → entidades del registro… sin volver a los campos; Shift+Tab es el nativo del navegador. Smoke OK sin errores de consola."
+  },
+  {
+    "id": "RSP-MODALS-01",
+    "estado": "implementado",
+    "archivos": ["site/cajanegra/src/app.js", "site/cajanegra/src/estilo.css"],
+    "detalle": "cajanegra: nuevas abrirCapa()/cerrarCapa() con pila (PILA) para las cinco .capa (sAjustes, pausa, dialogo, historial, lupa): guardan document.activeElement como activador, ponen inert en #app, #back, #topR, #globo, #menuHueco, #toast y en las capas inferiores; role dialog/alertdialog, aria-modal y aria-labelledby al h2/[data-titulo] con id estable; foco inicial en título o primer control (Cancelar en confirmaciones); Escape cierra sólo la capa superior; al cerrar se restaura inert y el foco vuelve al activador o, si desapareció, al campo activo/primer control de la pantalla revelada. La apertura (#apertura) también vuelve inerte el fondo y es role=dialog con aria-labelledby. Sin .blur().",
+    "verificacion": "Playwright: Pausa→Ajustes→Borrar: capas ['pausa','sAjustes'], pausa.inert=true, 20 Tab en Ajustes nunca salen de la capa; Cancelar enfocado al abrir; Escape cierra Ajustes y el foco vuelve a #pAj; Escape cierra pausa y el foco vuelve a #jPausa; historial: aria-labelledby=historialTit, app.inert=true, Escape devuelve el foco a #jHist."
+  },
+  {
+    "id": "RSP-NATIVE-KEYS-01",
+    "estado": "implementado",
+    "archivos": ["site/cajanegra/src/app.js"],
+    "detalle": "cajanegra (aplicación del ID común): en el keydown de documento, tras Escape/pausa y antes de las órdenes de juego, se sale si el destino está en input/textarea/select/contenteditable, y si Enter/Espacio caen sobre button, a[href], summary, [role=button|tab|switch] (salvo .hueco, que implementa colocar la ficha elegida con flechas). En la apertura ya no se consume Enter/Espacio: el botón «Omitir animación/Abrir expediente» responde de forma nativa; sólo Escape la salta.",
+    "verificacion": "Playwright: con campo activo y ficha preseleccionada por flecha, Enter sobre #verificar enfocado verifica (envios 1→2) y no coloca ficha (H1 sin cambio)."
+  },
+  {
+    "id": "VIS-CAJA-02",
+    "estado": "implementado",
+    "archivos": ["site/cajanegra/src/dibujo.js", "site/cajanegra/src/app.js", "site/cajanegra/src/estilo.css"],
+    "detalle": "cajanegra: D.escenaFoto(datos, lang, opts) separa la evidencia del acabado: con opts.post=false devuelve sólo la evidencia. El acabado usa un RNG visual propio (rndSemilla(semilla^0x9e3779b9)), viñeta máxima .28, grano (RV()-.5)*8, aberración cromática eliminada; no consume el RNG de la evidencia (el grano ya se aplicaba después de toda la evidencia, así que el layout por semilla es idéntico). CAM 02 / REC se conservan; marcas de esquina a 2 px y alfa .4. Flash: deja de ser brightness/contrast sobre el canvas y pasa a velo blanco .fotoCaja::after alfa .12→0 en 140 ms, omitido con movimiento reducido. Zoom: botones 44 px, material rgba(20,29,40,.94), borde 1 px #415166, signo 20 px; indicador mono 12 px; descripción 15 px/1.55 sin glow. Gancho CAJANEGRA.escenaFoto(post) para la comparación interna.",
+    "verificacion": "Captura cajanegra-foto-1280.png: reloj, parches numerados y objetos legibles; smoke sin errores; CAJANEGRA.escenaFoto(false) devuelve el lienzo sin acabado. La igualdad píxel a píxel de la evidencia con post apagado no se midió automáticamente (cambio limitado al bloque posterior a la evidencia)."
+  },
+  {
+    "id": "VIS-CAJA-03",
+    "estado": "implementado",
+    "archivos": ["site/cajanegra/src/dibujo.js", "site/cajanegra/src/estilo.css"],
+    "detalle": "cajanegra: D.telemetria conserva escalas, rangos, muestras, x/xinv, D.valorSerie y D.fmtValor. Curva sólida #83E1D1 de 2 px sin degradado ni relleno; rejilla mayor rgba(96,117,138,.22) y menor .10 a 1 px; carriles alternos blanco .018 o transparentes; rótulos y unidades 12 px mono #CBD7E1 (el color de una marca del usuario sigue como identidad del carril); cursor ámbar 1.5 px con punto 4 px y centro oscuro 1.5 px; tooltip fondo rgba(22,32,44,.98), borde ámbar .7, padding 6/8, radio 4, clamp X/Y dentro del carril sin tapar el rótulo. Tabla espejo: 13 px mono, filas 32 px, zebra blanco .02, cabecera opaca #151B25.",
+    "verificacion": "Captura cajanegra-tel-1280.png (tutorial 3): dos carriles, mismas horas 16:40/16:50/17:00, curva legible. Smoke OK. No se midieron arrays (t,valor) antes/después porque la función de valores no se tocó."
+  },
+  {
+    "id": "PLAY-CAJA-01",
+    "estado": "implementado",
+    "archivos": ["site/cajanegra/src/app.js", "site/cajanegra/src/i18n.js", "site/cajanegra/src/estilo.css"],
+    "detalle": "cajanegra: al activar un campo el banco muestra sólo las fichas de su categoría en todos los layouts (antes sólo en vertical), con título «Fichas para: {c}» y botón «Ver todas las categorías» / «Solo {c}»; sin campo activo, «Palabras disponibles · {n}». Nuevo botón «Ampliar registro» / «Volver al caso» (#jAmp) en la cabecera del registro: clase .ampliado en #sJuego lleva el visor a toda la mesa sin tocar G.activo, marcas ni respuestas; Escape vuelve al caso; irA() lo limpia al salir del juego.",
+    "verificacion": "Playwright 1280×757: al tocar H1 el banco tiene 1 grupo (Quién), título «Fichas para: Quién»; «Ampliar registro» alterna a «Volver al caso» y Escape lo cierra. Captura cajanegra-juego-1280.png y cajanegra-ampliado-1280.png."
+  },
+  {
+    "id": "PLAY-CAJA-02",
+    "estado": "implementado",
+    "archivos": ["site/cajanegra/src/app.js", "site/cajanegra/src/i18n.js", "site/cajanegra/src/estilo.css"],
+    "detalle": "cajanegra: tocar una respuesta ya colocada la selecciona para cambiarla (abre el banco de su categoría) y ya no la vacía. Vaciar es una acción explícita: botón «Vaciar campo» en la cabecera del banco (visible sólo con campo lleno activo), opción «Vaciar campo» del menú de pulsación larga y tecla Supr. Cada vaciado o sustitución guarda G.deshacer y muestra un aviso con botón «Deshacer cambio» (toastAccion, 6 s, operable con teclado) que repone la respuesta anterior; no indica si es correcta. Pista inicial «Elige un campo y después una ficha para completarlo.» en el informe antes de la primera respuesta (fuera del tutorial); el grupo de marcas lleva aria-label «Marcar en todos los registros»; el campo en edición añade un anillo blanco distinto del resaltado de evidencia; etiqueta accesible del campo lleno incluye «Cambiar respuesta» y el estado de duda.",
+    "verificacion": "Playwright: colocar Lena Varga en H1 → tocar H1 → sigue Lena Varga y #jVaciar visible → Vaciar → H1 null y toast «Campo vaciado · Deshacer cambio» → Deshacer → H1 vuelve a Lena Varga."
+  },
+  {
+    "id": "PLAY-CAJA-03",
+    "estado": "implementado",
+    "archivos": ["site/cajanegra/src/app.js", "site/cajanegra/src/i18n.js", "site/cajanegra/src/estilo.css"],
+    "detalle": "cajanegra: verificar() guarda en cada intento hip (copia de P.huecos en ese momento) junto a k y tiempo. hipotesisDe() usa esa copia o, en intentos antiguos, la clave de verificación (mismo orden de campos) mapeada al banco; si no se puede reconstruir fielmente (p. ej. revisita del diario, que sólo guarda k), muestra «Este intento no guardó la hipótesis enviada.». El historial «Intentos anteriores» lista «Intento {n} · … datos no coinciden» (0 / 1 / plural; con 3 o más muestra «3 o más», igual que la verificación, sin revelar el número exacto), con «Ver informe de este intento» (informe con los valores de ese momento, botones tabindex -1) y «Comparar con el informe actual» (resalta con outline neutro .dif los campos distintos entre hipótesis del jugador). No se compara con la solución; editar el informe actual no toca los intentos.",
+    "verificacion": "Playwright: tras verificar y cambiar H1, el historial conserva H1=Tomás Okafor mientras el informe actual tiene Lena Varga; comparar marca 1 campo .dif. Captura cajanegra-historial-390.png."
+  },
+  {
+    "id": "PLAY-CAJA-04",
+    "estado": "implementado",
+    "archivos": ["site/cajanegra/src/i18n.js", "site/cajanegra/src/registros.js", "site/cajanegra/src/app.js"],
+    "detalle": "cajanegra: etiquetas «Intentos de verificación» (res.envios), «Intentos anteriores» (juego.historial), «Verificar informe» (ES ya; EN pasa de Check report a Verify report), «Intento {n}», «Último intento…», «{n} intentos» en el texto compartido, estadísticas e insignia «Primer intento limpio»: ninguna cadena sugiere envío a un servidor. Concordancia singular/plural en los datos que no coinciden (hist.intento1 / hist.intentoN). Contradicción catálogo–código en «1 parche / 2 parche»: en la ficha de tripulación el número es el identificador del parche («parche 3» = parche número 3, entidad marcable), no un recuento; aplicar «{cantidad} parches» cambiaría el significado. Se dejó el texto y se marcó el badge numérico como aria-hidden para que el lector no diga «3 parche 3».",
+    "verificacion": "Revisión de i18n.js ES/EN; captura cajanegra-juego-390.png muestra el badge y «parche 1». Historial y resultado usan «Intento»."
+  },
+  {
+    "id": "PLAY-CAJA-05",
+    "estado": "implementado",
+    "archivos": ["site/cajanegra/src/app.js", "site/cajanegra/src/i18n.js", "site/cajanegra/src/estilo.css"],
+    "detalle": "cajanegra: la apertura del expediente muestra un botón real y enfocado (#apAbrir): «Omitir animación» con movimiento normal y «Abrir expediente» con movimiento reducido (donde no hay animación); el avance automático (2,6 s / 1,4 s) se conserva, por lo que no hace falta un segundo clic. #apertura pasa a role=dialog con aria-labelledby y el fondo queda inerte (antes aria-hidden dejaba expuesta la pantalla anterior). El cronómetro ya excluía G.apertura y G.ocupado: arranca al mostrarse los materiales; se verificó. Etiqueta del cronómetro «Tiempo de investigación». Retomar un caso guardado no toca tiempoMs.",
+    "verificacion": "Playwright: tras Empezar, foco en «Omitir animación», app.inert=true; Enter abre el caso; 500 ms después tiempoMs≈498 (el contador parte de cero al ver el caso). Captura cajanegra-apertura-390.png."
+  },
+  {
+    "id": "PLAY-CAJA-06",
+    "estado": "implementado",
+    "archivos": ["site/cajanegra/src/app.js", "site/cajanegra/src/i18n.js", "site/cajanegra/src/estilo.css"],
+    "detalle": "cajanegra: el globo del tutorial lleva botón «Cerrar explicación» (aria-label) y, al cerrarlo, aparece en la barra «Volver a mostrar consejo» (#jConsejo) que reabre el último globo. Si la pista está dentro de un registro (.regBody/.fotoCaja/.telCaja) y cabe, el globo se coloca a un lado (clases der/izq con flecha --fy) en vez de encima de las filas vecinas; si no cabe, abajo/arriba como antes. Diálogos «Cómo se sabía» (lupa) con foco inicial, fondo inert, Escape y retorno de foco por RSP-MODALS-01. Cada paso del resultado tiene aria-label «Ver registro: {nombre}, {hora}» (o «Ver registro: {nombre}» si la línea no tiene hora). El registro de radio muestra «Radio · transcripción disponible» bajo su cabecera.",
+    "verificacion": "Captura cajanegra-tel-1280.png: globo «Arrastra sobre la curva…» con X; lupa abre como capa (pila). Posicionamiento lateral depende del ancho: a 390 px cae al modo abajo/arriba."
+  },
+  {
+    "id": "RSP-GLOBAL-01",
+    "estado": "implementado",
+    "archivos": ["site/cajanegra/index.html", "site/cajanegra/src/estilo.css"],
+    "detalle": "cajanegra: meta viewport sin maximum-scale ni user-scalable (queda width=device-width, initial-scale=1, viewport-fit=cover). No había bloqueos de gesturestart/dblclick a nivel documento. Paneles desplazables (.regBody, .infBody, .bancoBody, .scr, .capa) con touch-action: pan-y pinch-zoom; botones conservan manipulation; touch-action:none sólo en lienzos de foto/telemetría y el asa.",
+    "verificacion": "Smoke 390/1280 sin cambios de maquetación; capturas cajanegra-390.png y cajanegra-1280.png."
+  },
+  {
+    "id": "SRC-CN01",
+    "estado": "implementado",
+    "archivos": ["site/cajanegra/src/i18n.js", "site/cajanegra/src/app.js"],
+    "detalle": "cajanegra: «Palabras disponibles · {n}», «Faltan {n} campos por completar» / «Falta 1 campo por completar», «Intentos anteriores», «Verificar informe» (ES/EN). «Hueco» pasa a «campo» en etiquetas accesibles (Campo {n}, categoría {c}, vacío/contiene {v}), continuar partida, subtítulos del diario y práctica. La categoría del campo sigue visible (icono + rótulo) y la duda se anuncia aparte («marcado como duda»). La verificación sigue informando sólo cuántos datos no coinciden; el historial conserva cada hipótesis con su total (ver PLAY-CAJA-03).",
+    "verificacion": "Captura cajanegra-juego-390.png: pie «Palabras disponibles · 9» y «Faltan 3 campos por completar»; tras completar, «Verificar informe»."
+  },
+  {
+    "id": "SRC-CN02",
+    "estado": "implementado",
+    "archivos": ["site/cajanegra/src/i18n.js", "site/cajanegra/src/app.js"],
+    "detalle": "cajanegra: confirmación de solución con «Ver solución y cerrar el caso» y cancelación «Seguir investigando» (enfocada al abrir); en el caso del día con racha vigente se añade «Se cortará tu racha.». Pausa «Reanudar partida» y «Volver al menú»; resultado «Volver al menú»; título «Caso archivado sin resolver» (sello ARCHIVADO gris y sin estrellas, como antes).",
+    "verificacion": "Playwright: #pCont = «Reanudar partida». Revisión de renderResultado: rendido → res.rendido, sin estrellas encendidas."
+  },
+  {
+    "id": "VIS-CAJA-01",
+    "estado": "implementado",
+    "archivos": ["site/cajanegra/src/estilo.css"],
+    "detalle": "cajanegra: tokens CN_ART (--cn-art-*) sólo de superficie, sin tocar --c-* ni --m*: fondo de #sJuego #0C1018, visor #151B25, informe #1B222D, controles #101620, borde 1 px #344251, radio 10 px, sombra 0 6px 18px negro .20; se retira el doble halo violeta en reposo. .regCab 12/16 px; .regBody 12 px (16 px en .wide); --fs-reg base 15 px y --fs-inf 16 px con line-height 1.65/1.6, conservando html.grande (16.2/18). Títulos 18 px/600, metadatos 12 px mono #AEBCCB. Pestañas radio 8 px, seleccionada #253447 con subrayado cian sólido 2 px, inactiva transparente. Alto contraste mantiene borde 2 px y color propio.",
+    "verificacion": "Capturas cajanegra-juego-390/1280.png: mismos registros y orden, informe sin reescribir, pestaña seleccionada distinguible por relleno + subrayado + posición. Contraste texto #F6FAFC/#AEBCCB sobre #151B25 > 4.5:1 (cálculo nominal)."
+  },
+  {
+    "id": "VIS-CAJA-04",
+    "estado": "implementado",
+    "archivos": ["site/cajanegra/src/estilo.css"],
+    "detalle": "cajanegra: se preservan los 6 patrones y tonos m0…m5; el relleno baja a .18–.25 manteniendo el subrayado de 3 px y texto #F6FAFC. .linea.resalta fondo ámbar .08 + barra lateral 3 px. Foco de teclado en .ent: outline blanco 2 px offset 2 además del subrayado. .destello deja brightness(2.2) por anillo de 120 ms + transición de fondo 120 ms sin mover texto. .tab .punto fijo 8 px con borde 1 px del fondo y sin brillo; «late» sigue siendo 3 pulsos breves, no permanente. .casoF.disp borde #7D92AF sin respiración infinita; resuelto conserva el check ::after. .ileg sigue ilegible (color transparente) y queda estático con movimiento reducido, html.quieto o contraste.",
+    "verificacion": "Revisión CSS; smoke sin errores. Las marcas se prueban con el gancho CAJANEGRA.marcar(e) (patrones intactos en las reglas base .mk.mk0–mk5)."
+  },
+  {
+    "id": "SRC-G03",
+    "estado": "implementado",
+    "archivos": ["site/cajanegra/src/i18n.js"],
+    "detalle": "cajanegra (común): pausa «Reanudar partida», salida de pausa y del resultado «Volver al menú», cierre de Campaña/Práctica/Estadísticas/Cómo jugar «Volver al menú» (btn.volver), guardado «Continuar partida: {caso} · {a}/{b} campos». Se conservan verbos de dominio (Verificar informe, Ver la solución, Siguiente caso, Otro caso).",
+    "verificacion": "Lectura de etiquetas sin contexto en i18n.js ES/EN; Playwright confirma #pCont."
+  },
+  {
+    "id": "SRC-G04",
+    "estado": "implementado",
+    "archivos": ["site/cajanegra/src/app.js", "site/cajanegra/src/i18n.js", "site/cajanegra/src/estilo.css"],
+    "detalle": "cajanegra (común): el doble clic temporal de «Borrar progreso» (clase armado + 4 s) se sustituye por confirmarBorrado(): alertdialog «¿Borrar todo el progreso de JET//Caja Negra?» / «Se borrarán el tutorial, los casos del día, la campaña, las estadísticas, las insignias y las partidas en curso. Esta acción no se puede deshacer.», botón «Cancelar» enfocado al abrir y botón peligro «Borrar progreso». borrarProgreso() no toca ajustes (idioma/audio), que no se prometen.",
+    "verificacion": "Playwright: al abrir, foco en Cancelar; Enter (Cancelar) cierra sin borrar y devuelve el foco a «Borrar progreso». Captura cajanegra-borrar-390.png."
+  },
+  {
+    "id": "SRC-G05",
+    "estado": "implementado",
+    "archivos": ["site/cajanegra/index.html", "site/cajanegra/src/app.js"],
+    "detalle": "cajanegra (común): #carga con título JET//Caja Negra y «Cargando JET//Caja Negra…» visible antes de los módulos (CSS inline, ES/EN según documentElement.lang de jet-idioma.js). Un script en captura marca error: si falla la descarga de un <script> → «No pudimos descargar todos los recursos.»; si hay error de ejecución o el bootstrap no termina en 12 s → «La carga se interrumpió. Puedes volver a intentarlo.»; botones «Volver a cargar» (location.reload) y enlace «Volver a los juegos» (conserva ?lang). app.js llama __cnCargaLista() al terminar el arranque y elimina #carga: loading/error/ready excluyentes, sin spinner infinito ni botones vacíos.",
+    "verificacion": "Playwright: #carga eliminado tras la carga normal. Smoke: 0 botones vacíos. No se ejecutó la prueba de bloquear un módulo."
+  },
+  {
+    "id": "SRC-G06",
+    "estado": "implementado",
+    "archivos": ["site/cajanegra/src/app.js", "site/cajanegra/src/i18n.js"],
+    "detalle": "cajanegra (común): botón «Compartir resultado»; éxito «Texto copiado» sólo tras resolverse clipboard.writeText o execCommand('copy'); cancelar navigator.share (AbortError) no muestra nada. Fallback persistente: diálogo con título, «No pudimos copiarlo automáticamente. Selecciona y copia este texto.», textarea readonly con el resultado íntegro, botones «Copiar texto» y «Cerrar»; sin redes ni envíos automáticos. Tono adaptado a tú (el juego no usa voseo).",
+    "verificacion": "Revisión de compartir(); el fallback usa la capa modal (foco en el textarea, Escape cierra). No se forzó el fallo del portapapeles en Playwright."
+  },
+  {
+    "id": "SRC-G01",
+    "estado": "no_aplicable",
+    "archivos": [],
+    "detalle": "cajanegra (común): el ID afecta a las tarjetas de la home (site/index.html), fuera de esta asignación. El juego ya ofrece «Volver a JET//Games» (#back) con target=_top hacia la ruta canónica.",
+    "verificacion": "Sin cambios."
+  },
+  {
+    "id": "SRC-G02",
+    "estado": "ya_corregido_verificado",
+    "archivos": [],
+    "detalle": "cajanegra (común): selector ES/EN con aria-pressed en inicio y Ajustes, JETIdioma (?lang > cookie/localStorage > navegador) y migración del idioma propio ya presentes; no se creó un segundo selector.",
+    "verificacion": "Smoke en EN (navegador) y Playwright con ?lang=es: la página adopta el idioma pedido."
+  }
+]

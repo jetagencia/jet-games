@@ -24,6 +24,7 @@
   --gap:12px;--edge:12px;--tap:48px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
+[hidden]{display:none!important}
 html,body{width:100%;height:100%;background:var(--green);color:var(--cream);font-family:Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
 body{overflow:hidden;overscroll-behavior:none}
 canvas#c{position:fixed;inset:0;width:100%;height:100vh;height:100dvh;display:block;touch-action:none}
@@ -39,12 +40,21 @@ kbd{display:inline-block;min-width:1.6em;padding:1px 6px;border:1px solid #f4ecd
 /* ---------- carga ---------- */
 #load{position:fixed;inset:0;z-index:50;display:grid;place-items:center;background:radial-gradient(120% 90% at 50% 20%,#1d4a37,var(--green) 70%);transition:opacity .6s}
 #load.gone{opacity:0;pointer-events:none}
-.load-in{text-align:center;width:min(340px,84vw)}
+.load-in{text-align:center;width:min(340px,84vw);max-width:100%;display:flex;flex-direction:column;align-items:center}
+.load-in .bar{width:100%}
+.load-title{font-family:'Playfair Display',Georgia,serif;font-size:22px;font-weight:700;margin-top:22px;line-height:1.2}
+#load-hint{font-size:13px;color:var(--cream-2);margin-top:8px;line-height:1.5}
+#load[data-state=error] .bar{display:none}
+#load[data-state=error] #load-txt{font-size:15px;color:var(--cream);margin-top:8px;line-height:1.5}
+.load-actions{display:flex;flex-direction:column;align-items:center;gap:10px;width:100%;margin-top:16px}
+.load-actions .btn{width:min(100%,260px);min-height:48px;margin:0;justify-content:center;text-align:center;text-decoration:none}
+#load-details{margin-top:14px;font-size:13px;color:var(--cream-2);text-align:left;width:100%}
+#load-details summary{cursor:pointer;text-align:center;color:var(--gold2)}
+#load-details pre{margin-top:6px;white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;line-height:1.5;max-height:30vh;overflow:auto;padding:8px;border-radius:8px;background:#0d241a99}
 .load-in .brand{font-size:44px}
 .bar{height:4px;background:#ffffff1f;border-radius:2px;overflow:hidden;margin:26px 0 10px}
 .bar i{display:block;height:100%;width:0;background:var(--gold2);transition:width .25s}
 #load-txt{font-size:13px;color:var(--cream-2)}
-#load-retry{margin-top:16px}
 
 /* ---------- botones ---------- */
 .btn{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:52px;padding:12px 18px;border-radius:12px;font-weight:600;font-size:16px;text-align:left;
@@ -190,7 +200,7 @@ body.touch .gait{bottom:calc(var(--edge) + var(--b))}
 }
 
 /* ---------- ventanas ---------- */
-.modal{position:fixed;inset:0;z-index:40;display:none;align-items:center;justify-content:center;padding:calc(16px + var(--t)) 16px calc(16px + var(--b));background:#06120cc4;overflow:auto}
+.modal{position:fixed;inset:0;z-index:40;display:none;align-items:center;justify-content:center;padding:calc(16px + var(--t)) calc(16px + var(--r)) calc(16px + var(--b)) calc(16px + var(--l));background:#06120cc4;overflow:auto}
 .modal.open{display:flex}
 .card{width:min(480px,100%);max-height:100%;overflow:auto;background:var(--panel-solid);border:1px solid var(--line);border-radius:18px;padding:22px;box-shadow:0 30px 80px #0009;touch-action:pan-y}
 .card h2{font-family:'Playfair Display',Georgia,serif;font-size:28px;font-weight:700;margin-bottom:8px}
@@ -228,6 +238,29 @@ body.touch .gait{bottom:calc(var(--edge) + var(--b))}
   .card.wide{width:min(820px,100%)}.card.wide .how{grid-template-columns:1fr 1fr;column-gap:18px}
 }
 @media (prefers-reduced-motion:reduce){#toast,#load,.btn{transition:none}}
+/* ---------- VIS-JUMP-04: placas de datos sobrias ---------- */
+:root{--hud-surface:rgba(13,36,26,.90);--hud-line:rgba(244,236,219,.18)}
+.data,.gait,.keyhelp{background:var(--hud-surface);border:1px solid var(--hud-line);border-radius:8px}
+.data .lbl{font-size:12px;line-height:1.3}
+.data .val{font-size:18px;font-weight:800;font-variant-numeric:tabular-nums}
+.data .val small{font-size:13px;font-weight:600}
+.hbtn{border-color:rgba(244,236,219,.4);box-shadow:none}
+.hbtn:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+#jump-state::before{content:'· ';opacity:0}
+#jump-wrap.ready #jump-state::before{content:'● ';opacity:1}
+#jump-wrap.req #jump-state::before{content:'◌ ';opacity:1}
+/* ---------- VIS-JUMP-05: rancho y resultados con la misma voz ---------- */
+.card{background:#11301f;border-color:rgba(244,236,219,.16);border-radius:18px}
+.card h2{font-size:28px;font-weight:700}
+.card h3{font-size:16px;font-weight:800}
+.card p{font-size:15px;line-height:1.55}
+.card .eyebrow,.spot small,.menu-foot{font-size:12px;line-height:1.4}
+.score div{background:#183b2b;border-radius:12px}
+.score b{font-size:26px;font-variant-numeric:tabular-nums}
+.pill,.hub-tabs,#hub-panel,.spot{border-color:rgba(244,236,219,.16)}
+#hub-panel{background:#11301f}
+.spot{border-radius:12px;background:#183b2bf2}
+.spot small{white-space:normal;text-align:center;max-width:160px}
 /* ---------- carrera: rancho ---------- */
 #hub,#task,#photo{position:fixed;inset:0;z-index:25;pointer-events:none}
 #hub.hidden,#task.hidden,#photo.hidden,#roam-bar.hidden,#hoof.hidden{display:none}
@@ -487,12 +520,82 @@ body:has(#hud:not(.hidden)) #upd{display:none}
 <body class="keys">
 <canvas id="c" aria-label="Pista de salto" data-i18n-aria="canvas"></canvas>
 
-<div id="load"><div class="load-in">
+<div id="load" data-state="loading"><div class="load-in">
   <div class="brand">JET<b>//</b>Jump</div>
   <div class="bar" role="progressbar" id="load-prog" aria-label="Cargando el juego" data-i18n-aria="loadBar" aria-valuemin="0" aria-valuemax="1" aria-valuenow="0"><i id="load-bar"></i></div>
-  <div id="load-txt" aria-live="polite">Cargando el juego…</div>
-  <button class="btn primary" id="load-retry" hidden>Reintentar carga</button>
+  <h2 class="load-title" id="load-title" tabindex="-1" hidden></h2>
+  <div id="load-txt" aria-live="polite">Cargando JET//Jump…</div>
+  <p id="load-hint" hidden></p>
+  <div class="load-actions" id="load-actions" hidden><button class="btn primary" id="load-retry" type="button">Volver a cargar</button><a class="btn" id="load-home" href="https://jetgames.fun/">Volver a los juegos</a></div>
+  <details id="load-details" hidden><summary id="load-details-t">Detalles técnicos</summary><pre id="load-detail"></pre></details>
 </div></div>
+<script>
+// Arranque: estados excluyentes loading / error / ready, dueños del texto del cargador. Vive fuera del módulo para que un
+// fallo de importación, de dependencia o de WebGL también termine en un error accionable (SRC-G05, SRC-JU02, PLAY-JUMP-02/03).
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var TX = {
+    es: { loading: 'Cargando JET//Jump…', progress: function (d, t) { return 'Cargando recursos: ' + d + ' de ' + t; }, title: 'No pudimos cargar JET//Jump',
+      webgl: 'Este navegador no pudo iniciar los gráficos 3D.', webglHint: 'Probá con un navegador compatible con WebGL y la aceleración gráfica activada.',
+      network: 'No pudimos descargar todos los recursos.', unknown: 'La carga se interrumpió. Podés volver a intentarlo.', lost: 'Se interrumpieron los gráficos.',
+      slow: 'La carga está tardando más de lo normal.', retry: 'Volver a cargar', retrying: 'Volviendo a cargar…', home: 'Volver a los juegos', details: 'Detalles técnicos' },
+    en: { loading: 'Loading JET//Jump…', progress: function (d, t) { return 'Loading resources: ' + d + ' of ' + t; }, title: 'We couldn’t load JET//Jump',
+      webgl: 'This browser couldn’t initialize 3D graphics.', webglHint: 'Try a WebGL-compatible browser with hardware acceleration enabled.',
+      network: 'We couldn’t download all resources.', unknown: 'Loading was interrupted. You can try again.', lost: 'The graphics were interrupted.',
+      slow: 'Loading is taking longer than usual.', retry: 'Reload game', retrying: 'Reloading…', home: 'Back to games', details: 'Technical details' }
+  };
+  var t = function () { return TX[window.JETIdioma && window.JETIdioma.get() === 'en' ? 'en' : 'es']; };
+  var B = { state: 'loading', kind: null, detail: '', done: 0, total: 0, retrying: false };
+  var watchdog = null;
+  function arm() { clearTimeout(watchdog); if (B.state !== 'loading') return; watchdog = setTimeout(function () { if (B.state === 'loading') { $('load-hint').textContent = t().slow; $('load-hint').hidden = false; } }, 25000); }
+  function paint() {
+    var L = $('load'), T = t(); if (!L) return;
+    L.dataset.state = B.state;
+    if (B.state === 'loading') {
+      $('load-title').hidden = true; $('load-actions').hidden = true; $('load-details').hidden = true;
+      $('load-txt').textContent = B.total ? T.progress(B.done, B.total) : T.loading;
+      if ($('load-hint').textContent !== T.slow) $('load-hint').hidden = true; else $('load-hint').textContent = T.slow;
+    } else if (B.state === 'error') {
+      $('load-title').textContent = T.title; $('load-title').hidden = false;
+      $('load-txt').textContent = T[B.kind] || T.unknown;
+      $('load-hint').textContent = B.kind === 'webgl' ? T.webglHint : ''; $('load-hint').hidden = B.kind !== 'webgl';
+      $('load-retry').textContent = B.retrying ? T.retrying : T.retry; $('load-retry').disabled = B.retrying;
+      $('load-home').textContent = T.home; $('load-actions').hidden = false;
+      $('load-details-t').textContent = T.details; $('load-detail').textContent = B.detail; $('load-details').hidden = !B.detail;
+    }
+  }
+  var API = {
+    get state() { return B.state; },
+    progress: function (done, total) { if (B.state !== 'loading') return; B.done = done; B.total = total; var pb = $('load-prog'); if (pb) { pb.setAttribute('aria-valuemax', total); pb.setAttribute('aria-valuenow', done); } var bar = $('load-bar'); if (bar) bar.style.width = (total ? done / total * 100 : 0).toFixed(0) + '%'; $('load-txt').textContent = t().progress(done, total); arm(); },
+    fail: function (kind, detail) {
+      if (B.state === 'ready') return;                       // un juego listo no vuelve a error por un aviso tardío
+      if (B.state === 'error' && B.kind !== 'unknown') return;   // la primera causa concreta se conserva
+      B.state = 'error'; B.kind = kind || 'unknown'; B.detail = detail ? String(detail).slice(0, 600) : ''; clearTimeout(watchdog);
+      var L = $('load'); L.hidden = false; L.classList.remove('gone'); L.removeAttribute('inert');
+      paint();
+      setTimeout(function () { var b = $('load-retry'); if (b && !b.hidden) b.focus({ preventScroll: true }); }, 30);
+    },
+    ready: function () {
+      B.state = 'ready'; clearTimeout(watchdog);
+      var L = $('load'); L.dataset.state = 'ready'; L.classList.add('gone'); L.setAttribute('inert', ''); L.setAttribute('aria-hidden', 'true');
+      setTimeout(function () { L.hidden = true; }, 700);
+    },
+    relang: paint
+  };
+  $('load-retry').addEventListener('click', function () { if (B.retrying) return; B.retrying = true; paint(); location.reload(); });
+  // error de red/sintaxis del propio módulo o de una dependencia (el evento llega al elemento <script>), y errores no capturados en el arranque
+  addEventListener('error', function (e) {
+    if (B.state !== 'loading') return;
+    var tg = e.target;
+    if (tg && tg !== window && tg.tagName === 'SCRIPT') { API.fail('network', 'script: ' + (tg.src || '')); return; }
+    if (tg === window || !tg || tg === document) { var m = e.message || (e.error && e.error.message) || ''; API.fail(/WebGL|context/i.test(m) ? 'webgl' : /fetch|import|module|network|Failed to load/i.test(m) ? 'network' : 'unknown', m); }
+  }, true);
+  addEventListener('unhandledrejection', function (e) { if (B.state !== 'loading') return; var r = e.reason, m = r && (r.message || String(r)) || ''; API.fail(/WebGL|context/i.test(m) ? 'webgl' : /fetch|import|module|network|Failed to load|TypeError/i.test(m) ? 'network' : 'unknown', m); });
+  addEventListener('jet-idioma', paint);
+  paint(); arm();
+  window.JJBoot = API;
+})();
+</script>
 
 <div id="menu" class="hidden">
   <div class="menu-top"><a class="chip back" href="https://jetgames.fun/" id="m-back" aria-label="Volver a JET//Games" data-i18n-aria="back">‹ JET<b>//</b>Games</a><div class="right"><div class="langseg" role="group" aria-label="Idioma" data-i18n-aria="langGroup"><button type="button" data-lang="es" aria-pressed="false">ES</button><button type="button" data-lang="en" aria-pressed="false">EN</button></div><button class="chip" id="m-settings">Ajustes</button></div></div>

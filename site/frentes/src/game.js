@@ -39,11 +39,15 @@
   const reduced = () => (P.reduced == null ? prefersReduced : P.reduced);
   function t(k, vars) {
     let s = (window.T[LANG] && window.T[LANG][k] != null) ? window.T[LANG][k] : (window.T.es[k] != null ? window.T.es[k] : k);
-    if (typeof s === 'string' && vars) s = s.replace(/\{(\w+)\}/g, (m, n) => (vars[n] != null ? vars[n] : m));
+    if (typeof s === 'string' && vars) s = s.replace(/\{([^}]+)\}/g, (m, n) => (vars[n] != null ? vars[n] : m));
     return s;
   }
-  const tip = (k, vars) => t('tips')[k].replace(/\{(\w+)\}/g, (m, n) => (vars[n] != null ? vars[n] : m));
+  const tip = (k, vars) => t('tips')[k].replace(/\{([^}]+)\}/g, (m, n) => (vars[n] != null ? vars[n] : m));
   const fmtPct = (p, dec) => { const v = dec ? (Math.round(p * 10) / 10) : Math.round(p); return LANG === 'es' ? String(v).replace('.', ',') : String(v); };
+  // Rendimiento = (victorias + 0,5 × empates) / rivales × 100 (core.evaluar). Un solo formato en resultado, análisis e historial:
+  // una cifra decimal cuando no es entero, separador según idioma, sin el signo % dentro del valor.
+  const fmtRend = (p) => fmtPct(p, 1);
+  const plural = (n, one, many, key) => (n === 1 ? t(one) : t(many, { [key]: n }));
   const pctS = (p, dec) => fmtPct(p, dec) + (LANG === 'es' ? ' %' : '%');
   const pu = (v) => t(+v === 1 ? 'ptsOne' : 'ptsShort');
   const MONTHS = { es: ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'], en: ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'] };
@@ -69,7 +73,7 @@
   function sfx(n, o) { A.sfx(n, o); }
   let toastT = 0;
   function toast(msg, btn, fn, ms) {
-    const el = $('toast'); el.innerHTML = ''; const s = document.createElement('span'); s.textContent = msg; el.appendChild(s);
+    const el = $('toast'); el.innerHTML = ''; el.classList.toggle('accion', !!btn); const s = document.createElement('span'); s.textContent = msg; el.appendChild(s);
     if (btn) { const b = document.createElement('button'); b.textContent = btn; b.onclick = () => { el.classList.remove('on'); fn(); }; el.appendChild(b); }
     el.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('on'), ms || 2600);
   }
@@ -90,28 +94,53 @@
 
   // ---------- pantallas ----------
   const OVERLAYS = ['sBrief', 'sResult', 'sAcad', 'sTrain', 'sHist', 'sHelp', 'sSet', 'sPause'];
+  const SHEETS = ['shConfirm', 'shKeypad', 'shMsg'];
+  const ACT = {};
+  const FOCOS = 'button:not([disabled]):not([tabindex="-1"]),a[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
+  const visibleFoco = (n) => !!(n && n.isConnected && n !== document.body && n.offsetParent !== null && !n.closest('[inert]') && !n.closest('[hidden]'));
+  function enfocar(n) { if (!n) return; if (!n.matches(FOCOS)) n.tabIndex = -1; try { n.focus({ preventScroll: true }); } catch (e) { /* nada */ } }
+  /* Sólo la capa superior (hoja > superposición > pantalla base) es operable; el resto queda inert. */
+  function sincInert() {
+    const top = topOv(), sheet = G.sheet;
+    ['sHome', 'sBoard', 'back', 'topR', 'banner', 'toast'].forEach((id) => { const e = $(id); if (e) e.inert = !!top || !!sheet; });
+    OVERLAYS.forEach((id) => { $(id).inert = (G.overlays.indexOf(id) >= 0 && id !== top) || !!sheet; });
+    SHEETS.forEach((id) => { const s = $(id); if (!s.hidden) s.inert = id !== sheet; });
+  }
   function setBase(b) {
     G.base = b;
     $('sHome').classList.toggle('on', b === 'home');
     $('sBoard').classList.toggle('on', b === 'board');
+    R.boardMode = b === 'board';
     updateTop(); music();
     if (b === 'home') { renderHome(); LS.set('ui', null); }
     if (b === 'board') { relayout(); requestAnimationFrame(relayout); }
   }
   function openOv(id, opts) {
-    if (G.overlays.indexOf(id) < 0) G.overlays.push(id);
+    opts = opts || {};
+    if (G.overlays.indexOf(id) < 0) { G.overlays.push(id); ACT[id] = opts.activador || document.activeElement; }
     $(id).classList.add('on'); $(id).scrollTop = 0;
-    updateTop(); music();
-    setTimeout(() => { const f = $(id).querySelector('.btn.pri, .x, button'); if (f && !(opts && opts.nofocus) && matchMedia('(hover:hover)').matches) try { f.focus({ preventScroll: true }); } catch (e) { /* nada */ } }, 30);
+    updateTop(); music(); sincInert();
+    // foco inicial: el título del diálogo (o el control indicado), con o sin pantalla táctil
+    const f = (opts.foco && $(id).querySelector(opts.foco)) || $(id).querySelector('h2') || $(id).querySelector(FOCOS);
+    if (f) setTimeout(() => { if (G.overlays.indexOf(id) >= 0) enfocar(f); }, 30);
   }
-  function closeOv(id) {
+  function closeOv(id, opts) {
+    opts = opts || {};
     id = id || G.overlays[G.overlays.length - 1]; if (!id) return;
-    $(id).classList.remove('on'); G.overlays = G.overlays.filter((x) => x !== id);
+    $(id).classList.remove('on'); $(id).inert = false; G.overlays = G.overlays.filter((x) => x !== id);
     if (id === 'sHelp') stopHelp();
     if (id === 'sPause') resumeGame();
-    updateTop(); music();
+    updateTop(); music(); sincInert();
+    if (opts.sinFoco) return;
+    const a = ACT[id]; delete ACT[id];
+    if (visibleFoco(a)) { enfocar(a); return; }
+    const top = topOv();
+    if (top) { enfocar($(top).querySelector('h2') || $(top).querySelector(FOCOS)); return; }
+    if (G.base === 'board' && B.lanes.length) { try { B.lanes[B.sel].el.focus({ preventScroll: true }); } catch (e) { /* nada */ } return; }
+    enfocar($('hLogo'));
   }
-  function closeAllOv() { G.overlays.slice().forEach((id) => { $(id).classList.remove('on'); }); G.overlays = []; stopHelp(); updateTop(); }
+  // Cerrar todo al cambiar de flujo: no equivale a reanudar, pero la nueva sesión no hereda la pausa de la anterior.
+  function closeAllOv() { if (G.overlays.indexOf('sPause') >= 0) G.paused = false; G.overlays.slice().forEach((id) => { $(id).classList.remove('on'); $(id).inert = false; }); G.overlays = []; stopHelp(); updateTop(); sincInert(); }
   const topOv = () => G.overlays[G.overlays.length - 1];
   function updateTop() {
     const onBoard = G.base === 'board' && !G.overlays.length;
@@ -119,12 +148,27 @@
     $('bBrief').hidden = !(onBoard && (B.mode === 'daily'));
     $('bGear').hidden = topOv() === 'sSet';
   }
-  function openSheet(id) {
-    if (G.sheet && G.sheet !== id) $(G.sheet).classList.remove('on');
-    G.sheet = id; $(id).classList.add('on'); $('sheetBg').classList.add('on');
-    setTimeout(() => { const f = $(id).querySelector('.btn.pri'); if (f && matchMedia('(hover:hover)').matches) try { f.focus({ preventScroll: true }); } catch (e) { /* nada */ } }, 40);
+  // Hojas inferiores (RSP-FRENTES-01): cerradas = hidden + inert; abiertas, sólo sus controles son alcanzables.
+  function openSheet(id, opts) {
+    opts = opts || {};
+    if (G.sheet && G.sheet !== id) { const o = $(G.sheet); clearTimeout(o._hideT); o.classList.remove('on'); o.inert = true; o.hidden = true; } else if (!G.sheet) G.sheetAct = document.activeElement;
+    G.sheet = id; const s = $(id); clearTimeout(s._hideT);
+    s.hidden = false; s.inert = false; void s.offsetWidth; // posición inicial un frame, luego la transición
+    s.classList.add('on'); $('sheetBg').classList.add('on'); sincInert();
+    const f = (opts.foco && s.querySelector(opts.foco)) || s.querySelector('.btn.pri') || s.querySelector('h3') || s.querySelector(FOCOS);
+    if (f) setTimeout(() => { if (G.sheet === id) enfocar(f); }, 40);
   }
-  function closeSheet() { if (!G.sheet) return; $(G.sheet).classList.remove('on'); $('sheetBg').classList.remove('on'); const s = G.sheet; G.sheet = null; if (s === 'shMsg' && G.msgClose) { const f = G.msgClose; G.msgClose = null; f(); } }
+  function closeSheet(opts) {
+    opts = opts || {};
+    if (!G.sheet) return; const s = $(G.sheet); const id = G.sheet; G.sheet = null;
+    s.inert = true; s.classList.remove('on'); $('sheetBg').classList.remove('on');
+    const ocultar = () => { if (G.sheet !== id) s.hidden = true; };
+    if (reduced()) ocultar(); else s._hideT = setTimeout(ocultar, 320);
+    sincInert();
+    const a = G.sheetAct; G.sheetAct = null;
+    if (!opts.sinFoco && visibleFoco(a)) enfocar(a);
+    if (id === 'shMsg' && G.msgClose) { const f = G.msgClose; G.msgClose = null; f(); }
+  }
   function message(title, text, buttons, opts) {
     opts = opts || {};
     // título, texto, etiquetas y extra pueden ser funciones: así la hoja se repinta en el otro idioma sin cerrarse
@@ -132,12 +176,13 @@
       $('msgT').textContent = val(title) || ''; $('msgP').textContent = val(text) || '';
       $('msgX').innerHTML = ''; const ex = typeof opts.extra === 'function' ? opts.extra(!!again) : opts.extra; if (ex) $('msgX').appendChild(ex);
       const bb = $('msgB'); bb.innerHTML = '';
-      (buttons || [{ label: () => t('ok'), pri: true }]).forEach((b) => { const x = el('button', 'btn' + (b.pri ? ' pri' : '')); x.textContent = val(b.label); x.onclick = () => { sfx('click'); G.msgClose = null; closeSheet(); if (b.fn) b.fn(); }; bb.appendChild(x); });
+      (buttons || [{ label: () => t('ok'), pri: true }]).forEach((b, i) => { const x = el('button', 'btn' + (b.pri ? ' pri' : '') + (b.cls ? ' ' + b.cls : '')); if (i === 0) x.id = 'msgB0'; x.textContent = val(b.label); x.onclick = () => { sfx('click'); G.msgClose = null; closeSheet(); if (b.fn) b.fn(); }; bb.appendChild(x); });
     };
     paint(false); G.msgPaint = paint;
     G.msgClose = opts.onClose || null; G.msgHop = opts.hop || 0;
     $('msgCmd').style.display = opts.noCmd ? 'none' : '';
-    openSheet('shMsg');
+    $('shMsg').setAttribute('role', opts.alert ? 'alertdialog' : 'dialog');
+    openSheet('shMsg', { foco: opts.focoPrimero ? '#msgB0' : null });
   }
   A.onIdle = () => { G.resultPlaying = false; music(); };
   function music() {
@@ -311,7 +356,7 @@
         '<div class="st"><em>' + esc(t('avg')) + '</em>' + fmtPct(info.intel.media[p], 1) + '</div><div class="st"><em>' + esc(t('emptyShort')) + '</em>' + info.intel.vacio[p] + (LANG === 'es' ? ' %' : '%') + '</div>';
       g.appendChild(c); R.planetIcon(c.querySelector('canvas'), p, c.querySelector('canvas').clientWidth || 40);
     }
-    $('brComp').innerHTML = compLine(info.flota) + (G.offline ? '<br>' + esc(t('offline')) : '');
+    $('brComp').innerHTML = compLine(info.flota) + (G.offline ? '<br>' + esc(t('offline')) : '') + '<br><span class="ley"><i class="sw bar"></i>' + esc(t('avgLegend')) + ' · ' + esc(t('emptyLegend')) + ' (%)</span>';
     $('brTipT').textContent = commanderTip(info);
     $('bToDeploy').querySelector('span').textContent = fromBoard ? t('continue') : t('toDeploy');
     G.briefFromBoard = !!fromBoard;
@@ -351,7 +396,9 @@
     $('toolsX').innerHTML = ''; (cfg.tools || []).forEach((b) => $('toolsX').appendChild(b));
     $('bClear').hidden = !!cfg.noClear; $('bUndo').hidden = $('bRedo').hidden = !!cfg.noUndo;
     $('resv').hidden = !!cfg.noReserve;
+    G.paused = false; // una partida nueva nunca hereda la pausa de la anterior (PLAY-FRENTES-01)
     renderBanner(); renderSideBrief(); relayout(); updateBoard(true);
+    if ((cfg.mode === 'daily' || cfg.mode === 'quick') && !B.x.some((v) => v) && !LS.get('hintDrag', 0)) { LS.set('hintDrag', 1); setTimeout(() => { if (G.base === 'board' && !G.overlays.length) toast(t('dragHelp'), null, null, 5000); }, 700); }
   }
   function reserve() { let s = 0; for (const v of B.x) s += v; return B.ships - s; }
   const maxFor = (p) => B.x[p] + reserve();
@@ -378,7 +425,9 @@
     if (resBefore > 0 && reserve() === 0 && !B.allow) { sfx('full'); vib(12); }
     updateBoard(); return true;
   }
-  function bump() { const now = performance.now(); if (now - (bump.t || 0) < 300) return; bump.t = now; sfx('max'); const r = $('resv'); r.classList.remove('flash'); void r.offsetWidth; r.classList.add('flash'); }
+  function bump() { const now = performance.now(); if (now - (bump.t || 0) < 300) return; bump.t = now; sfx('max'); const r = $('resv'); r.classList.remove('flash'); void r.offsetWidth; r.classList.add('flash');
+    // qué pasa al sumar sin reserva: la política vigente no quita naves de otro planeta por sí sola
+    if (reserve() === 0 && !B.allow && now - (bump.msgT || 0) > 4000) { bump.msgT = now; toast(t('noReserve'), null, null, 3000); } }
   function selectLane(p, quiet) {
     if (p < 0 || p >= B.n) return; B.sel = p;
     B.lanes.forEach((o, i) => o.el.classList.toggle('sel', i === p));
@@ -396,8 +445,11 @@
       if (B.mode === 'daily' && G.info && G.info.valoresAyer) { const d = pv - G.info.valoresAyer[i]; if (d) vh += ' <span class="' + (d > 0 ? 'up' : 'dn') + '">' + (d > 0 ? '▲' : '▼') + '</span>'; }
       if (o._vh !== vh) { o.val.innerHTML = vh; o._vh = vh; }
       o.el.setAttribute('aria-valuemax', String(maxFor(i))); o.el.setAttribute('aria-valuenow', String(v));
-      o.el.setAttribute('aria-label', t('a11yLane', { pl: PN[B.ids[i]], v: pv, vu: t(+pv === 1 ? 'unitPt' : 'unitPts'), n: v, nu: t(+v === 1 ? 'unitShip' : 'unitShips') }));
-      o.rest.textContent = $('lanes').classList.contains('narrow') ? '+' + res : t('restHere'); o.rest.setAttribute('aria-label', t('restHere')); o.rest.classList.toggle('can', res > 0 && !B.locked && !B.cfg.noRest);
+      const pl = PN[B.ids[i]];
+      o.el.setAttribute('aria-label', t('a11yLane', { pl, v: pv, vu: t(+pv === 1 ? 'unitPt' : 'unitPts'), n: v, nu: t(+v === 1 ? 'unitShip' : 'unitShips') }) + ' · ' + (res === 1 ? t('reserve1') : t('reserveN', { n: res })));
+      o.val.title = pv === 1 ? t('value1') : t('valuePts', { puntos: pv });
+      o.num.setAttribute('aria-label', t('shipsOn', { planeta: pl }) + ': ' + v); o.plus.setAttribute('aria-label', t('addShip', { planeta: pl })); o.minus.setAttribute('aria-label', t('removeShip', { planeta: pl }));
+      o.rest.textContent = $('lanes').classList.contains('narrow') ? '+' + res : t('restHere'); o.rest.setAttribute('aria-label', t('reserveTo', { planeta: pl })); o.rest.classList.toggle('can', res > 0 && !B.locked && !B.cfg.noRest);
       o.minus.disabled = v <= 0; o.plus.disabled = res <= 0;
       // marca de la media de ayer
       if (B.intel && B.intel.media) { o.mark.classList.add('on'); o.mark.style.bottom = Math.min(100, B.intel.media[i] / scale * 100) + '%'; } else o.mark.classList.remove('on');
@@ -411,6 +463,8 @@
     $('resvN').textContent = res;
     $('resvFill').style.width = (res / B.ships * 100) + '%';
     $('resv').classList.toggle('zero', res === 0);
+    $('resv').setAttribute('aria-label', res === 1 ? t('reserve1') : t('reserveN', { n: res }));
+    { const used = B.ships - res; $('resvTot').textContent = used === 1 ? t('assigned1') : t('assignedN', { n: used }); }
     selectLane(B.sel, true);
     $('bUndo').disabled = !B.undo.length; $('bRedo').disabled = !B.redo.length; $('bClear').disabled = res === B.ships;
     updateLaunch();
@@ -565,7 +619,8 @@
       r.innerHTML = '<canvas></canvas><span>' + esc(PN[p]) + ' <b>' + info.valores[p] + '</b> <span class="d">' + (B.mode === 'daily' ? '(' + info.valoresAyer[p] + (d > 0 ? ' ▲' : d < 0 ? ' ▼' : '') + ')' : '') + '</span></span><span class="d n">' + fmtPct(info.intel.media[p], 1) + '</span><span class="d n">' + pctS(info.intel.vacio[p]) + '</span>';
       sb.appendChild(r); R.planetIcon(r.querySelector('canvas'), p, 22);
     }
-    sb.appendChild(el('div', 'sb-comp', B.mode === 'daily' ? compLine(info.flota) : esc(t('fleetQuick', { n: 200 }))));
+    sb.appendChild(el('div', 'sb-ley', '<span><i class="sw dash"></i>' + esc(t('avgLegend')) + '</span><span>' + esc(t('emptyLegend')) + ' (%)</span>'));
+    sb.appendChild(el('div', 'sb-comp', B.mode === 'daily' ? compLine(info.flota) : esc(t('comparedPractice', { rivales: 200 }))));
     // el consejo del Comandante también en el panel lateral (escritorio y tablet): llena el hueco y orienta sin abrir el informe
     if (B.mode === 'daily' && info.valoresAyer && info.intel) sb.appendChild(el('div', 'sb-tip', '<div class="kick">' + esc(t('tipTitle')) + '</div><p>' + esc(commanderTip(info)) + '</p>'));
   }
@@ -749,13 +804,16 @@
     o = o || {}; G.resultRec = rec; G.resultMode = o.mode || 'daily';
     const quick = G.resultMode === 'quick';
     const pct = rec.res.pct, N = rec.res.N, best = rec.mejor;
-    $('rsKick').textContent = quick ? t('roundCode', { c: rec.code }) : t('frontNum', { n: rec.num }) + ' · ' + fmtDate(rec.d);
+    $('rsKick').textContent = quick ? t('quickPractice') + ' · ' + t('roundCode', { c: rec.code }) : t('frontNum', { n: rec.num }) + ' · ' + fmtDate(rec.d);
     $('rsCd').innerHTML = !quick && !o.fresh && rec.d === today() ? esc(t('nextFront', { t: countdown() })) : '';
+    // rendimiento = (victorias + 0,5 × empates) / N × 100, con el mismo formato que el análisis
     const headTpl = quick ? t('headlineQuick', { p: '§' }) : t('headline', { p: '§' });
-    $('rsHead').innerHTML = esc(headTpl).replace(/§\s?%?/, '<span class="n" id="rsNum">' + (o.fresh ? '0' : fmtPct(pct)) + (LANG === 'es' ? ' %' : '%') + '</span>');
-    $('rsWdl').textContent = t('wdl', { w: rec.res.ganados, d: rec.res.empates, l: rec.res.perdidos, n: N }) + (quick ? '' : ' · ' + pctS(pct, 1));
+    $('rsHead').innerHTML = esc(headTpl).replace(/§\s?%?/, '<span class="n" id="rsNum">' + (o.fresh ? '0' : fmtRend(pct)) + '%</span>');
+    $('rsWdl').textContent = [plural(rec.res.ganados, 'win1', 'wins', 'victorias'), plural(rec.res.empates, 'draw1', 'draws', 'empates'), plural(rec.res.perdidos, 'loss1', 'losses', 'derrotas')].join(' · ');
+    $('rsRule').textContent = t('perfRule');
     let note = '';
-    if (!quick) { const fl = { reales: rec.res.reales, practica: rec.res.practica }; note = rec.offline ? esc(t('offlineRes')) : compLine(fl); }
+    if (quick || rec.offline || !rec.res.reales) note = esc(N === 1 ? t('comparedPractice1') : t('comparedPractice', { rivales: N })) + (rec.offline ? '<br>' + esc(t('offlineRes')) : '');
+    else { const fl = { reales: rec.res.reales, practica: rec.res.practica }; note = compLine(fl) + '<br>' + esc(t('comparedReal', { rivales: N })); }
     $('rsNote').innerHTML = note;
     // insignias
     const md = quick ? C.medalla(pct, null) : medalOf(rec), st = streakInfo(), mer = merits(), rk = C.rango(mer);
@@ -769,14 +827,18 @@
       const q = LS.get('rapida', { best: 0, n: 0 });
       bh += '<div class="badge">' + ringSVG(q.best / 100, '#00f2cf', '') + '<div><span class="kick">' + esc(t('record', { p: fmtPct(q.best) })) + '</span><b>' + (rec.newRecord ? esc(t('newRecord')) : '#' + q.n) + '</b></div></div>';
     }
+    // criterios de medalla: la regla vigente (Math.round del rendimiento; 50/75/90; Mando perfecto sólo con mejor reparto evaluado)
+    bh += '<div class="badge info"><button type="button" class="btn sm" id="bMedalInfo" aria-expanded="false" aria-controls="rsMedalInfo"><span>' + esc(t('medalCriteria')) + '</span></button><p id="rsMedalInfo" hidden>' + esc(t('medalRounded')) + ' ' + esc(t('medalThresholds')) + (quick ? '' : ' ' + esc(t('perfectCommand'))) + '</p></div>';
     $('rsBadges').innerHTML = bh;
+    $('bMedalInfo').onclick = () => { const p = $('rsMedalInfo'); p.hidden = !p.hidden; $('bMedalInfo').setAttribute('aria-expanded', !p.hidden); sfx('click'); };
+    $('rsLey').innerHTML = '<span><i class="sw line"></i>' + esc(t('ownFleet')) + '</span><span><i class="sw bars"></i>' + esc(t('rivalDist')) + '</span>';
     // por planeta
     const fleet = rec.flota ? C.fleetFromB64(rec.flota) : (quick ? G.quick.fleet : null);
     const pl = $('rsPlanets'); pl.innerHTML = '';
     for (let p = 0; p < 5; p++) {
       const q = rec.res.planetas[p], pg = q.gane / N * 100;
       const mk = pg >= 60 ? '<span class="mk" style="color:var(--cyan)">✓</span>' : pg < 30 ? '<span class="mk" style="color:var(--pink)">✗</span>' : '<span class="mk">=</span>';
-      const row = el('div', 'rp', '<canvas class="ic"></canvas><div><div class="nm">' + mk + esc(PN[p]) + ' <small>' + rec.valores[p] + ' ' + pu(rec.valores[p]) + ' · ' + rec.x[p] + ' ' + esc(t('yourShips')) + '</small></div>' +
+      const row = el('div', 'rp', '<canvas class="ic"></canvas><div><div class="nm">' + mk + esc(PN[p]) + ' <small>' + esc(rec.valores[p] === 1 ? t('value1') : t('valuePts', { puntos: rec.valores[p] })) + ' · ' + esc(rec.x[p] === 1 ? t('planetShip1', { planeta: t('ownFleet') }) : t('planetShips', { planeta: t('ownFleet'), naves: rec.x[p] })) + '</small></div>' +
         '<div class="ds">' + esc(t('planetBeat', { p: '§' })).replace('§', '<b>' + fmtPct(pg) + '</b>') + '</div><div class="hint">' + esc(t('p95', { n: q.p95 })) + '</div></div>' + (fleet ? '<canvas class="h"></canvas>' : ''));
       pl.appendChild(row);
       R.planetIcon(row.querySelector('canvas.ic'), p, 34);
@@ -786,8 +848,9 @@
     const bb = $('rsBest');
     if (best) {
       const diff = best.pct - pct;
-      const txt = diff > 0.05 ? esc(t('best', { p: '§' })).replace('§', '<b>' + fmtPct(best.pct) + '</b>') : diff < -0.05 ? esc(t('bestBeaten')) : esc(t('bestSame'));
-      bb.innerHTML = '<div><div class="kick">' + esc(t('bestKick')) + '</div><p>' + txt + '</p><div class="mini">' + best.x.join(' · ') + '</div></div><canvas></canvas>';
+      const txt = diff > 0.05 ? esc(t('best', { p: '§' })).replace('§', '<b>' + fmtRend(best.pct) + '</b>') : diff < -0.05 ? esc(t('bestBeaten')) : esc(t('bestSame'));
+      const lista = best.x.map((n, i) => esc(n === 1 ? t('planetShip1', { planeta: PN[i] }) : t('planetShips', { planeta: PN[i], naves: n }))).join(' · ');
+      bb.innerHTML = '<div><div class="kick">' + esc(t('bestKick')) + '</div><p>' + txt + '</p><div class="mini">' + lista + '</div></div><canvas></canvas>';
       const lb = el('button', 'btn'); lb.innerHTML = '<span>' + esc(t('tryLab')) + '</span>'; lb.onclick = () => { sfx('click'); openLab(rec, quick, true); }; bb.appendChild(lb);
       requestAnimationFrame(() => R.miniBars(bb.querySelector('canvas'), rec.x, best.x, Math.max(...rec.x, ...best.x)));
       bb.hidden = false;
@@ -796,12 +859,13 @@
     // botones
     const bt = $('rsBtns'); bt.innerHTML = '';
     const mk = (lab, cls, fn) => { const b = el('button', 'btn' + (cls ? ' ' + cls : '')); b.innerHTML = '<span>' + esc(lab) + '</span>'; b.onclick = () => { sfx('click'); fn(); }; bt.appendChild(b); return b; };
-    if (quick) { mk(t('anotherRound'), 'pri', () => startQuick()); mk(t('share'), '', () => share(rec, true)); mk(t('analyze'), '', () => openLab(rec, true)); mk(t('home'), '', goHome); }
-    else { mk(t('share'), 'pri', () => share(rec)); mk(t('analyze'), '', () => openLab(rec, false)); mk(t('train'), '', () => openTrain()); mk(t('home'), '', goHome); }
+    // acciones primarias: analizar y jugar otra ronda; compartir queda como acción secundaria y deliberada
+    if (quick) { mk(t('anotherRound'), 'pri', () => startQuick()); mk(t('analyze'), '', () => openLab(rec, true)); mk(t('share'), '', () => share(rec, true)); mk(t('home'), '', goHome); }
+    else { mk(t('analyze'), 'pri', () => openLab(rec, false)); mk(t('share'), '', () => share(rec)); mk(t('train'), '', () => openTrain()); mk(t('home'), '', goHome); }
     if (o.repaint) { requestAnimationFrame(() => document.querySelectorAll('#rsBadges .ring-fg').forEach((c) => { c.style.strokeDashoffset = c.dataset.off; })); return; } // cambio de idioma: solo repinta, no toca pantallas ni animaciones
     if (o.fresh) G.resultPlaying = true; // la música de batalla sigue durante la cuenta y luego suena el cierre
     closeAllOv(); if (G.base !== 'home') setBase('home');
-    openOv('sResult', { nofocus: true });
+    openOv('sResult');
     if (!quick) LS.set('ui', { s: 'result', d: rec.d });
     // animaciones
     const hop = pct >= 50; G.cmdHop = hop ? 0.01 : 0;
@@ -810,7 +874,7 @@
       const numEl = $('rsNum'); const t0 = performance.now(), D = (reduced() ? 400 : 1600) * ANIM; let lastTick = -3;
       const roll = (now) => {
         const k = Math.min(1, (now - t0) / D), e = 1 - Math.pow(1 - k, 3), v = pct * e;
-        numEl.textContent = fmtPct(v) + (LANG === 'es' ? ' %' : '%');
+        numEl.textContent = (k < 1 ? fmtPct(v) : fmtRend(pct)) + '%';
         if (v - lastTick >= 3) { lastTick = v; sfx('tick'); }
         if (k < 1) requestAnimationFrame(roll);
         else {
@@ -825,7 +889,7 @@
     }
   }
   function shareText(rec, quick) {
-    const p = Math.round(rec.res.pct), sq = rec.res.planetas.map((q) => { const g = q.gane / rec.res.N * 100; return g >= 60 ? '🟩' : g >= 30 ? '🟨' : '🟥'; }).join('');
+    const p = fmtRend(rec.res.pct), sq = rec.res.planetas.map((q) => { const g = q.gane / rec.res.N * 100; return g >= 60 ? '🟩' : g >= 30 ? '🟨' : '🟥'; }).join('');
     const md = quick ? C.medalla(rec.res.pct, null) : medalOf(rec); const me = ['', ' 🥉', ' 🥈', ' 🥇', ' 🎖️'][md];
     if (quick) return 'JET//Frentes ⚔️\n' + t('shareQuick', { c: rec.code, p }) + me + '\n' + sq + '\nhttps://jetgames.fun/frentes/';
     const st = streakInfo().cur;
@@ -833,14 +897,27 @@
   }
   async function share(rec, quick) {
     const txt = shareText(rec, quick);
-    if (!quick) { rec.sh = 1; putRec(rec); }
+    // rec.sh se marca sólo cuando compartir o copiar realmente ocurrió (no al intentarlo)
+    const hecho = () => { if (!quick && !rec.sh) { rec.sh = 1; putRec(rec); } };
     const touch = matchMedia('(pointer:coarse)').matches;
-    if (navigator.share && touch) { try { await navigator.share({ text: txt }); return; } catch (e) { if (e && e.name === 'AbortError') return; } }
+    if (navigator.share && touch) { try { await navigator.share({ text: txt }); hecho(); return; } catch (e) { if (e && e.name === 'AbortError') return; } }
     let ok = false;
-    try { await navigator.clipboard.writeText(txt); ok = true; } catch (e) {
-      try { const ta = el('textarea'); ta.value = txt; ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select(); ok = document.execCommand('copy'); ta.remove(); } catch (e2) { ok = false; }
-    }
-    if (ok) { sfx('copy'); toast(t('copied')); } else { sfx('error'); toast(txt.split('\n').slice(0, 2).join(' · '), null, null, 5000); }
+    try { await navigator.clipboard.writeText(txt); ok = true; } catch (e) { ok = false; }
+    if (ok) { hecho(); sfx('copy'); toast(t('copied')); return; }
+    // Sin portapapeles: texto íntegro, seleccionable y persistente hasta que el jugador cierre; sin reevaluar ni reenviar nada.
+    const extra = () => { const ta = el('textarea', 'copiaMano'); ta.readOnly = true; ta.value = txt; ta.setAttribute('aria-label', t('share')); ta.rows = 5; return ta; };
+    message(() => t('share'), () => t('copyFailed'), [
+      { label: () => t('copyText'), pri: true, fn: null, keep: true },
+      { label: () => t('close') }
+    ], { extra, noCmd: true });
+    const bCopiar = $('msgB0');
+    if (bCopiar) bCopiar.onclick = async () => {
+      const ta = $('msgX').querySelector('textarea'); if (!ta) return; ta.focus(); ta.select(); let ok2 = false;
+      try { ok2 = document.execCommand('copy'); } catch (e) { ok2 = false; }
+      if (!ok2) { try { await navigator.clipboard.writeText(txt); ok2 = true; } catch (e) { ok2 = false; } }
+      if (ok2) { hecho(); sfx('copy'); toast(t('copied')); }
+    };
+    setTimeout(() => { const ta = $('msgX').querySelector('textarea'); if (ta) { ta.focus(); ta.select(); } }, 80);
   }
 
   // ---------- análisis ----------
@@ -853,11 +930,12 @@
     tools.push(mk('loadMine', () => { snapshot(); B.x = rec.x.slice(); updateBoard(); }));
     if (rec.mejor) tools.push(mk('loadBest', () => { snapshot(); B.x = rec.mejor.x.slice(); updateBoard(); }));
     closeAllOv();
+    const labKey = quick ? 'labBanner' : 'labDaily'; // práctica ≠ jugada oficial
     boardSetup({
       mode: 'lab', values: v, ships: 100, scale: 100, x: loadBest && rec.mejor ? rec.mejor.x : rec.x, allowReserve: true,
-      title: () => t('labBanner'), tools,
+      title: () => t(labKey), tools,
       launch: { label: () => t('close'), ready: () => true, go: () => { showResult(rec, { fresh: false, mode: quick ? 'quick' : 'daily' }); } },
-      banner: (bb) => { const d = el('div', 'bb-lab'); d.innerHTML = '<span>' + esc(t('labBanner')) + '</span><span>' + esc(t('labLive')) + ' <b class="grad" id="labPct">–</b></span>'; bb.appendChild(d); },
+      banner: (bb) => { const d = el('div', 'bb-lab'); d.innerHTML = '<span>' + esc(t(labKey)) + '</span><span>' + esc(t('labLive')) + ' <b class="grad" id="labPct">–</b></span>'; bb.appendChild(d); },
       onChange: labUpdate
     });
     setBase('board'); labUpdate();
@@ -869,7 +947,7 @@
     cancelAnimationFrame(labRaf);
     labRaf = requestAnimationFrame(() => {
       const L = G.lab, used = B.x.reduce((a, b) => a + b, 0), res = 100 - used;
-      const ev = C.evaluar(B.x, L.fleet, L.v); const e = $('labPct'); if (e) e.textContent = pctS(ev.pct, 1);
+      const ev = C.evaluar(B.x, L.fleet, L.v); const e = $('labPct'); if (e) e.textContent = fmtRend(ev.pct) + '%';
       if (!P.labHelp) { B.lanes.forEach((o) => { o.marg.textContent = ''; }); return; }
       const m = C.marginales(B.x.slice(), L.fleet, L.v, res);
       B.lanes.forEach((o, i) => {
@@ -891,7 +969,7 @@
     closeAllOv();
     boardSetup({
       mode: 'quick', values: v, ships: 100, scale: 100, intel: G.quick.info.intel,
-      title: () => t('roundCode', { c: 'R-' + code }),
+      title: () => t('quickPractice') + ' · ' + t('roundCode', { c: 'R-' + code }),
       launch: { label: () => t('launch'), missing: true, go: launchQuick },
       banner: null
     });
@@ -945,7 +1023,7 @@
     };
     const title = () => (done ? (sa > sb ? t('seriesWin') : t('seriesLose')) : r > 0 ? t('duelWin') : r < 0 ? t('duelLose') : t('duelTie'));
     if (r > 0) { A.result(true); } else A.result(false);
-    message(title, '', [{ label: () => (done || !s ? t('again') : t('next')), pri: true, fn: () => { if (done) G.duel.over = true; startDuel(G.duel.style); } }, { label: () => t('training'), fn: () => { goHome(); openTrain(); } }, { label: () => t('home'), fn: goHome }], { extra, hop: r > 0 ? 0.01 : 0 });
+    message(title, '', [{ label: () => (done || !s ? t('anotherDuel') : t('next')), pri: true, fn: () => { if (done) G.duel.over = true; startDuel(G.duel.style); } }, { label: () => t('training'), fn: () => { goHome(); openTrain(); } }, { label: () => t('home'), fn: goHome }], { extra, hop: r > 0 ? 0.01 : 0 });
   }
   function openTrain() {
     if (G.base === 'board') setBase('home');
@@ -1016,13 +1094,13 @@
       A.result(true); vib([10, 40, 10]);
       const btns = [];
       if (next && unlocked(next)) btns.push({ label: () => t('next'), pri: true, fn: () => startMission(next.id) });
-      btns.push({ label: () => t('again'), pri: !btns.length, fn: () => { closeSheet(); } });
+      btns.push({ label: () => t('repeat'), pri: !btns.length, fn: () => { closeSheet(); } });
       btns.push({ label: () => t('academy'), fn: () => { goHome(); openAcad(); } });
       message(() => t('missionWon'), () => (stars === 3 ? '' : t('starsHow', { a: m.star2, b: m.minShips })), btns, { extra, hop: 0.01 });
       if (!next) toast(t('allDone'), null, null, 4000);
     } else {
       s.fails[m.id] = (s.fails[m.id] || 0) + 1; acadSave(s); sfx('lose'); vib(25);
-      const btns = [{ label: () => t('again'), pri: true, fn: () => {} }];
+      const btns = [{ label: () => t('retry'), pri: true, fn: () => {} }];
       if (s.fails[m.id] >= 3) btns.push({ label: () => t('hint'), fn: () => { const T = m.values.reduce((a, b) => a + b, 0), hp = PN[B.ids[m.hintPlanet]]; message(() => t('hint'), () => t('hint1', { pl: hp }) + ' ' + t('hint2', { n: Math.floor(T / 2) + 1, t: T }), [{ label: () => t('ok'), pri: true }]); } });
       btns.push({ label: () => t('academy'), fn: () => { goHome(); openAcad(); } });
       message(() => t('missionLost'), () => t('missionLostSub'), btns, { extra });
@@ -1032,9 +1110,10 @@
 
   // ---------- tutorial ----------
   function bubble(bb, text, btn) {
-    const d = el('div', 'bubble'); d.innerHTML = '<canvas class="cmd"></canvas><div style="flex:1"><span class="kick">' + esc(t('tutStep', { n: G.tut.step })) + ' · ' + esc(t('commander')) + '</span><p></p></div>';
+    const d = el('div', 'bubble'); d.innerHTML = '<canvas class="cmd"></canvas><div style="flex:1"><span class="kick">' + esc(G.tut && G.tut.done ? t('tutCompleted') : t('tutStep', { n: G.tut.step })) + ' · ' + esc(t('commander')) + '</span><p></p></div>';
     d.querySelector('p').textContent = val(text); bb.appendChild(d);
-    if (btn) { const b = el('button', 'btn' + (btn.pri ? ' pri' : '')); b.textContent = val(btn.label); b.onclick = () => { sfx('click'); btn.fn(); }; d.appendChild(b); }
+    const btns = Array.isArray(btn) ? btn : (btn ? [btn] : []);
+    if (btns.length) { const w = el('div', 'bubble-btns'); btns.forEach((x) => { const b = el('button', 'btn' + (x.pri ? ' pri' : '')); b.textContent = val(x.label); b.onclick = () => { sfx('click'); x.fn(); }; w.appendChild(b); }); d.appendChild(w); }
     G.bubbleCv = d.querySelector('canvas');
   }
   function setBubble(text, btn) { const bb = $('bBanner'); bb.innerHTML = ''; bubble(bb, text, btn); if (G.tut) G.tut.bub = [text, btn]; }
@@ -1082,11 +1161,19 @@
   function tutLaunch3() {
     sfx('launch'); const rv = G.tut.rival, v = B.values; let a = 0, b = 0;
     runBattle({ kind: 'duel', rival: rv, onReveal: (i, won) => { if (won > 0) a += v[i]; else if (won < 0) b += v[i]; } }).then(() => {
+      if (!G.tut) return;
       const win = a > b; A.result(win); G.tut.done = true;
-      setBubble(() => (win ? t('t3win') : t('t3lose')) + t('t3end'), { label: () => t('goToday'), pri: true, fn: () => finishTutorial(true) });
+      // estado «Tutorial completado»: el despliegue terminó, no se puede relanzar ni saltar; destinos explícitos y separados
+      B.cfg.launch = null; updateLaunch(); $('toolsX').innerHTML = ''; $('bTitle').textContent = t('tutCompleted');
+      setBubble(() => (win ? t('t3win') : t('t3lose')) + t('t3end'), [
+        { label: () => t('todayFront'), pri: true, fn: () => finishTutorial(true) },
+        { label: () => t('practiceRound'), fn: () => { finishTutorial(false); startQuick(); } },
+        { label: () => t('home'), fn: () => finishTutorial(false) }
+      ]);
       B.locked = true; $('sBoard').classList.add('locked');
     });
   }
+  // «Ver el frente de hoy» sólo abre el informe del día; no confirma ni publica ninguna jugada.
   function finishTutorial(go) {
     LS.set('tutorial', { done: true }); G.tut = null; toast(t('tutDone'));
     if (go && C.frontNum(G.day) >= 1 && !(getRec(G.day) || {}).x) { goHome(); openBrief(false); } else goHome();
@@ -1109,7 +1196,7 @@
         .forEach(([v, l]) => s.appendChild(el('div', 'stat', '<b>' + esc(v) + '</b><span>' + esc(l) + '</span>')));
       recs.forEach((r) => {
         const b = el('button', 'hrow'); const md = medalOf(r);
-        b.innerHTML = '<span class="md">' + (['–', '🥉', '🥈', '🥇', '🎖️'][md]) + '</span><span class="d">#' + r.num + '<small>' + fmtDate(r.d) + '</small></span><span class="v">' + pctS(r.res.pct) + '<small>' + esc(t('attack')) + '</small></span><span class="v">' + (r.def && r.def.pct != null ? pctS(r.def.pct) : '–') + '<small>' + esc(t('defenseCol')) + '</small></span><canvas></canvas>';
+        b.innerHTML = '<span class="md">' + (['–', '🥉', '🥈', '🥇', '🎖️'][md]) + '</span><span class="d">#' + r.num + '<small>' + fmtDate(r.d) + '</small></span><span class="v">' + fmtRend(r.res.pct) + '%<small>' + esc(t('attack')) + '</small></span><span class="v">' + (r.def && r.def.pct != null ? fmtRend(r.def.pct) + '%' : '–') + '<small>' + esc(t('defenseCol')) + '</small></span><canvas></canvas>';
         b.onclick = () => { sfx('click'); showResult(r, { fresh: false }); };
         L.appendChild(b); requestAnimationFrame(() => R.miniBars(b.querySelector('canvas'), r.x, null, Math.max(...r.x)));
       });
@@ -1144,14 +1231,16 @@
   function openSettings() { renderSettings(); openOv('sSet'); }
   function applyAudioPrefs() { A.setMusic(P.music, P.musicVol); A.setSfx(P.sfx, P.sfxVol); }
   function applyReduced() { R.reduced = reduced(); document.documentElement.classList.toggle('nomo', reduced()); }
-  let resetArm = 0;
   function resetProgress() {
-    const b = $('bReset');
-    if (!resetArm) { resetArm = setTimeout(() => { resetArm = 0; b.classList.remove('armed'); $('bResetT').textContent = t('resetAll'); }, 4000); b.classList.add('armed'); $('bResetT').textContent = t('resetSure'); sfx('warn'); return; }
-    clearTimeout(resetArm); resetArm = 0; b.classList.remove('armed'); $('bResetT').textContent = t('resetAll');
-    LS.keys().forEach((k) => { if (k !== 'id' && k !== 'prefs') LS.del(k); });
-    G.info = null; sfx('error'); closeAllOv(); goHome(); loadInfo(true);
-    message(() => t('resetDone'), '', [{ label: () => t('ok'), pri: true }], { noCmd: true });
+    sfx('warn');
+    message(() => t('resetTitle', { juego: 'JET//Frentes' }), () => t('resetBody', { 'datos concretos': t('resetData') }), [
+      { label: () => t('cancel'), pri: false },
+      { label: () => t('resetAll'), cls: 'danger', fn: () => {
+        LS.keys().forEach((k) => { if (k !== 'id' && k !== 'prefs') LS.del(k); }); // idioma y audio no se prometen: se conservan
+        G.info = null; sfx('error'); closeAllOv(); goHome(); loadInfo(true);
+        message(() => t('resetDone'), '', [{ label: () => t('ok'), pri: true }], { noCmd: true });
+      } }
+    ], { noCmd: true, alert: true, focoPrimero: true });
   }
 
   // ---------- pantalla completa ----------
@@ -1169,10 +1258,15 @@
   // ---------- pausa, foco y cambios de tamaño ----------
   function pauseGame(auto) {
     if (G.overlays.indexOf('sPause') >= 0) return;
-    G.paused = true; openOv('sPause'); if (!auto) sfx('back');
+    G.paused = true;
+    const enBatalla = !!(G.bt && !G.bt.done);
+    $('paNote').hidden = !enBatalla;
+    $('bPResult').hidden = !(enBatalla && G.bt.rec); // sólo si el resultado ya está calculado
+    openOv('sPause'); if (!auto) sfx('back');
   }
   function resumeGame() { G.paused = false; unlockAudio(); if (G.base === 'board') try { B.lanes[B.sel].el.focus({ preventScroll: true }); } catch (e) { /* nada */ } }
-  function goHome() { closeSheet(); closeAllOv(); G.bt = null; B.locked = false; $('sBoard').classList.remove('battle', 'locked'); B.mode = null; setBase('home'); }
+  // Salir de una partida cierra la pausa de verdad: la siguiente sesión arranca con el estado limpio.
+  function goHome() { closeSheet({ sinFoco: true }); closeAllOv(); G.paused = false; G.bt = null; B.locked = false; $('sBoard').classList.remove('battle', 'locked'); B.mode = null; setBase('home'); }
   function newDaySheet() {
     const old = G.day; const nd = today(); const rec = getRec(old);
     G.day = nd; G.info = null; loadInfo(true);
@@ -1209,7 +1303,9 @@
   document.addEventListener('keydown', (e) => {
     const k = e.key, mod = e.ctrlKey || e.metaKey;
     if (G.sheet === 'shKeypad') { if (/^\d$/.test(k)) { kpKey(k); e.preventDefault(); } else if (k === 'Backspace') { kpKey('⌫'); e.preventDefault(); } else if (k === 'Enter') { kpOk(); e.preventDefault(); } else if (k === 'Escape') { kp = null; closeSheet(); } return; }
-    if (G.sheet) { if (k === 'Escape') closeSheet(); else if (k === 'Enter' && G.sheet === 'shConfirm' && document.activeElement && document.activeElement.id !== 'bCfNo') { e.preventDefault(); confirmLaunch(); } return; }
+    if (G.sheet) { if (k === 'Escape') closeSheet(); return; }
+    const enBoton = e.target && e.target.closest && e.target.closest('button,a[href],summary,[role="button"],[role="switch"],input,textarea,select');
+    if ((k === 'Enter' || k === ' ') && enBoton) return;
     if (k === 'Escape' || (k === 'p' || k === 'P') && !mod) {
       if (G.overlays.length) { if (topOv() === 'sPause') closeOv('sPause'); else if (topOv() !== 'sHome') { sfx('back'); closeOv(); } return; }
       if (G.base === 'board') { pauseGame(); return; }
@@ -1218,6 +1314,7 @@
     if (topOv() === 'sHelp') { if (k === 'ArrowRight') helpGo(1); if (k === 'ArrowLeft') helpGo(-1); return; }
     if (G.overlays.length || G.base !== 'board') return;
     if (G.bt) { if (k === ' ' || k === 'Enter') { e.preventDefault(); speedUp(); } return; }
+    if (e.target && e.target.closest && e.target.closest('input,textarea,select')) return;
     if (B.locked) return;
     const p = B.sel;
     if (/^[1-5]$/.test(k) && +k <= B.n && !G.typing) { selectLane(+k - 1); e.preventDefault(); return; }
@@ -1249,6 +1346,8 @@
   $('sBoard').addEventListener('pointerdown', (e) => { if (G.bt && !G.bt.done && !e.target.closest('#topR')) speedUp(); });
   $('sheetBg').addEventListener('click', () => { if (G.sheet === 'shKeypad') kp = null; closeSheet(); });
   on('bResume', () => closeOv('sPause')); on('bPHelp', openHelp); on('bPSet', openSettings); on('bPMenu', () => { flushSaves(); goHome(); });
+  // «Ver resultado»: acelera la animación hasta el final con la evaluación ya calculada; no fabrica resultados.
+  on('bPResult', () => { if (G.bt && !G.bt.done && G.bt.rec) G.bt.speed = 60; closeOv('sPause'); });
   on('bQuick', () => startQuick()); on('tSeries', () => { $('tSeries').classList.toggle('on'); $('tSeries').setAttribute('aria-checked', $('tSeries').classList.contains('on')); }, 'toggle');
   on('bHePrev', () => helpGo(-1), false); on('bHeNext', () => helpGo(1), false);
   on('bTutAgain', () => { closeAllOv(); startTutorial(1); });
@@ -1282,7 +1381,6 @@
     if (G.overlays.indexOf('sHist') >= 0) renderHist();
     if (G.overlays.indexOf('sHelp') >= 0) { const h0 = helpT0; renderHelp(); helpT0 = h0; }
     if (G.overlays.indexOf('sSet') >= 0) renderSettings();
-    if (resetArm) $('bResetT').textContent = t('resetSure');
     if (G.sheet === 'shMsg' && G.msgPaint) G.msgPaint(true);
     if (G.sheet === 'shKeypad' && kp) { $('kpT').textContent = t('keypadT', { pl: PN[B.ids[kp.p]] }); $('kpMax').textContent = t('keypadMax', { n: kp.max }); }
   }
@@ -1331,6 +1429,7 @@
       else if (ui.s === 'tut') startTutorial(ui.step || 1);
     }
     if (TEST) { const acc = ACAD.map((m) => C.resolverMision(m, 1)); window.FRENTES.academiaOK = acc.every((r, i) => r.count > 0 && r.min === ACAD[i].minShips); }
+    if (window.__frCargaLista) window.__frCargaLista();
     if (DEMO) demo();
   }
   // captura para la portada (?demo): planetas con enjambres cian y la nube rosa a medio revelar

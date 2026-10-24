@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>JET//Frentes · Vence a la flota de ayer</title>
 <meta name="description" content="Reparte 100 naves entre 5 planetas y vence a la flota de ayer. Un reto diario de estrategia para teléfono, tablet y computadora.">
 <meta name="theme-color" content="#050108">
@@ -18,7 +18,19 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <script src="src/jet-idioma.js?v=1"></script>
-<link rel="stylesheet" href="src/ui.css?v=7">
+<link rel="stylesheet" href="src/ui.css?v=8">
+<style>
+/* Estado de carga (SRC-G05): título y estado visibles antes del JS; error recuperable sin botones vacíos. */
+#carga{position:fixed;inset:0;z-index:4;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:24px;background:#050108;color:#f5f0ff;font-family:Poppins,system-ui,sans-serif;text-align:center}
+#carga .cargaTit{margin:0;font-weight:900;font-size:clamp(28px,8vw,44px);letter-spacing:-.03em}
+#carga .cargaTit i{font-style:normal;color:#00f2cf}
+#carga p{margin:0;font-size:15px;color:#b5a8d8;max-width:420px;line-height:1.5}
+#carga .cargaAcc{display:flex;flex-direction:column;align-items:center;gap:12px;margin-top:16px;width:min(100%,260px)}
+#carga .cargaAcc[hidden]{display:none}
+#carga .cargaAcc button,#carga .cargaAcc a{width:100%;min-height:48px;display:inline-flex;align-items:center;justify-content:center;border-radius:14px;font:600 16px Poppins,system-ui,sans-serif;color:#fff;text-decoration:none;cursor:pointer}
+#carga .cargaAcc button{border:0;background:linear-gradient(135deg,#7700f4,#00f2cf)}
+#carga .cargaAcc a{border:1px solid rgba(245,240,255,.3);background:rgba(255,255,255,.05)}
+</style>
 </head>
 <body>
 <a id="back" href="https://jetgames.fun/" target="_top" rel="noopener" data-ta="back">‹ JET<i>//</i>Games</a>
@@ -29,6 +41,22 @@
  <button class="ib" id="bGear" data-ta="settingsBtn"><svg viewBox="0 0 24 24"><path d="M10.3 2.6h3.4l.5 2.6a7.4 7.4 0 0 1 1.9 1.1l2.5-.9 1.7 2.9-2 1.8a7.6 7.6 0 0 1 0 2.2l2 1.8-1.7 2.9-2.5-.9a7.4 7.4 0 0 1-1.9 1.1l-.5 2.6h-3.4l-.5-2.6a7.4 7.4 0 0 1-1.9-1.1l-2.5.9-1.7-2.9 2-1.8a7.6 7.6 0 0 1 0-2.2l-2-1.8 1.7-2.9 2.5.9a7.4 7.4 0 0 1 1.9-1.1z"/><circle cx="12" cy="12" r="3"/></svg></button>
 </div>
 <div id="banner" role="status"></div>
+<div id="carga" role="status" aria-live="polite"><p class="cargaTit">JET<i>//</i>Frentes</p><p id="cargaMsg">Cargando JET//Frentes…</p><div class="cargaAcc" id="cargaAcc" hidden><button type="button" id="cargaReint">Volver a cargar</button><a id="cargaVolver" href="https://jetgames.fun/">Volver a los juegos</a></div></div>
+<script>
+(function () {
+  var en = !!(window.JETIdioma && JETIdioma.get() === 'en');
+  var T = en ? { c: 'Loading JET//Frentes…', e: 'Loading was interrupted. You can try again.', n: 'We couldn’t download all resources.', r: 'Reload game', v: 'Back to games' }
+             : { c: 'Cargando JET//Frentes…', e: 'La carga se interrumpió. Puedes volver a intentarlo.', n: 'No pudimos descargar todos los recursos.', r: 'Volver a cargar', v: 'Volver a los juegos' };
+  var m = document.getElementById('cargaMsg'), a = document.getElementById('cargaAcc'), b = document.getElementById('cargaReint'), v = document.getElementById('cargaVolver');
+  m.textContent = T.c; b.textContent = T.r; v.textContent = T.v; v.href = 'https://jetgames.fun/?lang=' + (en ? 'en' : 'es');
+  var listo = false, fallo = false;
+  function error(red) { if (listo || fallo) return; fallo = true; m.textContent = red ? T.n : T.e; a.hidden = false; b.focus(); }
+  b.onclick = function () { location.reload(); };
+  window.addEventListener('error', function (e) { if (listo) return; var t = e && e.target; if (t && t !== window && t.tagName !== 'SCRIPT') return; error(!!(t && t.tagName === 'SCRIPT')); }, true);
+  var tm = setTimeout(function () { error(false); }, 12000);
+  window.__frCargaLista = function () { listo = true; clearTimeout(tm); var c = document.getElementById('carga'); if (c) c.remove(); };
+})();
+</script>
 
 <!-- INICIO -->
 <section class="scr home" id="sHome" aria-labelledby="hLogo">
@@ -67,6 +95,7 @@
    <div class="resv" id="resv">
     <div class="resv-top"><span class="kick" data-t="reserve"></span><b id="resvN">100</b></div>
     <div class="resv-bar"><i id="resvFill"></i></div>
+    <div class="resv-tot" id="resvTot"></div>
    </div>
    <div class="tools">
     <button class="ib sm" id="bUndo" data-ta="undo"><svg viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H10"/></svg></button>
@@ -81,7 +110,7 @@
 </section>
 
 <!-- INFORME DEL DÍA -->
-<section class="scr" id="sBrief" aria-labelledby="brT">
+<section class="scr" id="sBrief" role="dialog" aria-modal="true" aria-labelledby="brT">
  <div class="card wide">
   <div class="kick" data-t="briefKick"></div>
   <div class="top"><h2 id="brT"></h2><button class="x" data-close data-ta="close" aria-label="Cerrar">✕</button></div>
@@ -94,15 +123,17 @@
 </section>
 
 <!-- RESULTADO -->
-<section class="scr" id="sResult" aria-labelledby="rsHead">
+<section class="scr" id="sResult" role="dialog" aria-modal="true" aria-labelledby="rsHead">
  <div class="card wide res">
   <div class="kick" id="rsKick"></div>
   <div class="rs-cd" id="rsCd"></div>
   <div class="rs-top"><canvas class="cmd big" id="rsCmd"></canvas><h2 class="rs-head" id="rsHead"></h2></div>
   <div class="rs-wdl" id="rsWdl"></div>
+  <div class="rs-rule" id="rsRule"></div>
   <div class="rs-note" id="rsNote"></div>
   <div class="rs-badges" id="rsBadges"></div>
   <div class="kick sec" data-t="planetsDetail"></div>
+  <div class="rs-ley" id="rsLey"></div>
   <div class="rs-planets" id="rsPlanets"></div>
   <div class="rs-best" id="rsBest"></div>
   <p class="rs-def" id="rsDef"></p>
@@ -111,7 +142,7 @@
 </section>
 
 <!-- ACADEMIA -->
-<section class="scr" id="sAcad" aria-labelledby="acT">
+<section class="scr" id="sAcad" role="dialog" aria-modal="true" aria-labelledby="acT">
  <div class="card wide">
   <div class="top"><h2 id="acT" data-t="academy"></h2><span class="chip" id="acStars"></span><button class="x" data-close data-ta="close" aria-label="Cerrar">✕</button></div>
   <div id="acList"></div>
@@ -119,7 +150,7 @@
 </section>
 
 <!-- ENTRENAMIENTO -->
-<section class="scr" id="sTrain" aria-labelledby="trT">
+<section class="scr" id="sTrain" role="dialog" aria-modal="true" aria-labelledby="trT">
  <div class="card">
   <div class="top"><h2 id="trT" data-t="training"></h2><button class="x" data-close data-ta="close" aria-label="Cerrar">✕</button></div>
   <p class="sub2" data-t="trainSub"></p>
@@ -132,7 +163,7 @@
 </section>
 
 <!-- HISTORIAL -->
-<section class="scr" id="sHist" aria-labelledby="hiT">
+<section class="scr" id="sHist" role="dialog" aria-modal="true" aria-labelledby="hiT">
  <div class="card wide">
   <div class="top"><h2 id="hiT" data-t="history"></h2><button class="x" data-close data-ta="close" aria-label="Cerrar">✕</button></div>
   <div class="stats" id="hiStats"></div>
@@ -141,7 +172,7 @@
 </section>
 
 <!-- CÓMO JUGAR -->
-<section class="scr" id="sHelp" aria-labelledby="heT">
+<section class="scr" id="sHelp" role="dialog" aria-modal="true" aria-labelledby="heT">
  <div class="card wide">
   <div class="top"><h2 id="heT" data-t="howTo"></h2><button class="x" data-close data-ta="close" aria-label="Cerrar">✕</button></div>
   <div class="slides" id="heSlides"><canvas id="helpCv"></canvas><p class="slide-t" id="heText"></p></div>
@@ -151,7 +182,7 @@
 </section>
 
 <!-- AJUSTES -->
-<section class="scr" id="sSet" aria-labelledby="seT">
+<section class="scr" id="sSet" role="dialog" aria-modal="true" aria-labelledby="seT">
  <div class="card">
   <div class="top"><h2 id="seT" data-t="settings"></h2><button class="x" data-close data-ta="close" aria-label="Cerrar">✕</button></div>
   <div class="set"><label for="rMus" data-t="music"></label><input type="range" id="rMus" min="0" max="100"><button class="tog" id="tMus" role="switch" data-ta="music"></button></div>
@@ -168,10 +199,12 @@
 </section>
 
 <!-- PAUSA -->
-<section class="scr" id="sPause" aria-labelledby="paT">
+<section class="scr" id="sPause" role="dialog" aria-modal="true" aria-labelledby="paT">
  <div class="card">
   <h2 class="ctitle" id="paT" data-t="pause"></h2>
+  <p class="sub2" id="paNote" hidden data-t="animPaused" style="text-align:center"></p>
   <button class="btn pri" id="bResume"><span data-t="resume"></span></button>
+  <button class="btn" id="bPResult" hidden><span data-t="viewResult"></span></button>
   <div class="row"><button class="btn" id="bPHelp"><span data-t="howTo"></span></button><button class="btn" id="bPSet"><span data-t="settings"></span></button></div>
   <button class="btn" id="bPMenu"><span data-t="toMenu"></span></button>
  </div>
@@ -179,19 +212,19 @@
 
 <!-- HOJAS INFERIORES -->
 <div class="sheet-bg" id="sheetBg"></div>
-<section class="sheet" id="shConfirm" aria-labelledby="cfT">
+<section class="sheet" id="shConfirm" role="alertdialog" aria-modal="true" aria-labelledby="cfT" hidden inert>
  <h3 id="cfT" data-t="confirmT"></h3><p id="cfQ" data-t="confirmQ"></p>
  <div class="cf-mini" id="cfMini"></div>
  <button class="btn pri big" id="bCfGo"><span data-t="launch"></span></button>
  <button class="btn" id="bCfNo"><span data-t="keepAdjusting"></span></button>
 </section>
-<section class="sheet" id="shKeypad" aria-labelledby="kpT">
+<section class="sheet" id="shKeypad" role="dialog" aria-modal="true" aria-labelledby="kpT" hidden inert>
  <div class="top"><h3 id="kpT"></h3><span class="chip" id="kpMax"></span></div>
  <div class="kp-val" id="kpVal">0</div>
  <div class="kp" id="kpKeys"></div>
  <div class="row"><button class="btn" id="bKpNo"><span data-t="cancel"></span></button><button class="btn pri" id="bKpOk"><span data-t="ok"></span></button></div>
 </section>
-<section class="sheet" id="shMsg" aria-live="polite">
+<section class="sheet" id="shMsg" role="dialog" aria-modal="true" aria-labelledby="msgT" hidden inert>
  <div class="msg-top"><canvas class="cmd" id="msgCmd"></canvas><div><h3 id="msgT"></h3><p id="msgP"></p></div></div>
  <div class="msg-extra" id="msgX"></div>
  <div class="msg-btns" id="msgB"></div>
@@ -200,12 +233,12 @@
 <div id="toast" role="status" aria-live="polite"></div>
 <div id="flash"></div>
 <noscript><p style="color:#fff;text-align:center;padding:40px">JET//Frentes necesita JavaScript. · JET//Frentes needs JavaScript.</p></noscript>
-<script src="src/i18n.js?v=7"></script>
+<script src="src/i18n.js?v=8"></script>
 <script src="src/core.js?v=3"></script>
 <script src="src/academia.js?v=3"></script>
 <script src="src/astronauta-oficial.js?v=2"></script>
-<script src="src/render.js?v=3"></script>
+<script src="src/render.js?v=4"></script>
 <script src="src/audio.js?v=3"></script>
-<script src="src/game.js?v=8"></script>
+<script src="src/game.js?v=9"></script>
 </body>
 </html>

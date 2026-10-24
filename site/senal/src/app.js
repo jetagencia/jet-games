@@ -27,7 +27,7 @@
   const reducidoSO = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
   // El idioma es el de todo jetgames.fun (src/jet-idioma.js): ?lang > cookie jet_lang / localStorage > navegador.
   const JI = window.JETIdioma;
-  const aj = Object.assign({ musica: true, volMusica: 0.7, efectos: true, volEfectos: 0.8, vibracion: true, letras: false, movReducido: reducidoSO }, st.get('ajustes', {}));
+  const aj = Object.assign({ musica: true, volMusica: 0.7, efectos: true, volEfectos: 0.8, vibracion: true, letras: false, movReducido: reducidoSO, atajos: false }, st.get('ajustes', {}));
   if ('idioma' in aj) {
     // Migración única: el idioma que el juego guardaba por su cuenta pasa a la elección común,
     // salvo que ya haya una elección del sitio (cookie o localStorage) o un ?lang en la dirección.
@@ -44,7 +44,7 @@
     if (s == null) s = TT.es[k];
     if (s == null) return k;
     if (vars && vars.p != null && vars.pw == null) vars = Object.assign({ pw: TT[lang()][vars.p === 1 ? 'pulsoS' : 'pulsoP'] }, vars);
-    if (typeof s === 'string' && vars) s = s.replace(/\{(\w+)\}/g, (m, x) => vars[x] != null ? vars[x] : m);
+    if (typeof s === 'string' && vars) s = s.replace(/\{([^{}]+)\}/g, (m, x) => vars[x] != null ? vars[x] : m);
     return s;
   }
   const marcado = s => esc(s).replace(/\u0001/g, '<b>').replace(/\u0002/g, '</b>');
@@ -66,6 +66,10 @@
       if (el && el.paleta && el.paleta.children.length) { renderPaleta(); renderBandeja(); renderRegistro(); }
     }
     document.body.classList.toggle('reducido', !!aj.movReducido);
+    // PLAY-SENAL-05: ayuda compacta junto a la bandeja + tecla visible sobre cada pieza
+    document.body.classList.toggle('atajos-on', !!aj.atajos);
+    if (el && el.btnAtajos) { el.btnAtajos.setAttribute('aria-expanded', aj.atajos ? 'true' : 'false'); el.btnAtajos.classList.toggle('on', !!aj.atajos); }
+    if (el && el.ayudaBand) el.ayudaBand.hidden = !aj.atajos;
     A.prefs({ musica: aj.musica, volMusica: aj.volMusica, efectos: aj.efectos, volEfectos: aj.volEfectos });
   }
   const vibrar = p => { if (aj.vibracion && navigator.vibrate) try { navigator.vibrate(p); } catch (e) { /* nada */ } };
@@ -175,7 +179,8 @@
   // ---------- partida ----------
   let partida = null, fnSecreta = null, codeSecreta = null;
   const enviadas = p => p.registro.filter(e => e.t === 'e').length;
-  const pulsosDe = p => enviadas(p) + 2 * p.fallos;
+  const COSTO_FALLO = 2; // pulsos que suma una comprobación de regla rechazada (regla vigente, no se modifica)
+  const pulsosDe = p => enviadas(p) + COSTO_FALLO * p.fallos;
   const claveDe = p => p.modo === 'practica' ? 'practica' : p.modo === 'tutorial' ? 'tutorial' : 'diario:' + p.fecha;
   function crearPartida(o) {
     return {
@@ -202,7 +207,8 @@
     toast: $('#toast'), hudN: $('#hudN'), hudTitulo: $('#hudTitulo'), hudDelta: $('#hudDelta'), btnEnviar: $('#btnEnviar'), btnFormular: $('#btnFormular'),
     btnVaciar: $('#btnVaciar'), btnPausa: $('#btnPausa'), btnFs: $('#btnFs'), btnAjustes: $('#btnAjustes'), menuTarj: $('#menuTarj'),
     globo: $('#globo'), globoTxt: $('#globoTxt'), globoBtn: $('#globoBtn'), saltar: $('#btnSaltarTut'), vuelo: $('#vuelo'), vivo: $('#sondaVivo'),
-    zSonda: $('#zSonda'), cvResAstro: $('#cvResAstro')
+    zSonda: $('#zSonda'), cvResAstro: $('#cvResAstro'), btnAtajos: $('#btnAtajos'), ayudaBand: $('#ayudaBand'), hudLbl: $('#hudLbl'), hudTotal: $('#hudTotal'), hudR: $('#hudR'),
+    back: $('#back'), barraDer: $('#barraDer')
   };
 
   let pantalla = 'inicio', ocupado = false, panelAbierto = false;
@@ -237,16 +243,20 @@
       pal = clamp(Math.floor((disp - 5 * gp) / 6), 40, Math.min(66, Math.floor(H * 0.085)));
       slot = clamp(Math.floor((disp - 4 * gp - 14) / 5), 44, Math.min(68, Math.floor(H * 0.09)));
       mini = clamp(Math.floor((W / 2 - 58) / 5.4), 15, 28);
-      hS = panelAbierto ? 58 : clamp(Math.round(H * 0.16), 64, 170);
+      // PLAY-SENAL-01: la Sonda decorativa cede altura a las tarjetas de muestras (antes 16 % / máx. 170 px)
+      hS = panelAbierto ? 58 : clamp(Math.round(H * 0.14), 64, 140);
     } else {
       const hAv = H - 72;
       pal = clamp(Math.floor(Math.min((hAv - 5 * gp) / 6, (W * 0.3 - 2 * gp) / 3)), 38, W > 1200 ? 84 : 72);
       slot = clamp(Math.floor((W * 0.32 - 4 * gp - 16) / 5), 40, 72);
       mini = clamp(Math.floor((W * 0.38 / 2 - 58) / 5.4), 15, W >= 1200 && H >= 700 ? 34 : 28);
-      hS = panelAbierto ? 52 : clamp(Math.round(H * 0.16), 56, 120);
+      hS = panelAbierto ? 52 : clamp(Math.round(H * 0.13), 56, 100);
     }
     root.setProperty('--pal', pal + 'px'); root.setProperty('--slot', slot + 'px'); root.setProperty('--mini', mini + 'px');
     root.setProperty('--gp', gp + 'px'); root.setProperty('--hSonda', hS + 'px');
+    // VIS-SENAL-01: con miniaturas de hasta 28 px se usa la variante de detalle de los símbolos
+    const chico = mini <= 28;
+    if (chico !== miniChico) { miniChico = chico; if (partida && el.listaA.children.length) renderRegistro(); }
     // paleta: vertical 6×3 (filas = color), horizontal 3×6 (columnas = color)
     for (const b of el.paleta.children) {
       const id = +b.dataset.id, f = R.PF[id], c = R.PC[id], tm = R.PT[id], k = f * 2 + tm;
@@ -257,7 +267,7 @@
     cajaIni = null;
     if (pantalla === 'inicio') dibujarFondo(true);
   }
-  let rafLayout = 0;
+  let rafLayout = 0, miniChico = true;
   const pedirLayout = () => { cancelAnimationFrame(rafLayout); rafLayout = requestAnimationFrame(layout); };
 
   // ---------- paleta ----------
@@ -280,10 +290,13 @@
     let h = '';
     for (let i = 0; i < 5; i++) {
       const id = b[i];
-      const lleno = id != null;
-      h += '<button class="ranura' + (lleno ? ' llena' : '') + (partida.sel === i && lleno ? ' sel' : '') + '" type="button" data-i="' + i + '" aria-label="' + (i + 1) + ': ' + (lleno ? esc(P.nombre(id, lang(), TT[lang()])) : t('vacia')) + '">' + (lleno ? P.svg(id) : '<span class="idx">' + (i + 1) + '</span>') + '</button>';
+      const lleno = id != null, sel = partida.sel === i && lleno;
+      // PLAY-SENAL-05 / VIS-SENAL-03: nombre accesible de acción por casilla; número de posición siempre visible en cápsula
+      const d = lleno ? P.nombre(id, lang(), TT[lang()]) : '';
+      const aria = lleno ? t(sel ? 'ranuraSel' : 'ranuraLlena', { i: i + 1, d }) : t('ranuraVacia', { i: i + 1 });
+      h += '<button class="ranura' + (lleno ? ' llena' : '') + (sel ? ' sel' : '') + '" type="button" data-i="' + i + '" aria-label="' + esc(aria) + '"' + (lleno ? ' aria-pressed="' + sel + '"' : '') + '>' + (lleno ? P.svg(id) : '') + '<span class="idx" aria-hidden="true">' + (i + 1) + '</span></button>';
     }
-    if (!b.length) h += '<div class="band-hint">' + esc(t('bandejaVacia')) + '</div>';
+    if (!b.length) h += '<div class="band-hint">' + esc(t('armaMuestra')) + '</div>';
     el.bandeja.innerHTML = h;
     el.btnEnviar.classList.toggle('off', !b.length);
     el.btnEnviar.setAttribute('aria-disabled', b.length ? 'false' : 'true');
@@ -345,6 +358,8 @@
     partida.bandeja = []; partida.sel = -1; A.sfx('quitar'); cambioBandeja(null);
   }
   const jugable = () => partida && partida.estado === 'jugando' && pantalla === 'juego' && !ocupado && el.velo.hidden;
+  // VIS-SENAL-02/04: el contraejemplo recién recibido queda resaltado de forma estática hasta la siguiente acción
+  const limpiarContra = () => $$('.tarj.nuevo-contra').forEach(n => n.classList.remove('nuevo-contra'));
 
   // vuelo de una pieza (180 ms)
   function volar(origen, destino, id) {
@@ -431,15 +446,19 @@
   }, true);
 
   // ---------- registro ----------
-  function filaHTML(ids) { return ids.map(id => P.svg(id)).join(''); }
+  // filaHTML(ids, mini): la variante mini (VIS-SENAL-01) se usa en registro, ejemplos y resultado, donde el render es <= 28 px
+  function filaHTML(ids, mini) { return ids.map(id => (mini ? P.svgMini(id) : P.svg(id))).join(''); }
   function tarjHTML(e, i, marcas) {
-    let cls = 'tarj' + (e.t === 'r' ? ' regalo' : '');
-    let marca = '';
+    let cls = 'tarj' + (e.t === 'r' ? ' regalo' : '') + (e.t === 'c' ? ' contra' : '');
+    // VIS-SENAL-02: tres columnas estables (índice · secuencia · veredicto); la caja del veredicto existe siempre
+    let marca = '<span class="marca" aria-hidden="true"></span>';
     if (marcas) { const ok = marcas[i]; marca = '<span class="marca ' + (ok ? 'si' : 'no') + '">' + (ok ? '✓' : '✗') + '</span>'; if (!ok) cls += ' contra-d'; }
-    const lbl = (e.t === 'r' ? t('regalo') : e.t === 'c' ? t('contraejemplo') : t('enviada', { i: i + 1 })) + ': ' + e.p.map(id => P.nombre(id, lang(), TT[lang()])).join(', ');
-    return '<div class="' + cls + '" data-i="' + i + '" role="button" tabindex="-1" aria-label="' + esc(lbl) + '"><span class="num">#' + (i + 1) + '</span><span class="fila">' + filaHTML(e.p) + '</span>' + (e.t === 'c' ? '<span class="rombo" aria-hidden="true">◆</span>' : '') + marca + '</div>';
+    // PLAY-SENAL-03: los ejemplos de regalo se rotulan «Ejemplo inicial» (visible y accesible) y conservan su número único
+    const tipo = e.t === 'r' ? t('ejemploInicial') : e.t === 'c' ? t('contraejemplo') : t('enviada', { i: i + 1 });
+    const lbl = '#' + (i + 1) + ' · ' + tipo + ': ' + e.p.map(id => P.nombre(id, lang(), TT[lang()])).join(', ');
+    return '<div class="' + cls + '" data-i="' + i + '" role="button" tabindex="-1" aria-label="' + esc(lbl) + '"><span class="num">#' + (i + 1) + '</span><span class="fila">' + filaHTML(e.p, miniChico) + (e.t === 'r' ? '<span class="etq" aria-hidden="true">' + esc(t('ejemploInicial')) + '</span>' : '') + '</span>' + (e.t === 'c' ? '<span class="rombo" aria-hidden="true">◆</span>' : '') + marca + '</div>';
   }
-  let marcasCoh = null;
+  let marcasCoh = null, tNueva = 0;
   function renderRegistro(nuevo) {
     if (!partida) return;
     const reg = partida.registro;
@@ -451,7 +470,8 @@
     el.listaA.innerHTML = ha; el.listaR.innerHTML = hr;
     el.cntA.textContent = na; el.cntR.textContent = nr;
     if (nuevo != null) {
-      const n = tarjetaDe(nuevo); if (n) { n.classList.add('entra'); const lista = n.parentElement; if (lista) lista.scrollTop = 0; }
+      // VIS-SENAL-02/04: inserción de 220 ms (<= 6 px) y marca lateral de 2 px durante 700 ms
+      const n = tarjetaDe(nuevo); if (n) { n.classList.add('entra', 'nueva'); const lista = n.parentElement; if (lista) lista.scrollTop = 0; clearTimeout(tNueva); tNueva = setTimeout(() => n.classList.remove('nueva'), 700); }
     }
     actualizarHud();
   }
@@ -463,6 +483,10 @@
       el.hudN.textContent = n;
       if (animar !== false) { el.hudN.classList.remove('gira'); void el.hudN.offsetWidth; el.hudN.classList.add('gira'); }
     }
+    // PLAY-SENAL-03: «Pruebas enviadas: {n}» (sin contar ejemplos iniciales ni contraejemplos) y «Muestras analizadas: {n}» (todo el registro)
+    el.hudLbl.textContent = t('pruebasEnviadas', { n: '' }).replace(/\s+$/, '');
+    el.hudTotal.textContent = t('muestrasAnalizadas', { n: partida.registro.length });
+    el.hudR.setAttribute('aria-label', t('pruebasEnviadas', { n }) + ' · ' + t('muestrasAnalizadas', { n: partida.registro.length }));
     let tit;
     if (partida.modo === 'tutorial') tit = t('tutorialN', { i: (partida.tut || 0) + 1 });
     else if (partida.modo === 'practica') tit = t('practicaR', { r: partida.rangoAntes || rango() });
@@ -531,7 +555,7 @@
     const e = partida.registro[i]; if (!e) return;
     const est = e.a ? '<span style="color:var(--cyan)">✓ ' + esc(t('aceptadas')) + '</span>' : '<span style="color:#ff8fa3">✗ ' + esc(t('rechazadas')) + '</span>';
     abrirModal('<div class="m-top"><h2>#' + (i + 1) + (e.t === 'c' ? ' ◆' : '') + '</h2><button class="x" type="button" data-cerrar aria-label="' + esc(t('cerrar')) + '">✕</button></div>' +
-      '<p class="kick" style="text-align:center">' + est + (e.t === 'r' ? ' · ' + esc(t('regalo')) : e.t === 'c' ? ' · ' + esc(t('contraejemplo')) : '') + '</p>' +
+      '<p class="kick" style="text-align:center">' + est + (e.t === 'r' ? ' · ' + esc(t('ejemploInicial')) : e.t === 'c' ? ' · ' + esc(t('contraejemplo')) : '') + '</p>' +
       '<div class="grande-fila">' + filaHTML(e.p) + '</div><p class="grande-nombres">' + e.p.map(id => esc(P.nombre(id, lang(), TT[lang()]))).join(' · ') + '</p>' +
       '<div class="m-btns" style="margin-top:14px">' + (partida.estado === 'jugando' && !panelAbierto ? '<button class="btn-pri" type="button" data-copiar="' + i + '">' + esc(partida.bandeja.length ? t('reemplazar') : t('copiar')) + '</button>' : '') + '</div>', { volver: 'juego' });
     const b = el.modal.querySelector('[data-copiar]');
@@ -549,6 +573,7 @@
       const n = tarjetaDe(dup); if (n) { n.scrollIntoView({ block: 'nearest' }); n.classList.remove('parpadea'); void n.offsetWidth; n.classList.add('parpadea'); }
       A.sfx('lleno'); toast(t('yaConoces')); return;
     }
+    limpiarContra();
     ocupado = true; partida.sel = -1;
     const acepta = fnSecreta(ids, ids.length);
     if (!el.globo.hidden && !horiz) el.globo.classList.add('transparente');
@@ -652,7 +677,7 @@
     if (!jugable() || panelAbierto) return;
     if (!Tut.permite('formular')) return Tut.rechazo();
     if (!partida.borrador) partida.borrador = nuevoBorrador();
-    panelAbierto = true; cerrarMenuTarj();
+    panelAbierto = true; cerrarMenuTarj(); limpiarContra();
     el.juego.classList.add('formulando'); el.panel.hidden = false;
     A.sfx('panelAbre');
     renderPanel(); layout();
@@ -719,10 +744,13 @@
   }
   function moldesHTML(k) {
     const b = partida.borrador, fams = familiasPanel();
-    let s = '<div class="tabs" role="tablist">';
+    // PLAY-SENAL-02: lista de categorías con nombre, en dos filas si hace falta; las bloqueadas llevan aria-disabled y explican el requisito real
+    let s = '<div class="tabs" role="tablist" aria-label="' + esc(t('categoriasReglas')) + '">';
     for (const f of FAM_PANEL) {
       const ab = fams.includes(f);
-      s += '<button type="button" role="tab" class="tab' + (b.fam === f ? ' on' : '') + (ab ? '' : ' bloq') + '" data-fam="' + f + '" aria-selected="' + (b.fam === f) + '">' + (ab ? '' : '🔒 ') + esc(t('familias')[f]) + '</button>';
+      const req = (f === 'simetria' || f === 'combinadas') ? t('reqComb') : t('reqBase');
+      const bloq = ab ? '' : t('catBloqueada', { 'categoría': t('familias')[f], requisito: req });
+      s += '<button type="button" role="tab" class="tab' + (b.fam === f ? ' on' : '') + (ab ? '' : ' bloq') + '" data-fam="' + f + '" aria-selected="' + (b.fam === f) + '"' + (ab ? '' : ' aria-disabled="true" title="' + esc(bloq) + '" aria-label="' + esc(bloq) + '"') + '>' + (ab ? '' : '<span aria-hidden="true">🔒 </span>') + esc(t('familias')[f]) + '</button>';
     }
     s += '</div><div class="moldes">';
     const ab = fams.includes(b.fam);
@@ -732,7 +760,7 @@
       const lc = TT[lang()].letraChica[m];
       s += '<div class="molde' + (ab ? '' : ' bloq') + '" role="button" tabindex="0" data-m="' + m + '" data-k="' + k + '"><span class="fr">' + esc(t('moldeGen')[m]) + '</span>' +
         (lc && ab ? '<button type="button" class="info" data-info="' + m + '" aria-label="i">i</button>' : '<span></span>') +
-        (ab ? '<span class="ej"><span>' + esc(t('ejemplo', { r: R.texto(EJEMPLO[m], lang()) })) + '</span><span class="ok">✓<span class="mini">' + filaHTML(ej.si) + '</span></span><span class="no">✗<span class="mini">' + filaHTML(ej.no) + '</span></span></span>' : '<span class="lck">' + esc(b.fam === 'simetria' ? t('candadoComb') : t('candado')) + '</span>') +
+        (ab ? '<span class="ej"><span>' + esc(t('ejemplo', { r: R.texto(EJEMPLO[m], lang()) })) + '</span><span class="ok">✓<span class="mini">' + filaHTML(ej.si, true) + '</span></span><span class="no">✗<span class="mini">' + filaHTML(ej.no, true) + '</span></span></span>' : '<span class="lck">' + esc(b.fam === 'simetria' ? t('candadoComb') : t('candado')) + '</span>') +
         (b.info === m ? '<p class="letra-chica">' + esc(lc) + '</p>' : '') + '</div>';
     }
     return s + '</div>';
@@ -770,9 +798,10 @@
       if (!malos.length) { estado = partida.registro.length === 1 ? t('coherente1') : t('coherente', { m: partida.registro.length }); cls = 'ok'; puede = true; }
       else { estado = malos.length === 1 ? t('contradiceN', { i: malos[0] + 1 }) : t('contradice', { k: malos.length }) + ': ' + malos.slice(0, 4).map(i => '#' + (i + 1)).join(', ') + (malos.length > 4 ? '…' : ''); cls = 'mal'; }
     }
+    // SRC-SE01: la comprobación de la regla anuncia su costo real antes de actuar (COSTO_FALLO pulsos sólo si la Sonda la rechaza)
     el.panel.innerHTML = '<div class="pn-cab"><h3>' + esc(t('formular')) + '</h3><button class="x" type="button" data-cerrarpanel aria-label="' + esc(t('cerrar')) + '">✕</button></div>' +
       '<div class="pn-cuerpo">' + cuerpo + '</div>' +
-      '<div class="pn-pie"><p class="pn-estado ' + cls + '" aria-live="polite">' + esc(estado) + '</p><button type="button" class="btn-pri' + (puede ? '' : ' off') + '" data-transmitir aria-disabled="' + (!puede) + '">' + esc(t('transmitir')) + '</button></div>';
+      '<div class="pn-pie"><p class="pn-estado ' + cls + '" aria-live="polite">' + esc(estado) + (puede ? '<br><span class="pn-costo">' + esc(t('costoComprobar', { c: COSTO_FALLO })) + '</span>' : '') + '</p><button type="button" class="btn-pri' + (puede ? '' : ' off') + '" data-transmitir aria-disabled="' + (!puede) + '">' + esc(t('transmitir')) + '</button></div>';
     const antes = panelEstadoPrevio;
     panelEstadoPrevio = cls;
     if (cls === 'ok' && antes !== 'ok') A.sfx('coherente');
@@ -780,8 +809,9 @@
     if (cls === 'mal') {
       const i = coh.findIndex(ok => !ok); const n = tarjetaDe(i); if (n) n.scrollIntoView({ block: 'nearest', behavior: aj.movReducido ? 'auto' : 'smooth' });
     }
+    // PLAY-SENAL-02: desplazar lo mínimo para que la categoría activa quede completa (nearest), nunca llevarla a un extremo
     const tab = el.panel.querySelector('.tab.on');
-    if (tab) { const tabs = tab.parentElement; tabs.scrollLeft = Math.max(0, tab.offsetLeft - (tabs.clientWidth - tab.offsetWidth) / 2); }
+    if (tab) tab.scrollIntoView({ block: 'nearest', inline: 'nearest' });
     Tut.foco();
   }
   let panelEstadoPrevio = '';
@@ -796,7 +826,11 @@
       transmitir(); return;
     }
     if ((x = tg.closest('[data-info]'))) { e.stopPropagation(); b.info = b.info === x.dataset.info ? null : x.dataset.info; A.sfx('ui'); renderPanel(); return; }
-    if ((x = tg.closest('[data-fam]'))) { if (!Tut.permite('tab', x.dataset.fam)) return Tut.rechazo(); b.fam = x.dataset.fam; b.info = null; A.sfx('ui'); renderPanel(); return; }
+    if ((x = tg.closest('[data-fam]'))) {
+      if (!Tut.permite('tab', x.dataset.fam)) return Tut.rechazo();
+      if (x.getAttribute('aria-disabled') === 'true') { A.sfx('lleno'); toast(x.getAttribute('aria-label'), null, 2600); return; }
+      b.fam = x.dataset.fam; b.info = null; A.sfx('ui'); renderPanel(); return;
+    }
     if ((x = tg.closest('.molde'))) {
       if (x.classList.contains('bloq')) { A.sfx('lleno'); return; }
       const m = x.dataset.m, k = +x.dataset.k;
@@ -878,7 +912,7 @@
     if (!partida || ocupado || !borradorCompleto()) return;
     const coh = coherencia(); if (!coh || coh.some(ok => !ok)) return;
     const code = R.codificar(borradorAST());
-    ocupado = true;
+    ocupado = true; limpiarContra();
     const notas = [];
     partida.borrador.c.forEach(cl => { if (cl.p) notas.push(66 + Math.max(0, cl.p.f) * 2, 70 + Math.max(0, cl.p.c) * 2); if (cl.neg) notas.push(72); });
     A.sfx('transmitir', notas);
@@ -936,8 +970,9 @@
     A.sfx('contra'); vibrar([40, 30, 40]);
     toast(t('contra'), 'rojo', 2600);
     el.vivo.textContent = t('contra');
-    el.hudDelta.textContent = '+2'; el.hudDelta.classList.remove('ve'); void el.hudDelta.offsetWidth; el.hudDelta.classList.add('ve');
+    el.hudDelta.textContent = '+' + COSTO_FALLO; el.hudDelta.classList.remove('ve'); void el.hudDelta.offsetWidth; el.hudDelta.classList.add('ve');
     renderRegistro(partida.registro.length - 1);
+    // VIS-SENAL-02/04: marco discontinuo estático (sin halo de 3 s) hasta la siguiente acción
     const n = tarjetaDe(partida.registro.length - 1); if (n) { n.classList.add('nuevo-contra'); n.scrollIntoView({ block: 'nearest' }); }
     guardar();
     ocupado = false;
@@ -978,35 +1013,63 @@
   }
 
   // ---------- modales ----------
-  let modalVolver = null, onCerrarModal = null;
-  // el anillo de foco solo aparece si se viene usando el teclado
-  let viaTeclado = false;
-  document.addEventListener('keydown', e => { if (e.key === 'Tab' || e.key.startsWith('Arrow') || e.key === 'Enter' || e.key === 'Escape') viaTeclado = true; }, true);
-  document.addEventListener('pointerdown', () => { viaTeclado = false; }, true);
+  // RSP-MODALS-01: una sola superposición (#velo/#modal). Al abrir se guarda el activador, el resto de la página queda
+  // inerte, el diálogo recibe nombre (aria-labelledby) y foco inicial, Tab/Shift+Tab circulan dentro y al cerrar el foco
+  // vuelve al activador si sigue visible (o al primer control lógico de la pantalla revelada).
+  let modalVolver = null, onCerrarModal = null, modalActivador = null, reabriendo = false;
+  const FOCUSABLE = 'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
+  const visibleEl = n => !!n && n.isConnected && !n.closest('[hidden]') && n.getClientRects().length > 0;
+  const focusables = raiz => Array.from(raiz.querySelectorAll(FOCUSABLE)).filter(n => visibleEl(n) && n.getAttribute('aria-hidden') !== 'true');
+  const capasFondo = () => [el.inicio, el.juego, el.back, el.barraDer, el.globo, el.menuTarj].filter(Boolean);
   function abrirModal(html, o) {
     o = o || {};
     cerrarMenuTarj();
+    if (el.velo.hidden && !reabriendo) modalActivador = (document.activeElement && document.activeElement !== document.body) ? document.activeElement : null;
     el.modal.className = 'card' + (o.ancha ? ' ancha' : '') + (o.clase ? ' ' + o.clase : '');
     el.modal.innerHTML = html;
+    el.modal.setAttribute('role', o.alerta ? 'alertdialog' : 'dialog');
+    const tit = el.modal.querySelector('h2,h3');
+    if (tit) { if (!tit.id) tit.id = 'modalTitulo'; el.modal.setAttribute('aria-labelledby', tit.id); } else el.modal.removeAttribute('aria-labelledby');
+    capasFondo().forEach(n => { n.inert = true; });
     el.velo.hidden = false;
     modalVolver = o.volver || null; onCerrarModal = o.alCerrar || null;
     el.modal.scrollTop = 0;
-    const f = viaTeclado ? el.modal.querySelector('.btn-pri,[data-cerrar],button') : el.modal; if (f) f.focus({ preventScroll: true });
+    // foco inicial sin condicionarlo al tipo de puntero: en confirmaciones destructivas, el control de cancelar (o.foco)
+    const f = (o.foco && el.modal.querySelector(o.foco)) || el.modal.querySelector('.btn-pri,[data-cerrar],button,[href],textarea') || el.modal;
+    f.focus({ preventScroll: true });
     if (pantalla === 'juego') cronometro(false);
+  }
+  function restaurarFoco(act) {
+    if (act && visibleEl(act) && !act.closest('[inert]')) { act.focus({ preventScroll: true }); return; }
+    // el activador desapareció: primer control lógico de la pantalla revelada
+    const dest = pantalla === 'juego' ? (panelAbierto ? el.panel.querySelector('button') : el.btnPausa) : $('#btnPrincipal');
+    if (dest && visibleEl(dest)) dest.focus({ preventScroll: true });
   }
   function cerrarModal() {
     if (el.velo.hidden) return;
+    const act = modalActivador;
     el.velo.hidden = true; el.modal.innerHTML = '';
+    capasFondo().forEach(n => { n.inert = false; });
     A.amortiguar(false);
     el.cvResAstro.hidden = true; resAstroOn = false;
     clearInterval(tCuenta); detenerComo();
     const cb = onCerrarModal; onCerrarModal = null;
     if (pantalla === 'juego' && partida && partida.estado === 'jugando') cronometro(true);
-    if (cb) cb();
+    if (cb) { reabriendo = true; try { cb(); } finally { reabriendo = false; } }
+    if (el.velo.hidden) { modalActivador = null; restaurarFoco(act); }
   }
   el.velo.addEventListener('click', e => {
     if (e.target === el.velo) { if (modalVolver !== 'bloquear') cerrarModal(); return; }
     if (e.target.closest('[data-cerrar]')) { A.sfx('ui'); cerrarModal(); }
+  });
+  // ciclo de Tab dentro del diálogo (aria-modal no sustituye el control de foco)
+  el.velo.addEventListener('keydown', e => {
+    if (e.key !== 'Tab' || el.velo.hidden) return;
+    const f = focusables(el.modal);
+    if (!f.length) { e.preventDefault(); el.modal.focus(); return; }
+    const first = f[0], last = f[f.length - 1], act = document.activeElement;
+    if (e.shiftKey && (act === first || act === el.modal || !el.modal.contains(act))) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && (act === last || !el.modal.contains(act))) { e.preventDefault(); first.focus(); }
   });
 
   // pausa
@@ -1017,7 +1080,7 @@
     const jug = partida.estado === 'jugando';
     A.amortiguar(true);
     abrirModal('<div class="m-top"><h2>' + esc(t('pausa')) + '</h2></div>' +
-      '<div class="m-btns"><button class="btn-pri" type="button" data-p="seguir">' + esc(t('continuar')) + '</button>' +
+      '<div class="m-btns"><button class="btn-pri" type="button" data-p="seguir">' + esc(t('reanudar')) + '</button>' +
       '<div class="m-fila"><button class="btn-sec" type="button" data-p="como">' + esc(t('comoJugar')) + '</button><button class="btn-sec" type="button" data-p="ajustes">' + esc(t('ajustes')) + '</button></div>' +
       (jug && partida.modo !== 'tutorial' ? '<button class="btn-sec peligro" type="button" data-p="rendirse">' + esc(t('rendirse')) + '</button>' : '') +
       (partida.modo === 'tutorial' ? '<button class="btn-sec" type="button" data-p="saltar">' + esc(t('saltarTut')) + '</button>' : '') +
@@ -1034,12 +1097,14 @@
     };
   }
   function abrirRendirse() {
-    const diaria = partida.modo !== 'practica' && partida.fecha === hoy();
-    abrirModal('<div class="m-top"><h2>' + esc(t('rendirseQ')) + '</h2></div><p class="texto" style="margin-bottom:16px">' + esc(diaria ? t('rendirseD') : t('rendirseP')) + '</p>' +
-      '<div class="m-btns"><button class="btn-pri" type="button" data-r="seguir">' + esc(t('seguir')) + '</button><button class="btn-sec peligro" type="button" data-r="ver">' + esc(t('verRegla')) + '</button></div>', { volver: 'juego' });
+    // SRC-SE02: aviso antes de revelar; el efecto sobre la racha sólo se menciona en el reto diario de hoy
+    const diaria = partida.modo !== 'practica' && partida.modo !== 'tutorial' && partida.fecha === hoy();
+    abrirModal('<div class="m-top"><h2>' + esc(t('rendirseQ')) + '</h2></div><p class="texto" style="margin-bottom:16px">' + esc(t('rendirseP')) + (diaria ? ' ' + esc(t('rendirseD')) : '') + '</p>' +
+      '<div class="m-btns"><button class="btn-pri" type="button" data-r="seguir">' + esc(t('seguir')) + '</button><button class="btn-sec peligro" type="button" data-r="ver">' + esc(t('verRegla')) + '</button></div>', { volver: 'juego', alerta: true, foco: '[data-r="seguir"]' });
     el.modal.onclick = e => {
       const b = e.target.closest('[data-r]'); if (!b) return;
       if (b.dataset.r === 'seguir') { A.sfx('ui'); cerrarModal(); return; }
+      if (!partida || partida.estado !== 'jugando') return; // se revela una sola vez
       cerrarModal();
       if (panelAbierto) cerrarPanel(false);
       partida.estado = 'rendida'; cronometro(false);
@@ -1059,7 +1124,7 @@
   function ejemplosRegistro() {
     const reg = partida.registro;
     const a = [...reg].reverse().find(e => e.a) || reg[0], r = [...reg].reverse().find(e => !e.a) || reg[1];
-    return '<div class="res-ejs"><span class="ok">✓<span class="mini">' + filaHTML(a.p) + '</span></span><span class="no">✗<span class="mini">' + filaHTML(r.p) + '</span></span></div>';
+    return '<div class="res-ejs"><span class="ok">✓<span class="mini">' + filaHTML(a.p, true) + '</span></span><span class="no">✗<span class="mini">' + filaHTML(r.p, true) + '</span></span></div>';
   }
   function mostrarResultado(info) {
     info = info || {};
@@ -1072,15 +1137,19 @@
     h += '</div></div><div class="res-der">';
     if (ok && !tut) {
       h += '<div class="ondas">' + ondasSVG(3 - cal, cal === 3) + '</div><p class="califica">' + esc(t('calif')[cal]) + '</p>';
-      h += '<div class="lineas"><div><span>' + esc(t('pulsosLbl')) + '</span><b>' + esc(t('pulsos', { p: pul, par: p.par })) + '</b></div><div><span>' + esc(t('muestrasEnv')) + '</span><b>' + enviadas(p) + '</b></div>' + (p.fallos ? '<div><span>' + esc(t('fallos')) + '</span><b>' + p.fallos + '</b></div>' : '') + '<div><span>' + esc(t('tiempo')) + '</span><b>' + fmtTiempo(p.tiempo) + '</b></div></div>';
+      // SRC-SE01: pulsos y objetivo (par) como líneas separadas, con la unidad definida
+      h += '<div class="lineas"><div><span>' + esc(t('pulsosLbl')) + '</span><b>' + esc(t('pulsosDe', { p: pul })) + '</b></div><div><span>' + esc(t('objetivoPulsos', { par: p.par })) + '</span><b>' + (pul <= p.par ? '✓' : '+' + (pul - p.par)) + '</b></div><div><span>' + esc(t('muestrasEnv')) + '</span><b>' + enviadas(p) + '</b></div>' + (p.fallos ? '<div><span>' + esc(t('fallos')) + '</span><b>' + p.fallos + '</b></div>' : '') + '<div><span>' + esc(t('tiempo')) + '</span><b>' + fmtTiempo(p.tiempo) + '</b></div></div>';
+      h += '<p class="texto dim" style="font-size:12px;margin-top:-6px">' + esc(t('pulsoDef')) + '</p>';
     }
     if (info.racha) h += '<span class="sello">' + esc(info.racha === 1 ? t('rachaSube1') : t('rachaSube', { d: info.racha })) + '</span>';
     if (info.rangoNuevo) h += '<span class="sello">' + esc(t('rangoNuevo', { r: nombreRango(info.rangoNuevo) })) + '</span>';
     if (info.famNueva) h += '<span class="sello">' + esc(t('patronNuevo', { f: t('familias')[info.famNueva] })) + '</span>';
     h += '<div class="m-btns">';
+    // SRC-SE02 / SRC-G03: «Nueva práctica» genera una regla nueva (jugarPractica(true)); «Volver al menú» es el menú del juego.
+    // No existe un manejador para repetir la misma señal, así que no se anuncia «Repetir esta señal».
     if (tut) h += '<button class="btn-pri" type="button" data-z="tutSig">' + esc(t('siguiente')) + '</button>';
-    else if (prac) h += '<button class="btn-pri" type="button" data-z="siguiente">' + esc(t('siguiente')) + '</button><div class="m-fila"><button class="btn-sec" type="button" data-z="compartir">' + esc(t('compartir')) + '</button><button class="btn-sec" type="button" data-z="inicio">' + esc(t('inicio')) + '</button></div>';
-    else h += '<button class="btn-pri" type="button" data-z="compartir">' + esc(t('compartir')) + '</button><div class="m-fila"><button class="btn-sec" type="button" data-z="inicio">' + esc(t('inicio')) + '</button><button class="btn-sec" type="button" data-z="practica">' + esc(t('practicar')) + '</button></div>';
+    else if (prac) h += '<button class="btn-pri" type="button" data-z="siguiente">' + esc(t('nuevaPractica')) + '</button><div class="m-fila"><button class="btn-sec" type="button" data-z="compartir">' + esc(t('compartir')) + '</button><button class="btn-sec" type="button" data-z="inicio">' + esc(t('inicio')) + '</button></div>';
+    else h += '<button class="btn-pri" type="button" data-z="compartir">' + esc(t('compartir')) + '</button><div class="m-fila"><button class="btn-sec" type="button" data-z="inicio">' + esc(t('inicio')) + '</button><button class="btn-sec" type="button" data-z="practica">' + esc(t('nuevaPractica')) + '</button></div>';
     if (diariaHoy || (!prac && !tut)) h += '<p class="cuenta" id="cuenta"></p>';
     h += '</div></div>';
     abrirModal(h, { volver: 'bloquear', clase: 'res' });
@@ -1137,6 +1206,8 @@
     const fin = ok ? '📡 ' + t('shareIntento', { o: t('ordinales')[Math.min(9, p.fallos)] }) : t('shareSin');
     return cab + '\n' + (seq || '—') + '\n' + fin + '\njetgames.fun/senal';
   }
+  // SRC-G06: compartir sólo por acción del jugador; cancelar el diálogo nativo no muestra nada; éxito sólo tras confirmar el copiado;
+  // si no se puede copiar, el texto íntegro queda seleccionable en un textarea (patrón de referencia) con «Copiar texto» y «Cerrar».
   async function compartir(p) {
     const txt = textoCompartir(p);
     try {
@@ -1145,8 +1216,18 @@
     } catch (e) { if (e && e.name === 'AbortError') return; }
     try { await navigator.clipboard.writeText(txt); A.sfx('copiado'); toast(t('copiado'), 'cian', 1600); return; } catch (e) { /* sigue */ }
     const enRes = !el.velo.hidden && el.modal.classList.contains('res') && partida === p;
-    abrirModal('<div class="m-top"><h2>' + esc(t('compartir')) + '</h2><button class="x" type="button" data-cerrar aria-label="' + esc(t('cerrar')) + '">✕</button></div><textarea readonly style="width:100%;min-height:140px;background:#0a0418;color:#fff;border:1px solid var(--line);border-radius:12px;padding:10px;font:14px JetBrains Mono,monospace;user-select:text;-webkit-user-select:text">' + esc(txt) + '</textarea>', { alCerrar: enRes ? () => mostrarResultado({}) : null });
-    const ta = el.modal.querySelector('textarea'); ta.focus(); ta.select();
+    abrirModal('<div class="m-top"><h2>' + esc(t('compartir')) + '</h2><button class="x" type="button" data-cerrar aria-label="' + esc(t('cerrar')) + '">✕</button></div>' +
+      '<p class="texto dim" id="compartirAviso" style="margin-bottom:8px">' + esc(t('copiaFallo')) + '</p>' +
+      '<textarea readonly aria-labelledby="modalTitulo" style="width:100%;min-height:140px;background:#0a0418;color:#fff;border:1px solid var(--line);border-radius:12px;padding:10px;font:14px JetBrains Mono,monospace;user-select:text;-webkit-user-select:text">' + esc(txt) + '</textarea>' +
+      '<div class="m-fila" style="margin-top:12px"><button class="btn-pri" type="button" data-copiar-txt>' + esc(t('copiarTexto')) + '</button><button class="btn-sec" type="button" data-cerrar>' + esc(t('cerrar')) + '</button></div>', { alCerrar: enRes ? () => mostrarResultado({}) : null, foco: 'textarea' });
+    const ta = el.modal.querySelector('textarea'); ta.select();
+    el.modal.onclick = async e => {
+      if (!e.target.closest('[data-copiar-txt]')) return;
+      ta.focus(); ta.select();
+      let ok = false;
+      try { await navigator.clipboard.writeText(txt); ok = true; } catch (err) { try { ok = document.execCommand && document.execCommand('copy'); } catch (er) { ok = false; } }
+      if (ok) { A.sfx('copiado'); toast(t('copiado'), 'cian', 1600); } else { toast(t('copiaFallo'), 'rojo', 2600); }
+    };
   }
 
   // ajustes
@@ -1167,7 +1248,6 @@
     h += '<p class="set-grupo">' + esc(t('progreso')) + '</p><button type="button" class="btn-sec peligro" data-borrar style="width:100%">' + esc(t('borrarTodo')) + '</button>';
     h += '<p class="texto dim atajos" style="font-size:12px;margin-top:14px">' + esc(t('atajos')) + '</p>';
     abrirModal(h, { volver: pantalla, alCerrar: volverA || null });
-    let armado = 0;
     el.modal.onclick = e => {
       const b = e.target.closest('button'); if (!b) return;
       if (b.dataset.tog) {
@@ -1183,11 +1263,7 @@
         if (b.dataset.lang !== lang()) { JI.set(b.dataset.lang); abrirAjustes(volverA); }
         return;
       }
-      if (b.dataset.borrar != null) {
-        if (!armado) { armado = setTimeout(() => { armado = 0; b.textContent = t('borrarTodo'); b.classList.remove('armado'); }, 4000); b.textContent = t('borrarSeguro'); b.classList.add('armado'); A.sfx('lleno'); return; }
-        clearTimeout(armado); armado = 0;
-        borrarTodo(); toast(t('borrado'), 'cian'); cerrarModal(); return;
-      }
+      if (b.dataset.borrar != null) { abrirConfirmarBorrado(volverA); return; }
     };
     el.modal.oninput = e => {
       const r = e.target.closest('[data-vol]'); if (!r) return;
@@ -1195,8 +1271,20 @@
     };
     el.modal.onchange = e => { const r = e.target.closest('[data-vol]'); if (r && r.dataset.vol === 'volEfectos') A.sfx('acepta'); };
   }
+  // SRC-G04: confirmación explícita (sin doble toque), Cancelar con el foco inicial, botón peligro «Borrar progreso»,
+  // enumeración de lo que se borra. Los ajustes (audio, letras, movimiento) y el idioma del sitio se conservan.
+  function abrirConfirmarBorrado(volverA) {
+    abrirModal('<div class="m-top"><h2>' + esc(t('borrarQ', { juego: 'JET//' + t('titulo') })) + '</h2></div>' +
+      '<p class="texto" style="margin-bottom:16px">' + esc(t('borrarCuerpo', { datos: t('borrarDatos') })) + '</p>' +
+      '<div class="m-btns"><button class="btn-sec" type="button" data-cancelar>' + esc(t('cancelar')) + '</button><button class="btn-sec peligro" type="button" data-confirmar-borrado>' + esc(t('borrarTodo')) + '</button></div>',
+      { volver: pantalla, alerta: true, foco: '[data-cancelar]', alCerrar: () => abrirAjustes(volverA) });
+    el.modal.onclick = e => {
+      if (e.target.closest('[data-cancelar]')) { A.sfx('ui'); cerrarModal(); return; }
+      if (e.target.closest('[data-confirmar-borrado]')) { onCerrarModal = null; borrarTodo(); }
+    };
+  }
   function borrarTodo() {
-    for (const k of st.claves()) st.del(k);
+    for (const k of st.claves()) if (k !== 'ajustes') st.del(k);
     location.reload();
   }
 
@@ -1234,7 +1322,7 @@
       const filas = [[8, 1], [12, 17]], ok = [1, 0];
       const ciclo = (k) => {
         const v = $('#ceV'), s = $('#ceS'); if (!v) return;
-        v.innerHTML = filaHTML(filas[k % 2]); v.style.transition = 'none'; v.style.left = '50%'; v.style.top = '140px'; v.style.transform = 'translateX(-50%)'; v.style.opacity = '1';
+        v.innerHTML = filaHTML(filas[k % 2], true); v.style.transition = 'none'; v.style.left = '50%'; v.style.top = '140px'; v.style.transform = 'translateX(-50%)'; v.style.opacity = '1';
         s.className = 'ce-sonda';
         T_(80, () => { v.style.transition = ''; v.style.top = '28px'; v.style.opacity = '.2'; });
         T_(750, () => { s.className = 'ce-sonda ' + (ok[k % 2] ? 'si' : 'no'); A.sfx(ok[k % 2] ? 'acepta' : 'rechaza'); });
@@ -1242,7 +1330,7 @@
           v.style.opacity = '0';
           const col = esc_.querySelector(ok[k % 2] ? '.ce-col.a' : '.ce-col.r');
           if (col.querySelectorAll('.ce-fila').length > 2) col.querySelector('.ce-fila').remove();
-          col.insertAdjacentHTML('beforeend', '<div class="ce-fila">' + filaHTML(filas[k % 2]) + '</div>');
+          col.insertAdjacentHTML('beforeend', '<div class="ce-fila">' + filaHTML(filas[k % 2], true) + '</div>');
         });
         T_(2300, () => ciclo(k + 1));
       };
@@ -1253,10 +1341,10 @@
       const ciclo = () => {
         const a = esc_.querySelector('.ce-col.a'), r = esc_.querySelector('.ce-col.r'), s = $('#ceS');
         if (!a) return;
-        a.innerHTML = '<h4>' + esc(t('aceptadas')) + '</h4>'; r.innerHTML = '<h4>' + esc(t('rechazadas')) + '</h4><div class="ce-fila" id="ceBase">' + filaHTML(base) + '</div>';
+        a.innerHTML = '<h4>' + esc(t('aceptadas')) + '</h4>'; r.innerHTML = '<h4>' + esc(t('rechazadas')) + '</h4><div class="ce-fila" id="ceBase">' + filaHTML(base, true) + '</div>';
         s.className = 'ce-sonda';
         T_(700, () => { const b = $('#ceBase'); if (b) b.children[1].classList.add('ce-cambio'); });
-        T_(1500, () => { const b = $('#ceBase'); if (!b) return; const n = base.slice(); n[1] = 9; a.insertAdjacentHTML('beforeend', '<div class="ce-fila" style="opacity:.25" id="ceNueva">' + filaHTML(n) + '</div>'); const nn = $('#ceNueva'); nn.children[1].classList.add('ce-cambio'); });
+        T_(1500, () => { const b = $('#ceBase'); if (!b) return; const n = base.slice(); n[1] = 9; a.insertAdjacentHTML('beforeend', '<div class="ce-fila" style="opacity:.25" id="ceNueva">' + filaHTML(n, true) + '</div>'); const nn = $('#ceNueva'); nn.children[1].classList.add('ce-cambio'); });
         T_(2100, () => { s.className = 'ce-sonda si'; A.sfx('acepta'); const nn = $('#ceNueva'); if (nn) nn.style.opacity = '1'; });
         T_(4200, ciclo);
       };
@@ -1266,8 +1354,8 @@
       const ciclo = () => {
         const f = $('#ceF'), a = esc_.querySelector('.ce-col.a'), r = esc_.querySelector('.ce-col.r'), s = $('#ceS'); if (!f) return;
         f.innerHTML = ''; s.className = 'ce-sonda';
-        a.innerHTML = '<h4>' + esc(t('aceptadas')) + '</h4><div class="ce-fila">' + filaHTML([8, 1]) + '<span class="ce-marca">✓</span></div><div class="ce-fila">' + filaHTML([16, 9, 4]) + '<span class="ce-marca">✓</span></div>';
-        r.innerHTML = '<h4>' + esc(t('rechazadas')) + '</h4><div class="ce-fila">' + filaHTML([12, 17]) + '<span class="ce-marca">✓</span></div>';
+        a.innerHTML = '<h4>' + esc(t('aceptadas')) + '</h4><div class="ce-fila">' + filaHTML([8, 1], true) + '<span class="ce-marca">✓</span></div><div class="ce-fila">' + filaHTML([16, 9, 4], true) + '<span class="ce-marca">✓</span></div>';
+        r.innerHTML = '<h4>' + esc(t('rechazadas')) + '</h4><div class="ce-fila">' + filaHTML([12, 17], true) + '<span class="ce-marca">✓</span></div>';
         T_(400, () => { f.innerHTML = marcado(R.texto('HAY:c', lang(), true)); A.sfx('chip', { fila: 1, i: 2 }); });
         T_(1300, () => { esc_.querySelectorAll('.ce-marca').forEach(m => m.classList.add('on')); A.sfx('coherente'); });
         T_(2300, () => { s.className = 'ce-sonda si'; A.sfx('acepta'); f.innerHTML = '<b>' + esc(t('contacto')) + '</b>'; });
@@ -1376,12 +1464,15 @@
     else { detenerFondo(); A.tema('juego'); }
     layout();
   }
+  // RSP-MODALS-01: si el foco quedó en el cuerpo (el activador desapareció con el cambio de pantalla), va al primer control lógico
+  const focoPerdido = () => !document.activeElement || document.activeElement === document.body || !visibleEl(document.activeElement);
   function irInicio() {
     guardarYa();
     if (panelAbierto) { panelAbierto = false; el.juego.classList.remove('formulando'); el.panel.hidden = true; marcasCoh = null; }
     Tut.ocultar();
     partida = null;
     renderInicio(); mostrar('inicio');
+    if (focoPerdido()) { const b = $('#btnPrincipal'); if (b && visibleEl(b)) b.focus({ preventScroll: true }); }
   }
   function entrarJuego(p, pausar) {
     activar(p);
@@ -1389,6 +1480,7 @@
     S.poner(sonda, 'reposo', ahora()); sonda.progreso = -1;
     mostrar('juego');
     renderBandeja(); renderRegistro(); actualizarHud(false);
+    if (focoPerdido()) el.juego.focus({ preventScroll: true });
     guardar();
     if (p.estado !== 'jugando') { mostrarResultado({}); return; }
     if (pausar) abrirPausa(); else cronometro(true);
@@ -1453,6 +1545,7 @@
     const nuevo = perfil.tutorial == null;
     const h0 = hoy(), s = numDe(h0), g = leerPartida('diario:' + h0);
     const racha = rachaEfectiva();
+    btn.hidden = false;
     $('#rachaIni').hidden = nuevo || racha < 1;
     $('#rachaIni b').textContent = racha === 1 ? t('racha1') : t('racha', { d: racha });
     $('#rangoIni').textContent = nombreRango(rango()).replace(' · ', '\n');
@@ -1461,7 +1554,8 @@
     $$('.ini-sec .btn-sec').forEach(b => { b.hidden = nuevo && b.dataset.acc !== 'como'; });
     if (nuevo) {
       const tp = tutPendiente();
-      bt.textContent = tp ? t('continuar') : t('empezar');
+      // SRC-G03: «Continuar partida» sólo cuando hay un tutorial guardado que se recupera; si sólo falta avanzar, «Continuar»
+      bt.textContent = tp ? (tp.p ? t('continuarPartida') : t('continuar')) : t('empezar');
       bs.textContent = tp ? t('tutorialN', { i: tp.r + 1 }) : t('empezarSub');
       btn.dataset.acc = 'tutorial';
     }
@@ -1589,8 +1683,11 @@
   el.btnAjustes.addEventListener('click', () => {
     A.sfx('ui');
     if (!el.velo.hidden) { if (modalVolver === 'bloquear') return; cerrarModal(); }
-    abrirAjustes(pantalla === 'juego' && partida && partida.estado === 'jugando' ? null : null);
+    abrirAjustes(null);
+    modalActivador = el.btnAjustes;
   });
+  // PLAY-SENAL-05: ayuda compacta junto a la bandeja (cómo agregar, reemplazar y quitar) y teclas sobre las piezas
+  el.btnAtajos.addEventListener('click', () => { A.sfx('ui'); aj.atajos = !aj.atajos; guardarAjustes(); aplicarAjustes(); pedirLayout(); });
 
   // ---------- tutorial ----------
   const Tut = {
@@ -1620,10 +1717,18 @@
     },
     ir(paso) {
       this.paso = paso;
-      const txt = { 0: 'tut1', 1: 'tut2', 2: 'tut3', 3: 'tut4', 4: 'tut5', 5: 'tut6', 6: 'tut7', 7: 'tut8', 8: 'tut9', 9: 'tut10' }[paso];
+      let txt = { 0: 'tut1', 1: 'tut2', 2: 'tut3', 3: 'tut4', 4: 'tut5', 5: 'tut6', 6: 'tut7', 7: 'tut8', 8: 'tut9', 9: 'tut10' }[paso];
+      // PLAY-SENAL-01: la frase «cambiaste una sola característica» sólo si la última muestra difiere del ejemplo rechazado en una pieza y cambió la respuesta
+      if (paso === 4) txt = this.unaCaracteristica() ? 'unaCaracteristica' : 'tut5b';
       const conBoton = paso === 0 || paso === 4;
       this.globo(t(txt), conBoton ? t('siguiente') : null, 0, paso === 0);
       this.foco();
+    },
+    unaCaracteristica() {
+      if (!partida) return false;
+      const env = partida.registro.filter(e => e.t === 'e'); const u = env[env.length - 1], base = partida.registro[1];
+      if (!u || !base || u.p.length !== base.p.length || u.a === base.a) return false;
+      return u.p.filter((id, k) => id !== base.p[k]).length === 1;
     },
     globo(txt, boton, ms, conSaltar) {
       el.globo.hidden = false; el.globoTxt.textContent = txt;
@@ -1641,29 +1746,31 @@
       else if (this.r > 0 && !el.globo.hidden) { el.globoTxt.textContent = t(this.r === 1 ? 'tut11' : 'tut13'); posicionarGlobo(); }
     },
     rechazo() { A.sfx('lleno'); const g = el.globo; if (!g.hidden) g.animate([{ transform: 'translateX(-5px)' }, { transform: 'translateX(5px)' }, { transform: 'none' }], { duration: 220 }); },
-    limpiarFoco() { $$('.foco').forEach(n => n.classList.remove('foco')); $$('.zona.apagada').forEach(n => n.classList.remove('apagada')); },
+    limpiarFoco() { $$('.foco').forEach(n => { n.classList.remove('foco'); n.removeAttribute('data-guia'); }); $$('.zona.apagada').forEach(n => n.classList.remove('apagada')); },
     foco() {
       this.limpiarFoco();
       if (!this.activo || this.r !== 0) { el.juego.classList.remove('tut'); return; }
       el.juego.classList.add('tut');
       const ap = (...ids) => ids.forEach(i => { const n = $(i); if (n) n.classList.add('apagada'); });
-      const f = n => { if (!n) return; n.classList.add('foco'); if (n.closest('#panel')) n.scrollIntoView({ block: 'nearest', inline: 'nearest' }); };
+      // PLAY-SENAL-04: la guía es un contorno discontinuo ámbar con rótulo («Siguiente paso» / «Elegí esta opción»),
+      // distinto del borde sólido cian de la selección y del anillo de foco del teclado
+      const f = (n, guia) => { if (!n) return; n.classList.add('foco'); if (guia) n.setAttribute('data-guia', t(guia)); if (n.closest('#panel')) n.scrollIntoView({ block: 'nearest', inline: 'nearest' }); };
       switch (this.paso) {
         case 0: ap('#zBandeja', '#zPaleta', '#zAcciones'); break;
-        case 1: ap('#zBandeja', '#zPaleta', '#zAcciones'); f(tarjetaDe(1)); break;
-        case 2: ap('#zAcciones'); f(el.bandeja); $$('#paleta .pz').forEach(b => { if (R.PC[+b.dataset.id] === 1) f(b); }); break;
-        case 3: f(el.btnEnviar); break;
+        case 1: ap('#zBandeja', '#zPaleta', '#zAcciones'); f(tarjetaDe(1), 'siguientePaso'); break;
+        case 2: ap('#zAcciones'); f(el.bandeja, 'siguientePaso'); $$('#paleta .pz').forEach(b => { if (R.PC[+b.dataset.id] === 1) f(b); }); break;
+        case 3: f(el.btnEnviar, 'siguientePaso'); break;
         case 4: ap('#zBandeja', '#zPaleta', '#zAcciones'); break;
-        case 6: ap('#zBandeja', '#zPaleta'); f(el.btnFormular); break;
-        case 7: f(el.panel.querySelector('.molde[data-m="HAY"]')); break;
+        case 6: ap('#zBandeja', '#zPaleta'); f(el.btnFormular, 'siguientePaso'); break;
+        case 7: f(el.panel.querySelector('.molde[data-m="HAY"]'), 'elegiOpcion'); break;
         case 8: {
           const cl = partida.borrador && partida.borrador.c[0];
           const ch = el.panel.querySelector('[data-ch="c"][data-v="1"]');
-          if (ch) f(ch); else f(el.panel.querySelector('.hueco'));
-          if (cl && cl.p.c === 1) f(el.panel.querySelector('[data-transmitir]'));
+          if (ch) f(ch, 'elegiOpcion'); else f(el.panel.querySelector('.hueco'), 'siguientePaso');
+          if (cl && cl.p.c === 1) f(el.panel.querySelector('[data-transmitir]'), 'siguientePaso');
           break;
         }
-        case 9: f(el.panel.querySelector('[data-transmitir]')); break;
+        case 9: f(el.panel.querySelector('[data-transmitir]'), 'siguientePaso'); break;
       }
     },
     permite(acc, d) {
@@ -1729,10 +1836,14 @@
   el.saltar.addEventListener('click', () => { A.sfx('ui'); Tut.saltar(); });
   function posicionarGlobo() {
     if (el.globo.hidden) return;
-    const abajo = horiz;
+    const abajo = horiz && panelAbierto;
     el.globo.classList.toggle('abajo', abajo);
-    if (abajo) {
-      // en horizontal, abajo de la columna del registro: nunca tapa bandeja, paleta ni botones
+    if (horiz && !panelAbierto) {
+      // PLAY-SENAL-01: en horizontal la guía va sobre la bandeja (columna central), junto al control que explica
+      const r = $('#zBandeja').getBoundingClientRect(), h = el.globo.offsetHeight || 80;
+      el.globo.style.top = Math.max(56, Math.round(r.top - h - 6)) + 'px'; el.globo.style.left = Math.round(r.left) + 'px'; el.globo.style.width = Math.round(r.width) + 'px';
+    } else if (abajo) {
+      // formulando en horizontal: abajo de la columna del registro, sin tapar el panel
       const r = $('#zRegistro').getBoundingClientRect();
       el.globo.style.top = ''; el.globo.style.left = Math.round(r.left) + 'px'; el.globo.style.width = Math.round(r.width) + 'px';
     } else if (panelAbierto) {
@@ -1876,4 +1987,6 @@
   };
   arrancar();
   setTimeout(() => { el.btnFs.hidden = !puedeFs() || pantalla !== 'inicio'; }, 0);
+  // SRC-G05: el juego quedó listo; el estado de carga del HTML pasa a «listo» (loading/error/ready excluyentes)
+  if (window.JETCarga) window.JETCarga.listo();
 })();

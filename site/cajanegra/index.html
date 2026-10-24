@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>JET//Caja Negra · Reconstruye el incidente</title>
 <meta name="description" content="Llega la caja negra de una misión con un incidente. Cruza la radio, la foto, la telemetría y la bitácora, completa el informe y fírmalo. Un caso nuevo cada día.">
 <meta name="theme-color" content="#050108">
@@ -19,7 +19,20 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
 <script src="src/jet-idioma.js?v=1"></script>
-<link rel="stylesheet" href="src/estilo.css?v=6">
+<link rel="stylesheet" href="src/estilo.css?v=7">
+<style>
+/* Estado de carga (SRC-G05): título y estado visibles antes del JS; error recuperable sin botones vacíos. */
+#carga{position:fixed;inset:0;z-index:4;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:24px;background:#050108;color:#f5f0ff;font-family:Poppins,system-ui,sans-serif;text-align:center}
+#carga .cargaTit{margin:0;font-weight:900;font-size:clamp(28px,8vw,44px);letter-spacing:-.03em}
+#carga .cargaTit i{font-style:normal;color:#00f2cf}
+#carga p{margin:0;font-size:15px;color:#b5a8d8;max-width:420px;line-height:1.5}
+#carga .cargaAcc{display:flex;flex-direction:column;align-items:center;gap:12px;margin-top:16px;width:min(100%,260px)}
+#carga .cargaAcc[hidden]{display:none}
+#carga .cargaAcc button,#carga .cargaAcc a{width:100%;min-height:48px;display:inline-flex;align-items:center;justify-content:center;border-radius:14px;font:600 16px Poppins,system-ui,sans-serif;color:#fff;text-decoration:none;cursor:pointer}
+#carga .cargaAcc button{border:0;background:linear-gradient(135deg,#7700f4,#00f2cf)}
+#carga .cargaAcc a{border:1px solid rgba(245,240,255,.3);background:rgba(255,255,255,.05)}
+#carga.err .cargaTit{font-size:clamp(22px,6vw,32px)}
+</style>
 </head>
 <body>
 <canvas id="fondo" aria-hidden="true"></canvas>
@@ -42,6 +55,23 @@
 <div class="capa" id="historial" role="dialog" aria-modal="true"></div>
 <div class="capa" id="lupa" role="dialog" aria-modal="true"></div>
 <div id="apertura" aria-hidden="true"></div>
+<div id="carga" role="status" aria-live="polite"><p class="cargaTit">JET<i>//</i><span id="cargaNom">Caja Negra</span></p><p id="cargaMsg">Cargando JET//Caja Negra…</p><div class="cargaAcc" id="cargaAcc" hidden><button type="button" id="cargaReint">Volver a cargar</button><a id="cargaVolver" href="https://jetgames.fun/">Volver a los juegos</a></div></div>
+<script>
+(function () {
+  var en = document.documentElement.lang === 'en';
+  var T = en ? { nom: 'Black Box', c: 'Loading JET//Black Box…', e: 'Loading was interrupted. You can try again.', n: 'We couldn’t download all resources.', r: 'Reload game', v: 'Back to games' }
+             : { nom: 'Caja Negra', c: 'Cargando JET//Caja Negra…', e: 'La carga se interrumpió. Puedes volver a intentarlo.', n: 'No pudimos descargar todos los recursos.', r: 'Volver a cargar', v: 'Volver a los juegos' };
+  var m = document.getElementById('cargaMsg'), a = document.getElementById('cargaAcc'), b = document.getElementById('cargaReint'), v = document.getElementById('cargaVolver');
+  document.getElementById('cargaNom').textContent = T.nom; m.textContent = T.c; b.textContent = T.r; v.textContent = T.v; v.href = 'https://jetgames.fun/?lang=' + (en ? 'en' : 'es');
+  var listo = false, fallo = false;
+  function error(red) { if (listo || fallo) return; fallo = true; m.textContent = red ? T.n : T.e; a.hidden = false; document.getElementById('carga').classList.add('err'); b.focus(); }
+  b.onclick = function () { location.reload(); };
+  // Un <script> que no se descarga es fallo de red; un error de ejecución o un bootstrap que no termina, no presupone red.
+  window.addEventListener('error', function (e) { if (listo) return; var t = e && e.target; if (t && t !== window && t.tagName !== 'SCRIPT') return; error(!!(t && t.tagName === 'SCRIPT')); }, true);
+  var tm = setTimeout(function () { error(false); }, 12000);
+  window.__cnCargaLista = function () { listo = true; clearTimeout(tm); var c = document.getElementById('carga'); if (c) c.remove(); };
+})();
+</script>
 <div id="menuHueco" role="menu"></div>
 <div id="globo" role="status"></div>
 <div id="toast" role="status" aria-live="polite"></div>
@@ -56,11 +86,11 @@
 <script src="src/generador.js?v=3"></script>
 <script src="src/campana.js?v=2"></script>
 <script src="src/calendario.js?v=1"></script>
-<script src="src/i18n.js?v=5"></script>
+<script src="src/i18n.js?v=6"></script>
 <script src="src/astronauta-oficial.js?v=1"></script>
-<script src="src/dibujo.js?v=1"></script>
+<script src="src/dibujo.js?v=2"></script>
 <script src="src/audio.js?v=3"></script>
-<script src="src/registros.js?v=1"></script>
-<script src="src/app.js?v=9"></script>
+<script src="src/registros.js?v=2"></script>
+<script src="src/app.js?v=10"></script>
 </body>
 </html>

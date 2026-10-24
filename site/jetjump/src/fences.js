@@ -14,12 +14,18 @@ function stripeTexture(c1, c2, bands = 6) {
   stripeCache.set(key, t); return t;
 }
 function labelTexture(text, bg = '#ffffff', fg = '#14204a') {
-  const cv = document.createElement('canvas'); cv.width = 128; cv.height = 128;
+  const cv = document.createElement('canvas'); cv.width = 256; cv.height = 256;
   const x = cv.getContext('2d');
-  x.fillStyle = bg; x.fillRect(0, 0, 128, 128);
-  x.strokeStyle = fg; x.lineWidth = 6; x.strokeRect(5, 5, 118, 118);
-  x.fillStyle = fg; x.font = `900 ${text.length > 1 ? 64 : 84}px Arial, sans-serif`; x.textAlign = 'center'; x.textBaseline = 'middle';
-  x.fillText(text, 64, 70);
+  x.fillStyle = bg; x.fillRect(0, 0, 256, 256);
+  x.strokeStyle = fg; x.lineWidth = 12; x.strokeRect(10, 10, 236, 236);
+  // Inter 800 si la fuente ya está disponible; si no, Arial 900. Se mide el texto para centrar uno o dos dígitos sin recortes.
+  let inter = false; try { inter = !!(document.fonts && document.fonts.check('800 20px Inter')); } catch { inter = false; }
+  let size = text.length > 1 ? 128 : 168;
+  const font = (s) => (inter ? `800 ${s}px Inter, Arial, sans-serif` : `900 ${s}px Arial, sans-serif`);
+  x.font = font(size);
+  while (size > 60 && x.measureText(text).width > 200) { size -= 8; x.font = font(size); }
+  x.fillStyle = fg; x.textAlign = 'center'; x.textBaseline = 'middle';
+  x.fillText(text, 128, 140);
   const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; return t;
 }
 

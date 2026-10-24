@@ -34,7 +34,7 @@ export const DRAGON_SKINS = {
 };
 
 function skinMaterial(p, detail) {
-  const m = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.5, metalness: 0.05 });
+  const m = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.5, metalness: 0 });
   m.onBeforeCompile = (sh) => {
     sh.uniforms.uBase = { value: new THREE.Color(p.base) }; sh.uniforms.uLight = { value: new THREE.Color(p.light) };
     sh.uniforms.uOchre = { value: new THREE.Color(p.ochre) }; sh.uniforms.uEmber = { value: new THREE.Color(p.ember) };
@@ -50,7 +50,7 @@ function skinMaterial(p, detail) {
         sc = mix(sc, sc * vec3(0.3, 0.26, 0.26), sR);
         sc = mix(sc, uOchre, sG * 0.85);
         diffuseColor.rgb = sc;`)
-      .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = 0.42 + 0.26 * sR;')
+      .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = 0.52 + 0.24 * sR;')
       .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance += uEmber * (sR * sG) * 1.6;');
   };
   m.customProgramCacheKey = () => 'skin-dragon';
@@ -58,7 +58,7 @@ function skinMaterial(p, detail) {
 }
 
 function boneMaterial(p) {
-  const m = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.36, metalness: 0.04 });
+  const m = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.48, metalness: 0 });
   m.onBeforeCompile = (sh) => {
     sh.uniforms.uBone = { value: new THREE.Color(p.bone) }; sh.uniforms.uDark = { value: new THREE.Color(p.bonedark) };
     sh.vertexShader = sh.vertexShader

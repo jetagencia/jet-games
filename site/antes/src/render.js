@@ -77,6 +77,8 @@ export function crearVista(cv) {
         continue;
       }
       c.fillStyle = '#120a26'; c.fillRect(px, py, cs, cs);
+      // VIS-ANTES-01: en casillas chicas (cs < 24) el suelo lleva una sola junta de 1 px; sin remaches ni patrones
+      if (cs < 24) { c.strokeStyle = 'rgba(255,255,255,.10)'; c.lineWidth = 1; c.strokeRect(px + 0.5, py + 0.5, cs - 1, cs - 1); continue; }
       // panel con juntas y remaches; variación de patrón por capítulo
       c.strokeStyle = '#1c1238'; c.lineWidth = Math.max(1, cs * 0.035); c.strokeRect(px + 1, py + 1, cs - 2, cs - 2);
       c.fillStyle = 'rgba(255,255,255,.035)'; c.fillRect(px + 2, py + 2, cs - 4, cs * 0.18);
@@ -104,7 +106,7 @@ export function crearVista(cv) {
     }
     // cables placa → lo que controla (apagados)
     V.cables = calcularCables();
-    for (const cb of V.cables) dibujarCable(c, cb, 0.16, false, 0);
+    for (const cb of V.cables) dibujarCable(c, cb, 0.25, false, 0);
     // paredes: cara superior clara + frente oscuro (diorama)
     const cerca = (x, y) => { for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const n = k(x + dx, y + dy); if (!esMuro(n) && !(x + dx < 0 || y + dy < 0 || x + dx >= GW || y + dy >= GH)) return true; } return false; };
     for (let y = 0; y < GH; y++) for (let x = 0; x < GW; x++) {
@@ -130,7 +132,7 @@ export function crearVista(cv) {
     // sombra interior de las paredes sobre el suelo
     for (let y = 0; y < GH; y++) for (let x = 0; x < GW; x++) {
       if (esMuro(k(x, y)) || k(x, y) === '_') continue;
-      if (esMuro(k(x, y - 1))) { const g = c.createLinearGradient(0, y * cs, 0, y * cs + cs * 0.3); g.addColorStop(0, 'rgba(0,0,0,.45)'); g.addColorStop(1, 'rgba(0,0,0,0)'); c.fillStyle = g; c.fillRect(x * cs, y * cs, cs, cs * 0.3); }
+      if (esMuro(k(x, y - 1))) { const g = c.createLinearGradient(0, y * cs, 0, y * cs + cs * 0.2); g.addColorStop(0, 'rgba(0,0,0,.45)'); g.addColorStop(1, 'rgba(0,0,0,0)'); c.fillStyle = g; c.fillRect(x * cs, y * cs, cs, cs * 0.2); }
     }
     V.estatico = oc;
   };
@@ -151,13 +153,14 @@ export function crearVista(cv) {
     }
     return res;
   }
-  function dibujarCable(c, cb, a, on, tm) {
+  // VIS-ANTES-03: cable apagado 1,5 px alpha .25; encendido 2 px con halo acotado; pulso viajero solo 250 ms tras cambiar de estado
+  function dibujarCable(c, cb, a, on, tm, pulso) {
     const cs = V.cs, col = COLOR_PLACA[cb.k];
     c.save(); c.lineCap = 'round'; c.lineJoin = 'round';
-    c.strokeStyle = hexA(col, a); c.lineWidth = Math.max(1.5, cs * 0.06);
-    if (on) { c.shadowColor = col; c.shadowBlur = cs * 0.3; }
+    c.strokeStyle = hexA(col, a); c.lineWidth = on ? 2 : 1.5;
+    if (on) { c.shadowColor = col; c.shadowBlur = Math.min(6, cs * 0.15); }
     c.beginPath(); cb.pts.forEach(([x, y], i) => { const X = (x + 0.5) * cs, Y = (y + 0.5) * cs; i ? c.lineTo(X, Y) : c.moveTo(X, Y); }); c.stroke();
-    if (on) { c.setLineDash([cs * 0.12, cs * 0.3]); c.lineDashOffset = -tm * cs * 2; c.strokeStyle = 'rgba(255,255,255,.75)'; c.lineWidth = Math.max(1, cs * 0.03); c.shadowBlur = 0; c.stroke(); }
+    if (on && pulso) { c.setLineDash([cs * 0.12, cs * 0.3]); c.lineDashOffset = -tm * cs * 2; c.strokeStyle = `rgba(255,255,255,${0.75 * pulso})`; c.lineWidth = 1; c.shadowBlur = 0; c.stroke(); }
     c.restore();
   }
   function dibujarEmisor(c, px, py, cs, [dx, dy]) {
@@ -185,8 +188,10 @@ export function crearVista(cv) {
     g.addColorStop(0, hexA(ACENTO_CAP[f.cap || 0], 0.07)); g.addColorStop(1, 'rgba(0,0,0,0)'); c.fillStyle = g; c.fillRect(V.ox - cs * 4, V.oy - cs * 4, V.scr.GW * cs + cs * 8, V.scr.GH * cs + cs * 8);
     c.drawImage(V.estatico, V.ox, V.oy, V.estatico.width / dpr, V.estatico.height / dpr);
     const dv = f.dv, pk = dv.pk;
-    // cables encendidos
-    for (const cb of V.cables) if (pk[cb.k]) dibujarCable(c, Object.assign({}, cb, { pts: cb.pts.map(([x, y]) => [x + V.ox / cs, y + V.oy / cs]) }), 0.65, true, tm);
+    // cables encendidos (el pulso viajero dura 250 ms desde el cambio de estado de su placa)
+    if (!V.pkPrev) { V.pkPrev = pk.slice(); V.pkT = [-9, -9, -9, -9]; }
+    for (let k = 0; k < 4; k++) if (!!pk[k] !== !!V.pkPrev[k]) { V.pkPrev[k] = !!pk[k]; V.pkT[k] = tm; }
+    for (const cb of V.cables) if (pk[cb.k]) { const dtp = tm - V.pkT[cb.k]; const pulso = f.reducido || f.instantaneo ? 0 : Math.max(0, 1 - dtp / 0.25); dibujarCable(c, Object.assign({}, cb, { pts: cb.pts.map(([x, y]) => [x + V.ox / cs, y + V.oy / cs]) }), 0.65, true, tm, pulso); }
     // placas
     for (let k = 0; k < 4; k++) for (const ci of st.plates[k]) placa(c, ci, k, pk[k], st.heavy[k], tm);
     // salida y cápsula
@@ -230,24 +235,27 @@ export function crearVista(cv) {
     }
     lista.sort((u, v) => u.py - v.py);
     setTS(cs * 0.82);
+    const insignias = []; // VIS-ANTES-02: los números se dibujan después de todas las siluetas
     for (const L of lista) {
       if (L.desv) continue; // se dibuja como partículas
       const esJ = L.i === f.jugador;
       const fc = V.scr.dir(f.facing[L.i] || 'D').toLowerCase();
       const mov = f.movio[L.i] && f.p < 1 ? 1 : 0, ph = mov ? f.p * Math.PI * 2 : 0;
       const push = f.empujo[L.i] ? Math.sin(Math.min(1, f.p) * Math.PI) : 0;
-      if (!esJ && f.trail !== false && mov) for (let s = 1; s <= 3; s++) {
+      // estela: una silueta (cs < 28) o dos (cs >= 28); ninguna con movimiento reducido
+      if (!esJ && f.trail !== false && mov && !f.reducido) { const nS = cs < 28 ? 1 : 2; for (let s = 1; s <= nS; s++) {
         const q = Math.max(0, f.p - s * 0.12); const [qx, qy] = V.centro(L.x0 + (L.x1 - L.x0) * q, L.y0 + (L.y1 - L.y0) * q);
-        astroEco(c, qx, qy, fc, ph, mov, push, tm, L.i, f, [0.15, 0.1, 0.05][s - 1] / 0.55);
-      }
+        astroEco(c, qx, qy, fc, ph, mov, push, tm, L.i, f, [0.10, 0.06][s - 1] / 0.55);
+      } }
       if (esJ) {
         const hg = c.createRadialGradient(L.px, L.py + cs * 0.3, 0, L.px, L.py + cs * 0.3, cs * 0.5);
         hg.addColorStop(0, 'rgba(255,255,255,.22)'); hg.addColorStop(1, 'rgba(255,255,255,0)'); c.fillStyle = hg; c.fillRect(L.px - cs * 0.6, L.py - cs * 0.3, cs * 1.2, cs * 1.2);
         c.save(); if (f.saturacion != null && c.filter !== undefined) c.filter = `saturate(${f.saturacion})`;
         drawAstro(c, L.px, L.py + cs * 0.82 * 0.06, fc, ph, mov, push, tm, 0); c.restore();
-      } else astroEco(c, L.px, L.py, fc, ph, mov, push, tm, L.i, f, 1);
+      } else { astroEco(c, L.px, L.py, fc, ph, mov, push, tm, L.i, f, 1); insignias.push([L.px, L.py, L.i]); }
       if (f.chispa && f.chispa.has(L.i) && f.p < 1) { c.fillStyle = `rgba(255,220,120,${1 - f.p})`; for (let s = 0; s < 5; s++) { const an = s * 1.3 + tm * 9; c.beginPath(); c.arc(L.px + Math.cos(an) * cs * 0.22, L.py - cs * 0.42 + Math.sin(an) * cs * 0.1, cs * 0.03, 0, 7); c.fill(); } }
     }
+    for (const [bx, by, i] of insignias) insignia(c, bx, by, i, f);
     // flechas del próximo movimiento de cada eco
     if (f.flechas) for (const fl of f.flechas) flecha(c, fl, tm, f);
     // partículas
@@ -260,7 +268,10 @@ export function crearVista(cv) {
       if (!f.reducido) { c.globalAlpha = 0.25 * Math.sin(r * Math.PI); c.fillStyle = '#00f2cf'; for (let yy = 0; yy < H; yy += 6) { const off = Math.sin(yy * 0.05 + tm * 20) * 10 * Math.sin(r * Math.PI); c.fillRect(off, yy, W, 1); } }
       c.restore();
     }
-    if (f.vista) { c.save(); c.strokeStyle = 'rgba(0,242,207,.55)'; c.lineWidth = 2; c.setLineDash([8, 6]); c.lineDashOffset = -tm * 30; c.strokeRect(V.ox - 6, V.oy - 6, V.scr.GW * cs + 12, V.scr.GH * cs + 12); c.restore(); }
+    // VIS-ANTES-04: marco estático de guiones y rótulo «Vista» fuera de la sala mientras se inspecciona otro turno
+    if (f.vista) { c.save(); c.strokeStyle = 'rgba(0,242,207,.55)'; c.lineWidth = 2; c.setLineDash([8, 6]); c.strokeRect(V.ox - 6, V.oy - 6, V.scr.GW * cs + 12, V.scr.GH * cs + 12); c.setLineDash([]);
+      if (f.vistaRotulo) { c.font = '700 11px JetBrains Mono, monospace'; const tw = c.measureText(f.vistaRotulo).width + 10; const lx = V.ox + V.scr.GW * cs + 6 - tw, ly = Math.max(2, V.oy - 6 - 18); c.fillStyle = 'rgba(5,1,8,.88)'; if (c.roundRect) { c.beginPath(); c.roundRect(lx, ly, tw, 16, 4); c.fill(); } else c.fillRect(lx, ly, tw, 16); c.fillStyle = '#00f2cf'; c.textAlign = 'left'; c.textBaseline = 'middle'; c.fillText(f.vistaRotulo, lx + 5, ly + 8.5); }
+      c.restore(); }
   };
 
   const ecoCv = document.createElement('canvas'); const ecoCtx = ecoCv.getContext('2d');
@@ -272,15 +283,20 @@ export function crearVista(cv) {
     const col = (f.aurora ? COLOR_AURORA : COLOR_ECO)[i % 6];
     e.globalCompositeOperation = 'source-atop'; e.globalAlpha = 0.45; e.fillStyle = col; e.fillRect(0, 0, size, size); e.globalAlpha = 1;
     if (f.hc) patron(e, i, size, col);
-    if (!f.reducido) { e.fillStyle = 'rgba(5,1,8,.35)'; const off = (tm * 18) % 4; for (let y = off; y < size; y += 4) e.fillRect(0, y, size, 1); }
+    if (!f.reducido && cs >= 28) { e.fillStyle = 'rgba(5,1,8,.35)'; const off = (tm * 18) % 4; for (let y = off; y < size; y += 4) e.fillRect(0, y, size, 1); }
     e.globalCompositeOperation = 'source-over';
     c.save(); c.globalAlpha = Math.min(1, (f.hc ? 0.7 : 0.55) * alphaMul * (f.alfaEcos ?? 1)); c.drawImage(ecoCv, px - size / 2, py - size / 2, size, size); c.restore();
-    if (alphaMul >= 1) { // insignia con el número
-      const bx = px + cs * 0.26, by = py - cs * 0.36, r = Math.max(6, cs * 0.14);
-      c.fillStyle = col; c.beginPath(); c.arc(bx, by, r, 0, 7); c.fill();
-      if (f.hc) { c.strokeStyle = '#fff'; c.lineWidth = 1.5; c.stroke(); }
-      c.fillStyle = '#050108'; c.font = `800 ${Math.round(r * 1.3)}px JetBrains Mono, monospace`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(String(i + 1), bx, by + 0.5);
-    }
+  }
+  // insignia numerada del eco: diámetro mínimo 12 px (14–18 px con cs >= 32), borde oscuro de 1 px, número con contraste >= 4.5:1
+  const lum = (hex) => { const n = parseInt(hex.slice(1), 16); const f = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }; return 0.2126 * f(n >> 16) + 0.7152 * f((n >> 8) & 255) + 0.0722 * f(n & 255); };
+  function insignia(c, px, py, i, f) {
+    const cs = V.cs, col = (f.aurora ? COLOR_AURORA : COLOR_ECO)[i % 6];
+    const r = cs >= 32 ? Math.max(7, Math.min(9, cs * 0.14)) : 6;
+    const bx = px + cs * 0.26, by = py - cs * 0.36;
+    c.save(); c.fillStyle = col; c.beginPath(); c.arc(bx, by, r, 0, 7); c.fill();
+    c.strokeStyle = f.hc ? '#fff' : 'rgba(5,1,8,.9)'; c.lineWidth = f.hc ? 1.5 : 1; c.stroke();
+    const oscuro = (lum(col) + 0.05) / (lum('#050108') + 0.05) >= 4.5; c.fillStyle = oscuro ? '#050108' : '#f5f0ff';
+    c.font = `800 ${Math.round(r * 1.3)}px JetBrains Mono, monospace`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(String(i + 1), bx, by + 0.5); c.restore();
   }
   function patron(e, i, size, col) {
     e.save(); e.globalAlpha = 0.8; e.strokeStyle = '#ffffff'; e.fillStyle = '#ffffff'; e.lineWidth = 1.4;
@@ -304,7 +320,7 @@ export function crearVista(cv) {
     }
     c.fillStyle = on ? hexA(col, 0.32) : '#0b0619'; rr(c, cx - s / 2, cy - s / 2, s, s, cs * 0.1); c.fill();
     c.strokeStyle = hexA(col, on ? 0.95 : 0.45); c.lineWidth = Math.max(1.5, cs * 0.045); c.stroke();
-    if (on) { c.save(); c.shadowColor = col; c.shadowBlur = cs * 0.5; c.strokeStyle = hexA(col, 0.6); c.stroke(); c.restore(); }
+    if (on) { c.save(); c.shadowColor = col; c.shadowBlur = Math.min(6, cs * 0.15); c.strokeStyle = hexA(col, 0.6); c.stroke(); c.restore(); }
     forma(c, k, cx, cy, cs * 0.17, on ? col : hexA(col, 0.6), on);
   }
   function forma(c, k, cx, cy, r, col, lleno) {

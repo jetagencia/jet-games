@@ -1,0 +1,163 @@
+[
+  {
+    "id": "RSP-MODALS-01",
+    "estado": "implementado",
+    "archivos": ["site/crater/src/ui.js", "site/crater/index.html", "site/crater/src/estilo.css"],
+    "detalle": "crater: abrir(m, opts)/cerrar(opts) con pila (modales) y ACTIVADOR por capa: al abrir se guarda document.activeElement, se pone inert en las seis pantallas base, #back, #tr, #pill, #toast y en las capas inferiores (sincInerte); foco inicial en el h2 del diálogo o en el control indicado (Cancelar en borrado), sin condicionar a ontouchstart; Escape cierra sólo la capa superior; al cerrar se restaura inert y el foco vuelve al activador si sigue visible o, si no, al título de la capa revelada/canvas de la ronda. Las secciones .scr.modal (Cómo jugar, Por qué, Ajustes, Pausa, Compartir, Borrar) llevan role=dialog/alertdialog + aria-modal + aria-labelledby. cerrarTodo() para salir al menú sin foco colgado.",
+    "verificacion": "Playwright 390: Pausa→Ajustes→Borrar: sRonda.inert=true, sPausa.inert=true con Ajustes encima, 24 Tab no salen de Ajustes, Cancelar enfocado al abrir; Escape cierra Ajustes (foco a #bPAjustes) y luego Pausa (foco a #bPausa)."
+  },
+  {
+    "id": "RSP-NATIVE-KEYS-01",
+    "estado": "implementado",
+    "archivos": ["site/crater/src/ui.js"],
+    "detalle": "crater: en el keydown global, tras Escape/pausa, se sale si el destino es input/textarea/select/contenteditable y si Enter/Espacio caen sobre button, a[href], summary, [role=button|radio|switch] o .tog: el control nativo recibe su click. Las .plat (radios) se seleccionan con su click nativo y ya no confirman. Enter/Espacio confirman el aterrizaje sólo con #cv enfocado de verdad (document.activeElement===cv), sin repetición de tecla (e.repeat) y al menos 300 ms después de la selección.",
+    "verificacion": "Playwright: con una opción elegida, Enter sobre #bPausa enfocado abre la pausa y la fase sigue en «elegir» (no aterriza)."
+  },
+  {
+    "id": "VIS-CRATER-01",
+    "estado": "implementado",
+    "archivos": ["site/crater/src/mapa.js"],
+    "detalle": "crater: constantes MAP_ART locales a mapa.js (version:2) y plano() repintado en el orden pedido: fondo #0B1220, viñeta negra .20 sin textura, rejilla con las mismas 20 y 4 divisiones (#8FA9BD alfa .045/.085, 1 CSS px vía px()=v*dpr), pasillos, sombra y cuerpos, detalles, etiquetas; los estados siguen en dibujar(). Clave de CACHE con la versión del arte (base:v2:…) y limpiarCache() sigue vaciándola al cambiar idioma. Sin filtro sobre el canvas completo. No se tocan ronda.op, ronda.pasillos, semilla, formas, puertas ni RNG (la generación está en gen.js y no cambió).",
+    "verificacion": "Captura crater-base-1280.png y -390.png (archivo 2026-10-22, ronda 6, local sin votos): 6 módulos, 6 etiquetas (Hangar, Puente de mando, Gimnasio, Almacén, Observatorio, Dormitorios) y 5 pasillos, misma disposición que la referencia. Igualdad op+pasillos garantizada por no tocar gen.js; no se exportó JSON comparativo."
+  },
+  {
+    "id": "VIS-CRATER-02",
+    "estado": "implementado",
+    "archivos": ["site/crater/src/mapa.js"],
+    "detalle": "crater: cada pasillo conserva su segmento exacto A→B y sus anchos .05s/.03s; banda exterior #172638, interior #273C50, eje central continuo rgba(128,151,168,.32) de 1 CSS px (sin guiones cian, sin flechas ni animación), lineCap/lineJoin round. Dibujados antes de los módulos, como antes.",
+    "verificacion": "Captura crater-base-1280.png: corredores legibles, sin dirección sugerida, módulos encima."
+  },
+  {
+    "id": "VIS-CRATER-03",
+    "estado": "implementado",
+    "archivos": ["site/crater/src/mapa.js"],
+    "detalle": "crater: siluetas y dimensiones intactas (mismo arc/rr y radio s*.016). Relleno degradado vertical #26384A→#162433; borde #7693A8 de 1.5 CSS px; reflejo interior superior .75 CSS px blanco .14 recortado a la silueta; sombra negra .28, blur 8 CSS px, offsetY 3 CSS px igual para todos. Domo: mismos dos anillos y cruceta a 1 CSS px rgba(157,180,196,.35), reflejo radial .18. Torre: antena 1.5 CSS px #C7D7E2 y punto #ff4466 sin halo. Rect: tres ventanas en las mismas posiciones, cian funcional sin glow; grande conserva la división a y+h*.18. Puerta amarilla con dirección, tamaño y color originales. Sin pictogramas nuevos.",
+    "verificacion": "Captura crater-base-1280.png: domo distinguible del rectángulo, torre con antena y punto rojo, puerta visible. Comparación de máscaras geométricas no automatizada (geometría sin cambios en el código)."
+  },
+  {
+    "id": "VIS-CRATER-04",
+    "estado": "implementado",
+    "archivos": ["site/crater/src/mapa.js"],
+    "detalle": "crater: nombres de BAN.MOD sin abreviar; Poppins 600 a clamp(CSSW*.038,12,15) CSS px (×dpr), color #E7EFF5, interlínea 1.25, 8 CSS px bajo el edificio y centrados en su x. Fondo único por etiqueta (rgba(11,18,32,.82), radio 4, padding 6/3 CSS px, sin borde ni glow) sólo cuando la caja pisa un módulo o un pasillo (pisaEstructura/segCaja); sobre fondo limpio, texto directo con sombra 0 1 2 negro .35. Salto a dos líneas conservando palabras cuando supera el 27 % del lado; colisión etiqueta–etiqueta resuelta bajando la posterior; ninguna etiqueta se oculta ni se cambia por icono. El modo mini (CSSW<170) sigue sin nombres, como el original; el radiogroup #srOps da el texto equivalente.",
+    "verificacion": "Capturas base 1280/390: seis nombres con acento en Almacén; «Puente de mando» parte en dos líneas a 390 px sin solapar. Contraste nominal #E7EFF5 sobre #0B1220 > 12:1."
+  },
+  {
+    "id": "VIS-CRATER-05",
+    "estado": "implementado",
+    "archivos": ["site/crater/src/mapa.js", "site/crater/src/ui.js", "site/crater/index.html", "site/crater/src/estilo.css"],
+    "detalle": "crater: tabla de estados en dibujar(): reposo sin halo; hover #9FB5C6 1.5 px offset 4 (sólo si no hay selección ni foco en esa opción); foco de teclado anillo blanco 2 px offset 8 dash [4,3]; seleccionado cian 2.5 px offset 4 estático (sin pulso) con relleno cian .06; ganador corona cian con halo máximo 6 px; elección propia amarillo punteado intacto. Porcentajes del plano de la base se colocan arriba del módulo para no tapar su nombre; la corona sube en consecuencia. Leyenda en el panel de ronda (#rLey) «Tu elección» sólo con selección real; leyenda de revelación añade «Tu elección» y «Más elegido» / «Más elegidos · empate» con muestras. st.sel/hover/foco/ganadores/mio y elegirEn no cambian.",
+    "verificacion": "Capturas crater-eleccion-390.png (anillo de selección estático + leyenda «Tu elección») y crater-revela-1280.png (corona, marcador propio, leyenda). «Foco de teclado» no se muestra porque el juego no mantiene un índice de foco distinto de la selección (st.foco nunca se asigna)."
+  },
+  {
+    "id": "PLAY-CRATER-01",
+    "estado": "implementado",
+    "archivos": ["site/crater/src/ui.js", "site/crater/index.html", "site/crater/src/textos.js"],
+    "detalle": "crater: corrección del onboarding actual. Al terminar el ensayo (fase posado) se guarda tut=1 y aparecen, junto a «Jugar el día #{n}», los botones «Repetir ensayo» (vuelve a la ronda TUT, sin votos) y «Volver al menú» (mostrar('inicio'), sin iniciar el día). «Saltar ensayo» también lleva al menú en vez de abrir el día automáticamente; «Repetir ensayo» en Cómo jugar renombrado. La práctica local completa de siete rondas («Practicar sin enviar respuestas») NO se implementó: ampliación opcional pendiente de decisión según la orden maestra.",
+    "verificacion": "Playwright: tras confirmar en el ensayo aparecen «Jugar el día #3», «Repetir ensayo» y «Volver al menú»; «Volver al menú» deja pantalla=inicio con botón «Jugar el día #3» y cola de votos 0."
+  },
+  {
+    "id": "PLAY-CRATER-02",
+    "estado": "implementado",
+    "archivos": ["site/crater/src/ui.js", "site/crater/index.html", "site/crater/src/textos.js", "site/crater/src/estilo.css"],
+    "detalle": "crater: el mapa y la lista sólo seleccionan o cambian la selección: se eliminaron el «tocar otra vez para aterrizar», el doble clic (cv y lista) y la confirmación por Enter sobre una .plat. La confirmación es únicamente el botón «Confirmar aterrizaje» (#bAterrizar), precedido por «Elegiste: {opción}. Una vez confirmada, no podrás cambiarla.» (#rAviso, tono de tú del juego). Enter confirma sólo con el canvas enfocado, sin repetición y 300 ms después de elegir. Cómo jugar (how2b) describe el nuevo flujo. En modo hoy el botón sigue llamando a RED.votar (no se tocó la red).",
+    "verificacion": "Playwright: doble clic sobre la opción elegida deja la fase en «elegir»; el botón muestra «Confirmar aterrizaje» y el aviso con la opción; confirmar en el ensayo deja la cola de votos en 0."
+  },
+  {
+    "id": "PLAY-CRATER-03",
+    "estado": "implementado",
+    "archivos": ["site/crater/src/ui.js", "site/crater/src/textos.js"],
+    "detalle": "crater: el resultado del ensayo se rotula «Resultado del ensayo · datos simulados» y añade «Rivales de práctica: {n}» (n = suma real de R.practica). En lectura temprana y revelación los conteos se separan por unidad real: «Respuestas reales: {n}» (conteos devueltos por el servidor, no personas únicas) y «Rivales de práctica: {m}» con m = 30 − N (la mezcla vigente completa hasta 30); con N ≥ 30 sólo respuestas reales; con el filtro «solo reales» y N = 0 no se muestra mayoría (ganadoresVista). Cierre y revelación con fecha completa, hora y zona horaria del dispositivo (fhz: Intl timeZone o UTC±hh:mm): «La revelación se habilita el {fecha} a las {hora} ({zona}).» en la tarjeta de inicio y en la lectura; «Cierra el {fecha} a las {hora} ({zona})» en la revelación; how3b aclara «medianoche de tu zona horaria».",
+    "verificacion": "Playwright: resultado del ensayo «Ensayo completado · Resultado del ensayo · datos simulados … Rivales de práctica: 200»; lDust «… La revelación se habilita el 25 oct 2026 a las 00:00 (UTC).» (zona del entorno de prueba)."
+  },
+  {
+    "id": "PLAY-CRATER-04",
+    "estado": "implementado",
+    "archivos": ["site/crater/src/ui.js", "site/crater/src/textos.js"],
+    "detalle": "crater: la tarjeta de ronda revelada (rvLinea) muestra en texto «Tu elección: {opción} · coincidencia {porcentaje} %», «La opción más elegida: {mayoría} · {porcentajeMayoría} %» (o «Más elegidos · empate: …» si hay varias) y la línea explicativa del foco; el ensayo muestra lo mismo con «Ensayo completado». Porcentajes calculados con los mismos pv que se dibujan; geometría del mapa y áreas relativas intactas.",
+    "verificacion": "Playwright revelación archivo: «Tu elección: Cráter 1, pequeño · coincidencia 56 %» / «La opción más elegida: Cráter 1, pequeño · 56 %». Captura crater-revela-1280.png."
+  },
+  {
+    "id": "PLAY-CRATER-05",
+    "estado": "implementado",
+    "archivos": ["site/crater/src/ui.js", "site/crater/src/estilo.css"],
+    "detalle": "crater: fondo inert con cualquier diálogo y retorno de foco (ver RSP-MODALS-01). Los avisos transitorios se limpian al cambiar de pantalla (mostrar() → limpiarToast) y la tarjeta nueva se anuncia como «Nueva tarjeta: {nombre}» con acción «Ver en el cuaderno» (toastAccion, 6 s, sólo si la pantalla sigue siendo la que la desbloqueó); el historial queda en Perfil/Cuaderno. En la ronda el aviso se coloca bajo la barra para no tapar resultado ni confirmación.",
+    "verificacion": "Captura crater-revela-1280.png: aviso «Nueva tarjeta: El distinto» con botón «Ver en el cuaderno». Playwright: sRonda.inert=true con la pausa abierta."
+  },
+  {
+    "id": "RSP-GLOBAL-01",
+    "estado": "implementado",
+    "archivos": ["site/crater/index.html", "site/crater/src/estilo.css"],
+    "detalle": "crater: meta viewport sin maximum-scale ni user-scalable. #sRonda pasa de touch-action:none a pan-y pinch-zoom; el control de puntero queda en #cv (touch-action:none) y los botones conservan manipulation. No había bloqueos de gesturestart/dblclick a nivel documento.",
+    "verificacion": "Smoke 390/1280 sin errores; capturas crater-390.png y crater-1280.png."
+  },
+  {
+    "id": "SRC-CR01",
+    "estado": "implementado",
+    "archivos": ["site/crater/src/ui.js", "site/crater/src/textos.js", "site/crater/index.html"],
+    "detalle": "crater: chip de estado «Resultado provisional» / «Resultado final» (según GEN.cierreUTC vigente) y línea #rvTiempo «Cierra el {fecha} a las {hora} ({zona})»; revelación de inicio con fecha/hora/zona calculadas de la próxima medianoche local. Etiqueta de rivales simulados junto al resultado («Rivales de práctica: {m}») y en el texto compartido (sharePractice, ya existente). No se usa «jugadores reales»: los datos devueltos son conteos de respuestas, no personas únicas; se emplea «Respuestas reales: {n}». Ventana de juego sin cambios.",
+    "verificacion": "Playwright revelación de archivo cerrado: chip «Resultado final» y #rvTiempo vacío; en revelación abierta mostraría cierre con zona. Alrededor del cambio de día no se probó."
+  },
+  {
+    "id": "SRC-CR02",
+    "estado": "implementado",
+    "archivos": ["site/crater/src/ui.js", "site/crater/index.html", "site/crater/src/textos.js", "site/crater/src/estilo.css"],
+    "detalle": "crater: compartir() ya no vuelca el texto en un toast de 5 s: si navigator.share se cancela (AbortError) no muestra nada; si el portapapeles falla abre el diálogo #sCompartir con «No pudimos copiarlo automáticamente. Selecciona y copia este texto.», textarea readonly con el texto íntegro (título, sincronía, lunas y URL), botones «Copiar texto» (execCommand/clipboard, éxito «Texto copiado» sólo si funciona) y «Cerrar». Botón «Compartir resultado». La confirmación de aterrizaje recuerda que no se puede cambiar y el doble toque ya no fija la elección (PLAY-CRATER-02).",
+    "verificacion": "Playwright con clipboard.writeText forzado a fallar: se abre el modal «compartir» con foco en el textarea y primera línea «JET//Cráter #3»; Escape lo cierra."
+  },
+  {
+    "id": "VIS-CRATER-06",
+    "estado": "implementado",
+    "archivos": ["site/crater/src/mapa.js", "site/crater/src/ui.js"],
+    "detalle": "crater: microcráteres decorativos con globalAlpha .10–.20 (antes .18–.43) manteniendo la misma secuencia de RNG, posiciones y la exclusión a 1.25×radio (no se amplió a 1.6× porque requiere comparativa de saliencia). Paletas PLANETAS, dibCrater, rasgos (hielo/doble/rayos/oval/oscuro/pico) y cañón intactos. Fondo durante elección y revelación (opción suave): estrellas alfa .18–.38 y tamaño máximo 1.2 px, sin fugaces; la portada conserva su animación. Caché de terreno por semilla/tipo/tamaño sin cambios.",
+    "verificacion": "Capturas crater-eleccion-390.png y crater-revela-1280.png: rasgos reconocibles; sin marcas nuevas que parezcan opción. Misma semilla → mismos centros/radios por construcción (gen.js intacto)."
+  },
+  {
+    "id": "VIS-CRATER-07",
+    "estado": "implementado",
+    "archivos": ["site/crater/src/estilo.css", "site/crater/src/ui.js"],
+    "detalle": "crater: panel de consigna #132130, borde 1 px #304454, radio 14, padding 14/16, título 18/1.3 peso 600, explicación 14/1.5 #B4C3CE. Plataformas con material #172838→#101D2B, borde 1 px #3C5366, radio 12, sombra 0 4 10 negro .18, sin halo ::after en reposo (la pista cian sólo en .sel); balizas con var(--c) exacto, glow 8 px al 25 % y borde neutro 1 px. Tamaños relativos de números y palabras sin tocar. Resultado de ronda con la cifra dominante en mono 24 px (.cifra) y texto 15 px, separación 12 px. Sin saturate/filter.",
+    "verificacion": "Capturas crater-eleccion-390.png y crater-base-1280.png (consigna); los valores numéricos y porcentajes conservan formato."
+  },
+  {
+    "id": "SRC-G03",
+    "estado": "implementado",
+    "archivos": ["site/crater/src/textos.js"],
+    "detalle": "crater (común): pausa «Reanudar partida» (continue), destino «Volver al menú» (home: pausa, lectura, revelación de archivo, cierres de Archivo/Perfil); verbos de dominio conservados (Aterrizar → «Confirmar aterrizaje», Jugar el día #{n}, Ver mi lectura, Siguiente ronda).",
+    "verificacion": "Playwright: #bSeguir «Reanudar partida»; «Volver al menú» en el ensayo lleva a inicio."
+  },
+  {
+    "id": "SRC-G04",
+    "estado": "implementado",
+    "archivos": ["site/crater/src/ui.js", "site/crater/index.html", "site/crater/src/textos.js"],
+    "detalle": "crater (común): «Borrar progreso» ya no es doble toque con 4 s: abre #sBorrar (alertdialog) «¿Borrar todo el progreso de JET//Cráter?» / «Se borrarán tus aterrizajes, el historial de días, la racha, el perfil, la Brújula y el Cuaderno. Esta acción no se puede deshacer.», con «Cancelar» enfocado y botón peligro «Borrar progreso». Al confirmar se conservan las preferencias (música, efectos, vibración, avance automático, movimiento, filtro) y el uid: antes se reiniciaban sin prometerlo.",
+    "verificacion": "Playwright: diálogo con foco en Cancelar; Enter cancela sin borrar y devuelve el foco a «Borrar progreso». Captura crater-borrar-390.png."
+  },
+  {
+    "id": "SRC-G05",
+    "estado": "implementado",
+    "archivos": ["site/crater/index.html", "site/crater/src/ui.js"],
+    "detalle": "crater (común): #sCarga deja de ser aria-hidden con pulso infinito: role=status con «Cargando JET//Cráter…» (ES/EN según JETIdioma) y, ante fallo de descarga de un <script> («No pudimos descargar todos los recursos.»), error de ejecución o bootstrap que no termina en 12 s («La carga se interrumpió. Puedes volver a intentarlo.»), muestra «Volver a cargar» y «Volver a los juegos» (con ?lang) y oculta el pulso. arrancar() marca listo (__crCargaLista) antes de retirar la pantalla: estados excluyentes.",
+    "verificacion": "Smoke: 0 botones vacíos, sin errores de consola salvo el 404 esperado de api.php. No se ejecutó la prueba de bloquear un módulo."
+  },
+  {
+    "id": "SRC-G06",
+    "estado": "implementado",
+    "archivos": ["site/crater/src/ui.js", "site/crater/index.html"],
+    "detalle": "crater (común): ver SRC-CR02: compartir sólo por acción del usuario, éxito veraz, cancelación silenciosa, fallback persistente con texto íntegro, «Copiar texto» y «Cerrar».",
+    "verificacion": "Playwright: modal de compartir con el texto completo; Escape vuelve a la lectura sin reevaluar."
+  },
+  {
+    "id": "SRC-G01",
+    "estado": "no_aplicable",
+    "archivos": [],
+    "detalle": "crater (común): corresponde a las tarjetas de la home. El juego conserva «Volver a JET//Games» (#back) con target=_top.",
+    "verificacion": "Sin cambios."
+  },
+  {
+    "id": "SRC-G02",
+    "estado": "ya_corregido_verificado",
+    "archivos": [],
+    "detalle": "crater (común): selector ES/EN (inicio y Ajustes) con aria-pressed y JETIdioma con prioridad ?lang > cookie/localStorage > navegador ya presentes; migración única de prefs.lang conservada.",
+    "verificacion": "Playwright con ?lang=es muestra la interfaz en español; smoke en EN."
+  }
+]

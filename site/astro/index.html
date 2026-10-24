@@ -114,7 +114,7 @@
     background:rgba(2,2,8,0.55); backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px);
   }
   #confirm { z-index:5; background:rgba(2,2,8,0.7); }
-  #overlay[hidden], #confirm[hidden] { display:none; }
+  #overlay[hidden], #confirm[hidden], #overlay [hidden], .ja [hidden] { display:none !important; }
   .ov-card {
     position:relative; display:flex; flex-direction:column; align-items:center; gap:12px;
     width:min(100%, 440px); padding:18px 16px 16px; border-radius:16px;
@@ -525,7 +525,7 @@ const SONG_ASTRO=(()=>{
       k.textContent = TX.end; playBtn.textContent = TX.retry;
       // resultado, motivo y consejo acorde al choque real: roca → saltar más alto; meteorito → a veces conviene no saltar
       reason.textContent = s.cause === 'met' ? TX.reasonMet : TX.reasonRock;
-      $('ov-hint').textContent = (s.cause === 'met' ? TX.tipMeteor : TX.tipJump) + ' ' + TX.again;
+      $('ov-hint').textContent = (s.cause === 'met' ? TX.tipMeteor + '.' : TX.tipJump) + ' ' + TX.again;
       $('ov-score').textContent = `${s.score} ${TX.pts}`;
       $('ov-best').innerHTML = s.lastRecord && best > 0 ? `<b>${TX.newBest}</b>` : `${TX.best}: <b>${best}</b>`;
       data.hidden = false;
@@ -534,7 +534,7 @@ const SONG_ASTRO=(()=>{
       data.hidden = !(best > 0);
       if (best > 0) $('ov-best').innerHTML = `${TX.best}: <b>${best}</b>`;
     }
-    if (!confirmEl.hidden) paintConfirm();
+    if (!confirmEl.hidden) paintConfirm(); else { $('cf-stay').textContent = TX.stay; $('cf-go').textContent = TX.menu; }
   }
   function applyLang() {
     const lang = curLang(); TX = DICT[lang];
@@ -904,13 +904,18 @@ const SONG_ASTRO=(()=>{
     ctx.fillStyle = neb2; ctx.fillRect(0, 0, W, GROUND);
     ctx.restore();
 
+    // Estrellas decorativas: junto al corredor del astronauta no pasan de 0,45 de opacidad; arriba conservan su brillo (VIS-ASTRO-01)
+    const corridorTop = GROUND - 125;
     for (const st of s.starsBack) {
       const tw = RM.matches ? 0.5 : (Math.sin(s.frame * 0.04 + st.phase) + 1) / 2;
-      ctx.fillStyle = `rgba(255,255,255,${0.25 + tw * 0.5})`;
+      const a = st.y > corridorTop ? Math.min(0.45, 0.25 + tw * 0.5) : 0.25 + tw * 0.5;
+      ctx.fillStyle = `rgba(255,255,255,${a})`;
       ctx.beginPath(); ctx.arc(st.x, st.y, st.r, 0, Math.PI * 2); ctx.fill();
     }
-    ctx.fillStyle = 'rgba(220,230,255,0.85)';
-    for (const st of s.starsFront) { ctx.beginPath(); ctx.arc(st.x, st.y, st.r, 0, Math.PI * 2); ctx.fill(); }
+    for (const st of s.starsFront) {
+      ctx.fillStyle = st.y > corridorTop ? 'rgba(220,230,255,0.45)' : 'rgba(220,230,255,0.85)';
+      ctx.beginPath(); ctx.arc(st.x, st.y, st.r, 0, Math.PI * 2); ctx.fill();
+    }
 
     // Júpiter con bandas y gran mancha roja
     ctx.save();
@@ -940,8 +945,9 @@ const SONG_ASTRO=(()=>{
     const gg = ctx.createLinearGradient(0, GROUND, 0, H);
     gg.addColorStop(0, 'rgba(40,30,60,0.97)'); gg.addColorStop(1, 'rgba(12,8,22,0.97)');
     ctx.fillStyle = gg; ctx.fillRect(-10, GROUND, W + 20, H - GROUND + 10);
-    ctx.fillStyle = 'rgba(119,0,244,0.6)'; ctx.fillRect(0, GROUND - 1, W, 1);
-    ctx.fillStyle = 'rgba(0,242,207,0.15)'; ctx.fillRect(0, GROUND, W, 1);
+    // borde del suelo real: trazo continuo y nítido de 1,5 px CSS (ajustado a la escala), sin halo (VIS-ASTRO-01)
+    const edge = 1.5 / SCALE;
+    ctx.fillStyle = '#71608F'; ctx.fillRect(-10, GROUND - edge, W + 20, edge);
     ctx.lineWidth = 0.5;
     for (const cr of s.craters) {
       if (cr.x < -8 || cr.x > W + 8) continue;
@@ -972,7 +978,8 @@ const SONG_ASTRO=(()=>{
       ctx.fillStyle = rg; ctx.beginPath();
       a.shape.forEach((v, i) => i ? ctx.lineTo(v[0], v[1]) : ctx.moveTo(v[0], v[1]));
       ctx.closePath(); ctx.fill();
-      ctx.strokeStyle = a.kind === 'met' ? 'rgba(251,146,60,0.7)' : 'rgba(119,0,244,0.5)'; ctx.lineWidth = 1; ctx.stroke();
+      // borde mineral gris claro en las rocas comunes; cálido en meteoritos; 1,25 px CSS (VIS-ASTRO-02; la geometría a.shape no cambia)
+      ctx.strokeStyle = a.kind === 'met' ? 'rgba(251,146,60,0.7)' : 'rgba(148,163,184,0.75)'; ctx.lineWidth = 1.25 / SCALE; ctx.stroke();
       ctx.fillStyle = 'rgba(0,0,0,0.55)';
       for (const cr of a.craters) { ctx.beginPath(); ctx.arc(cr.cx, cr.cy, cr.r, 0, Math.PI * 2); ctx.fill(); }
       ctx.restore();
@@ -984,13 +991,13 @@ const SONG_ASTRO=(()=>{
     }
     ctx.globalAlpha = 1;
 
-    // hito cada 50 puntos
-    if (s.mileT > 0) {
-      const t = s.mileT / 90;
-      ctx.globalAlpha = Math.min(1, t * 3);
+    // hito cada 50 puntos: aviso breve (≈500 ms) en el cielo alto, fuera del corredor y sin tapar peligros (VIS-ASTRO-04)
+    if (s.mileT > 60) {
+      const t = (s.mileT - 60) / 30;
+      ctx.globalAlpha = Math.min(1, t * 4);
       ctx.textAlign = 'center'; ctx.fillStyle = '#00f2cf';
-      ctx.font = `800 ${TALL ? 44 : 30}px Poppins, system-ui, sans-serif`;
-      ctx.fillText(String(s.mile), W / 2, GROUND * (TALL ? 0.56 : 0.5) - (RM.matches ? 0 : (1 - t) * 10));
+      ctx.font = `800 24px Poppins, system-ui, sans-serif`;
+      ctx.fillText(String(s.mile), W / 2, (TALL ? GROUND * 0.34 : 30) - (RM.matches ? 0 : (1 - t) * 6));
       ctx.globalAlpha = 1; ctx.textAlign = 'left';
     }
     ctx.restore();
@@ -1078,7 +1085,8 @@ const SONG_ASTRO=(()=>{
     ctx.beginPath(); ctx.ellipse(cx, GROUND + 1, 22 * A_U * (0.6 + 0.4 * k), 6 * A_U, 0, 0, Math.PI * 2); ctx.fill();
     // llama del jetpack (sale de la mochila, detrás del cuerpo) al subir; más larga mientras se mantiene
     if (s.vy > 1 && !s.over) {
-      const fx = cx - 21.5 * A_U, fy = cy + 22 * A_U, len = (s.hold && s.canBoost && s.holdT <= HOLD_MAX ? 17 : 10) + Math.random() * 6;
+      // con movimiento reducido la llama es estable (sin ruido aleatorio) pero sigue indicando el ascenso
+      const fx = cx - 21.5 * A_U, fy = cy + 22 * A_U, len = (s.hold && s.canBoost && s.holdT <= HOLD_MAX ? 17 : 10) + (RM.matches ? 3 : Math.random() * 6);
       const f1 = ctx.createLinearGradient(0, fy, 0, fy + len);
       f1.addColorStop(0, '#22d3ee'); f1.addColorStop(0.5, '#7c3aed'); f1.addColorStop(1, 'transparent');
       ctx.fillStyle = f1; ctx.beginPath(); ctx.moveTo(fx - 4, fy); ctx.quadraticCurveTo(fx, fy + len + 4, fx + 4, fy); ctx.fill();
@@ -1096,7 +1104,7 @@ const SONG_ASTRO=(()=>{
   const ovc = $('ov-astro'), ovx = ovc.getContext('2d');
   { const d = Math.min(window.devicePixelRatio || 1, 3); ovc.width = ovc.height = Math.round(64 * d); }
   function drawOv() {
-    if (overlay.classList.contains('hidden') || !ovc.offsetParent) return;
+    if (overlay.hidden || !ovc.offsetParent) return;
     const w = ovc.width, t = performance.now() / 1000;
     ovx.setTransform(1, 0, 0, 1, 0, 0); ovx.clearRect(0, 0, w, w);
     if (s.over) {
@@ -1124,18 +1132,20 @@ const SONG_ASTRO=(()=>{
     requestAnimationFrame(loop);
   }
 
-  // ── Entrada: toda la pantalla es botón (en vertical el pulgar queda lejos de la franja de juego) ──
+  // ── Entrada: durante la partida toda la pantalla es botón de salto (en vertical el pulgar queda lejos de la franja).
+  //    Reintentar tras un impacto y reanudar la pausa exigen activar su botón: ningún toque suelto reinicia por accidente (SRC-A01). ──
   const canRestart = () => s.over && performance.now() - s.overAt > 600;
-  function primary() {
+  function primary() {   // teclado sobre la superficie de juego (canvas/body)
     if (s.paused) { pause(false); return; }
     if (s.running) { press(); return; }
-    if (!s.over || canRestart()) start();
+    if (!s.over) start();
   }
-  const UI_SEL = '#back, #play, #snd, #pause, .lang-seg';
+  const UI_SEL = '#back, #play, #snd, #pause, .lang-seg, .ov-row, #ov-catalog, #confirm';
   document.addEventListener('pointerdown', e => {
     if (e.button > 0 || e.target.closest(UI_SEL)) return;
     e.preventDefault();
-    primary();
+    if (s.running && !s.paused) press();
+    else if (!s.running && !s.over && overlay.dataset.kind !== 'pause') start();   // pantalla de inicio: un toque despega
   });
   const up = () => { if (s.hold) release(); };
   document.addEventListener('pointerup', up);
@@ -1144,17 +1154,33 @@ const SONG_ASTRO=(()=>{
     e.stopPropagation();
     if (s.paused) pause(false); else if (!s.over || canRestart()) start();
   });
-  pauseBtn.addEventListener('click', e => { e.stopPropagation(); pause(!s.paused); pauseBtn.blur(); });
+  $('ov-restart').addEventListener('click', e => { e.stopPropagation(); openConfirm('restart', e.currentTarget); });
+  $('ov-menu').addEventListener('click', e => { e.stopPropagation(); openConfirm('menu', e.currentTarget); });
+  $('cf-stay').addEventListener('click', e => { e.stopPropagation(); closeConfirm(false); });
+  $('cf-go').addEventListener('click', e => { e.stopPropagation(); closeConfirm(true); });
+  pauseBtn.addEventListener('click', e => { e.stopPropagation(); pause(!s.paused); });
   const JUMP_KEYS = ['Space', 'ArrowUp', 'KeyW'];
+  const EDITABLE = 'input, select, textarea, [contenteditable="true"]';
+  const CONTROL = 'button, a, input, select, textarea, [contenteditable="true"], [role="button"]';
   window.addEventListener('keydown', e => {
-    if (e.target.closest && e.target.closest('.ja, .lang-seg')) return;   // teclas dentro del panel de sonido o del selector de idioma
-    if (e.code === 'Escape' || e.code === 'KeyP') {
+    if (e.defaultPrevented) return;
+    const t = e.target && e.target.closest ? e.target : document.body;
+    if (t.closest('.ja, .lang-seg')) return;   // teclas dentro del panel de sonido o del selector de idioma
+    if (!confirmEl.hidden) {   // diálogo de confirmación: Escape cancela, Tab se queda dentro
+      if (e.code === 'Escape') { e.preventDefault(); closeConfirm(false); }
+      else if (e.key === 'Tab') trapTab(confirmEl, e);
+      return;
+    }
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.code === 'Escape' || e.code === 'KeyP') {   // atajos de pausa, salvo en campos editables
+      if (t.closest(EDITABLE)) return;
       if (s.running) { e.preventDefault(); pause(!s.paused); }
       return;
     }
+    if (e.key === 'Tab') { if (s.paused && !overlay.hidden) trapTab(overlay, e); return; }
+    if (t.closest(CONTROL)) return;   // Enter/Espacio activan el botón o enlace enfocado, nunca saltan
     if (e.code === 'ArrowDown' || e.code === 'KeyS') { e.preventDefault(); drop(); return; }
     if (JUMP_KEYS.includes(e.code) || e.code === 'Enter') {
-      if (e.target === playBtn && (e.code === 'Space' || e.code === 'Enter')) return;   // el botón ya hace su clic
       e.preventDefault();
       if (e.repeat) return;
       primary();
@@ -1172,14 +1198,14 @@ const SONG_ASTRO=(()=>{
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(relayout);
 
   // gancho de pruebas, como window.RAID
-  window.ASTRO = { state: s, start, press, release, drop, pause, step, get dims() { return { W, H, GROUND, AX, TALL }; } };
+  window.ASTRO = { state: s, start, press, release, drop, pause, step, toMenu, crash, get dims() { return { W, H, GROUND, AX, TALL }; } };
 
   // Vista de muestra para la tarjeta de la home: ?demo
-  if (best > 0) $('ov-best').style.display = '';
+  overlay.dataset.kind = 'start';
   applyLang();
   seedScenery(); layout(); hud();
   if (/[?&]demo/.test(location.search)) {
-    overlay.classList.add('hidden'); $('back').style.display = 'none'; $('snd').style.display = 'none';
+    setOverlayVisible(false); $('back').style.display = 'none'; $('snd').style.display = 'none';
     s.score = 27; s.alt = 38; s.vy = 4; s.frame = 40; hud();
     for (const [x, h, w] of [[W * 0.42, 40, 26], [W * 0.68, 30, 22], [W * 0.92, 46, 30]]) {
       const shape = []; for (let i = 0; i < 8; i++) { const ang = i / 8 * Math.PI * 2, r = 0.88 + ((i * 37) % 10) / 40; shape.push([Math.cos(ang) * w / 2 * r, Math.sin(ang) * h / 2 * r]); }

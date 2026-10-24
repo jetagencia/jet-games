@@ -46,7 +46,7 @@
         const p = l.txt[L].split(' · ');
         const c = l.claims[0];
         const col = DB().COLOR_PARCHE[(c.parche - 1) % 9];
-        h += '<div class="crew linea' + cls(i) + '" data-l="' + i + '"><span class="cs">' + ents(p[0]) + '</span><span class="nom">' + ents(p[1]) + '</span><span class="rol">' + ents(p[2]) + '</span><span class="pa"><i style="background:' + col + '">' + c.parche + '</i>' + ents(p[3]) + '</span></div>';
+        h += '<div class="crew linea' + cls(i) + '" data-l="' + i + '"><span class="cs">' + ents(p[0]) + '</span><span class="nom">' + ents(p[1]) + '</span><span class="rol">' + ents(p[2]) + '</span><span class="pa"><i style="background:' + col + '" aria-hidden="true">' + c.parche + '</i>' + ents(p[3]) + '</span></div>';
       });
     } else if (r.tipo === 'mantenimiento') {
       r.lineas.forEach((l, i) => {

@@ -42,13 +42,13 @@ export class World {
     // arena: textura fotográfica de Poly Haven con variación a gran escala para que no se note la repetición
     const sand = new THREE.MeshStandardMaterial({
       map: rep(A.sand, aw / 5, ah / 5, true), normalMap: rep(A.sandN, aw / 5, ah / 5), roughnessMap: rep(A.sandR, aw / 5, ah / 5),
-      roughness: 1, normalScale: new THREE.Vector2(0.7, 0.7), color: 0xe6d3b3,
+      roughness: 1, normalScale: new THREE.Vector2(0.5, 0.5), color: 0xe6d3b3,
     });
     sand.onBeforeCompile = (sh) => {
       sh.fragmentShader = sh.fragmentShader.replace('#include <map_fragment>', `#include <map_fragment>
         vec2 wp = vMapUv * 5.0;
         float n = sin(wp.x * 0.23 + sin(wp.y * 0.17) * 2.0) * 0.5 + sin(wp.y * 0.31 + wp.x * 0.07) * 0.5;
-        diffuseColor.rgb *= 0.93 + 0.07 * n;`);
+        diffuseColor.rgb *= 0.96 + 0.04 * n;`);
     };
     const arena = new THREE.Mesh(new THREE.PlaneGeometry(aw + 2, ah + 2), sand);
     arena.rotation.x = -Math.PI / 2; arena.position.y = 0.0; arena.receiveShadow = true; S.add(arena);

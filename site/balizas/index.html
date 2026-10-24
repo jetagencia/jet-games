@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <script src="src/jet-idioma.js?v=7"></script>
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>JET//Balizas · Cruza la niebla</title>
 <meta name="description" content="Cada día, un cinturón de asteroides en la niebla, el mismo para todos. Crúzalo, deja balizas para los que vienen detrás y mira cuántos astronautas guiaste.">
 <meta name="theme-color" content="#050108">
@@ -17,9 +17,28 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="src/style.css?v=7">
+<link rel="stylesheet" href="src/style.css?v=8">
+<script>
+/* SRC-G05 · estado de carga antes de los módulos del juego: título visible, error recuperable, sin spinner infinito. */
+(function () {
+  var es = (document.documentElement.lang || 'es') !== 'en';
+  var T = es ? { load: 'Cargando JET//Balizas…', err: 'La carga se interrumpió. Podés volver a intentarlo.', net: 'No pudimos descargar todos los recursos.', retry: 'Volver a cargar', back: 'Volver a los juegos' }
+             : { load: 'Loading JET//Balizas…', err: 'Loading was interrupted. You can try again.', net: 'We couldn’t download all resources.', retry: 'Reload game', back: 'Back to games' };
+  var listo = false, fallo = false;
+  function el(id) { return document.getElementById(id); }
+  function pintar() { var c = el('carga'); if (!c) return; el('cargaTxt').textContent = fallo ? (fallo === 'net' ? T.net : T.err) : T.load; el('cargaAcc').hidden = !fallo; el('cargaSpin').hidden = !!fallo; el('cargaRetry').textContent = T.retry; el('cargaBack').textContent = T.back; c.setAttribute('aria-busy', fallo ? 'false' : 'true'); }
+  window.__balizasCarga = {
+    listo: function () { listo = true; var c = el('carga'); if (c) c.hidden = true; clearTimeout(window.__balizasCarga.t); },
+    error: function (tipo) { if (listo) return; fallo = tipo || 'err'; pintar(); },
+    t: setTimeout(function () { if (!listo) { fallo = 'err'; pintar(); } }, 20000)
+  };
+  window.addEventListener('error', function (e) { if (listo) return; var src = e && e.target && e.target.tagName === 'SCRIPT'; window.__balizasCarga.error(src ? 'net' : 'err'); }, true);
+  document.addEventListener('DOMContentLoaded', function () { pintar(); el('cargaRetry').addEventListener('click', function () { location.reload(); }); });
+})();
+</script>
 </head>
 <body>
+<div id="carga" role="status" aria-live="polite" aria-busy="true"><div class="carga-in"><h1 class="logo">JET<i>//</i>Balizas</h1><p id="cargaTxt">Cargando JET//Balizas…</p><div class="spin" id="cargaSpin"></div><div id="cargaAcc" hidden><button class="btn pri" id="cargaRetry" type="button">Volver a cargar</button><a class="btn" id="cargaBack" href="https://jetgames.fun/">Volver a los juegos</a></div></div></div>
 <canvas id="cv" tabindex="-1" aria-label="JET//Balizas"></canvas>
 
 <a id="back" class="on" href="https://jetgames.fun/" target="_top" rel="noopener" data-ta="back_games">‹ JET<i>//</i>Games</a>
@@ -63,7 +82,7 @@
 <!-- ANTES DEL VUELO -->
 <section id="day" class="scr" aria-labelledby="dayTitle">
   <div class="card wide daycardx">
-    <div class="top"><button class="x" data-close="day" data-ta="go_home">‹</button><h2 id="dayTitle"></h2><span id="dayMode" class="badge"></span></div>
+    <div class="top"><button class="x" data-close="day" data-ta="go_home" type="button">‹</button><h2 id="dayTitle"></h2><span id="dayMode" class="badge"></span></div>
     <div class="day-grid">
       <div class="day-l">
         <p id="dayIntro" class="intro" hidden></p>
@@ -73,9 +92,9 @@
       </div>
       <div class="day-r">
         <ul class="facts" id="dayFacts"></ul>
-        <div class="set" id="trailRow"><label for="trailTog" data-t="trails"></label><button class="tog" id="trailTog" role="switch" aria-checked="false"></button></div>
-        <button id="takeoffBtn" class="btn pri big" data-t="takeoff"></button>
-        <p class="keys" id="dayKeys" data-t="keys_line"></p>
+        <div class="set" id="trailRow"><label id="lbTrails" data-t="trails"></label><button class="tog" id="trailTog" role="switch" aria-checked="false" aria-labelledby="lbTrails" type="button"></button></div>
+        <button id="takeoffBtn" class="btn pri big" data-t="takeoff" type="button"></button>
+        <p class="keys" id="dayKeys"></p>
       </div>
     </div>
   </div>
@@ -89,19 +108,20 @@
     <div class="hg hg-r"><div class="hv"><small data-t="hud_treasure"></small><b id="hTre">◆ 0/3</b></div>
       <div class="hv" id="hBeacWrap"><small data-t="hud_beacons"></small><b id="hBeac">3</b></div></div>
   </div>
-  <button id="pauseBtn" class="ico" data-ta="pause"><svg viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></svg></button>
+  <button id="pauseBtn" class="ico" data-ta="pause" type="button"><svg viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></svg></button>
+  <span id="modeTag" class="badge modetag" hidden data-t="tut_local"></span>
   <div id="prog"><i id="progDot"></i></div>
-  <canvas id="mini" width="84" height="84" hidden></canvas>
+  <canvas id="mini" width="84" height="84" hidden tabindex="0" role="img" data-ta="minimap_name"></canvas>
   <div id="tutLine" class="tutline" hidden></div>
-  <div id="undoBar" class="undo" hidden><span data-t="beacon_placed"></span><button id="undoBtn" data-t="undo"></button><i id="undoTimer"></i></div>
+  <div id="undoBar" class="undo" hidden role="status"><span class="undo-tx"><span id="undoTxt" data-t="beacon_placed"></span><small id="undoDur"></small></span><button id="undoBtn" data-t="undo" type="button"></button><i id="undoTimer"></i></div>
   <div id="stick" hidden><i id="stickKnob"></i></div>
   <div id="ghost" hidden><i></i><span data-t="hint_drag"></span></div>
   <div id="ctl">
-    <button id="beaconBtn" class="cbtn" data-ta="beacon"><svg viewBox="-1.15 -1.15 2.3 2.3"><path d="M0 -0.78 L0.74 0.06 L0.74 0.56 L0 -0.16 L-0.74 0.56 L-0.74 0.06 Z"/></svg><b id="beaconN">3</b></button>
-    <button id="brakeBtn" class="cbtn big" data-ta="brake"><span data-t="brake"></span></button>
+    <button id="beaconBtn" class="cbtn" data-ta="beacon" type="button"><svg viewBox="-1.15 -1.15 2.3 2.3"><path d="M0 -0.78 L0.74 0.06 L0.74 0.56 L0 -0.16 L-0.74 0.56 L-0.74 0.06 Z"/></svg><b id="beaconN">3</b></button>
+    <button id="brakeBtn" class="cbtn big" data-ta="brake" type="button"><span data-t="brake"></span></button>
   </div>
-  <div id="sel" class="sel" hidden role="dialog" data-ta="choose_symbol"><div class="sel-c" id="selC"></div><div class="sel-t" id="selT" data-t="choose_symbol"></div></div>
-  <div id="dial" class="dial" hidden role="dialog" data-ta="choose_dir"><div id="dialRing"></div><div id="dialArrow"></div><div class="sel-t" data-t="choose_dir"></div><button id="dialOk" class="dial-ok" data-ta="confirm">✓</button></div>
+  <div id="sel" class="sel" hidden role="dialog" aria-modal="true" data-ta="choose_symbol"><div class="sel-c" id="selC"></div><div class="sel-t" id="selT"></div><button id="selCancel" class="btn sel-cancel" type="button" data-t="cancel"></button></div>
+  <div id="dial" class="dial" hidden role="dialog" aria-modal="true" data-ta="choose_dir"><div id="dialRing"></div><div id="dialArrow"></div><div class="sel-t" data-t="choose_dir"></div><button id="dialOk" class="dial-ok" data-ta="confirm" type="button">✓</button><button id="dialCancel" class="btn sel-cancel" type="button" data-t="cancel"></button></div>
   <div id="count" class="count" hidden></div>
 </div>
 
@@ -110,27 +130,28 @@
   <div class="card">
     <h2 id="pauseTitle" class="ctitle" data-t="pause"></h2>
     <p id="pauseInfo" class="sub small"></p>
-    <button id="resumeBtn" class="btn pri big" data-t="resume"></button>
-    <button id="restartBtn" class="btn" data-t="restart"></button>
-    <div class="row"><button class="btn" id="pHow" data-t="how"></button><button class="btn" id="pSet" data-t="settings"></button></div>
-    <div class="row"><button id="abandonBtn" class="btn danger" data-t="abandon"></button><a class="btn ghost inline" href="https://jetgames.fun/" target="_top">‹ JET<i class="cy">//</i>Games</a></div>
+    <button id="resumeBtn" class="btn pri big" data-t="resume" type="button"></button>
+    <button id="restartBtn" class="btn" data-t="restart" type="button"></button>
+    <div class="row"><button class="btn" id="pHow" data-t="how" type="button"></button><button class="btn" id="pSet" data-t="settings" type="button"></button></div>
+    <div class="row"><button id="abandonBtn" class="btn danger" data-t="abandon" type="button"></button><a class="btn ghost inline" href="https://jetgames.fun/" target="_top">‹ JET<i class="cy">//</i>Games</a></div>
+    <p class="keys" id="pauseKeys"></p>
   </div>
 </section>
 
 <!-- RESULTADO -->
 <section id="result" class="scr" aria-labelledby="resTitle">
   <div class="card wide res">
-    <div class="res-head"><div class="kick" id="resKick"></div><h2 id="resTitle" class="ctitle"></h2></div>
+    <div class="res-head"><div class="kick" id="resKick"></div><h2 id="resTitle" class="ctitle" tabindex="-1"></h2></div>
     <div class="res-body">
-      <div class="res-map"><canvas id="resMap" width="200" height="560"></canvas></div>
+      <figure class="res-map"><canvas id="resMap" width="200" height="560" role="img" data-ta="your_route"></canvas><figcaption id="resRoute" class="res-route" data-t="your_route"></figcaption></figure>
       <div class="res-side">
         <div class="lines" id="resLines"></div>
         <div class="res-rank" id="resRank"></div>
         <p class="note" id="resNote"></p>
-        <button id="rateBtn" class="btn pri big" data-t="rate"></button>
-        <button id="againBtn" class="btn pri big" data-t="fly_again" hidden></button>
-        <div class="row"><button class="btn" id="shareBtn" data-t="share"></button><button class="btn" id="resTable" data-t="table"></button></div>
-        <button class="btn ghost" id="resHome" data-t="go_home"></button>
+        <button id="rateBtn" class="btn pri big" data-t="rate" type="button"></button>
+        <button id="againBtn" class="btn pri big" data-t="fly_again" hidden type="button"></button>
+        <div class="row"><button class="btn" id="shareBtn" data-t="share" type="button"></button><button class="btn" id="resTable" data-t="table" type="button"></button></div>
+        <button class="btn ghost" id="resHome" data-t="go_home" type="button"></button>
       </div>
     </div>
   </div>
@@ -139,17 +160,52 @@
 <!-- VALORAR -->
 <section id="rate" class="scr" aria-labelledby="rateTitle">
   <div class="card wide">
-    <div class="top"><h2 id="rateTitle" data-t="rate_title"></h2><span class="prog-t" id="rateProg"></span></div>
+    <div class="top"><h2 id="rateTitle" tabindex="-1"></h2><span class="prog-t" id="rateProg"></span></div>
+    <p class="badge warn ratesub" id="rateSub" hidden data-t="rate_sim"></p>
     <div class="rcards" id="rCards"></div>
-    <p class="note center" id="rateEnd" hidden data-t="rate_thanks"></p>
-    <div class="row"><button class="btn" id="rateSkip" data-t="skip"></button><button class="btn pri" id="rateDone" data-t="done"></button></div>
+    <p class="note center" id="rateEnd" hidden role="status"></p>
+    <div class="row"><button class="btn" id="rateSkip" data-t="skip" type="button"></button><button class="btn pri" id="rateDone" type="button"></button></div>
+  </div>
+</section>
+
+<!-- CIERRE DEL TUTORIAL (PLAY-BALIZAS-01/07) -->
+<section id="tutEnd" class="scr" aria-labelledby="teTitle">
+  <div class="card">
+    <div class="kick" data-t="tut_local"></div>
+    <h2 id="teTitle" class="ctitle" tabindex="-1"></h2>
+    <div class="lines" id="teLines"></div>
+    <p class="note" id="teOpt" data-t="opt_tasks"></p>
+    <button class="btn" id="teReview" type="button" data-t="review_trap"></button>
+    <button class="btn" id="teRepeat" type="button" data-t="repeat_practice"></button>
+    <button class="btn pri" id="teOfficial" type="button" data-t="view_official"></button>
+    <button class="btn ghost" id="teHome" type="button" data-t="go_home"></button>
+  </div>
+</section>
+
+<!-- CONFIRMACIÓN (abandonar vuelo, borrar progreso) -->
+<section id="confirm" class="scr lite" role="alertdialog" aria-modal="true" aria-labelledby="cfTitle" aria-describedby="cfBody">
+  <div class="card">
+    <h2 id="cfTitle" class="ctitle"></h2>
+    <p id="cfBody" class="sub small left"></p>
+    <p id="cfKeep" class="note" hidden></p>
+    <div class="row"><button class="btn" id="cfCancel" type="button" data-t="cancel"></button><button class="btn danger" id="cfOk" type="button"></button></div>
+  </div>
+</section>
+
+<!-- COMPARTIR: alternativa persistente (SRC-BA02 / SRC-G06) -->
+<section id="shareFb" class="scr lite" aria-labelledby="sfTitle">
+  <div class="card">
+    <div class="top"><h2 id="sfTitle" data-t="share"></h2><button class="x" id="sfX" type="button" data-ta="close">×</button></div>
+    <p class="note" data-t="share_fail"></p>
+    <textarea id="sfTa" class="sf-ta" readonly rows="5" aria-labelledby="sfTitle"></textarea>
+    <div class="row"><button class="btn pri" id="sfCopy" type="button" data-t="copy_text"></button><button class="btn" id="sfClose" type="button" data-t="close"></button></div>
   </div>
 </section>
 
 <!-- TABLA -->
 <section id="table" class="scr" aria-labelledby="tabTitle">
   <div class="card wide">
-    <div class="top"><button class="x" data-close="table" data-ta="go_home">‹</button><h2 id="tabTitle" data-t="table"></h2><span class="badge" id="tabState"></span></div>
+    <div class="top"><button class="x" data-close="table" data-ta="go_home" type="button">‹</button><h2 id="tabTitle" data-t="table"></h2><span class="badge" id="tabState"></span></div>
     <div class="tabs" role="tablist"><button role="tab" class="tab on" id="tabToday" data-t="tab_today"></button><button role="tab" class="tab" id="tabYest" data-t="tab_yesterday"></button></div>
     <p class="note" id="tabNote" hidden></p>
     <div class="tbl" id="tbl"></div>
@@ -160,7 +216,7 @@
 <!-- BITÁCORA -->
 <section id="logs" class="scr" aria-labelledby="logTitle">
   <div class="card wide">
-    <div class="top"><button class="x" data-close="logs" data-ta="go_home">‹</button><h2 id="logTitle" data-t="log"></h2></div>
+    <div class="top"><button class="x" data-close="logs" data-ta="go_home" type="button">‹</button><h2 id="logTitle" data-t="log"></h2></div>
     <div class="rankbox"><canvas id="logAstro" width="96" height="96"></canvas><div><b id="logRank"></b><div class="bar"><i id="logBar"></i></div><small id="logRankTxt"></small></div></div>
     <div id="logList" class="loglist"></div>
   </div>
@@ -169,7 +225,7 @@
 <!-- ARCHIVO -->
 <section id="arch" class="scr" aria-labelledby="archTitle">
   <div class="card wide">
-    <div class="top"><button class="x" data-close="arch" data-ta="go_home">‹</button><h2 id="archTitle" data-t="archive_title"></h2></div>
+    <div class="top"><button class="x" data-close="arch" data-ta="go_home" type="button">‹</button><h2 id="archTitle" data-t="archive_title"></h2></div>
     <p class="sub small left" data-t="archive_sub"></p>
     <div id="archList" class="archlist"></div>
   </div>
@@ -178,49 +234,53 @@
 <!-- CÓMO JUGAR -->
 <section id="help" class="scr" aria-labelledby="helpTitle">
   <div class="card wide">
-    <div class="top"><button class="x" data-close="help" data-ta="go_home">‹</button><h2 id="helpTitle" data-t="how_title"></h2></div>
+    <div class="top"><button class="x" data-close="help" data-ta="go_home" type="button">‹</button><h2 id="helpTitle" data-t="how_title"></h2></div>
+    <p class="keys" id="howKeys"></p>
     <div class="vignettes">
-      <figure><canvas class="vg" id="vg1" width="300" height="190"></canvas><figcaption data-t="how_1"></figcaption></figure>
+      <figure><canvas class="vg" id="vg1" width="300" height="190"></canvas><figcaption id="how1Cap"></figcaption></figure>
       <figure><canvas class="vg" id="vg2" width="300" height="190"></canvas><figcaption data-t="how_2"></figcaption></figure>
       <figure><canvas class="vg" id="vg3" width="300" height="190"></canvas><figcaption data-t="how_3"></figcaption></figure>
     </div>
     <p class="sub small" data-t="how_hint"></p>
     <div class="legend" id="legend"></div>
-    <button class="btn" id="replayTut" data-t="replay_tutorial"></button>
+    <button class="btn" id="replayTut" data-t="replay_tutorial" type="button"></button>
   </div>
 </section>
 
 <!-- AJUSTES -->
 <section id="settings" class="scr" aria-labelledby="setTitle">
   <div class="card">
-    <div class="top"><button class="x" data-close="settings" data-ta="go_home">‹</button><h2 id="setTitle" data-t="settings"></h2></div>
+    <div class="top"><button class="x" data-close="settings" data-ta="go_home" type="button">‹</button><h2 id="setTitle" data-t="settings"></h2></div>
     <p class="note" id="noAudio" hidden data-t="no_audio"></p>
-    <div class="set"><label data-t="set_music"></label><input type="range" id="musVol" min="0" max="100" data-ta="volume"><button class="tog" id="musTog" role="switch"></button></div>
-    <div class="set"><label data-t="set_sfx"></label><input type="range" id="sfxVol" min="0" max="100" data-ta="volume"><button class="tog" id="sfxTog" role="switch"></button></div>
-    <div class="set" id="vibRow"><label data-t="set_vibration"></label><button class="tog" id="vibTog" role="switch"></button></div>
-    <div class="set"><label data-t="set_lang"></label><div class="seg langseg" id="langSeg" role="group" data-ta="set_lang"><button data-v="es" lang="es">ES</button><button data-v="en" lang="en">EN</button></div></div>
-    <div class="set" id="fsRow"><label data-t="fullscreen"></label><button class="tog" id="fsTog" role="switch"></button></div>
-    <div class="set"><label data-t="set_controls"></label><div class="seg" id="ctlSeg"><button data-v="thumbs" data-t="ctl_thumbs"></button><button data-v="one" data-t="ctl_one"></button></div></div>
-    <div class="set"><label data-t="set_side"></label><div class="seg" id="sideSeg"><button data-v="right" data-t="side_right"></button><button data-v="left" data-t="side_left"></button></div></div>
-    <div class="set"><label data-t="set_trails"></label><button class="tog" id="trailSet" role="switch"></button></div>
-    <div class="set"><label data-t="set_minimap"></label><button class="tog" id="miniTog" role="switch"></button></div>
-    <div class="set"><label data-t="set_shake"></label><button class="tog" id="shakeTog" role="switch"></button></div>
-    <div class="set"><label data-t="set_contrast"></label><button class="tog" id="contrastTog" role="switch"></button></div>
-    <button class="btn danger" id="resetBtn" data-t="reset_progress"></button>
+    <div class="sect" data-t="sect_audio"></div>
+    <div class="set"><label id="lbMus" for="musVol" data-t="set_music"></label><input type="range" id="musVol" min="0" max="100" data-ta="vol_music"><button class="tog" id="musTog" role="switch" aria-labelledby="lbMus" type="button"></button></div>
+    <div class="set"><label id="lbSfx" for="sfxVol" data-t="set_sfx"></label><input type="range" id="sfxVol" min="0" max="100" data-ta="vol_sfx"><button class="tog" id="sfxTog" role="switch" aria-labelledby="lbSfx" type="button"></button></div>
+    <div class="set" id="vibRow"><label id="lbVib" data-t="set_vibration"></label><button class="tog" id="vibTog" role="switch" aria-labelledby="lbVib" type="button"></button></div>
+    <div class="sect" data-t="sect_ctl"></div>
+    <div class="set"><label id="lbLang" data-t="set_lang"></label><div class="seg langseg" id="langSeg" role="group" aria-labelledby="lbLang"><button data-v="es" lang="es" type="button">ES</button><button data-v="en" lang="en" type="button">EN</button></div></div>
+    <div class="set" id="fsRow"><label id="lbFs" data-t="fullscreen"></label><button class="tog" id="fsTog" role="switch" aria-labelledby="lbFs" type="button"></button></div>
+    <div class="set"><label id="lbCtl" data-t="set_controls"></label><div class="seg" id="ctlSeg" role="group" aria-labelledby="lbCtl"><button data-v="thumbs" data-t="ctl_thumbs" type="button"></button><button data-v="one" data-t="ctl_one" type="button"></button></div></div>
+    <div class="set"><label id="lbSide" data-t="set_side"></label><div class="seg" id="sideSeg" role="group" aria-labelledby="lbSide"><button data-v="right" data-t="side_right" type="button"></button><button data-v="left" data-t="side_left" type="button"></button></div></div>
+    <div class="sect" data-t="sect_vis"></div>
+    <div class="set"><label id="lbTrailSet" data-t="set_trails"></label><button class="tog" id="trailSet" role="switch" aria-labelledby="lbTrailSet" type="button"></button></div>
+    <div class="set"><label id="lbMini" data-t="set_minimap"></label><button class="tog" id="miniTog" role="switch" aria-labelledby="lbMini" type="button"></button></div>
+    <div class="set"><label id="lbShake" data-t="set_shake"></label><button class="tog" id="shakeTog" role="switch" aria-labelledby="lbShake" type="button"></button></div>
+    <div class="set"><label id="lbContrast" data-t="set_contrast"></label><button class="tog" id="contrastTog" role="switch" aria-labelledby="lbContrast" type="button"></button></div>
+    <button class="btn danger" id="resetBtn" data-t="reset_progress" type="button"></button>
   </div>
 </section>
 
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
-<div id="mapBig" hidden><canvas id="mapBigCv"></canvas></div>
+<div id="mapBig" hidden role="img" data-ta="minimap_name"><canvas id="mapBigCv"></canvas></div>
 <div id="fade"></div>
 
-<script src="src/gen.js?v=7"></script>
-<script src="src/sim.js?v=7"></script>
-<script src="src/astro.js?v=7"></script>
-<script src="src/i18n.js?v=7"></script>
-<script src="src/audio.js?v=7"></script>
-<script src="src/render.js?v=7"></script>
-<script src="src/net.js?v=7"></script>
-<script src="src/main.js?v=7"></script>
+<script src="src/gen.js?v=8"></script>
+<script src="src/sim.js?v=8"></script>
+<script src="src/astro.js?v=8"></script>
+<script src="src/i18n.js?v=8"></script>
+<script src="src/audio.js?v=8"></script>
+<script src="src/render.js?v=8"></script>
+<script src="src/net.js?v=8"></script>
+<script src="src/main.js?v=8"></script>
 </body>
 </html>

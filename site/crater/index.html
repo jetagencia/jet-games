@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>JET//Cráter · Coincide con el mundo</title>
 <meta name="description" content="Siete aterrizajes al día: elige dónde aterrizará la mayoría, sin poder hablar con nadie. A medianoche se levanta el polvo y ves el mapa del mundo.">
 <meta name="theme-color" content="#050108">
@@ -21,11 +21,36 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="src/estilo.css?v=6">
+<link rel="stylesheet" href="src/estilo.css?v=7">
+<style>
+/* Estado de carga (SRC-G05): título y estado visibles antes del JS; error recuperable con acciones reales. */
+#sCarga .cargaMsg{margin:0;font:500 15px Poppins,system-ui,sans-serif;color:#b5a8d8;text-align:center;max-width:420px;line-height:1.5;padding:0 16px}
+#sCarga .cargaAcc{display:flex;flex-direction:column;align-items:center;gap:12px;margin-top:8px;width:min(100% - 32px,260px)}
+#sCarga .cargaAcc[hidden]{display:none}
+#sCarga .cargaAcc button,#sCarga .cargaAcc a{width:100%;min-height:48px;display:inline-flex;align-items:center;justify-content:center;border-radius:14px;font:600 16px Poppins,system-ui,sans-serif;color:#fff;text-decoration:none;cursor:pointer}
+#sCarga .cargaAcc button{border:0;background:linear-gradient(135deg,#7700f4,#00f2cf)}
+#sCarga .cargaAcc a{border:1px solid rgba(245,240,255,.3);background:rgba(255,255,255,.05)}
+#sCarga.err .pulso{display:none}
+</style>
 </head>
 <body>
-<div id="sCarga" aria-hidden="true"><h1 class="logo">JET<i>//</i><span data-t="name">Cráter</span></h1><div class="pulso"></div></div>
-<script>if(window.JETIdioma&&JETIdioma.get()==='en'){document.title='JET//Crater · Sync with the world';document.querySelector('#sCarga span').textContent='Crater';}</script>
+<div id="sCarga" role="status" aria-live="polite"><h1 class="logo">JET<i>//</i><span data-t="name">Cráter</span></h1><div class="pulso"></div><p class="cargaMsg" id="cargaMsg">Cargando JET//Cráter…</p><div class="cargaAcc" id="cargaAcc" hidden><button type="button" id="cargaReint">Volver a cargar</button><a id="cargaVolver" href="https://jetgames.fun/">Volver a los juegos</a></div></div>
+<script>
+(function () {
+  var en = !!(window.JETIdioma && JETIdioma.get() === 'en');
+  if (en) { document.title = 'JET//Crater · Sync with the world'; document.querySelector('#sCarga span').textContent = 'Crater'; }
+  var T = en ? { c: 'Loading JET//Crater…', e: 'Loading was interrupted. You can try again.', n: 'We couldn’t download all resources.', r: 'Reload game', v: 'Back to games' }
+             : { c: 'Cargando JET//Cráter…', e: 'La carga se interrumpió. Puedes volver a intentarlo.', n: 'No pudimos descargar todos los recursos.', r: 'Volver a cargar', v: 'Volver a los juegos' };
+  var m = document.getElementById('cargaMsg'), a = document.getElementById('cargaAcc'), b = document.getElementById('cargaReint'), v = document.getElementById('cargaVolver');
+  m.textContent = T.c; b.textContent = T.r; v.textContent = T.v; v.href = 'https://jetgames.fun/?lang=' + (en ? 'en' : 'es');
+  var listo = false, fallo = false;
+  function error(red) { if (listo || fallo) return; fallo = true; m.textContent = red ? T.n : T.e; a.hidden = false; document.getElementById('sCarga').classList.add('err'); b.focus(); }
+  b.onclick = function () { location.reload(); };
+  window.addEventListener('error', function (e) { if (listo) return; var t = e && e.target; if (t && t !== window && t.tagName !== 'SCRIPT') return; error(!!(t && t.tagName === 'SCRIPT')); }, true);
+  var tm = setTimeout(function () { error(false); }, 12000);
+  window.__crCargaLista = function () { listo = true; clearTimeout(tm); };
+})();
+</script>
 <canvas id="fondo" aria-hidden="true"></canvas>
 <a id="back" href="https://jetgames.fun/" target="_top" rel="noopener" data-ta="back">‹ JET<i>//</i>Games</a>
 <div id="tr">
@@ -64,6 +89,7 @@
    <div class="r1"><span class="kick" id="rKick"></span><span class="lunas" id="rLunas" aria-hidden="true"></span></div>
    <h2 data-t="prompt" id="rPrompt"></h2>
    <p id="rCtx"></p>
+   <div class="leyenda" id="rLey" hidden></div>
    <button class="saltar" id="bSaltar" hidden data-t="skipTut"></button>
   </div>
   <div class="area" id="area">
@@ -73,7 +99,9 @@
   </div>
   <div class="accion" id="accion">
    <div class="res" id="rRes" hidden><span class="dot">✓</span><span id="rResT"></span></div>
+   <p class="avisoSel" id="rAviso" hidden></p>
    <button class="btn pri" id="bAterrizar" disabled></button>
+   <div class="fila" id="rExtra" hidden><button class="btn" id="bRepetir" data-t="replayRehearsal"></button><button class="btn" id="bMenu" data-t="home"></button></div>
   </div>
  </div>
 </section>
@@ -106,6 +134,7 @@
     <div class="veredicto" id="rvVer"></div>
     <div class="linea" id="rvLinea"></div>
     <div class="linea" id="rvPocos" style="font-size:13.5px;color:var(--dim)"></div>
+    <div class="linea" id="rvTiempo" style="font-size:13.5px;color:var(--dim)"></div>
     <div class="leyenda" id="rvLey"></div>
     <div class="set" id="rvSolo" style="border:0;padding:0"><span class="et" data-t="onlyReal" style="font-size:14px"></span><button class="tog" id="tSoloR" data-ta="onlyReal"></button></div>
     <div class="nav3"><button class="btn" id="bRvAnt" data-t="prevR"></button><button class="btn" id="bRvTodo" data-t="seeAll"></button><button class="btn pri" id="bRvSig" data-t="nextR"></button></div>
@@ -135,7 +164,7 @@
 </section>
 
 <!-- CÓMO JUGAR -->
-<section class="scr modal" id="sComo" aria-labelledby="cTit">
+<section class="scr modal" id="sComo" role="dialog" aria-modal="true" aria-labelledby="cTit">
  <div class="card">
   <div class="top"><h2 id="cTit" data-t="howTitle"></h2><button class="x" data-volver data-ta="done">✕</button></div>
   <div class="laminas" id="cLam">
@@ -145,14 +174,14 @@
   </div>
   <div class="puntos" id="cPuntos"></div>
   <div class="pie">
-   <button class="btn pri" id="bComoSig"></button>
+   <button class="btn pri" id="bComoSig" data-t="next2"></button>
    <div class="fila"><button class="btn" id="bComoPorque" data-t="howWhy"></button><button class="btn" id="bComoEnsayo" data-t="howWarmup"></button></div>
   </div>
  </div>
 </section>
 
 <!-- ¿POR QUÉ COINCIDIMOS? -->
-<section class="scr modal" id="sPorque" aria-labelledby="wTit">
+<section class="scr modal" id="sPorque" role="dialog" aria-modal="true" aria-labelledby="wTit">
  <div class="card">
   <div class="top"><h2 id="wTit" data-t="whyTitle"></h2><button class="x" data-volver data-ta="done">✕</button></div>
   <div class="pasos" id="wPasos"></div>
@@ -161,7 +190,7 @@
 </section>
 
 <!-- AJUSTES -->
-<section class="scr modal" id="sAjustes" aria-labelledby="sTit">
+<section class="scr modal" id="sAjustes" role="dialog" aria-modal="true" aria-labelledby="sTit">
  <div class="card">
   <div class="top"><h2 id="sTit" data-t="setTitle"></h2><button class="x" data-volver data-ta="done">✕</button></div>
   <div class="set"><label for="rMus" data-t="music"></label><input type="range" id="rMus" min="0" max="100"><button class="tog" id="tMus" data-ta="music"></button></div>
@@ -173,14 +202,14 @@
   <div class="set"><span class="et" data-t="language"></span><div class="seg segLang" id="segLang" role="group" data-ta="language"><button data-l="es" lang="es">ES</button><button data-l="en" lang="en">EN</button></div></div>
   <div class="pie">
    <button class="btn" id="bPantalla2"></button>
-   <button class="btn peligro" id="bBorrar"></button>
+   <button class="btn peligro" id="bBorrar" data-t="erase"></button>
    <button class="btn pri" data-volver data-t="done"></button>
   </div>
  </div>
 </section>
 
 <!-- PAUSA -->
-<section class="scr modal" id="sPausa" aria-labelledby="zTit">
+<section class="scr modal" id="sPausa" role="dialog" aria-modal="true" aria-labelledby="zTit">
  <div class="card" style="display:flex;flex-direction:column;gap:10px">
   <div class="kick" id="zKick"></div>
   <h2 id="zTit" style="font-size:28px;font-weight:800" data-t="paused"></h2>
@@ -191,14 +220,33 @@
  </div>
 </section>
 
+<!-- COMPARTIR: texto íntegro seleccionable cuando falla el copiado -->
+<section class="scr modal" id="sCompartir" role="dialog" aria-modal="true" aria-labelledby="shTit">
+ <div class="card">
+  <div class="top"><h2 id="shTit" data-t="share"></h2><button class="x" data-volver data-ta="close">✕</button></div>
+  <p class="sub" style="text-align:left;margin-bottom:10px" data-t="copyFailed"></p>
+  <textarea class="copiaMano" id="shTxt" readonly rows="5"></textarea>
+  <div class="fila" style="margin-top:12px"><button class="btn pri" id="bShCopiar" data-t="copyText"></button><button class="btn" data-volver data-t="close"></button></div>
+ </div>
+</section>
+
+<!-- BORRAR PROGRESO: confirmación explícita -->
+<section class="scr modal" id="sBorrar" role="alertdialog" aria-modal="true" aria-labelledby="bTit">
+ <div class="card">
+  <h2 id="bTit" style="font-size:21px;font-weight:800;line-height:1.3"></h2>
+  <p class="sub" id="bTxt" style="text-align:left;margin:10px 0 16px"></p>
+  <div class="fila"><button class="btn" id="bBorrarNo" data-t="cancel"></button><button class="btn peligro" id="bBorrarSi" data-t="erase"></button></div>
+ </div>
+</section>
+
 <script src="src/bancos.js?v=1"></script>
 <script src="src/horno.js?v=1"></script>
 <script src="src/gen.js?v=1"></script>
-<script src="src/textos.js?v=3"></script>
+<script src="src/textos.js?v=4"></script>
 <script src="src/audio.js?v=3"></script>
-<script src="src/mapa.js?v=1"></script>
+<script src="src/mapa.js?v=2"></script>
 <script src="src/estado.js?v=1"></script>
 <script src="src/red.js?v=2"></script>
-<script src="src/ui.js?v=6"></script>
+<script src="src/ui.js?v=7"></script>
 </body>
 </html>

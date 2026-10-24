@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>JET//Portada · Arma la portada del diario</title>
 <meta name="description" content="Rompecabezas editorial: encaja titulares, notas, fotos y publicidades en la portada del diario de la colonia. Los vecinos suman o restan. Edición diaria, modo libre y reglas de redacción que se acumulan.">
 <meta name="theme-color" content="#050108">
@@ -18,11 +18,49 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="src/style.css?v=5">
+<link rel="stylesheet" href="src/style.css?v=6">
 <script src="src/jet-idioma.js?v=1"></script>
+<script>
+/* SRC-G05 — estados de carga (loading / error / ready) antes del JS del juego. Autónomo a propósito:
+   tiene que funcionar aunque falle src/i18n.js, por eso lleva sus cadenas ES/EN acá. */
+(function () {
+  var L = (document.documentElement.lang === 'en') ? 'en' : 'es';
+  var T = {
+    es: { cargando: 'Cargando Portada…', inter: 'La carga se interrumpió. Podés volver a intentarlo.', red: 'No pudimos descargar todos los recursos.', recargar: 'Volver a cargar', juegos: 'Volver a los juegos' },
+    en: { cargando: 'Loading Portada…', inter: 'Loading was interrupted. You can try again.', red: 'We couldn’t download all resources.', recargar: 'Reload game', juegos: 'Back to games' }
+  }[L];
+  var estado = 'cargando', timer = 0;
+  function pintar() {
+    var c = document.getElementById('cargaTxt'); if (!c) return;
+    document.documentElement.setAttribute('data-carga', estado);
+    if (estado === 'cargando') { c.innerHTML = '<p class="carga-txt">' + T.cargando + '</p>'; return; }
+    if (estado === 'listo') return;
+    c.innerHTML = '<p class="carga-txt" role="alert">' + (estado === 'red' ? T.red : T.inter) + '</p>' +
+      '<div class="carga-acc"><button type="button" class="btn pri" id="cargaReintentar">' + T.recargar + '</button>' +
+      '<a class="btn" href="https://jetgames.fun/?lang=' + L + '" target="_top" rel="noopener">' + T.juegos + '</a></div>';
+    var b = document.getElementById('cargaReintentar');
+    if (b) { b.addEventListener('click', function () { location.reload(); }); b.focus(); }
+  }
+  window.JETCarga = {
+    error: function (tipo) { if (estado !== 'cargando') return; clearTimeout(timer); estado = tipo === 'red' ? 'red' : 'error'; pintar(); },
+    listo: function () { clearTimeout(timer); estado = 'listo'; pintar(); window.removeEventListener('error', alError, true); }
+  };
+  function alError(e) {
+    if (estado !== 'cargando') return;
+    var tg = e && e.target;
+    if (tg && tg.tagName === 'SCRIPT') { window.JETCarga.error('red'); return; }
+    if (!tg || tg === window) window.JETCarga.error('error');
+  }
+  window.addEventListener('error', alError, true);
+  timer = setTimeout(function () { if (estado === 'cargando') window.JETCarga.error('error'); }, 15000);
+  document.addEventListener('DOMContentLoaded', pintar);
+})();
+</script>
 </head>
 <body>
-<a id="back" href="https://jetgames.fun/" target="_top" rel="noopener" data-ta="back" aria-label="Volver a JET//Games">‹ JET<i>//</i>Games</a>
+<a id="back" href="https://jetgames.fun/" target="_top" rel="noopener" data-ta="back" aria-label="Volver a los juegos">‹ JET<i>//</i>Games</a>
+<!-- SRC-G05: título y estado visibles antes del JS; lo retira ui.js al arrancar (JETCarga.listo) -->
+<div id="carga" class="carga" role="status" aria-live="polite"><h1 class="logo">JET<i>//</i>Portada</h1><div id="cargaTxt"><p class="carga-txt">Cargando Portada…</p></div></div>
 <div id="tr">
  <button class="ib" id="bPause" hidden data-ta="pause" aria-label="Pausa"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1.2"/><rect x="14" y="5" width="4" height="14" rx="1.2"/></svg></button>
  <button class="ib" id="bGear" data-ta="settings" aria-label="Ajustes"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
@@ -30,9 +68,10 @@
 <canvas id="bg" aria-hidden="true"></canvas>
 
 <main id="game" hidden aria-label="Mesa de redacción" data-ta="a_desk">
- <div id="score" class="score" aria-live="polite">
+ <!-- PLAY-PORTADA-03: tirada estimada con unidad desde el tablero; meta y referencia del jefe en el nombre accesible -->
+ <div id="score" class="score" role="group" aria-live="polite">
   <div class="ed" id="edLbl"></div>
-  <div class="sc-main"><span class="sc-k" data-t="copies">Tirada</span><span class="sc-n" id="scN">0</span><span class="sc-d" id="scD"></span></div>
+  <div class="sc-main"><span class="sc-k" data-t="copies_est">Tirada estimada</span><span class="sc-n" id="scN">0</span><span class="sc-u" data-t="unit">mil ejemplares</span><span class="sc-d" id="scD"></span></div>
   <div class="sc-bar" id="scBar"><i id="scFill"></i><b id="scGoalMark"></b><span class="sc-goal" id="scGoal"></span></div>
  </div>
  <div id="chips" class="chips"></div>
@@ -45,6 +84,7 @@
  </div>
  <div id="trayBox"><div id="trayHead"><span data-t="tray">Mesa</span><span id="trayN"></span></div><div id="tray" role="list"></div></div>
  <div id="side"><div class="side-t" data-t="table">Pares de vecinos</div><div id="pairT"></div></div>
+ <div id="tutHint" class="tut-hint" aria-live="polite" hidden></div>
  <div id="bar">
   <button class="bb" id="bUndo" data-ta="undo" aria-label="Deshacer"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg><span data-t="undo">Deshacer</span></button>
   <button class="bb" id="bRedo" data-ta="redo" aria-label="Rehacer"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14l5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg><span data-t="redo">Rehacer</span></button>
@@ -107,8 +147,8 @@
  </div>
 </section>
 
-<!-- Presentación de edición -->
-<section class="scr lite" id="sIntro" aria-label="Edición" data-ta="a_edition">
+<!-- Presentación de edición (PLAY-PORTADA-07: el avance es un botón «Continuar») -->
+<section class="scr lite" id="sIntro" role="dialog" aria-modal="true" aria-labelledby="introT">
  <div class="intro" id="introBox"></div>
 </section>
 
@@ -122,25 +162,25 @@
  <div class="card wide" id="finCard"></div>
 </section>
 
-<!-- Pausa -->
-<section class="scr" id="sPause" aria-label="Pausa" data-ta="pause">
+<!-- Pausa (RSP-MODALS-01: diálogo con nombre; SRC-G03: Reanudar partida / Volver al menú) -->
+<section class="scr" id="sPause" role="dialog" aria-modal="true" aria-labelledby="pauseT">
  <div class="card">
-  <div class="top"><h2 data-t="pause">Pausa</h2></div>
+  <div class="top"><h2 id="pauseT" data-t="pause">Pausa</h2></div>
   <p class="note" id="pauseNote"></p>
-  <button class="btn pri" id="bCont" data-t="continue">Continuar</button>
+  <button class="btn pri" id="bCont" data-t="continue">Reanudar partida</button>
   <button class="btn" id="bRestart" data-t="restart_ed">Reiniciar edición</button>
   <div class="menu2"><button class="btn" id="bHowP" data-t="how">Cómo jugar</button><button class="btn" id="bSetP" data-t="settings">Ajustes</button></div>
-  <button class="btn" id="bHome" style="margin-top:10px" data-t="home">Salir al inicio</button>
+  <button class="btn" id="bHome" style="margin-top:10px" data-t="home">Volver al menú</button>
   <p class="note small" data-t="saved_note"></p>
  </div>
 </section>
 
-<!-- Cómo jugar -->
-<section class="scr" id="sHelp" aria-label="Cómo jugar" data-ta="help_t">
+<!-- Cómo jugar (PLAY-PORTADA-07: sólo la lámina activa expuesta; controles «Paso anterior» / «Paso siguiente») -->
+<section class="scr" id="sHelp" role="dialog" aria-modal="true" aria-labelledby="helpT">
  <div class="card wide">
-  <div class="top"><h2 data-t="help_t">Cómo jugar</h2><button class="x" data-back data-ta="close" aria-label="Cerrar">✕</button></div>
+  <div class="top"><h2 id="helpT" data-t="help_t">Cómo jugar</h2><button class="x" data-back data-ta="close_help" aria-label="Cerrar ayuda">✕</button></div>
   <div class="hcar" id="hcar"></div>
-  <div class="dots" id="hdots"></div>
+  <div class="hnav"><button class="bb" id="hPrev" type="button" data-ta="help_prev" aria-label="Paso anterior">‹</button><div class="dots" id="hdots"></div><button class="bb" id="hNext" type="button" data-ta="help_next" aria-label="Paso siguiente">›</button></div>
   <details class="tbl"><summary data-t="help_table">Ver la tabla completa</summary><div id="helpTable"></div></details>
   <p class="note small keys" data-t="help_keys"></p>
   <button class="btn pri" id="bPractice" data-t="practice">Practicar</button>
@@ -148,9 +188,9 @@
 </section>
 
 <!-- Ajustes -->
-<section class="scr" id="sSet" aria-label="Ajustes" data-ta="settings_t">
+<section class="scr" id="sSet" role="dialog" aria-modal="true" aria-labelledby="setT">
  <div class="card">
-  <div class="top"><h2 data-t="settings_t">Ajustes</h2><button class="x" data-back data-ta="close" aria-label="Cerrar">✕</button></div>
+  <div class="top"><h2 id="setT" data-t="settings_t">Ajustes</h2><button class="x" data-back data-ta="close" aria-label="Cerrar">✕</button></div>
   <div class="set"><label for="tMusic" data-t="music">Música</label><input type="range" id="vMusic" min="0" max="100" data-ta="vol_music" aria-label="Volumen de la música"><button class="tog" id="tMusic" role="switch"></button></div>
   <div class="set"><label for="tSfx" data-t="sfx">Efectos</label><input type="range" id="vSfx" min="0" max="100" data-ta="vol_sfx" aria-label="Volumen de los efectos"><button class="tog" id="tSfx" role="switch"></button></div>
   <div class="set"><label for="tVib" data-t="vibration">Vibración</label><button class="tog" id="tVib" role="switch"></button></div>
@@ -163,23 +203,23 @@
 </section>
 
 <!-- Hemeroteca -->
-<section class="scr" id="sArch" aria-label="Hemeroteca" data-ta="archive_t">
+<section class="scr" id="sArch" role="dialog" aria-modal="true" aria-labelledby="archT">
  <div class="card wide">
-  <div class="top"><h2 data-t="archive_t">Hemeroteca</h2><button class="x" data-back data-ta="close" aria-label="Cerrar">✕</button></div>
+  <div class="top"><h2 id="archT" data-t="archive_t">Hemeroteca</h2><button class="x" data-back data-ta="close" aria-label="Cerrar">✕</button></div>
   <div id="archGrid" class="agrid"></div>
  </div>
 </section>
 
 <!-- Vista de una portada -->
-<section class="scr" id="sView" aria-label="Portada" data-ta="a_page">
+<section class="scr" id="sView" role="dialog" aria-modal="true" aria-labelledby="viewT">
  <div class="view">
   <div class="top"><h2 id="viewT"></h2><button class="x" data-back data-ta="close" aria-label="Cerrar">✕</button></div>
   <div id="viewBox"><div id="viewPaper"></div></div>
-  <button class="btn pri" id="bViewShare" data-t="share">Compartir</button>
+  <button class="btn pri" id="bViewShare" data-t="share">Compartir resultado</button>
  </div>
 </section>
 
-<!-- Detalle de pieza / diálogos -->
+<!-- Detalle de pieza / diálogos (el nombre accesible lo asigna modal() a su título) -->
 <section class="scr" id="sModal" role="dialog" aria-modal="true" aria-label="Aviso" data-ta="a_notice">
  <div class="card" id="modalCard"></div>
 </section>
@@ -191,9 +231,9 @@
 <script src="src/content.js?v=1"></script>
 <script src="src/content2.js?v=2"></script>
 <script src="src/core.js?v=2"></script>
-<script src="src/i18n.js?v=5"></script>
-<script src="src/art.js?v=2"></script>
+<script src="src/i18n.js?v=6"></script>
+<script src="src/art.js?v=3"></script>
 <script src="src/audio.js?v=2"></script>
-<script src="src/ui.js?v=6"></script>
+<script src="src/ui.js?v=7"></script>
 </body>
 </html>

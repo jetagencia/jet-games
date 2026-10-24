@@ -95,7 +95,8 @@ var CABINA = (function () {
         c.restore();
       }
     } else {
-      dibujarEstrellas(c, w, h, t, 0.35, 0.55);
+      // VIS-TELEMETRIA-03: en juego el fondo baja al plano de ambiente (estrellas al 35 % de su alpha de menú)
+      dibujarEstrellas(c, w, h, t, 0.35, 0.35);
     }
     // luz ambiente: barrido de alarma ámbar o calma cian
     var col = luz === 'ok' ? '0,242,207' : luz === 'peligro' ? '255,68,102' : '255,176,32';
@@ -141,8 +142,8 @@ var CABINA = (function () {
     var m = ajustar(cv), c = cv.getContext('2d'), w = m.w, h = m.h;
     c.setTransform(m.d, 0, 0, m.d, 0, 0); c.clearRect(0, 0, w, h);
     var g = geometria(caso, w, h);
-    // anillos de radar de fondo
-    c.strokeStyle = 'rgba(119,0,244,.12)'; c.lineWidth = 1;
+    // anillos de radar de fondo (VIS-TELEMETRIA-03: rejilla alpha .06; los nodos son el contraste dominante)
+    c.strokeStyle = 'rgba(119,0,244,.06)'; c.lineWidth = 1;
     for (var r = 1; r <= 3; r++) { c.beginPath(); c.ellipse(w / 2, h / 2, g.bw * 0.22 * r, g.bh * 0.3 * r, 0, 0, 7); c.stroke(); }
     // toberas
     var x = g.bx, y = g.by, bw = g.bw, bh = g.bh;
@@ -158,7 +159,8 @@ var CABINA = (function () {
     // casco
     var hg = c.createLinearGradient(0, y, 0, y + bh); hg.addColorStop(0, '#22163f'); hg.addColorStop(0.5, '#160d2c'); hg.addColorStop(1, '#0d0720');
     c.fillStyle = hg; casco(c, g); c.fill();
-    c.strokeStyle = est.luz === 'ok' ? 'rgba(0,242,207,.55)' : est.luz === 'peligro' ? 'rgba(255,68,102,.55)' : 'rgba(181,168,216,.4)'; c.lineWidth = 1.6; casco(c, g); c.stroke();
+    // contorno 1.5 px neutro; el estado (aire, reparación) lo comunican la barra de aire, la onda y los nodos, no el casco
+    c.strokeStyle = 'rgba(181,168,216,.5)'; c.lineWidth = 1.5; casco(c, g); c.stroke();
     // zonas
     if (caso.hayZonas) {
       c.save(); casco(c, g); c.clip();
@@ -171,8 +173,8 @@ var CABINA = (function () {
       });
       c.restore();
     }
-    // conductos entre nodos
-    c.strokeStyle = 'rgba(119,0,244,.35)'; c.lineWidth = 1.5;
+    // conductos entre nodos (cableado decorativo alpha .18: no debe parecer el resultado de un sensor)
+    c.strokeStyle = 'rgba(119,0,244,.18)'; c.lineWidth = 1.5;
     var orden = g.pos.map(function (p, q) { return q; }).sort(function (a, b) { return g.pos[a].x - g.pos[b].x; });
     c.beginPath(); orden.forEach(function (q, k) { var p = g.pos[q]; if (k) c.lineTo(p.x, p.y); else c.moveTo(p.x, p.y); }); c.stroke();
     // onda de luz al reparar

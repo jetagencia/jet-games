@@ -56,7 +56,8 @@
   const G = {
     pantalla: 'inicio', ref: null, caso: null, P: null, activo: null, mano: null, bancoAbierto: false, verTodas: false,
     layout: 'port', pausado: false, ocupado: false, apertura: false, foto: { z: 1, x: 0.5, y: 0.5 }, descFoto: false, tablaTel: false,
-    regEnts: [], fotoCtl: null, telCtl: null, split: null, tut: null, fechaForzada: null, estabaFS: false, focoFicha: -1
+    regEnts: [], fotoCtl: null, telCtl: null, split: null, tut: null, fechaForzada: null, estabaFS: false, focoFicha: -1,
+    deshacer: null, ampliado: false
   };
   try { const s = sessionStorage.getItem(PRE + 'split'); if (s) G.split = JSON.parse(s); } catch (e) { /* */ }
   const CACHE = {};
@@ -89,7 +90,62 @@
 
   // ───────────── Utilidades de interfaz ─────────────
   let toastT = 0;
-  function toast(msg) { const el = $('#toast'); el.textContent = msg; el.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('on'), 1600); }
+  function toast(msg) { const el = $('#toast'); el.textContent = msg; el.classList.remove('accion'); el.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('on'), 1600); }
+  // Aviso con una acción (p. ej. «Deshacer cambio»): dura más y es operable con teclado.
+  function toastAccion(msg, lab, fn) {
+    const el = $('#toast');
+    el.innerHTML = '<span>' + esc(msg) + '</span><button type="button" class="tAcc" id="tAcc">' + esc(lab) + '</button>';
+    el.classList.add('on', 'accion'); clearTimeout(toastT);
+    $('#tAcc', el).onclick = () => { clearTimeout(toastT); el.classList.remove('on', 'accion'); fn(); };
+    toastT = setTimeout(() => el.classList.remove('on', 'accion'), 6000);
+  }
+
+  // ───────────── Capas modales (RSP-MODALS-01): pila con inert, nombre accesible y retorno de foco ─────────────
+  const PILA = [];
+  const CAPAS = ['sAjustes', 'pausa', 'dialogo', 'historial', 'lupa'];
+  const FOCOS = 'button:not([disabled]):not([tabindex="-1"]),a[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
+  const capaAbierta = (id) => $('#' + id).classList.contains('on');
+  function fondoInerte() {
+    const top = PILA.length ? PILA[PILA.length - 1].id : null;
+    const hayModal = !!top || G.apertura;
+    for (const id of ['app', 'back', 'topR', 'globo', 'menuHueco', 'toast']) { const el = $('#' + id); if (el) el.inert = hayModal; }
+    for (const id of CAPAS) { const el = $('#' + id); el.inert = capaAbierta(id) && id !== top; }
+  }
+  function visibleParaFoco(n) { return !!(n && n.isConnected && n !== document.body && n.offsetParent !== null && !n.closest('[inert]') && !n.closest('[hidden]')); }
+  function enfocar(n) { if (!n) return; if (!n.matches(FOCOS)) n.tabIndex = -1; n.focus({ preventScroll: true }); }
+  function abrirCapa(id, opts) {
+    opts = opts || {};
+    const el = $('#' + id);
+    if (!capaAbierta(id)) PILA.push({ id, activador: opts.activador || document.activeElement });
+    el.classList.add('on');
+    el.setAttribute('role', opts.role || (id === 'dialogo' ? 'alertdialog' : 'dialog'));
+    el.setAttribute('aria-modal', 'true');
+    const tit = $('h2, h3, [data-titulo]', el);
+    if (tit) { if (!tit.id) tit.id = id + 'Tit'; el.setAttribute('aria-labelledby', tit.id); el.removeAttribute('aria-label'); }
+    else if (opts.nombre) { el.setAttribute('aria-label', opts.nombre); el.removeAttribute('aria-labelledby'); }
+    fondoInerte();
+    const dest = (opts.foco && $(opts.foco, el)) || $(FOCOS, el) || el;
+    setTimeout(() => { if (capaAbierta(id)) enfocar(dest); }, 30);
+  }
+  function cerrarCapa(id, opts) {
+    opts = opts || {};
+    const el = $('#' + id);
+    if (!capaAbierta(id)) return;
+    el.classList.remove('on'); el.inert = false;
+    const i = PILA.findIndex((x) => x.id === id);
+    const ent = i >= 0 ? PILA.splice(i, 1)[0] : null;
+    fondoInerte();
+    if (opts.sinFoco) return;
+    const a = ent && ent.activador;
+    if (visibleParaFoco(a)) { enfocar(a); return; }
+    // El activador ya no está: título o primer control lógico de la pantalla revelada.
+    const top = PILA.length ? $('#' + PILA[PILA.length - 1].id) : null;
+    if (top) { enfocar($(FOCOS, top) || top); return; }
+    const scr = G.pantalla === 'juego' ? $('#sJuego') : $('.scr.on');
+    if (!scr) return;
+    const h = G.pantalla === 'juego' ? ($('.hueco.act', scr) || $('#jMenu', scr)) : ($('h1, h2', scr) || $(FOCOS, scr));
+    enfocar(h);
+  }
   function anunciar(msg) { const v = $('#vivo'); v.textContent = ''; setTimeout(() => { v.textContent = msg; }, 30); }
   function fmtT(ms) { const s = Math.floor(ms / 1000); const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), ss = s % 60; return (h ? h + ':' + String(m).padStart(2, '0') : m) + ':' + String(ss).padStart(2, '0'); }
   function cuentaAtras() { const ms = CNX.cal.msHastaMedianoche(); const s = Math.floor(ms / 1000); return [Math.floor(s / 3600), Math.floor((s % 3600) / 60), s % 60].map((x) => String(x).padStart(2, '0')).join(':'); }
@@ -127,6 +183,7 @@
   function irA(nombre, opts) {
     opts = opts || {};
     cerrarGlobo();
+    if (nombre !== 'juego') ampliarRegistro(false, true);
     $$('.scr').forEach((s) => s.classList.remove('on'));
     const jg = $('#sJuego');
     jg.classList.toggle('on', nombre === 'juego');
@@ -306,7 +363,6 @@
   }
 
   // ───────────── Ajustes ─────────────
-  let borrarT = 0;
   function abrirAjustes() {
     const el = $('#sAjustes');
     const tog = (id, on, lab) => '<button class="tog" id="' + id + '" role="switch" aria-checked="' + !!on + '" aria-label="' + esc(lab) + '"></button>';
@@ -322,7 +378,7 @@
     h += '<div class="set"><span class="lab">' + t('aj.movimiento') + '</span>' + tog('tMov', AJ.movimiento, t('aj.movimiento')) + '</div>';
     h += '<button class="btn peligro" id="ajBorrar" style="margin-top:14px">' + t('aj.borrar') + '</button></div>';
     el.innerHTML = h;
-    el.classList.add('on');
+    abrirCapa('sAjustes', { foco: 'h2' });
     const cambia = () => { guardarAj(); AU.volumenes({ musica: AJ.musica, volMusica: AJ.volMusica, efectos: AJ.efectos, volEfectos: AJ.volEfectos }); aplicarClases(); };
     const sw = (id, k, extra) => { const b = $('#' + id, el); if (!b) return; b.addEventListener('click', () => { AJ[k] = !AJ[k]; b.setAttribute('aria-checked', AJ[k]); cambia(); sfx('boton'); if (extra) extra(); }); };
     sw('tMus', 'musica'); sw('tSfx', 'efectos'); sw('tVib', 'vibracion', () => vibrar(15)); sw('tCro', 'cronometro', pintarCrono); sw('tTG', 'textoGrande', relayout); sw('tAC', 'altoContraste'); sw('tMov', 'movimiento');
@@ -332,35 +388,33 @@
     const fsB = $('#tFS', el); if (fsB) fsB.addEventListener('click', () => { alternarFS(); setTimeout(() => fsB.setAttribute('aria-checked', enFS()), 300); });
     $('#lEs', el).addEventListener('click', () => cambiarIdioma('es'));
     $('#lEn', el).addEventListener('click', () => cambiarIdioma('en'));
-    const bb = $('#ajBorrar', el);
-    bb.addEventListener('click', () => {
-      if (!bb.classList.contains('armado')) {
-        bb.classList.add('armado'); bb.textContent = t('aj.borrarConfirma'); vibrar(20); sfx('faltan');
-        clearTimeout(borrarT); borrarT = setTimeout(() => { bb.classList.remove('armado'); bb.textContent = t('aj.borrar'); }, 4000);
-      } else {
-        clearTimeout(borrarT);
-        borrarProgreso();
-        bb.classList.remove('armado'); bb.textContent = t('aj.borrar');
-        toast(t('aj.borrado'));
-      }
-    });
+    $('#ajBorrar', el).addEventListener('click', () => { sfx('boton'); confirmarBorrado(); });
     $('#ajX', el).addEventListener('click', cerrarAjustes);
     el.onclick = (e) => { if (e.target === el) cerrarAjustes(); };
-    setTimeout(() => $('#ajX', el).focus(), 50);
   }
   const ajustesAbiertos = () => $('#sAjustes').classList.contains('on');
   function cerrarAjustes() {
-    $('#sAjustes').classList.remove('on'); sfx('boton');
-    if (G.pantalla === 'inicio') { renderInicio(); const b = $('#bAj'); if (b) b.focus({ preventScroll: true }); }
-    else if ($('#pausa').classList.contains('on')) { const b = $('#pCont'); if (b) b.focus({ preventScroll: true }); }
-    else if (G.pantalla === 'juego') { const b = $('#jAj'); if (b) b.focus({ preventScroll: true }); }
+    if (!ajustesAbiertos()) return;
+    sfx('boton');
+    if (G.pantalla === 'inicio') renderInicio();
+    cerrarCapa('sAjustes');
+  }
+  // Borrado permanente: diálogo explícito, Cancelar enfocado, enumera lo que se borra (no toca idioma ni audio).
+  function confirmarBorrado() {
+    const d = $('#dialogo');
+    const juego = 'JET//' + t('titulo.a') + ' ' + t('titulo.b');
+    d.innerHTML = '<div class="card"><h2 class="dlgTit" data-titulo>' + esc(t('aj.borrarTitulo', { juego })) + '</h2><p>' + esc(t('aj.borrarCuerpo', { 'datos concretos': t('aj.borrarDatos') })) + '</p><button class="btn" id="dNo">' + esc(t('btn.cancelar')) + '</button><button class="btn peligro" id="dSi">' + esc(t('aj.borrar')) + '</button></div>';
+    abrirCapa('dialogo', { foco: '#dNo', role: 'alertdialog' });
+    $('#dNo', d).onclick = () => { cerrarCapa('dialogo'); sfx('boton'); };
+    $('#dSi', d).onclick = () => { cerrarCapa('dialogo', { sinFoco: true }); sfx('boton'); borrarProgreso(); toast(t('aj.borrado')); };
+    d.onclick = (e) => { if (e.target === d) cerrarCapa('dialogo'); };
   }
   function borrarProgreso() {
     TUT = { t1: false, t2: false, t3: false, saltado: false }; DIARIO = {}; CAMP = {}; ST = JSON.parse(JSON.stringify(ST_DEF)); PART = { actual: null, p: {} };
     guardarTodo(); lsSet('partida', PART);
-    G.P = null; G.caso = null; G.ultimoInfo = null;
+    G.P = null; G.caso = null; G.ultimoInfo = null; G.deshacer = null;
     if (G.pausado) { G.pausado = false; AU.pausa(false); }
-    $('#pausa').classList.remove('on');
+    cerrarCapa('pausa', { sinFoco: true });
     if (G.pantalla !== 'inicio') { cerrarAjustes(); irA('inicio'); } else renderInicio();
   }
   // Cambiar desde el juego: JETIdioma lo guarda para todo el sitio y avisa con 'jet-idioma'.
@@ -426,7 +480,8 @@
     if (ref.modo === 'diario' && DIARIO[ref.fecha]) { verInformeDiario(ref.fecha); return; }
     if (!mismo || P.resuelto || P.rendido) P = nuevaPartida(ref, caso);
     if (G.pausado) { G.pausado = false; AU.pausa(false); }
-    $('#pausa').classList.remove('on');
+    cerrarCapa('pausa', { sinFoco: true });
+    G.deshacer = null; G.ampliado = false;
     ayudaVuelta = 'inicio';
     G.ref = ref; G.caso = caso; G.P = P;
     G.activo = P.activo && P.huecos[P.activo] == null ? P.activo : null; G.mano = null; G.verTodas = false; G.bancoAbierto = false; G.descFoto = false; G.tablaTel = false; G.focoFicha = -1;
@@ -457,14 +512,19 @@
   function mostrarApertura(caso, ref, cb) {
     const el = $('#apertura');
     G.apertura = true;
-    el.innerHTML = '<div class="cajaA"><div class="mitad sup"></div><div class="mitad inf"></div><div class="brillo"></div><div class="sello">//</div></div><div class="ficha"><div class="kick">' + esc(t('ap.expediente', { n: caso.numIncidente })) + '</div><h3>' + esc(nombreCaso(ref, caso)) + '</h3><dl><dt>' + t('ap.nave') + '</dt><dd>' + esc(caso.nave + ' · ' + caso.tipoNave[L]) + '</dd><dt>' + t('ap.fecha') + '</dt><dd>' + caso.diaMision + '</dd><dt>' + t('ap.hora') + '</dt><dd>' + esc(caso.horaIncidente) + ' UTC</dd><dt>' + t('ap.resumen') + '</dt><dd>' + esc((caso.intro && caso.intro[L]) || caso.resumen[L]) + '</dd></dl></div><div class="saltar">' + t('ap.saltar') + '</div>';
+    // Sin animación (movimiento reducido) el botón se llama «Abrir expediente»; con animación, «Omitir animación».
+    el.innerHTML = '<div class="cajaA" aria-hidden="true"><div class="mitad sup"></div><div class="mitad inf"></div><div class="brillo"></div><div class="sello">//</div></div><div class="ficha"><div class="kick">' + esc(t('ap.expediente', { n: caso.numIncidente })) + '</div><h3 id="apTit">' + esc(nombreCaso(ref, caso)) + '</h3><dl><dt>' + t('ap.nave') + '</dt><dd>' + esc(caso.nave + ' · ' + caso.tipoNave[L]) + '</dd><dt>' + t('ap.fecha') + '</dt><dd>' + caso.diaMision + '</dd><dt>' + t('ap.hora') + '</dt><dd>' + esc(caso.horaIncidente) + ' UTC</dd><dt>' + t('ap.resumen') + '</dt><dd>' + esc((caso.intro && caso.intro[L]) || caso.resumen[L]) + '</dd></dl></div><button type="button" class="btn borde abrirExp" id="apAbrir">' + esc(t(quieto() ? 'ap.abrir' : 'ap.saltar')) + '</button>';
+    el.setAttribute('aria-hidden', 'false'); el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-labelledby', 'apTit');
     void el.offsetWidth;
     el.classList.add('on');
+    fondoInerte();
     AU.stinger(); sfx('sello');
     let hecho = false;
-    const cerrar = () => { if (hecho) return; hecho = true; clearTimeout(tm); el.classList.remove('on'); G.apertura = false; cb(); };
+    const cerrar = () => { if (hecho) return; hecho = true; clearTimeout(tm); el.classList.remove('on'); el.setAttribute('aria-hidden', 'true'); G.apertura = false; fondoInerte(); cb(); };
     const tm = setTimeout(cerrar, quieto() ? 1400 : 2600);
     el.onclick = () => { if (performance.now() - t0 > 250) cerrar(); };
+    $('#apAbrir', el).onclick = (e) => { e.stopPropagation(); cerrar(); };
+    setTimeout(() => { const b = $('#apAbrir', el); if (b && G.apertura) b.focus({ preventScroll: true }); }, 60);
     const t0 = performance.now();
   }
 
@@ -482,14 +542,15 @@
     G.regEnts = RG.entidadesPorRegistro(caso);
     const tabs = caso.registros.map((r, i) => '<button class="tab" role="tab" data-r="' + i + '" aria-selected="' + (P.reg === i) + '" aria-label="' + esc(t('reg.' + r.tipo)) + ' ' + (i + 1) + '">' + ICON[r.tipo] + '<span class="lbl">' + t('reg.' + r.tipo) + '</span><span class="num">' + (i + 1) + '</span><span class="punto"></span></button>').join('');
     el.innerHTML =
-      '<header class="barra"><button class="ibtn" id="jMenu" aria-label="' + t('juego.menu') + '">' + ICON.atras + '</button><div class="nomCaso"><b>' + esc(nombreCaso(G.ref, caso)) + '</b><small>' + esc(caso.nave + ' · ' + caso.incidente[L]) + '</small></div><span class="crono" id="crono" aria-label="' + t('juego.tiempo') + '"></span><button class="ibtn" id="jPausa" aria-label="' + t('juego.pausa') + '">' + ICON.pausa + '</button><button class="ibtn" id="jAj" aria-label="' + t('juego.ajustes') + '">' + ICON.engranaje + '</button></header>' +
+      '<header class="barra"><button class="ibtn" id="jMenu" aria-label="' + t('juego.menu') + '">' + ICON.atras + '</button><div class="nomCaso"><b>' + esc(nombreCaso(G.ref, caso)) + '</b><small>' + esc(caso.nave + ' · ' + caso.incidente[L]) + '</small></div><button class="chipBtn consejo" id="jConsejo" hidden>' + esc(t('tut.consejo')) + '</button><span class="crono" id="crono" aria-label="' + t('juego.tiempo') + '"></span><button class="ibtn" id="jPausa" aria-label="' + t('juego.pausa') + '">' + ICON.pausa + '</button><button class="ibtn" id="jAj" aria-label="' + t('juego.ajustes') + '">' + ICON.engranaje + '</button></header>' +
       '<nav class="pest" role="tablist" aria-label="' + t('juego.registros') + '">' + tabs + '</nav>' +
       '<section class="visor" id="visor"></section>' +
       '<div class="asa" id="asa" role="separator" aria-orientation="horizontal"><i></i></div>' +
-      '<section class="informe" id="informe" aria-label="' + t('juego.informe') + '"><div class="infCab"><b>' + t('juego.informe') + '</b><button class="chipBtn" id="jHist">' + ICON.historial + '<span>' + P.envios.length + '</span><span class="sr">' + t('juego.historial') + '</span></button></div><div class="marcados" id="marcados"></div><div class="infBody" id="infBody"></div><div class="escaner" id="escaner"></div><div class="selloG" id="selloG"></div></section>' +
-      '<section class="banco" id="banco" aria-label="' + esc(t('juego.bancoNombre')) + '"><div class="bancoCab"><b id="bancoTit"></b><button class="chipBtn" id="jTodas"></button><button class="x cerrarB" id="jCerrarB" aria-label="' + t('btn.cerrar') + '">' + ICON.cerrar + '</button></div><div class="bancoBody" id="bancoBody"></div></section>' +
+      '<section class="informe" id="informe" aria-label="' + t('juego.informe') + '"><div class="infCab"><b>' + t('juego.informe') + '</b><button class="chipBtn" id="jHist">' + ICON.historial + '<span>' + P.envios.length + '</span><span class="sr">' + t('juego.historial') + '</span></button></div><div class="marcados" id="marcados" role="group" aria-label="' + esc(t('juego.marcarTodos')) + '"></div><div class="infBody" id="infBody"></div><div class="escaner" id="escaner"></div><div class="selloG" id="selloG"></div></section>' +
+      '<section class="banco" id="banco" aria-label="' + esc(t('juego.bancoNombre')) + '"><div class="bancoCab"><b id="bancoTit"></b><button class="chipBtn" id="jVaciar" hidden>' + esc(t('juego.quitar')) + '</button><button class="chipBtn" id="jTodas"></button><button class="x cerrarB" id="jCerrarB" aria-label="' + t('btn.cerrar') + '">' + ICON.cerrar + '</button></div><div class="bancoBody" id="bancoBody"></div></section>' +
       '<footer class="pie"><button class="bancoBtn" id="jBanco" aria-expanded="false"></button><button class="verificar" id="verificar"></button></footer>';
     relayout(true);
+    el.classList.toggle('ampliado', !!G.ampliado);
     renderVisor(false);
     renderInforme();
     renderBanco();
@@ -514,13 +575,13 @@
     const v = $('#visor');
     if (G.fotoCtl) G.fotoCtl = null;
     AU.radio(r.tipo === 'radio');
-    let acc = '';
-    if (r.tipo === 'radio') acc = '<button class="chipBtn" id="jEsc">' + ICON.volumen + t('juego.escuchar') + '</button>';
-    if (r.tipo === 'foto') acc = '<button class="chipBtn" id="jDesc" aria-pressed="' + G.descFoto + '">' + ICON.ojo + '<span>' + (G.descFoto ? t('juego.ocultarDesc') : t('juego.describir')) + '</span></button>';
-    if (r.tipo === 'telemetria') acc = '<button class="chipBtn" id="jTabla" aria-pressed="' + G.tablaTel + '">' + (G.tablaTel ? ICON.telemetria : ICON.tabla) + '<span>' + (G.tablaTel ? t('juego.grafica') : t('juego.tabla')) + '</span></button>';
-    let h = '<div class="regCab">' + ICON[r.tipo] + '<div class="tt"><b>' + (P.reg + 1) + ' · ' + t('reg.' + r.tipo) + '</b><small>' + ents(r.meta[L]) + '</small></div><div class="acc">' + acc + '</div></div>';
+    let acc = '<button class="chipBtn amp" id="jAmp" aria-pressed="' + !!G.ampliado + '">' + (G.ampliado ? t('juego.volverCaso') : t('juego.ampliar')) + '</button>';
+    if (r.tipo === 'radio') acc = '<button class="chipBtn" id="jEsc">' + ICON.volumen + t('juego.escuchar') + '</button>' + acc;
+    if (r.tipo === 'foto') acc = '<button class="chipBtn" id="jDesc" aria-pressed="' + G.descFoto + '">' + ICON.ojo + '<span>' + (G.descFoto ? t('juego.ocultarDesc') : t('juego.describir')) + '</span></button>' + acc;
+    if (r.tipo === 'telemetria') acc = '<button class="chipBtn" id="jTabla" aria-pressed="' + G.tablaTel + '">' + (G.tablaTel ? ICON.telemetria : ICON.tabla) + '<span>' + (G.tablaTel ? t('juego.grafica') : t('juego.tabla')) + '</span></button>' + acc;
+    let h = '<div class="regCab">' + ICON[r.tipo] + '<div class="tt"><b>' + (P.reg + 1) + ' · ' + t('reg.' + r.tipo) + '</b><small>' + ents(r.meta[L]) + '</small>' + (r.tipo === 'radio' ? '<small class="transc">' + esc(t('juego.transc')) + '</small>' : '') + '</div><div class="acc">' + acc + '</div></div>';
     if (r.tipo === 'foto') {
-      h += '<div class="fotoCaja"><canvas class="fotoCv' + (anim ? ' flash' : '') + '" id="fotoCv" tabindex="0" aria-label="' + t('reg.foto') + '"></canvas><span class="zoomNiv" id="zoomNiv">' + (L === 'es' ? '1,0×' : '1.0×') + '</span><div class="zoomCtl"><button id="zMenos" aria-label="' + esc(t('juego.alejar')) + '" title="' + esc(t('juego.alejar')) + '">−</button><button id="zMas" aria-label="' + esc(t('juego.acercar')) + '" title="' + esc(t('juego.acercar')) + '">+</button></div></div>' + (G.descFoto ? '<div class="desc">' + esc(DB.describirFoto(r.datos, L)) + '</div>' : '');
+      h += '<div class="fotoCaja' + (anim && !quieto() ? ' flash' : '') + '"><canvas class="fotoCv" id="fotoCv" tabindex="0" aria-label="' + t('reg.foto') + '"></canvas><span class="zoomNiv" id="zoomNiv">' + (L === 'es' ? '1,0×' : '1.0×') + '</span><div class="zoomCtl"><button id="zMenos" aria-label="' + esc(t('juego.alejar')) + '" title="' + esc(t('juego.alejar')) + '">−</button><button id="zMas" aria-label="' + esc(t('juego.acercar')) + '" title="' + esc(t('juego.acercar')) + '">+</button></div></div>' + (G.descFoto ? '<div class="desc">' + esc(DB.describirFoto(r.datos, L)) + '</div>' : '');
     } else if (r.tipo === 'telemetria') {
       const et = etiquetasTel(r);
       h += '<div class="telCaja">' + (G.tablaTel ? '<div class="regBody" id="regBody">' + RG.tablaTel(r.datos, L, et) + '</div>' : '<canvas class="telCv" id="telCv" tabindex="0" aria-label="' + t('tel.cursor') + '"></canvas>') + '<div class="telLeyenda">' + r.datos.series.map((s) => '<span>' + esc(CNX.mundo.CANALES[s.canal][L]) + ' · ' + ents(CNX.TX.ayudantes(L).mN(s.mod)) + '</span>').join('') + '</div></div>';
@@ -558,8 +619,20 @@
       }
     } else G.telCtl = null;
     if (r.tipo === 'radio') $('#jEsc').onclick = () => { AU.iniciar(); sfx('escuchar'); };
+    const bAmp = $('#jAmp'); if (bAmp) bAmp.onclick = () => { sfx('boton'); ampliarRegistro(!G.ampliado); };
     const rb = $('#regBody'); if (rb) rb.addEventListener('scroll', () => { guardarPartida(); posicionarGlobo(); }, { passive: true });
     pintarMarcas();
+  }
+  // Ampliar el registro abierto sobre el informe sin perder campo activo, marcas ni respuestas (PLAY-CAJA-01).
+  function ampliarRegistro(on, silencio) {
+    if (!!G.ampliado === !!on) return;
+    G.ampliado = !!on;
+    const jg = $('#sJuego'); jg.classList.toggle('ampliado', G.ampliado);
+    const b = $('#jAmp'); if (b) { b.textContent = G.ampliado ? t('juego.volverCaso') : t('juego.ampliar'); b.setAttribute('aria-pressed', G.ampliado); }
+    if (G.fotoCtl) requestAnimationFrame(() => G.fotoCtl && G.fotoCtl.dibujar());
+    if (G.telCtl) requestAnimationFrame(() => G.telCtl && G.telCtl.dibujar());
+    posicionarGlobo();
+    if (!silencio && b) b.focus({ preventScroll: true });
   }
   function etiquetasTel(r) { const M = CNX.mundo; return r.datos.series.map((s) => M.CANALES[s.canal][L] + ' · ' + (L === 'es' ? M.MODULOS[s.mod].es : M.MODULOS[s.mod].enN)); }
 
@@ -591,7 +664,9 @@
     if (!opts && P.dudas.includes(h)) cls.push('duda');
     if (!opts && G.mano && !lleno && fichaDe(G.mano).cat === hu.cat) cls.push('late');
     if (opts && opts.clase) cls.push(opts.clase);
-    const lab = lleno ? t('juego.huecoLleno', { n, c: t('cat.' + hu.cat), v: textoFicha(hu.cat, v) }) : t('juego.hueco', { n, c: t('cat.' + hu.cat) });
+    let lab = lleno ? t('juego.huecoLleno', { n, c: t('cat.' + hu.cat), v: textoFicha(hu.cat, v) }) : t('juego.hueco', { n, c: t('cat.' + hu.cat) });
+    if (!opts && P.dudas.includes(h)) lab += ', ' + t('juego.huecoDuda');
+    if (!opts && lleno) lab += ' · ' + t('juego.cambiar');
     return '<button class="' + cls.join(' ') + '" data-h="' + h + '" aria-label="' + esc(lab) + '"' + (opts ? ' tabindex="-1"' : '') + '>' + ICON[hu.cat] + (lleno ? '<span>' + esc(textoFicha(hu.cat, v)) + '</span>' : '<span class="ph">' + t('cat.' + hu.cat) + '</span>') + '</button>';
   }
   function htmlInforme(opts) {
@@ -615,7 +690,9 @@
     const P = G.P, caso = G.caso;
     const ib = $('#infBody'); if (!ib) return;
     const st = ib.scrollTop;
-    let h = htmlInforme();
+    let h = '';
+    if (!G.tut && !llenos(P, caso) && !P.envios.length) h += '<p class="pista">' + esc(t('juego.pista')) + '</p>';
+    h += htmlInforme();
     if (P.banda) h += htmlBanda(P.banda);
     const fallidos = P.envios.filter((e) => e.k > 0).length;
     if (fallidos >= 3 && !caso.tutorial) h += '<button class="rendirse" id="jRendirse">' + t('juego.rendirse') + '</button>';
@@ -643,7 +720,7 @@
     const body = $('#bancoBody'); if (!body) return;
     const st = body.scrollTop;
     const catAct = G.activo ? caso.huecos[G.activo].cat : (G.mano ? fichaDe(G.mano).cat : null);
-    const soloAct = G.layout === 'port' && catAct && !G.verTodas;
+    const soloAct = catAct && !G.verTodas;
     const total = caso.banco.reduce((a, f) => a + restantes(f), 0);
     let h = '';
     const orden = catAct ? [catAct].concat(CATS.filter((c) => c !== catAct)) : CATS;
@@ -661,10 +738,11 @@
     body.innerHTML = h;
     body.scrollTop = catAct && catAct !== G.ultimaCatBanco ? 0 : st;
     G.ultimaCatBanco = catAct;
-    $('#bancoTit').textContent = t('juego.banco', { n: total });
+    $('#bancoTit').textContent = catAct ? t('juego.fichasPara', { c: t('cat.' + catAct) }) : t('juego.banco', { n: total });
     const todas = $('#jTodas');
-    todas.style.display = G.layout === 'port' && catAct ? '' : 'none';
+    todas.style.display = catAct ? '' : 'none';
     todas.textContent = G.verTodas ? t('juego.soloCat', { c: t('cat.' + (catAct || 'persona')) }) : t('juego.verTodas');
+    const vac = $('#jVaciar'); if (vac) vac.hidden = !(G.activo && P.huecos[G.activo] != null);
     const bb = $('#jBanco');
     bb.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>' + esc(t('juego.banco', { n: total }));
     bb.setAttribute('aria-expanded', G.bancoAbierto);
@@ -746,7 +824,7 @@
       if (f.cat === cat) { colocar(h, f.valor, $('.ficha[data-f="' + f.id + '"]')); return; }
       noEncaja(h); return;
     }
-    if (P.huecos[h] != null) { quitar(h); setActivo(h, true); abrirBanco(true); renderBanco(); return; }
+    if (P.huecos[h] != null) { if (G.activo === h) { abrirBanco(true); return; } setActivo(h); return; }
     setActivo(G.activo === h && G.layout !== 'port' ? null : h);
   }
   function tocarFicha(fid) {
@@ -776,7 +854,7 @@
     requestAnimationFrame(() => { g.style.transform = 'translate(' + (b.left + b.width / 2 - a.left - a.width / 2) + 'px,' + (b.top + b.height / 2 - a.top - a.height / 2) + 'px) scale(.85)'; g.style.opacity = '.2'; });
     setTimeout(() => g.remove(), 220);
   }
-  function colocar(h, valor, desde) {
+  function colocar(h, valor, desde, esDeshacer) {
     const P = G.P;
     if (!partidaViva()) return false;
     const hu = G.caso.huecos[h];
@@ -785,7 +863,9 @@
     if (P.huecos[h] === valor) return true;
     if (P.huecos[h] == null && restantes(f) <= 0) return false;
     if (P.huecos[h] != null && restantes(f) <= 0) return false;
+    const antes = P.huecos[h];
     P.huecos[h] = valor;
+    if (antes != null && !esDeshacer) { G.deshacer = { h, valor: antes }; toastAccion(t('juego.cambiado'), t('juego.deshacer'), deshacerCambio); }
     G.mano = null;
     if (P.banda && !P.banda.tenue) P.banda.tenue = true;
     sfx('colocar');
@@ -804,14 +884,23 @@
     tutorial('colocado', h);
     return true;
   }
-  function quitar(h) {
+  function quitar(h, esDeshacer) {
     const P = G.P;
-    if (P.huecos[h] == null) return;
+    if (!partidaViva() || P.huecos[h] == null) return;
+    const antes = P.huecos[h];
     P.huecos[h] = null;
     P.dudas = P.dudas.filter((x) => x !== h);
     if (P.banda && !P.banda.tenue) P.banda.tenue = true;
     sfx('quitar');
+    if (!esDeshacer) { G.deshacer = { h, valor: antes }; toastAccion(t('juego.vaciado'), t('juego.deshacer'), deshacerCambio); }
     renderInforme(); renderBanco(); capaPorProgreso(); guardarPartida();
+  }
+  // Recupera la respuesta retirada o sustituida (solo cambia el informe del jugador; no indica si es correcta).
+  function deshacerCambio() {
+    const u = G.deshacer; G.deshacer = null;
+    if (!u || !partidaViva()) return;
+    const ok = colocar(u.h, u.valor, null, true);
+    if (ok) { const b = $('.hueco[data-h="' + u.h + '"]'); if (b) b.focus({ preventScroll: true }); }
   }
   function capaPorProgreso(inicial) {
     const P = G.P; if (!P) return;
@@ -858,7 +947,7 @@
     const prev = P.envios.find((e) => e.clave === clave);
     if (prev) { toast(t('ver.repetido')); P.banda = { k: prev.k, tenue: false }; renderInforme(); anunciar(t('ver.repetido')); return { k: prev.k, repetido: true }; }
     const k = ids.filter((h) => P.huecos[h] !== caso.huecos[h].valor).length;
-    P.envios.push({ clave, k, t: P.tiempoMs });
+    P.envios.push({ clave, k, t: P.tiempoMs, hip: Object.assign({}, P.huecos) });
     if (k === 0) { P.resuelto = true; }
     guardarPartida(true);
     G.ocupado = true;
@@ -906,7 +995,8 @@
     }
   }
   function rendirse() {
-    dialogo(t('juego.rendirseConfirma'), t('juego.si'), t('juego.no'), () => {
+    const aviso = G.ref && G.ref.modo === 'diario' && rachaVigente() > 0 ? ' ' + t('juego.rachaAviso') : '';
+    dialogo(t('juego.rendirseConfirma') + aviso, t('juego.si'), t('juego.no'), () => {
       G.P.rendido = true; guardarPartida(true);
       AU.rendido();
       finalizar(true);
@@ -914,24 +1004,55 @@
   }
   function dialogo(txt, si, no, cb) {
     const d = $('#dialogo');
-    d.innerHTML = '<div class="card"><p>' + esc(txt) + '</p><button class="btn pri" id="dSi" style="min-height:54px;font-size:16px">' + esc(si) + '</button><button class="btn" id="dNo">' + esc(no) + '</button></div>';
-    d.classList.add('on');
-    const cerrar = () => d.classList.remove('on');
-    $('#dSi', d).onclick = () => { cerrar(); sfx('boton'); cb(); };
-    $('#dNo', d).onclick = () => { cerrar(); sfx('boton'); };
-    d.onclick = (e) => { if (e.target === d) cerrar(); };
-    setTimeout(() => $('#dNo', d).focus(), 30);
+    d.innerHTML = '<div class="card"><p data-titulo>' + esc(txt) + '</p><button class="btn" id="dNo">' + esc(no) + '</button><button class="btn pri" id="dSi" style="min-height:54px;font-size:16px">' + esc(si) + '</button></div>';
+    abrirCapa('dialogo', { foco: '#dNo', role: 'alertdialog' });
+    $('#dSi', d).onclick = () => { cerrarCapa('dialogo', { sinFoco: true }); sfx('boton'); cb(); };
+    $('#dNo', d).onclick = () => { cerrarCapa('dialogo'); sfx('boton'); };
+    d.onclick = (e) => { if (e.target === d) cerrarCapa('dialogo'); };
+  }
+  // Hipótesis enviada en un intento: la instantánea guardada o, en intentos antiguos, la clave de verificación
+  // (mismo orden de campos). Si no hay forma fiel de reconstruirla, null.
+  function hipotesisDe(e, ids) {
+    if (e.hip) return e.hip;
+    if (typeof e.clave !== 'string') return null;
+    const partes = e.clave.split('\u0001');
+    if (partes.length !== ids.length) return null;
+    const hip = {};
+    ids.forEach((h, i) => { const cat = G.caso.huecos[h].cat; const f = G.caso.banco.find((x) => x.cat === cat && String(x.valor) === partes[i]); hip[h] = f ? f.valor : (partes[i] === '' ? null : partes[i]); });
+    return hip;
+  }
+  function textoIntento(e, i) {
+    if (e.k === 0) return t('hist.intento0', { n: i + 1 });
+    if (e.k === 1) return t('hist.intento1', { n: i + 1 });
+    // El juego solo informa «3 o más»: el historial no revela el número exacto.
+    return t('hist.intentoN', { n: i + 1, errores: e.k >= 3 ? t('ver.k3') : e.k });
   }
   function abrirHistorial() {
-    const P = G.P, d = $('#historial');
+    const P = G.P, d = $('#historial'), ids = idsHuecos(G.caso);
+    const hips = P.envios.map((e) => hipotesisDe(e, ids));
     let h = '<div class="card"><div class="cab"><h2>' + t('juego.historial') + '</h2><button class="x" id="hX" aria-label="' + t('btn.cerrar') + '">' + ICON.cerrar + '</button></div>';
     if (!P.envios.length) h += '<p class="nota" style="margin:0">' + t('juego.sinEnvios') + '</p>';
-    else h += '<div class="listaEnv">' + P.envios.map((e, i) => '<div class="env"><span class="cua k' + Math.min(3, e.k) + '"></span><span>' + t('ver.envio', { n: i + 1 }) + '</span><small>' + t('ver.k' + Math.min(3, e.k)) + (e.t != null ? ' · ' + fmtT(e.t) : '') + '</small></div>').join('') + '</div>';
+    else h += '<div class="listaEnv">' + P.envios.map((e, i) => '<div class="env" data-i="' + i + '"><div class="envCab"><span class="cua k' + Math.min(3, e.k) + '" aria-hidden="true"></span><span>' + esc(textoIntento(e, i)) + '</span><small>' + (e.t != null ? fmtT(e.t) : '') + '</small></div>' +
+      (hips[i] ? '<div class="envAcc"><button class="chipBtn" data-ver="' + i + '" aria-expanded="false" aria-controls="envInf' + i + '">' + esc(t('hist.ver')) + '</button><button class="chipBtn" data-cmp="' + i + '" aria-pressed="false" hidden>' + esc(t('hist.comparar')) + '</button></div><div class="envInf" id="envInf' + i + '" hidden></div>' : '<small class="nota sinHip">' + esc(t('hist.sinHipotesis')) + '</small>') + '</div>').join('') + '</div>';
     h += '</div>';
-    d.innerHTML = h; d.classList.add('on'); sfx('boton');
-    $('#hX', d).onclick = () => d.classList.remove('on');
-    d.onclick = (e) => { if (e.target === d) d.classList.remove('on'); };
-    setTimeout(() => $('#hX', d).focus(), 30);
+    d.innerHTML = h; sfx('boton');
+    abrirCapa('historial', { foco: 'h2' });
+    const pintar = (i, cmp) => {
+      const hip = hips[i], box = $('#envInf' + i, d);
+      box.innerHTML = htmlInforme((hh) => ({ valor: hip[hh], clase: cmp && hip[hh] !== P.huecos[hh] ? 'dif' : '' })) + (cmp ? '<p class="nota" style="margin:6px 0 0;font-size:12px">' + esc(t('hist.difNota')) + '</p>' : '');
+    };
+    $$('[data-ver]', d).forEach((b) => b.addEventListener('click', () => {
+      const i = +b.dataset.ver, box = $('#envInf' + i, d), cmp = $('[data-cmp="' + i + '"]', d);
+      const abrir = box.hidden;
+      box.hidden = !abrir; b.setAttribute('aria-expanded', abrir); cmp.hidden = !abrir || !partidaViva();
+      if (abrir) pintar(i, cmp.getAttribute('aria-pressed') === 'true'); sfx('registro');
+    }));
+    $$('[data-cmp]', d).forEach((b) => b.addEventListener('click', () => {
+      const i = +b.dataset.cmp; const on = b.getAttribute('aria-pressed') !== 'true';
+      b.setAttribute('aria-pressed', on); pintar(i, on); sfx('boton');
+    }));
+    $('#hX', d).onclick = () => cerrarCapa('historial');
+    d.onclick = (e) => { if (e.target === d) cerrarCapa('historial'); };
   }
 
   // ───────────── Fin de caso y resultado ─────────────
@@ -1038,7 +1159,9 @@
     if (caso.cadena && caso.cadena.length) {
       cad += '<div class="cadena' + (primeraVez || rendido ? ' abierta' : '') + '" id="cadena"><button aria-expanded="' + (primeraVez || rendido) + '">' + t('res.comoSeSabia') + '<svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></button><div class="pasos">' + caso.cadena.map((p, i) => {
         const tipos = Array.from(new Set(p.srcs.map((s) => caso.registros[s[0]].tipo)));
-        return '<button class="paso" data-p="' + i + '" aria-label="' + esc(t('res.verRegistro')) + '"><span class="nn">' + (i + 1) + '</span><span class="ics">' + tipos.map((x) => ICON[x]).join('') + '</span><span>' + esc(p.txt[L]) + '</span></button>';
+        const s0 = p.srcs[0]; const r0 = s0 && caso.registros[s0[0]]; const l0 = r0 && r0.lineas && r0.lineas[s0[1]];
+        const labP = r0 ? (l0 && l0.hora ? t('res.verRegistroN', { nombre: t('reg.' + r0.tipo), hora: l0.hora }) : t('res.verRegistro') + ': ' + t('reg.' + r0.tipo)) : t('res.verRegistro');
+        return '<button class="paso" data-p="' + i + '" aria-label="' + esc(labP) + '"><span class="nn">' + (i + 1) + '</span><span class="ics">' + tipos.map((x) => ICON[x]).join('') + '</span><span>' + esc(p.txt[L]) + '</span></button>';
       }).join('') + '<p class="nota" style="margin:6px 0 0;font-size:12px">' + t('res.tocaPaso') + '</p></div></div>';
       ST.vioCadena = true; lsSet('stats', ST);
     }
@@ -1095,14 +1218,15 @@
       else h += RG.cuerpoTexto(r, L, t, porReg[ri]);
     }
     h += '</div></div>';
-    d.innerHTML = h; d.classList.add('on'); sfx('registro');
+    d.innerHTML = h; sfx('registro');
+    abrirCapa('lupa', { foco: 'h2' });
     requestAnimationFrame(() => {
       $$('.lupaFoto', d).forEach((cv) => { const r = caso.registros[+cv.dataset.r]; RG.montarFoto(cv, r.datos, L, { z: 1, x: 0.5, y: 0.5 }, {}).dibujar(); });
       $$('.lupaTel', d).forEach((cv) => { const r = caso.registros[+cv.dataset.r]; const ch = r.datos.series.find((s) => s.cambio != null); DB.telemetria(cv, r.datos, L, ch ? ch.cambio : null, etiquetasTel(r), null); });
       const res = $('.resalta', d); if (res) res.scrollIntoView({ block: 'center' });
     });
-    $('#lX', d).onclick = () => d.classList.remove('on');
-    d.onclick = (e) => { if (e.target === d) d.classList.remove('on'); };
+    $('#lX', d).onclick = () => cerrarCapa('lupa');
+    d.onclick = (e) => { if (e.target === d) cerrarCapa('lupa'); };
   }
 
   function textoCompartir(info) {
@@ -1126,18 +1250,27 @@
   }
   function compartir(info) {
     const { texto } = textoCompartir(info);
+    const ok = () => { toast(t('res.copiado')); sfx('copiado'); };
+    const manual = () => {
+      const d = $('#dialogo');
+      d.innerHTML = '<div class="card"><h2 class="dlgTit" data-titulo>' + esc(t('res.compartir')) + '</h2><p>' + esc(t('res.copiaMano')) + '</p><textarea class="copiaMano" readonly aria-label="' + esc(t('res.compartir')) + '">' + esc(texto) + '</textarea><div class="fila"><button class="btn" id="dCopiar">' + esc(t('res.copiarTexto')) + '</button><button class="btn" id="dNo">' + esc(t('btn.cerrar')) + '</button></div></div>';
+      abrirCapa('dialogo', { foco: 'textarea', role: 'dialog' });
+      const ta = $('textarea', d); setTimeout(() => ta.select(), 40);
+      $('#dCopiar', d).onclick = () => {
+        ta.focus(); ta.select();
+        let hecho = false;
+        try { hecho = document.execCommand('copy'); } catch (e) { hecho = false; }
+        if (hecho) ok();
+        else if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(texto).then(ok, () => { /* el texto sigue seleccionable */ });
+      };
+      $('#dNo', d).onclick = () => cerrarCapa('dialogo');
+      d.onclick = (e) => { if (e.target === d) cerrarCapa('dialogo'); };
+    };
     const copiar = () => {
-      const ok = () => { toast(t('res.copiado')); sfx('copiado'); };
       if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(texto).then(ok, manual);
       else manual();
     };
-    const manual = () => {
-      const d = $('#dialogo');
-      d.innerHTML = '<div class="card"><p>' + t('res.copiaMano') + '</p><textarea class="copiaMano" readonly>' + esc(texto) + '</textarea><button class="btn" id="dNo">' + t('btn.cerrar') + '</button></div>';
-      d.classList.add('on');
-      const ta = $('textarea', d); ta.focus(); ta.select();
-      $('#dNo', d).onclick = () => d.classList.remove('on');
-    };
+    // Cancelar el diálogo nativo no muestra ni error ni éxito.
     if (navigator.share && /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)) navigator.share({ text: texto }).then(() => sfx('copiado'), (e) => { if (!e || e.name !== 'AbortError') copiar(); });
     else copiar();
   }
@@ -1150,21 +1283,20 @@
     AU.pausa(on);
     sfx('pausa', on);
     if (on) { mostrarPausa(); guardarPartida(true); cerrarMenuHueco(); }
-    else { $('#pausa').classList.remove('on'); tutorial('reanudar'); }
+    else { cerrarCapa('pausa'); tutorial('reanudar'); }
   }
   function mostrarPausa() {
     const p = $('#pausa');
     p.innerHTML = '<div class="card"><div class="kick" style="text-align:center">' + esc(nombreCaso(G.ref, G.caso)) + '</div><h2>' + t('pausa.titulo') + '</h2><p>' + t('pausa.guardado') + '</p><button class="btn pri" id="pCont" style="min-height:60px">' + t('pausa.continuar') + '</button><div class="fila"><button class="btn sec" id="pAyuda">' + t('btn.comoJugar') + '</button><button class="btn sec" id="pAj">' + t('btn.ajustes') + '</button></div><button class="btn" id="pIni">' + t('pausa.inicio') + '</button></div>';
-    p.classList.add('on');
+    abrirCapa('pausa', { foco: '#pCont' });
     $('#pCont', p).onclick = () => { AU.iniciar(); AU.reanudar(); pausar(false); };
-    $('#pAyuda', p).onclick = () => { sfx('boton'); ayudaVuelta = 'juego'; p.classList.remove('on'); irA('ayuda'); };
+    $('#pAyuda', p).onclick = () => { sfx('boton'); ayudaVuelta = 'juego'; cerrarCapa('pausa', { sinFoco: true }); irA('ayuda'); };
     $('#pAj', p).onclick = () => { sfx('boton'); abrirAjustes(); };
-    $('#pIni', p).onclick = () => { sfx('boton'); guardarPartida(true); p.classList.remove('on'); G.pausado = false; AU.pausa(false); irA('inicio'); };
-    setTimeout(() => $('#pCont', p).focus(), 30);
+    $('#pIni', p).onclick = () => { sfx('boton'); guardarPartida(true); cerrarCapa('pausa', { sinFoco: true }); G.pausado = false; AU.pausa(false); irA('inicio'); };
   }
 
   // ───────────── Tutorial ─────────────
-  let globoObj = null;
+  let globoObj = null, ultimoGlobo = null;
   function prepararTutorial() {
     const tu = G.tut, caso = G.caso;
     if (tu.n === 2) G.P.reg = Math.max(0, caso.registros.findIndex((r) => r.tipo === 'radio'));
@@ -1173,13 +1305,19 @@
   function globo(sel, txt, opts) {
     opts = opts || {};
     const g = $('#globo');
-    g.innerHTML = esc(txt) + (opts.saltar ? '<button class="saltar" id="gSaltar">' + t('tut.saltar') + '</button>' : '') + (opts.sig ? '<br><button class="sig" id="gSig">' + t('tut.siguiente') + '</button>' : '');
+    g.innerHTML = '<span class="gTxt">' + esc(txt) + '</span><button type="button" class="gX" id="gX" aria-label="' + esc(t('tut.cerrarExp')) + '">' + ICON.cerrar + '</button>' + (opts.saltar ? '<button class="saltar" id="gSaltar">' + t('tut.saltar') + '</button>' : '') + (opts.sig ? '<br><button class="sig" id="gSig">' + t('tut.siguiente') + '</button>' : '');
     g.classList.add('on');
     globoObj = { sel, opts };
+    ultimoGlobo = { sel, txt, opts };
+    botonConsejo(false);
     if (opts.saltar) $('#gSaltar').onclick = () => { TUT.saltado = true; guardarTodo(); cerrarGlobo(); G.tut = null; sfx('boton'); irA('inicio'); };
     if (opts.sig) $('#gSig').onclick = () => { cerrarGlobo(); };
+    $('#gX').onclick = () => { cerrarGlobo(); botonConsejo(true); sfx('boton'); const b = $('#jConsejo'); if (b) b.focus({ preventScroll: true }); };
     posicionarGlobo();
   }
+  // «Volver a mostrar consejo» aparece en la barra cuando el jugador cerró el globo del tutorial.
+  function botonConsejo(on) { const b = $('#jConsejo'); if (b) b.hidden = !(on && ultimoGlobo && G.tut); }
+  function reabrirConsejo() { if (ultimoGlobo) { const u = ultimoGlobo; globo(u.sel, u.txt, u.opts); } }
   function posicionarGlobo() {
     if (!globoObj) return;
     const g = $('#globo');
@@ -1190,6 +1328,17 @@
     if (tgt.classList.contains('tab') && tgt.scrollIntoView) tgt.scrollIntoView({ block: 'nearest', inline: 'nearest' });
     const r = tgt.getBoundingClientRect();
     const gw = g.offsetWidth, gh = g.offsetHeight;
+    // Si la pista está dentro de un registro, el globo va a un lado para no tapar las filas vecinas (PLAY-CAJA-06).
+    const enRegistro = !!tgt.closest('.regBody, .fotoCaja, .telCaja');
+    const cabeDer = r.right + 12 + gw <= W.innerWidth - 12, cabeIzq = r.left - 12 - gw >= 12;
+    if (enRegistro && (cabeDer || cabeIzq)) {
+      const left = cabeDer ? r.right + 12 : r.left - 12 - gw;
+      const top = Math.max(8, Math.min(W.innerHeight - gh - 8, r.top + r.height / 2 - gh / 2));
+      g.style.left = left + 'px'; g.style.top = top + 'px';
+      g.className = 'on ' + (cabeDer ? 'der' : 'izq');
+      g.style.setProperty('--fy', Math.max(14, Math.min(gh - 14, r.top + r.height / 2 - top)) + 'px');
+      return;
+    }
     let left = Math.min(W.innerWidth - gw - 12, Math.max(12, r.left + r.width / 2 - gw / 2));
     const abajo = r.bottom + gh + 16 < W.innerHeight;
     const top = abajo ? r.bottom + 12 : Math.max(8, r.top - gh - 12);
@@ -1308,6 +1457,8 @@
       case 'jBanco': abrirBanco(!G.bancoAbierto); break;
       case 'jCerrarB': abrirBanco(false); setActivo(null, true); break;
       case 'jTodas': G.verTodas = !G.verTodas; sfx('boton'); renderBanco(); break;
+      case 'jVaciar': if (G.activo) { const hh = G.activo; quitar(hh); setActivo(hh, true); renderBanco(); } break;
+      case 'jConsejo': sfx('boton'); reabrirConsejo(); break;
       case 'jHist': abrirHistorial(); break;
       case 'jRendirse': rendirse(); break;
       case 'jPausa': case 'jMenu': pausar(true); break;
@@ -1391,29 +1542,34 @@
   // ───────────── Teclado ─────────────
   document.addEventListener('keydown', (e) => {
     const k = e.key;
+    const tgt = e.target && e.target.closest ? e.target : null;
+    // Campos de texto, sliders y selects se quedan con sus teclas.
+    if (tgt && tgt.closest('input, textarea, select, [contenteditable="true"]')) { if (k !== 'Escape') return; }
     if (k === 'Escape') {
       if ($('#menuHueco').classList.contains('on')) { cerrarMenuHueco(); return; }
-      for (const id of ['dialogo', 'historial', 'lupa']) if ($('#' + id).classList.contains('on')) { $('#' + id).classList.remove('on'); return; }
-      if ($('#sAjustes').classList.contains('on')) { cerrarAjustes(); return; }
+      // Escape cierra solo la capa superior de la pila.
+      if (PILA.length) {
+        const top = PILA[PILA.length - 1].id;
+        if (top === 'sAjustes') { e.preventDefault(); cerrarAjustes(); return; }
+        if (top !== 'pausa') { e.preventDefault(); cerrarCapa(top); return; }
+      }
     }
     if (G.pantalla !== 'juego' || G.apertura) {
-      if (G.apertura && (k === 'Enter' || k === ' ' || k === 'Escape')) $('#apertura').click();
+      // En la apertura el botón «Abrir expediente» ya responde a Enter/Espacio de forma nativa.
+      if (G.apertura && k === 'Escape') $('#apertura').click();
       return;
     }
     if ($('.capa.on:not(#pausa)')) return;
     if (G.pausado) { if (k === 'Escape' || k === 'p' || k === 'P') { e.preventDefault(); pausar(false); } return; }
     const P = G.P, caso = G.caso;
-    if (k === 'Escape' || k === 'p' || k === 'P') { e.preventDefault(); if (G.bancoAbierto) { abrirBanco(false); return; } pausar(true); return; }
+    if (k === 'Escape' || k === 'p' || k === 'P') { e.preventDefault(); if (G.ampliado) { ampliarRegistro(false); return; } if (G.bancoAbierto) { abrirBanco(false); return; } pausar(true); return; }
     if (!partidaViva()) return;
+    // RSP-NATIVE-KEYS-01: Enter/Espacio sobre un botón o control enfocado activan ese control, no una orden del juego.
+    // Única excepción: un campo del informe (.hueco), que coloca la ficha elegida con las flechas.
+    const enBoton = tgt && tgt.closest('button, a[href], summary, [role="button"], [role="tab"], [role="switch"]');
+    if ((k === 'Enter' || k === ' ') && enBoton && !enBoton.classList.contains('hueco')) return;
     const ids = idsHuecos(caso);
-    if (k === 'Tab') {
-      e.preventDefault();
-      const i = G.activo ? ids.indexOf(G.activo) : -1;
-      const n = e.shiftKey ? (i <= 0 ? ids.length - 1 : i - 1) : (i + 1) % ids.length;
-      setActivo(ids[n]);
-      const b = $('.hueco[data-h="' + ids[n] + '"]'); if (b) b.focus({ preventScroll: true });
-      return;
-    }
+    // Tab es del navegador (RSP-CAJA-01): registros, campos, banco, Verificar, historial y pausa van en orden DOM.
     if ((k === 'v' || k === 'V') || (k === 'Enter' && (e.ctrlKey || e.metaKey))) { e.preventDefault(); verificar(); return; }
     if (k === 'h' || k === 'H') { abrirHistorial(); return; }
     if (/^[1-6]$/.test(k)) { if (+k <= caso.registros.length) abrirRegistro(+k - 1); return; }
@@ -1421,7 +1577,9 @@
     if ((k === 'm' || k === 'M') && document.activeElement && document.activeElement.classList.contains('ent')) { marcar(document.activeElement.dataset.e); return; }
     if ((k === '+' || k === '=' || k === '-' || k === '0') && G.fotoCtl) { G.fotoCtl.zoom(k === '0' ? 0 : k === '-' ? 1 / 1.5 : 1.5); return; }
     if ((k === 'Delete' || k === 'Backspace') && G.activo) { e.preventDefault(); quitar(G.activo); return; }
-    if (G.activo && ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(k) && document.activeElement !== $('#telCv')) {
+    // Las flechas eligen ficha solo con el foco dentro del informe (no desde evidencia, fichas ni acciones).
+    const focoEnInforme = !!(document.activeElement && document.activeElement.closest && document.activeElement.closest('#informe'));
+    if (G.activo && focoEnInforme && ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(k)) {
       e.preventDefault();
       const fs = $$('#bancoBody .grupo[data-cat="' + caso.huecos[G.activo].cat + '"] .ficha:not(.agotada)');
       if (!fs.length) return;
@@ -1431,7 +1589,7 @@
       sfx('tic', G.focoFicha / fs.length);
       return;
     }
-    if ((k === 'Enter' || k === ' ') && G.activo && G.focoFicha >= 0) {
+    if ((k === 'Enter' || k === ' ') && G.activo && focoEnInforme && G.focoFicha >= 0) {
       const f = $$('#bancoBody .grupo[data-cat="' + caso.huecos[G.activo].cat + '"] .ficha:not(.agotada)')[G.focoFicha];
       if (f) { e.preventDefault(); const h = G.activo; tocarFicha(f.dataset.f); const nb = $('.hueco[data-h="' + (G.activo || h) + '"]'); if (nb) nb.focus({ preventScroll: true }); }
     }
@@ -1471,7 +1629,12 @@
     saltarTutorial() { TUT.saltado = true; guardarTodo(); if (G.pantalla === 'inicio') renderInicio(); },
     exportarMuestra: (s) => AU.exportarMuestra(s),
     textoCompartir: () => G.ultimoInfo ? textoCompartir(G.ultimoInfo).texto : null,
-    idioma: (l) => cambiarIdioma(l)
+    idioma: (l) => cambiarIdioma(l),
+    // Lienzo 1200×900 de la foto del caso actual; post=false devuelve la evidencia sin viñeta ni grano para comparar.
+    escenaFoto(post) { const r = G.caso && G.caso.registros.find((x) => x.tipo === 'foto'); return r ? DB.escenaFoto(r.datos, L, { post: post !== false }) : null; },
+    historial: () => G.P ? G.P.envios.map((e) => ({ k: e.k, t: e.t, hip: hipotesisDe(e, idsHuecos(G.caso)) })) : [],
+    deshacer: () => deshacerCambio(),
+    capas: () => PILA.map((x) => x.id)
   };
 
   // ───────────── Arranque ─────────────
@@ -1487,5 +1650,6 @@
   const cp = params.get('caso');
   const sem = cp ? CNX.deB36(cp) : null;
   irA('inicio');
+  if (W.__cnCargaLista) W.__cnCargaLista();
   if (sem) { const d = Math.max(1, Math.min(3, +params.get('d') || 2)); setTimeout(() => empezar({ modo: 'practica', semilla: sem, dif: d }), 50); }
 })();

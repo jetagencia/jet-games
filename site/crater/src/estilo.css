@@ -86,7 +86,7 @@ body.pill .scr{padding-top:calc(var(--barra) + 40px + var(--sat))}
 .sec4 .btn{min-height:50px;font-size:15px}
 
 /* ---------- ronda ---------- */
-#sRonda{padding:0;overflow:hidden;touch-action:none}
+#sRonda{padding:0;overflow:hidden;touch-action:pan-y pinch-zoom}
 .juego{position:absolute;left:calc(14px + var(--sal));right:calc(14px + var(--sar));top:calc(var(--barra) + 6px + var(--sat));bottom:calc(12px + var(--sab));display:flex;flex-direction:column;gap:10px}
 body.pill .juego{top:calc(var(--barra) + 36px + var(--sat))}
 .consigna{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:11px 14px 12px;flex:none}
@@ -299,3 +299,34 @@ body.quieto .scr.on,body.quieto .lamina.on,body.quieto .res{animation:none}
 .pie .fila .btn,.fila .btn{font-size:15px}
 button:focus-visible,a:focus-visible,summary:focus-visible,[tabindex]:not(#cv):focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
 body.quieto .plat,body.quieto .plat>*{transition:none!important}
+
+/* ══ Auditoría 2026-10-22 · Cráter ══ */
+/* RSP-MODALS-01: lo inerte no se ve interactivo */
+[inert]{pointer-events:none}
+/* En la ronda el aviso va arriba, bajo la barra, para no tapar el resultado ni el botón de confirmación */
+body.enRonda #toast{bottom:auto;top:calc(var(--barra) + 14px + var(--sat));transform:translate(-50%,-14px)}
+body.enRonda.pill #toast{top:calc(var(--barra) + 44px + var(--sat))}
+body.enRonda #toast.on{transform:translate(-50%,0)}
+/* Aviso con acción (tarjeta nueva) */
+#toast.accion{pointer-events:auto;display:flex;align-items:center;gap:12px;padding:8px 8px 8px 16px;text-align:left}
+#toast .tAcc{min-height:40px;padding:0 12px;border-radius:9px;border:0;background:var(--violet);color:#fff;font:600 13.5px var(--sans);white-space:nowrap}
+/* PLAY-CRATER-02: la opción elegida y su consecuencia, antes del botón de confirmación */
+.accion .avisoSel{font-size:13.5px;line-height:1.4;color:#B4C3CE;text-align:center;margin:0;padding:0 4px}
+#rExtra .btn{min-height:48px;font-size:15px}
+/* Texto compartible íntegro y seleccionable (SRC-CR02) */
+.copiaMano{width:100%;min-height:120px;padding:10px;border-radius:12px;background:#0b0620;color:var(--ink);border:1px solid var(--line);font:500 13px var(--mono);line-height:1.5;-webkit-user-select:text;user-select:text;resize:vertical}
+/* Panel de consigna y plataformas (VIS-CRATER-07): material sobrio, sin halos en reposo; números, palabras y colores intactos */
+.consigna{background:#132130;border:1px solid #304454;border-radius:14px;padding:14px 16px}
+.consigna h2{font-size:18px;line-height:1.3;font-weight:600}
+.consigna p{font-size:14px;line-height:1.5;color:#B4C3CE}
+.consigna .leyenda{margin-top:8px}
+.consigna .leyenda i{border-radius:50%}
+.plat{background:linear-gradient(180deg,#172838,#101D2B);border:1px solid #3C5366;border-radius:12px;box-shadow:0 4px 10px rgba(0,0,0,.18)}
+.plat::after{background:transparent;box-shadow:none}
+.plat.sel::after{background:rgba(0,242,207,.55)}
+.plat .baliza{box-shadow:0 0 8px color-mix(in srgb,var(--c) 25%,transparent),0 0 3px rgba(255,255,255,.6) inset;border:1px solid rgba(255,255,255,.35)}
+.res .cifra{font:700 24px/1 var(--mono);color:var(--cyan);margin:0 2px}
+.res{font-size:15px;gap:12px}
+.rev .leyenda i{border-radius:50%}
+@media (orientation:landscape) and (max-height:500px){.consigna{padding:10px 12px}.consigna h2{font-size:16px}}
+@media (orientation:landscape) and (min-width:1000px) and (min-height:600px){.consigna{padding:16px 18px}}

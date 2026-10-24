@@ -90,6 +90,7 @@ function repaintLang(l) {
   if (S.ed && $('game').hidden === false) { buildEls(); renderAll(); }
   S.stack.slice().forEach(refreshScreen);
   if (!$('tut').hidden && tutLast) { clearInterval(typeT); $('tutTxt').textContent = tr(tutLast[0]) + (tutLast[1] ? ' ' + tr(tutLast[1]) : ''); positionTut(); }
+  else if (!$('tut').hidden && S.tut && S.tut.last) { S.tut.last = null; tutCheck(); }
   if (S.stack[S.stack.length - 1] === 'sModal') closeModal();
 }
 window.addEventListener('jet-idioma', e => repaintLang(e.detail));
@@ -108,22 +109,55 @@ function secOf(p) { return p.t === 'pub' || p.t === 'clas' ? 'PUB' : p.t === 'ex
 function ptext(p) { return CT.pieceText(p, LANG); }
 function shortT(p) { const t = ptext(p).h; return t.length > 46 ? t.slice(0, 44) + '…' : t; }
 const SCREENS = ['sTitle', 'sFree', 'sRules', 'sIntro', 'sEd', 'sFinal', 'sPause', 'sHelp', 'sSet', 'sArch', 'sView', 'sModal'];
+// RSP-MODALS-01: capas que se abren encima de otra pantalla o del tablero. Al abrir se guarda el activador, el fondo
+// (tablero y cromo) queda inerte, Tab circula sólo dentro de la capa superior y al cerrar el foco vuelve al activador.
+const OVERLAYS = ['sPause', 'sHelp', 'sSet', 'sArch', 'sView', 'sModal', 'sIntro'];
+const FOCUSABLE = 'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),summary,[tabindex]:not([tabindex="-1"])';
+const visibleEl = n => !!n && n.isConnected && !n.closest('[hidden]') && n.getClientRects().length > 0 && !n.closest('[inert]');
+const focusables = root => Array.from(root.querySelectorAll(FOCUSABLE)).filter(n => visibleEl(n) && n.getAttribute('aria-hidden') !== 'true');
+S.focusStack = [];
+function fondoInerte() {
+  const top = S.stack[S.stack.length - 1], inGame = !$('game').hidden;
+  $('game').inert = !!(inGame && top);
+  const cromo = !!(top && OVERLAYS.includes(top) && (inGame || S.stack.length > 1));
+  $('back').inert = cromo; $('tr').inert = cromo;
+  $('tut').inert = !!top;
+}
+function focoInicial(sc, id) {
+  const act = document.activeElement;
+  if (act && act !== document.body && sc.contains(act) && visibleEl(act)) return;
+  const f = sc.querySelector('[data-foco]') || sc.querySelector('.btn.pri:not([disabled]),.btn,.x') || sc.querySelector(FOCUSABLE);
+  if (f) { try { f.focus({ preventScroll: true }); } catch (e) { } }
+  else { sc.tabIndex = -1; try { sc.focus({ preventScroll: true }); } catch (e) { } }
+  void id;
+}
 function show(id, keep) {
-  if (!keep) S.stack = [];
+  if (!keep) { S.stack = []; S.focusStack = []; }
   SCREENS.forEach(s => $(s).classList.toggle('on', s === id));
-  if (id) { if (S.stack[S.stack.length - 1] !== id) S.stack.push(id); refreshScreen(id); }
+  if (id) { if (S.stack[S.stack.length - 1] !== id) { S.stack.push(id); S.focusStack.push(keep ? document.activeElement : null); } refreshScreen(id); }
   updateChrome();
-  const sc = $(id); if (sc) { sc.scrollTop = 0; const f = sc.querySelector('.btn.pri:not([disabled]),.btn,.x'); if (f && matchMedia('(hover:hover)').matches) setTimeout(() => { try { f.focus({ preventScroll: true }); } catch (e) { } }, 30); }
+  const sc = $(id); if (sc) { sc.scrollTop = 0; setTimeout(() => { if (S.stack[S.stack.length - 1] === id) focoInicial(sc, id); }, 30); }
 }
 function push(id) { show(id, true); }
+function restaurarFoco(act, prev) {
+  if (act && visibleEl(act)) { try { act.focus({ preventScroll: true }); } catch (e) { } return; }
+  if (prev) { focoInicial($(prev), prev); return; }
+  // sin capas: primer control lógico del tablero
+  const g = $('game'); if (!g.hidden) { const f = g.querySelector('#bPrint') || g.querySelector(FOCUSABLE); if (f && visibleEl(f)) f.focus({ preventScroll: true }); }
+}
 function back() {
-  S.stack.pop(); const prev = S.stack[S.stack.length - 1];
+  S.stack.pop(); const act = S.focusStack.pop(); const prev = S.stack[S.stack.length - 1];
   SCREENS.forEach(s => $(s).classList.toggle('on', s === prev));
   if (prev) refreshScreen(prev);
   updateChrome();
   if (!prev && S.run && S.run.phase === 'play') { AU.duck(false); }
+  setTimeout(() => restaurarFoco(act, prev), 0);
 }
-function hideAll() { S.stack = []; SCREENS.forEach(s => $(s).classList.remove('on')); updateChrome(); }
+function hideAll() {
+  const act = S.focusStack.length ? S.focusStack[0] : null;
+  S.stack = []; S.focusStack = []; SCREENS.forEach(s => $(s).classList.remove('on')); updateChrome();
+  if (act) setTimeout(() => restaurarFoco(act, null), 0);
+}
 function updateChrome() {
   const top = S.stack[S.stack.length - 1], inGame = !$('game').hidden;
   $('bPause').hidden = !(inGame && S.run && S.run.phase === 'play' && !top);
@@ -131,14 +165,41 @@ function updateChrome() {
   if (top === 'sTitle') startBg(); else stopBg();
   if (inGame && !top) placeChrome(); else resetChrome();
   $('tut').style.visibility = top ? 'hidden' : '';
+  fondoInerte();
 }
+// Tab y Shift+Tab recorren únicamente la capa superior (aria-modal no sustituye el control de foco)
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Tab') return;
+  const top = S.stack[S.stack.length - 1]; if (!top || !OVERLAYS.includes(top)) return;
+  const capa = $(top), f = focusables(capa);
+  if (!f.length) { e.preventDefault(); return; }
+  const first = f[0], last = f[f.length - 1], act = document.activeElement;
+  if (e.shiftKey && (act === first || !capa.contains(act))) { e.preventDefault(); last.focus(); }
+  else if (!e.shiftKey && (act === last || !capa.contains(act))) { e.preventDefault(); first.focus(); }
+}, true);
 function refreshScreen(id) {
   if (id === 'sTitle') renderTitle(); else if (id === 'sFree') renderFree(); else if (id === 'sSet') renderSettings();
   else if (id === 'sHelp') renderHelp(); else if (id === 'sArch') renderArchive(); else if (id === 'sRules') renderRules();
   else if (id === 'sEd') renderEdResult(); else if (id === 'sFinal') renderFinal(); else if (id === 'sPause') renderPause();
 }
-function modal(html, bind) { $('modalCard').innerHTML = html; if (bind) bind($('modalCard')); push('sModal'); }
+// modal(html, bind, opts): opts.alerta → alertdialog (confirmaciones destructivas); el nombre accesible sale del h2 (o de opts.nombre)
+function modal(html, bind, opts) {
+  opts = opts || {};
+  const card = $('modalCard'), sc = $('sModal');
+  card.innerHTML = html; if (bind) bind(card);
+  sc.setAttribute('role', opts.alerta ? 'alertdialog' : 'dialog');
+  const h = card.querySelector('h2');
+  if (h) { if (!h.id) h.id = 'modalT'; sc.setAttribute('aria-labelledby', h.id); sc.removeAttribute('aria-label'); }
+  else { sc.removeAttribute('aria-labelledby'); sc.setAttribute('aria-label', opts.nombre || tr('a_notice')); }
+  push('sModal');
+}
 function closeModal() { if (S.stack[S.stack.length - 1] === 'sModal') back(); }
+// SRC-G04: confirmación explícita y cancelable; Cancelar con el foco inicial y botón peligro aparte
+function confirmar(o) {
+  modal('<div class="top"><h2>' + esc(o.titulo) + '</h2></div><p class="note" style="text-align:left">' + esc(o.texto) + '</p>' + (o.extra || '') +
+    '<div class="row"><button class="btn" data-no data-foco>' + esc(tr('cancel')) + '</button><button class="btn danger" data-si style="margin-top:0">' + esc(o.boton) + '</button></div>',
+    c => { c.querySelector('[data-no]').onclick = () => { sfx('ui'); closeModal(); if (o.cancelar) o.cancelar(); }; c.querySelector('[data-si]').onclick = () => { closeModal(); o.ok(); }; }, { alerta: true });
+}
 
 // ───────────── disposición ─────────────
 function insets() { const p = $('probe') || (() => { const d = document.createElement('div'); d.id = 'probe'; d.style.cssText = 'position:fixed;left:0;top:0;visibility:hidden;pointer-events:none;padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)'; document.body.appendChild(d); return d; })(); const cs = getComputedStyle(p); return { t: parseFloat(cs.paddingTop) || 0, r: parseFloat(cs.paddingRight) || 0, b: parseFloat(cs.paddingBottom) || 0, l: parseFloat(cs.paddingLeft) || 0 }; }
@@ -164,13 +225,13 @@ function layout() {
     const top = I.t + 10, y1 = top + 44 + 8;
     const short = H < 720; S.compactChips = short;
     box('score', 12 + I.l, y1, W - 24 - I.l - I.r, 44);
-    if (short) { const br = 10 + I.l + $('back').offsetWidth, tl = W - I.r - 10 - 96; box('chips', br + 6, top + 6, Math.max(0, tl - br - 12), 34); }
-    else box('chips', 10 + I.l, y1 + 48, W - 20 - I.l - I.r, 32);
+    // RSP-PORTADA-01: los chips son botones de 44 px en una fila propia bajo el marcador (también en pantallas bajas: nunca en el hueco de la cabecera)
+    box('chips', 10 + I.l, y1 + 48, W - 20 - I.l - I.r, 44);
     const barH = short ? 50 : 54, barY = H - I.b - 8 - barH;
     box('bar', 10 + I.l, barY, W - 20 - I.l - I.r, barH);
     const trayH = short ? clamp(H * 0.16, 84, 120) : clamp(H * 0.2, 104, 196), trayY = barY - g - trayH;
     box('trayBox', 10 + I.l, trayY, W - 20 - I.l - I.r, trayH);
-    const py = y1 + 44 + (short ? 4 : 38), ph = trayY - g - py - TR, pw = W - 12 - I.l - I.r;
+    const py = y1 + 44 + 56, ph = trayY - g - py - TR, pw = W - 12 - I.l - I.r;
     box('paperBox', 6 + I.l, py, pw, ph);
     cell = fitCell(pw, ph, C, F);
     $('side').style.display = 'none';
@@ -184,11 +245,11 @@ function layout() {
     cell = fitCell(pw, ph, C, F);
     lay.backX = x0; lay.backY = top;
     box('score', x0, top + 50, colW, 44);
-    box('chips', x0, top + 96, colW, 32);
+    box('chips', x0, top + 96, colW, 44);
     const barH = 50, barY = H - I.b - 8 - barH;
     box('bar', x0, barY, colW, barH);
-    const trayH = barY - g - (top + 134 + TR);
-    box('trayBox', x0, top + 134 + TR, colW, trayH);
+    const trayH = barY - g - (top + 146 + TR);
+    box('trayBox', x0, top + 146 + TR, colW, trayH);
     $('side').style.display = 'none';
     // teléfono acostado: la mesa cabe en una sola fila; se desliza de lado como en vertical (sin filas medio vacías)
     S.trayRow = trayH < 300;
@@ -206,7 +267,7 @@ function layout() {
     box('trayBox', 16 + I.l, top, trayW, H - I.b - 12 - top);
     const sx = W - I.r - 16 - sideW;
     box('score', sx, top, sideW, 76);
-    box('chips', sx, top + 84, sideW, 32);
+    box('chips', sx, top + 84, sideW, 44);
     $('chips').style.height = 'auto';
     $('side').style.display = '';
     box('side', sx, top + 84 + chipsH(), sideW, H - I.b - 12 - (top + 84 + chipsH()));
@@ -231,13 +292,15 @@ function layout() {
   $('cells').style.backgroundSize = cell + 'px ' + cell + 'px'; $('cells').style.backgroundPosition = (cell / 2) + 'px ' + (cell / 2) + 'px';
   $('cells').style.backgroundImage = 'radial-gradient(circle at center, rgba(22,17,31,.22) 1px, transparent 1.6px)';
   const changed = cell !== S.cell; S.cell = cell;
+  // PLAY-PORTADA-02 / VIS-PORTADA-01: guías de filas y columnas sólo mientras se edita; tras cerrar la edición, retícula tenue
+  $('board').classList.toggle('editing', !!(S.run && S.run.phase === 'play' && !S.run.demo));
   if (changed || S.elsKey !== keyEls()) buildEls();
   renderAll();
   placeChrome();
   if (S.tut) positionTut();
 }
 function trayMaxW() { let m = 2; S.ed.pieces.forEach(p => { if (!S.run.pos[p.ix]) m = Math.max(m, K.dims(p, S.trot[p.ix] || 0).w); }); return m; }
-function chipsH() { const c = $('chips'); return Math.max(32, c.scrollHeight) + 8; }
+function chipsH() { const c = $('chips'); return Math.max(44, c.scrollHeight) + 8; }
 function placeChrome() {
   const b = $('back'), t = $('tr');
   if ($('game').hidden || S.stack.length) { resetChrome(); return; }
@@ -262,8 +325,17 @@ function pieceEl(p) {
   else if (p.t === 'breve') h = '<div class="in">' + tag + '<div class="f">' + esc(tx.f || '') + '</div><div class="h">' + esc(tx.h) + '</div></div>';
   else h = '<div class="in">' + tag + '<div class="h">' + esc(tx.h) + '</div>' + (tx.d ? '<div class="d">' + esc(tx.d) + '</div>' : '') + '</div>';
   el.innerHTML = h + '<div class="st"></div>';
-  el.setAttribute('aria-label', L().types[p.t] + ' · ' + (L().secs[sec] || '') + ' · ' + tx.h);
+  labelEl(el, p);
   return el;
+}
+// PLAY-PORTADA-02: nombre accesible con tipo, sección, dimensiones (según rotación actual), fila/columna si está puesta y selección
+function labelEl(el, p) {
+  const sec = secOf(p), tx = ptext(p), q = S.run && S.run.pos ? S.run.pos[p.ix] : null, r = q ? q.r : (S.trot[p.ix] || 0), d = K.dims(p, r);
+  let s = tr('piece_size', { tipo: L().types[p.t], 'sección': L().secs[sec] || '', ancho: d.w, alto: d.h }) + ' ' + tx.h + '.';
+  s += q ? ' ' + tr('piece_pos', { fila: q.y + 1, columna: q.x + 1 }) : ' ' + tr('not_placed') + '.';
+  if (S.sel === p.ix) s += ' ' + tr('selected') + '.';
+  if (el.getAttribute('aria-label') !== s) el.setAttribute('aria-label', s);
+  el.setAttribute('aria-pressed', S.sel === p.ix ? 'true' : 'false');
 }
 let meas = null;
 function sizeEl(el, p, r) {
@@ -279,21 +351,25 @@ function sizeEl(el, p, r) {
 function fitEl(el, p, d, c) {
   const inn = el.querySelector('.in'), h = el.querySelector('.h'), dd = el.querySelector('.d'), sec = el.querySelector('.sec'), f = el.querySelector('.f');
   if (sec) sec.style.fontSize = clamp(c * 0.13, 8.5, 12) + 'px';
+  // VIS-PORTADA-02: variante compacta para recortes de menos de 90 × 64 px CSS (titular en 2 líneas a 11 px, sin bajada); nunca letras bajo 10 px
+  const compact = d.w * c < 90 || d.h * c < 64;
+  el.classList.toggle('compact', compact);
   if (p.t === 'foto') {
     const cv = el.querySelector('canvas'), dpr = Math.min(3, window.devicePixelRatio || 1);
     cv.width = Math.round(d.w * c * dpr); cv.height = Math.round(d.h * c * dpr);
-    A.halftone(cv, p.ill, '#16111f', '#e9e2d2');
-    const cap = el.querySelector('.cap'); cap.style.fontSize = clamp(c * 0.13, 8.5, 12) + 'px';
+    A.halftone(cv, p.ill, '#16111f', '#e9e2d2', dpr);
+    const cap = el.querySelector('.cap'); cap.style.fontSize = clamp(c * 0.13, 10, 12) + 'px';
     return;
   }
   let start, min, ds = 0;
-  if (p.t === 'tit') { start = Math.min(32, c * 0.4); min = 9; }
-  else if (p.t === 'nota') { start = Math.min(24, c * 0.27); min = 10; ds = clamp(c * 0.165, 9.5, 15); }
-  else if (p.t === 'col') { start = Math.min(18, c * 0.22); min = 8; ds = clamp(c * 0.15, 9, 13); }
-  else if (p.t === 'breve') { start = clamp(c * 0.15, 8.5, 13); min = 8; if (f) f.style.fontSize = clamp(c * 0.34, 12, 32) + 'px'; }
-  else if (p.t === 'pub') { start = Math.min(20, c * 0.2); min = 8.5; }
-  else if (p.t === 'clas') { start = Math.min(13, c * 0.14); min = 8; }
-  else { start = clamp(c * 0.3, 12, 30); min = 10; ds = clamp(c * 0.15, 9, 14); }
+  if (p.t === 'tit') { start = Math.min(32, c * 0.4); min = 10; }
+  else if (p.t === 'nota') { start = clamp(c * 0.27, 16, 24); min = 10; ds = clamp(c * 0.165, 12, 14); }
+  else if (p.t === 'col') { start = Math.min(18, c * 0.22); min = 10; ds = clamp(c * 0.15, 12, 13); }
+  else if (p.t === 'breve') { start = clamp(c * 0.15, 10, 13); min = 10; if (f) f.style.fontSize = clamp(c * 0.34, 12, 32) + 'px'; }
+  else if (p.t === 'pub') { start = Math.min(20, c * 0.2); min = 10; }
+  else if (p.t === 'clas') { start = Math.min(13, c * 0.14); min = 10; }
+  else { start = clamp(c * 0.3, 12, 30); min = 10; ds = clamp(c * 0.15, 12, 14); }
+  if (compact) { start = Math.min(start, 11); min = 10; }
   const host = p.t === 'pub' || p.t === 'clas' ? el.querySelector('.pubb') : inn;
   if (dd) dd.style.display = 'none';
   h.style.display = ''; h.style.webkitLineClamp = ''; h.style.maxHeight = '';
@@ -304,8 +380,9 @@ function fitEl(el, p, d, c) {
   const over = () => host.scrollHeight > host.clientHeight + 1 || inn.scrollHeight > inn.clientHeight + 1 || h.scrollWidth > h.clientWidth + 1 || host.scrollWidth > host.clientWidth + 1;
   while (over() && s > min) { s -= 0.5; h.style.fontSize = s + 'px'; }
   if (h.scrollWidth > h.clientWidth + 1 || host.scrollWidth > host.clientWidth + 1) h.style.overflowWrap = 'anywhere';
-  if (over()) { const lh = s * 1.12, avail = host.clientHeight - (sec ? sec.offsetHeight + 3 : 0) - (f ? f.offsetHeight : 0) - 4; const n = Math.max(1, Math.floor(avail / lh)); h.style.display = '-webkit-box'; h.style.webkitBoxOrient = 'vertical'; h.style.webkitLineClamp = n; h.style.overflow = 'hidden'; }
-  if (dd) {
+  if (over() || compact) { const lh = s * 1.12, avail = host.clientHeight - (sec ? sec.offsetHeight + 3 : 0) - (f ? f.offsetHeight : 0) - 4; const n = Math.max(1, Math.min(compact ? 2 : 99, Math.floor(avail / lh))); h.style.display = '-webkit-box'; h.style.webkitBoxOrient = 'vertical'; h.style.webkitLineClamp = n; h.style.overflow = 'hidden'; }
+  // la bajada es ornamental en la miniatura: en compacto se oculta (el detalle y el nombre accesible conservan el texto íntegro)
+  if (dd && !compact) {
     dd.style.display = ''; dd.style.fontSize = ds + 'px';
     let n = 6; dd.style.webkitLineClamp = n;
     while (over() && n > 0) { n--; dd.style.webkitLineClamp = n; if (n === 0) dd.style.display = 'none'; }
@@ -333,10 +410,21 @@ function renderBoard() {
       el.classList.remove('nofit', 'src');
       if (el.parentNode !== host) host.appendChild(el);
       const pc = S.sc.pieces[p.ix], st = el.querySelector('.st');
-      st.innerHTML = pc ? pc.mults.map(m => '<i class="' + (m[0] === 'cab' || m[0] === 'foto' || m[0] === 'tema' ? m[0] : 'mx') + '" title="' + esc(L().m[m[0]] || '') + '">×' + String(m[1]).replace('.', LANG === 'es' ? ',' : '.') + '</i>').join('') : '';
+      // PLAY-PORTADA-03 / VIS-PORTADA-04: cada sello nombra su causa (título y lectura); glifo distinto para cabecera, foto y tema;
+      // en recortes compactos con varios sellos, un resumen «Sellos: {n}» (el detalle conserva el desglose íntegro)
+      const sellos = pc ? pc.mults : [];
+      el.classList.toggle('has-st', sellos.length > 0);
+      if (el.classList.contains('compact') && sellos.length > 1) st.innerHTML = '<i class="mx sum" title="' + esc(sellos.map(m => multName(m)).join(' · ')) + '">' + esc(tr('stamps_n', { cantidad: sellos.length })) + '</i>';
+      else st.innerHTML = sellos.map(m => '<i class="' + (m[0] === 'cab' || m[0] === 'foto' || m[0] === 'tema' ? m[0] : 'mx') + '" title="' + esc(multName(m)) + '">' + (m[0] === 'cab' ? '⌃' : m[0] === 'foto' ? '◩' : m[0] === 'tema' ? '★' : '') + '×' + String(m[1]).replace('.', LANG === 'es' ? ',' : '.') + '</i>').join('');
       el.classList.toggle('sel', S.sel === p.ix);
+      labelEl(el, p);
     }
   });
+}
+function multName(m) {
+  if (m[0] === 'cab' && m[1] === 2) return tr('mult_cab');
+  if (m[0] === 'foto' && m[1] === 2) return tr('mult_foto');
+  return (L().m[m[0]] || m[0]) + ' ×' + String(m[1]).replace('.', LANG === 'es' ? ',' : '.');
 }
 function renderTray() {
   if (S.mode !== 'port' && !S.trayRow) { const tb = $('trayBox').clientWidth; if (tb) S.ts = Math.min(S.mode === 'wide' ? 0.95 : 0.85, (tb - 34) / (trayMaxW() * S.cell + 4)); }
@@ -356,16 +444,20 @@ function renderTray() {
       if (el.parentNode !== w) w.appendChild(el);
       const nf = !K.fitsAnywhere(S.ed, S.run.pos, p.ix);
       el.classList.toggle('nofit', nf); el.dataset.nofit = tr('no_fit');
+      el.classList.remove('has-st'); el.querySelector('.st').innerHTML = '';
     }
     w.classList.toggle('sel', S.sel === p.ix);
+    labelEl(el, p);
     tray.appendChild(w);
   });
   for (const k in wraps) wraps[k].remove();
   let em = tray.querySelector('.empty');
-  if (!un.length) { if (!em) { em = document.createElement('div'); em.className = 'empty'; tray.appendChild(em); } em.textContent = S.sc.holes ? tr('holes', { n: S.sc.holes }) : tr('full'); }
+  // SRC-PO02: celdas vacías con la penalización real del motor (holePen: 0 con «Edición nocturna»), no «cada uno resta 2» fijo
+  if (!un.length) { if (!em) { em = document.createElement('div'); em.className = 'empty'; tray.appendChild(em); } em.textContent = S.sc.holes ? holesTxt() : tr('full_page'); }
   else if (em) em.remove();
   $('trayN').textContent = un.length === 1 ? tr('left1') : tr('left', { n: un.length });
 }
+function holesTxt() { return S.sc.holes === 1 ? tr('hole1', { 'penalización': S.sc.holePen }) : tr('holes', { n: S.sc.holes, 'penalización': S.sc.holePen }); }
 function tagHTML(pr, cls) {
   const v = pr.v, c = S.cell, cl = v > 0 ? 'pos' : v < 0 ? 'neg' : 'neu';
   const name = pr.parts.map(x => L().pairs[x[0]]).filter(Boolean).join(' · ');
@@ -404,8 +496,10 @@ function renderHUD(previewTotal) {
   setScore(total, previewTotal != null ? previewTotal - S.sc.total : 0);
   const bar = $('scBar'), goal = S.goal || 1;
   $('scFill').style.width = Math.min(100, total / goal * 100) + '%';
-  $('scGoal').textContent = isTut && !S.goal ? '' : tr('goal') + ' ' + fmt(goal);
+  // PLAY-PORTADA-03: meta con unidad; la referencia del jefe (misma unidad) va en el nombre accesible del marcador, sin presentarla como garantía
+  $('scGoal').textContent = isTut && !S.goal ? '' : tr('goal_v', { n: fmt(goal) });
   $('scGoalMark').style.display = isTut && !S.goal ? 'none' : '';
+  $('score').setAttribute('aria-label', tr('copies_est_v', { cantidad: fmt(total) }) + (S.goal ? ' · ' + tr('goal_v', { n: fmt(goal) }) : '') + ' · ' + tr('boss_ref', { cantidad: fmt(S.J) }));
   const met = S.sc.total >= goal && S.goal > 0, gold = S.sc.total >= S.J && S.J > 0;
   bar.classList.toggle('met', total >= goal && S.goal > 0); bar.classList.toggle('gold', previewTotal == null && gold);
   const pb = $('bPrint'); pb.classList.toggle('met', met && !gold); pb.classList.toggle('gold', gold);
@@ -421,25 +515,33 @@ function renderHUD(previewTotal) {
   const selP = S.sel >= 0 ? S.ed.pieces[S.sel] : S.drag && S.drag.started ? S.ed.pieces[S.drag.ix] : null;
   $('bRot').hidden = !(selP && K.canRotate(selP));
   const msg = $('msg'), un = S.ed.pieces.filter(p => !S.run.pos[p.ix]).length;
+  if (S.msgHold && performance.now() < S.msgHold) return; // un aviso de colocación («No entra…», «Colocación cancelada») se lee entero
   msg.className = '';
   if (S.sel >= 0 && !S.drag) msg.textContent = tr('sel_hint');
-  else if (S.sc.holes === 0) { msg.textContent = tr('full'); msg.className = 'ok'; }
-  else if (!un || !S.ed.pieces.some(p => !S.run.pos[p.ix] && K.fitsAnywhere(S.ed, S.run.pos, p.ix))) { msg.textContent = S.sc.holes === 1 ? tr('hole1') : tr('holes', { n: S.sc.holes }); msg.className = 'warn'; }
+  else if (S.sc.holes === 0) { msg.textContent = tr('full_page'); msg.className = 'ok'; }
+  else if (!un || !S.ed.pieces.some(p => !S.run.pos[p.ix] && K.fitsAnywhere(S.ed, S.run.pos, p.ix))) { msg.textContent = holesTxt(); msg.className = 'warn'; }
   else msg.textContent = '';
 }
+// aviso efímero en la zona viva de la barra (PLAY-PORTADA-02 / RSP-PORTADA-02)
+function aviso(txt, cls) { const m = $('msg'); m.textContent = txt; m.className = cls || 'warn'; S.msgHold = performance.now() + 1800; clearTimeout(S.msgT); S.msgT = setTimeout(() => { S.msgHold = 0; if (S.ed) renderHUD(); }, 1850); }
 function renderChips() {
   const c = $('chips'), ed = S.ed; let h = '';
   if (ed.theme) h += '<button class="chip theme" style="color:' + A.SEC_COLOR[ed.theme] + '" data-chip="theme">' + A.iconSVG(ed.theme) + '<span style="color:var(--ink)">' + esc(L().secs[ed.theme]) + ' ×' + (S.ctx.rules.doble ? '2' : (LANG === 'es' ? '1,5' : '1.5')) + '</span></button>';
   const picks = (S.run.picks || []).filter(p => p.ed <= S.run.k);
-  if (S.compactChips) { const roomy = c.clientWidth >= 84; c.innerHTML = '<button class="chip rule" data-chip="rules" style="max-width:100%" aria-label="' + esc(tr('rules_n', { n: picks.length })) + '">' + (ed.theme ? '<span style="color:' + A.SEC_COLOR[ed.theme] + '">' + A.iconSVG(ed.theme) + '</span>' + (roomy ? esc(L().code[ed.theme]) : '') : '') + ' <b>§' + picks.length + '</b></button>'; return; }
+  if (S.compactChips) { const roomy = c.clientWidth >= 84; c.innerHTML = '<button class="chip rule" data-chip="rules" style="max-width:100%" aria-label="' + esc(tr('rules_theme') + ' · ' + tr('rules_n', { n: picks.length })) + '">' + (ed.theme ? '<span style="color:' + A.SEC_COLOR[ed.theme] + '">' + A.iconSVG(ed.theme) + '</span>' + (roomy ? esc(L().code[ed.theme]) : '') : '') + ' <b>§' + picks.length + '</b><span class="chip-t">' + esc(tr('rules_theme')) + '</span></button>'; return; }
   if (false) h += '<button class="chip rule" data-chip="rules"><b>§</b>' + esc(tr('rules_n', { n: picks.length })) + '</button>';
   else picks.forEach(p => { const r = L().rules[p.id]; h += '<button class="chip rule" data-chip="' + p.id + '"><b>' + esc(glyph(p.id)) + '</b>' + esc(r[0]) + (p.sec ? ' · ' + L().code[p.sec] : '') + '</button>'; });
   c.innerHTML = h;
 }
+// PLAY-PORTADA-03: las abreviaturas de sección se expanden a su nombre completo en las tablas
+function expandCodes(s) { const inv = {}; for (const k in L().code) inv[L().code[k]] = k; return s.replace(/\b(POL|ECO|DEP|CIE|CUL|SOC|CLI|PUB|SPO|SCI|WX|AD)\b/g, m => (inv[m] && L().secs[inv[m]]) || m); }
+function pairTableHTML(hl) {
+  const rows = L().table_rows, codes = ['ctx', 'expl', 'curi', 'agenda', 'aficion', 'rep', 'ruido', 'distr', 'holes'];
+  return '<table class="ptab">' + rows.map((r, i) => '<tr class="' + (hl && hl.has(codes[i]) ? 'on' : '') + '"><td title="' + esc(r[0]) + '">' + esc(expandCodes(r[0])) + '</td><td class="' + (r[1][0] === '+' ? 'p' : 'n') + '">' + r[1] + '</td><td>' + esc(r[2]) + '</td></tr>').join('') + '</table>';
+}
 function renderPairTable(hl) {
   if (S.mode !== 'wide') return;
-  const rows = L().table_rows, codes = ['ctx', 'expl', 'curi', 'agenda', 'aficion', 'rep', 'ruido', 'distr', 'holes'];
-  $('pairT').innerHTML = '<table class="ptab">' + rows.map((r, i) => '<tr class="' + (hl && hl.has(codes[i]) ? 'on' : '') + '"><td>' + esc(r[0]) + '</td><td class="' + (r[1][0] === '+' ? 'p' : 'n') + '">' + r[1] + '</td><td>' + esc(r[2]) + '</td></tr>').join('') + '</table>' + rulesSummary();
+  $('pairT').innerHTML = '<p class="note small" style="text-align:left;margin:0 0 8px">' + esc(tr('boss_ref', { cantidad: fmt(S.J) })) + '</p>' + pairTableHTML(hl) + rulesSummary();
 }
 function rulesSummary() {
   const picks = (S.run.picks || []).filter(p => p.ed <= S.run.k);
@@ -478,8 +580,9 @@ function dust(el) {
   if (RM) return; const r = el.getBoundingClientRect(), fx = $('fx');
   for (let i = 0; i < 6; i++) { const d = document.createElement('i'); d.className = 'dust'; const x = r.left + (i % 2 ? r.width : 0), y = r.top + r.height * Math.random(); d.style.left = x + 'px'; d.style.top = y + 'px'; d.style.setProperty('--dx', (i % 2 ? 1 : -1) * (8 + Math.random() * 14) + 'px'); d.style.setProperty('--dy', (Math.random() * 16 - 8) + 'px'); fx.appendChild(d); setTimeout(() => d.remove(), 520); }
 }
-function undo() { if (!S.run || S.run.phase !== 'play' || !S.run.hist.length) return; S.run.fut.push(S.run.pos); S.run.pos = S.run.hist.pop(); S.sel = -1; renderAll(); saveRun(); sfx('undo'); }
-function redo() { if (!S.run || S.run.phase !== 'play' || !S.run.fut.length) return; S.run.hist.push(S.run.pos); S.run.pos = S.run.fut.pop(); S.sel = -1; renderAll(); saveRun(); sfx('redo'); }
+// PLAY-PORTADA-04: deshacer y rehacer también actualizan la guía del tutorial
+function undo() { if (!S.run || S.run.phase !== 'play' || !S.run.hist.length) return; S.run.fut.push(S.run.pos); S.run.pos = S.run.hist.pop(); S.sel = -1; renderAll(); saveRun(); sfx('undo'); tutCheck(); }
+function redo() { if (!S.run || S.run.phase !== 'play' || !S.run.fut.length) return; S.run.hist.push(S.run.pos); S.run.pos = S.run.fut.pop(); S.sel = -1; renderAll(); saveRun(); sfx('redo'); tutCheck(); }
 function without(pos, ix) { const o = Object.assign({}, pos); delete o[ix]; return o; }
 function placeAt(ix, x, y, r) {
   if (!K.canPlace(S.ed, without(S.run.pos, ix), ix, x, y, r)) return false;
@@ -544,7 +647,7 @@ function boardTap(x, y) {
   const br = boardRect(), cx = Math.floor((x - br.left) / S.cell), cy = Math.floor((y - br.top) / S.cell);
   const ix = S.sel, r = S.run.pos[ix] ? S.run.pos[ix].r : (S.trot[ix] || 0);
   let s = K.canPlace(S.ed, without(S.run.pos, ix), ix, cx, cy, r) ? { x: cx, y: cy, r } : nearestSpot(ix, cx, cy, r);
-  if (!s) { sfx('invalid'); vibe([20, 30, 20]); return; }
+  if (!s) { sfx('invalid'); vibe([20, 30, 20]); aviso(tr('does_not_fit')); return; }
   S.sel = -1; placeAt(ix, s.x, s.y, s.r);
 }
 function beginDrag() {
@@ -668,12 +771,16 @@ function kbPreview() {
   k.x = clamp(k.x, 0, S.ed.C - dm.w); k.y = clamp(k.y, 0, S.ed.F - dm.h);
   const ok = K.canPlace(S.ed, without(S.run.pos, k.ix), k.ix, k.x, k.y, k.r);
   showPreview(k.ix, { x: k.x, y: k.y, ok }, k.r);
+  // PLAY-PORTADA-02: destino navegable anunciado (fila/columna) y mensaje de colisión o salida de límites
+  const m = $('msg'); m.textContent = tr('piece_pos', { fila: k.y + 1, columna: k.x + 1 }) + (ok ? '' : ' ' + tr('does_not_fit')); m.className = ok ? '' : 'warn';
 }
 function kbDrop() {
   const k = S.kb; if (!k) return;
   if (placeAt(k.ix, k.x, k.y, k.r)) { S.kb = null; clearPreview(); setTimeout(() => { const el = S.els[k.ix]; if (el) el.focus({ preventScroll: true }); }, 0); }
-  else { sfx('invalid'); vibe([20, 30, 20]); }
+  else { sfx('invalid'); vibe([20, 30, 20]); aviso(tr('does_not_fit')); }
 }
+// RSP-PORTADA-02: Tab durante la colocación por teclado cancela sólo la previsualización (posición original e historial intactos) y sigue su curso
+function kbCancel(anuncio) { S.kb = null; clearPreview(); renderAll(); if (anuncio) aviso(tr('placement_cancelled'), ''); }
 document.addEventListener('keydown', e => {
   const top = S.stack[S.stack.length - 1];
   if (top) {
@@ -687,7 +794,7 @@ document.addEventListener('keydown', e => {
   const f = document.activeElement, fix = f && f.classList && f.classList.contains('pc') ? +f.dataset.ix : -1;
   const k = e.key, ctrl = e.ctrlKey || e.metaKey;
   if (ctrl && k === 'Enter') { e.preventDefault(); onPrint(); return; }
-  if (k === 'Escape') { e.preventDefault(); if (S.kb) { S.kb = null; clearPreview(); renderAll(); } else if (S.sel >= 0) select(S.sel); else pause(); return; }
+  if (k === 'Escape') { e.preventDefault(); if (S.kb) { kbCancel(true); } else if (S.sel >= 0) select(S.sel); else pause(); return; }
   if (k === 'p' || k === 'P') { pause(); return; }
   if ((k === 'z' || k === 'Z') && !e.shiftKey) { e.preventDefault(); undo(); return; }
   if (k === 'y' || k === 'Y' || ((k === 'z' || k === 'Z') && e.shiftKey)) { e.preventDefault(); redo(); return; }
@@ -696,7 +803,7 @@ document.addEventListener('keydown', e => {
     const mv = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[k];
     if (mv) { e.preventDefault(); S.kb.x += mv[0]; S.kb.y += mv[1]; sfx('tick'); kbPreview(); return; }
     if (k === 'Enter' || k === ' ') { e.preventDefault(); kbDrop(); return; }
-    if (k === 'Tab') { e.preventDefault(); return; }
+    if (k === 'Tab') { kbCancel(true); return; } // sin preventDefault: el foco avanza a la siguiente herramienta
   }
   if (fix >= 0) {
     if (k === 'Enter' || k === ' ') { e.preventDefault(); kbStart(fix); return; }
@@ -708,21 +815,26 @@ document.addEventListener('keydown', e => {
 // ───────────── detalle de pieza ─────────────
 function showDetail(ix) {
   const p = S.ed.pieces[ix], tx = ptext(p), sec = secOf(p), pc = S.sc.pieces[ix];
-  let h = '<div class="top"><span class="det-sec" style="--sc:' + A.SEC_COLOR[sec] + '">' + A.iconSVG(sec) + esc(L().types[p.t]) + ' · ' + esc(L().secs[sec] || '') + '</span><span style="flex:1"></span><button class="x" data-close aria-label="' + esc(tr('close')) + '">✕</button></div>';
-  h += '<div class="det-h">' + esc((tx.f ? tx.f + ' · ' : '') + tx.h) + '</div>';
+  // PLAY-PORTADA-01: vista ampliada de la noticia (texto íntegro, sin cambiar su ubicación ni su tamaño lógico)
+  let h = '<div class="top"><span class="det-sec" style="--sc:' + A.SEC_COLOR[sec] + '">' + A.iconSVG(sec) + esc(L().types[p.t]) + ' · ' + esc(L().secs[sec] || '') + '</span><span style="flex:1"></span><button class="x" data-close aria-label="' + esc(tr('close_expanded')) + '">✕</button></div>';
+  h += '<h2 class="det-h">' + esc((tx.f ? tx.f + ' · ' : '') + tx.h) + '</h2>';
   if (tx.d) h += '<div class="det-d">' + esc(tx.d) + '</div>';
-  if (p.t === 'foto') h += '<div class="det-d">' + esc(tr('photo_of', { t: shortT(S.ed.pieces[p.story]) })) + '</div>';
+  if (p.t === 'foto') h += '<canvas class="det-foto" aria-hidden="true"></canvas><div class="det-d">' + esc(tr('photo_of', { t: shortT(S.ed.pieces[p.story]) })) + '</div>';
   h += '<div class="lines"><div><span>' + esc(tr('base')) + '</span><b>' + p.base + '</b></div>';
   if (pc) {
-    pc.mults.forEach(m => { h += '<div><span>' + esc(L().m[m[0]]) + '</span><b class="p">×' + String(m[1]).replace('.', LANG === 'es' ? ',' : '.') + '</b></div>'; });
+    pc.mults.forEach(m => { h += '<div><span>' + esc(multName(m)) + '</span><b class="p">×' + String(m[1]).replace('.', LANG === 'es' ? ',' : '.') + '</b></div>'; });
     pc.extra.forEach(x => { h += '<div><span>' + esc(L().glob[x[0]] || x[0]) + '</span><b class="p">+' + x[1] + '</b></div>'; });
     S.sc.pairs.filter(pr => pr.a === ix || pr.b === ix).forEach(pr => { const o = S.ed.pieces[pr.a === ix ? pr.b : pr.a]; pr.parts.forEach(x => { h += '<div><span>' + esc(L().pairs[x[0]] || x[0]) + ' · ' + esc(L().code[secOf(o)]) + '</span><b class="' + (x[1] > 0 ? 'p' : x[1] < 0 ? 'n' : '') + '">' + (x[1] > 0 ? '+' : x[1] < 0 ? '−' : '') + Math.abs(x[1]) + '</b></div>'; }); });
     h += '<div><span><b>' + esc(tr('value')) + '</b></span><b>' + pc.total + '</b></div>';
   } else h += '<div><span>' + esc(tr('not_placed')) + '</span><b>—</b></div>';
   h += '</div>';
   if (S.run.pos[ix] && S.run.phase === 'play') h += '<button class="btn" data-rm>' + esc(tr('remove')) + '</button>';
-  h += '<button class="btn pri" data-close>' + esc(tr('close')) + '</button>';
-  modal(h, c => { c.querySelectorAll('[data-close]').forEach(b => b.onclick = closeModal); const rm = c.querySelector('[data-rm]'); if (rm) rm.onclick = () => { closeModal(); removeToTray(ix); }; });
+  h += '<button class="btn pri" data-close>' + esc(tr('close_expanded')) + '</button>';
+  modal(h, c => {
+    c.querySelectorAll('[data-close]').forEach(b => b.onclick = closeModal); const rm = c.querySelector('[data-rm]'); if (rm) rm.onclick = () => { closeModal(); removeToTray(ix); };
+    // VIS-PORTADA-03: reproducción de la misma viñeta (p.ill) en el detalle de una foto
+    const cv = c.querySelector('.det-foto'); if (cv) { const dpr = Math.min(2, window.devicePixelRatio || 1), W = Math.min(360, c.clientWidth - 40 || 320), d = K.dims(p, 0); cv.style.width = W + 'px'; cv.style.height = Math.round(W * d.h / d.w) + 'px'; cv.width = Math.round(W * dpr); cv.height = Math.round(W * d.h / d.w * dpr); A.halftone(cv, p.ill, '#16111f', '#e9e2d2', dpr); }
+  }, { nombre: tr('expanded_news') });
 }
 
 // ───────────── partida ─────────────
@@ -777,11 +889,15 @@ function startEdition(fresh) {
 }
 function showIntro() {
   const ed = S.ed, run = S.run, th = ed.theme;
-  let h = '<div class="n">' + esc(run.mode === 'tut' ? tr('tut_x', { k: run.k }) : tr('edition_x', { k: run.k })) + '</div><h2>' + esc(tr('size', { c: ed.C, f: ed.F })) + '</h2>';
+  let h = '<div class="n">' + esc(run.mode === 'tut' ? tr('tut_x', { k: run.k }) : tr('edition_x', { k: run.k })) + '</div><h2 id="introT">' + esc(tr('size', { c: ed.C, f: ed.F })) + '</h2>';
   if (th) h += '<div class="th" style="--sc:' + A.SEC_COLOR[th] + '">' + A.iconSVG(th) + esc(tr('theme')) + ': ' + esc(L().secs[th]) + '</div>';
-  if (S.goal) h += '<div class="gl">' + esc(tr('goal')) + ' <b>' + fmt(S.goal) + '</b> ' + esc(tr('unit')) + '</div>';
-  h += '<div class="tap">' + esc(tr('tap_skip')) + '</div>';
+  // PLAY-PORTADA-03: meta y referencia del jefe con la misma unidad, sin presentar la referencia como garantía
+  if (S.goal) h += '<div class="gl">' + esc(tr('goal_v', { n: fmt(S.goal) })) + '</div>';
+  h += '<div class="gl ref">' + esc(tr('boss_ref', { cantidad: fmt(S.J) })) + '</div>';
+  // PLAY-PORTADA-07: el avance es un botón real («Continuar»), activable con Enter y Espacio
+  h += '<button class="btn pri" id="bIntroGo" type="button" data-foco>' + esc(tr('intro_continue')) + '</button>';
   $('introBox').innerHTML = h;
+  $('bIntroGo').onclick = e => { e.stopPropagation(); introDone(); };
   push('sIntro'); sfx('print');
   clearTimeout(S.introT); S.introT = setTimeout(introDone, 1700);
 }
@@ -800,9 +916,12 @@ function onPrint() {
   if (!S.run || S.run.phase !== 'play' || S.press) return;
   cancelDrag(); S.kb = null; clearPreview(); S.sel = -1;
   sfx('uiPri');
+  // SRC-PO01: la confirmación declara que termina la partida y muestra tirada, meta y faltante; sólo con meta insuficiente
   if (S.run.mode !== 'tut' && S.sc.total < S.goal) {
-    modal('<div class="top"><h2>' + esc(tr('below_goal_t')) + '</h2></div><p class="note">' + esc(S.run.mode === 'free' ? tr('below_goal_free') : tr('below_goal')) + '</p><p class="res-g"><span>' + esc(tr('copies')) + ' <b>' + fmt(S.sc.total) + '</b></span><span>' + esc(tr('goal')) + ' <b>' + fmt(S.goal) + '</b></span></p><button class="btn pri" data-k>' + esc(tr('keep_editing')) + '</button><button class="btn" data-p>' + esc(tr('print_anyway')) + '</button>',
-      c => { c.querySelector('[data-k]').onclick = closeModal; c.querySelector('[data-p]').onclick = () => { closeModal(); doPrint(); }; });
+    modal('<div class="top"><h2>' + esc(tr('below_goal_t')) + '</h2></div><p class="note">' + esc(S.run.mode === 'free' ? tr('below_goal_free') : tr('below_goal')) + '</p>' +
+      '<div class="lines"><div><span>' + esc(tr('copies_v', { n: fmt(S.sc.total) })) + '</span></div><div><span>' + esc(tr('goal_v', { n: fmt(S.goal) })) + '</span></div><div><span class="n">' + esc(tr('shortfall', { n: fmt(S.goal - S.sc.total) })) + '</span></div></div>' +
+      '<button class="btn pri" data-k data-foco>' + esc(tr('keep_editing')) + '</button><button class="btn danger" data-p>' + esc(tr('print_anyway')) + '</button>',
+      c => { c.querySelector('[data-k]').onclick = closeModal; c.querySelector('[data-p]').onclick = () => { closeModal(); doPrint(); }; }, { alerta: true });
     return;
   }
   doPrint();
@@ -892,6 +1011,9 @@ function archiveAdd(res) {
   let a = sget('archive'); if (!Array.isArray(a)) a = []; a.unshift({ v: VER, d: K.localDay(), mode: run.mode, seed: run.seed, diff: run.diff, k: run.k, picks: run.picks.filter(p => p.ed <= run.k), pos: res.pos, total: res.total, stars: res.stars, n: run.mode === 'daily' ? K.dailyNumber(run.day) : run.seed, kind: res.kind });
   sset('archive', a.slice(0, 30));
 }
+// PLAY-PORTADA-05: bossDiff compara el aporte de la MISMA pieza en ambas portadas (0 si falta); no calcula el efecto neto de
+// sustituir una pieza por otra. Pieza ausente en la mía → aporte absoluto en la del jefe; presente en ambas → diferencia de aportes.
+// Fórmula y función conservadas; cambian sólo las etiquetas.
 function bossDiff(res) {
   const ed = S.ed, ctx = S.ctx, me = K.score(ed, res.pos, ctx), bo = K.score(ed, ed.boss, ctx);
   if (me.total > bo.total) return { full: tr('diff_none') };
@@ -903,10 +1025,14 @@ function bossDiff(res) {
   });
   if (!best) return tr('diff_pairs', { v: Math.max(1, bo.total - me.total) });
   const p = best.p, bm = bo.pieces[p.ix].mults.map(x => x[0]), mm = me.pieces[p.ix] ? me.pieces[p.ix].mults.map(x => x[0]) : null;
-  if (!mm) return tr('diff_left', { t: shortT(p), v: best.v });
-  if (bm.indexOf('cab') >= 0 && mm.indexOf('cab') < 0) return tr('diff_cab', { t: shortT(p) });
-  if (bm.indexOf('foto') >= 0 && mm.indexOf('foto') < 0) return tr('diff_foto', { t: shortT(p) });
-  return tr('diff_left', { t: shortT(p), v: best.v });
+  const sgn = v => (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v);
+  const nota = ' ' + tr('not_net');
+  if (!mm) return tr('diff_out', { t: shortT(p) }) + '. ' + tr('boss_piece_abs', { aporte: sgn(bo.pieces[p.ix].total) }) + '.' + nota;
+  let base;
+  if (bm.indexOf('cab') >= 0 && mm.indexOf('cab') < 0) base = tr('diff_cab', { t: shortT(p) });
+  else if (bm.indexOf('foto') >= 0 && mm.indexOf('foto') < 0) base = tr('diff_foto', { t: shortT(p) });
+  else base = '«' + shortT(p) + '»';
+  return base + '. ' + tr('same_piece_delta', { delta: sgn(best.v) }) + '.' + nota;
 }
 function renderEdResult() {
   const run = S.run, res = run.res[run.k - 1]; if (!res || !S.ed) return;
@@ -916,24 +1042,33 @@ function renderEdResult() {
   h += '<span class="res-stamp ' + kind + '">' + esc(tr(lbl)) + '</span>';
   h += '<div class="res-n">' + fmt(res.total) + '<small>' + esc(tr('unit')) + '</small></div>';
   h += '<div class="res-g">' + (isT ? '' : '<span>' + esc(tr('goal')) + ' <b>' + fmt(res.goal) + '</b></span>') + '<span>' + esc(tr('chief')) + ' <b>' + fmt(res.J) + '</b></span></div>';
-  h += '<div class="stars" aria-label="' + esc(tr('stars_lbl', { n: res.stars })) + '">' + [1, 2, 3].map(i => starSVG(false)).join('') + '</div>';
-  h += '<div class="cmp"><figure><canvas id="cmpA"></canvas><figcaption><b>' + esc(tr('your_page')) + '</b><span class="fc-n">' + fmt(res.total) + '</span></figcaption></figure><figure><canvas id="cmpB"></canvas><figcaption>' + esc(tr('boss_page')) + '<span class="fc-n">' + fmt(res.J) + '</span></figcaption></figure></div>';
+  // PLAY-PORTADA-05: texto y sello representan el mismo nivel; el faltante sólo si la tirada queda por debajo de la referencia
+  h += '<div class="stars" role="img" aria-label="' + esc(tr('stars_lbl', { n: res.stars })) + '">' + [1, 2, 3].map(i => starSVG(false)).join('') + '</div>';
+  h += '<p class="stars-txt">' + esc(tr('published', { estrellas: res.stars })) + (res.total < res.J ? '<br>' + esc(tr('ref_shortfall', { diferencia: fmt(res.J - res.total) })) : '') + '</p>';
   const bd = bossDiff(res);
-  h += '<div class="dnote">' + esc(typeof bd === 'string' ? tr('diff_note', { t: bd }) : bd.full) + '</div>';
+  h += '<div class="dnote">' + esc(typeof bd === 'string' ? bd : bd.full) + '</div>';
+  // PLAY-PORTADA-06: desglose completo (piezas, vecinos, reglas, globales y huecos) siempre antes del CTA; las portadas se comparan a pedido
   const sc = K.score(S.ed, res.pos, S.ctx);
   const rulesV = sc.extras + sc.glob.reduce((a, x) => a + x[1], 0);
+  h += '<div class="side-t" style="margin-top:4px">' + esc(tr('breakdown')) + '</div>';
   h += '<div class="lines"><div><span>' + esc(tr('pieces')) + '</span><b>' + sc.sumPieces + '</b></div><div><span>' + esc(tr('effects')) + '</span><b class="' + (sc.sumPairs >= 0 ? 'p' : 'n') + '">' + (sc.sumPairs >= 0 ? '+' : '−') + Math.abs(sc.sumPairs) + '</b></div>' + (rulesV ? '<div><span>' + esc(tr('rules_n', { n: (run.picks || []).filter(p => p.ed <= run.k).length })) + '</span><b class="p">+' + rulesV + '</b></div>' : '') + (sc.gm.length ? '<div><span>' + sc.gm.map(x => esc(L().glob[x[0]] || x[0])).join(' · ') + '</span><b class="p">×' + sc.gm.reduce((a, x) => a * x[1], 1).toFixed(2).replace('.', LANG === 'es' ? ',' : '.') + '</b></div>' : '') + (sc.holePen ? '<div><span>' + esc(L().glob.holes) + ' (' + sc.holes + ')</span><b class="n">−' + sc.holePen + '</b></div>' : '') + '</div>';
+  h += '<button class="btn" id="bCmp" type="button" aria-expanded="' + (!!S.cmpOpen) + '" aria-controls="cmpBox">' + esc(tr('compare')) + '</button>';
+  h += '<div class="cmp" id="cmpBox"' + (S.cmpOpen ? '' : ' hidden') + '><figure><canvas id="cmpA"></canvas><figcaption><b>' + esc(tr('your_page')) + '</b><span class="fc-n">' + fmt(res.total) + '</span></figcaption></figure><figure><canvas id="cmpB"></canvas><figcaption>' + esc(tr('boss_page')) + '<span class="fc-n">' + fmt(res.J) + '</span></figcaption></figure></div>';
   const last = run.k === 3 || res.failed;
-  if (res.failed && run.mode === 'free') h += '<div class="acts"><div class="row"><button class="btn pri" id="bRedoEd">' + esc(tr('redo_ed')) + '</button></div><button class="btn" id="bNext">' + esc(tr('final_btn')) + '</button></div>';
-  else h += '<div class="acts"><button class="btn pri" id="bNext">' + esc(last ? tr('final_btn') : tr('next_ed')) + '</button></div>';
+  // acciones: en práctica se puede repetir la edición como intento separado (el resultado de práctica no se guarda); «Volver al menú» conserva la partida
+  if (res.failed && run.mode === 'free') h += '<div class="acts"><div class="row"><button class="btn pri" id="bRedoEd">' + esc(tr('redo_ed')) + '</button></div><button class="btn" id="bNext">' + esc(tr('final_btn')) + '</button>';
+  else h += '<div class="acts"><button class="btn pri" id="bNext">' + esc(last ? tr('final_btn') : tr('next_ed')) + '</button>' + (isT ? '<button class="btn" id="bRedoEd">' + esc(tr('replay_practice')) + '</button>' : '');
+  h += '<button class="btn" id="bEdHome">' + esc(tr('home')) + '</button><p class="note small" style="margin-top:4px">' + esc(tr('saved_note')) + '</p></div>';
   $('edCard').innerHTML = h;
   // estrellas animadas
   const st = $('edCard').querySelectorAll('.stars svg');
   st.forEach((s, i) => setTimeout(() => { if (i < res.stars) { s.classList.add('on'); s.querySelector('path').setAttribute('fill', '#f2c14e'); sfx('count', 4 + i * 2); } }, 250 + i * 260));
-  drawMini($('cmpA'), S.ed, res.pos, kind === 'gold' ? 'gold' : kind === 'sold' ? 'sold' : 'rec');
-  drawMini($('cmpB'), S.ed, S.ed.boss, null);
-  $('bNext').onclick = () => { sfx('uiPri'); nextAfterResult(res); };
-  const rd = $('bRedoEd'); if (rd) rd.onclick = () => { sfx('uiPri'); run.res.splice(run.k - 1, 1); run.pos = {}; run.hist = []; run.fut = []; run.phase = 'play'; saveRun(true); startEdition(true); };
+  const dibujarCmp = () => { drawMini($('cmpA'), S.ed, res.pos, kind === 'gold' ? 'gold' : kind === 'sold' ? 'sold' : 'rec'); drawMini($('cmpB'), S.ed, S.ed.boss, null); };
+  if (S.cmpOpen) dibujarCmp();
+  $('bCmp').onclick = () => { sfx('ui'); S.cmpOpen = !S.cmpOpen; $('cmpBox').hidden = !S.cmpOpen; $('bCmp').setAttribute('aria-expanded', S.cmpOpen); if (S.cmpOpen) { dibujarCmp(); $('cmpBox').scrollIntoView({ block: 'nearest', behavior: RM ? 'auto' : 'smooth' }); } };
+  $('bNext').onclick = () => { sfx('uiPri'); S.cmpOpen = false; nextAfterResult(res); };
+  $('bEdHome').onclick = () => { sfx('ui'); S.cmpOpen = false; saveRun(true); S.run = null; S.ed = null; goTitle(); };
+  const rd = $('bRedoEd'); if (rd) rd.onclick = () => { sfx('uiPri'); S.cmpOpen = false; run.res.splice(run.k - 1, 1); run.pos = {}; run.hist = []; run.fut = []; run.phase = 'play'; saveRun(true); startEdition(true); };
 }
 function LAND_SHORT() { return matchMedia('(orientation:landscape) and (max-height:520px)').matches; }
 function drawMini(cv, ed, pos, stamp) {
@@ -1091,13 +1226,19 @@ function shareText(run) {
   lines.push(tr('share_gold', { g }) + (run.mode === 'daily' && S.prog.streak ? ' · ' + tr('share_streak', { s: S.prog.streak }) : ''));
   return lines.join('\n');
 }
+// SRC-G06: compartir sólo por acción del jugador; cancelar el diálogo nativo no muestra nada; éxito sólo tras confirmar el copiado;
+// si no se puede copiar, el texto íntegro queda seleccionable (patrón de Señal) con «Copiar texto» y «Cerrar».
 function share(text, noUrl) {
   const url = 'https://jetgames.fun/portada/', full = text + '\n' + url;
+  const copiarClasico = () => { const ta = document.createElement('textarea'); ta.value = full; ta.setAttribute('readonly', ''); ta.style.cssText = 'position:fixed;left:-9999px;top:0;opacity:0'; document.body.appendChild(ta); ta.select(); let ok = false; try { ok = document.execCommand('copy'); } catch (e) { ok = false; } ta.remove(); return ok; };
   const fallback = () => {
     const done = () => { sfx('copied'); toast(tr('copied')); };
-    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(full).then(done, manual); else manual();
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(full).then(done, () => { if (copiarClasico()) done(); else manual(); }); else if (copiarClasico()) done(); else manual();
   };
-  const manual = () => modal('<div class="top"><h2>' + esc(tr('share')) + '</h2><button class="x" data-c>✕</button></div><p class="note">' + esc(tr('share_fail')) + '</p><textarea class="shtxt" readonly>' + esc(full) + '</textarea><button class="btn pri" data-c>' + esc(tr('close')) + '</button>', c => { c.querySelectorAll('[data-c]').forEach(b => b.onclick = closeModal); const ta = c.querySelector('textarea'); ta.focus(); ta.select(); });
+  const manual = () => modal('<div class="top"><h2>' + esc(tr('share')) + '</h2><button class="x" data-c aria-label="' + esc(tr('close')) + '">✕</button></div><p class="note">' + esc(tr('share_fail')) + '</p><textarea class="shtxt" readonly aria-labelledby="modalT" data-foco>' + esc(full) + '</textarea><div class="row"><button class="btn pri" data-cp>' + esc(tr('copy_text')) + '</button><button class="btn" data-c>' + esc(tr('close')) + '</button></div>', c => {
+    c.querySelectorAll('[data-c]').forEach(b => b.onclick = closeModal); const ta = c.querySelector('textarea'); setTimeout(() => { ta.focus(); ta.select(); }, 40);
+    c.querySelector('[data-cp]').onclick = () => { ta.focus(); ta.select(); const fin = ok => { if (ok) { sfx('copied'); toast(tr('copied')); } else toast(tr('share_fail'), 3000); }; if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(full).then(() => fin(true), () => fin(copiarClasico())); else fin(copiarClasico()); };
+  });
   if (navigator.share) navigator.share({ text, url }).then(() => sfx('copied'), e => { if (!e || e.name !== 'AbortError') fallback(); });
   else fallback();
   void noUrl;
@@ -1182,10 +1323,11 @@ $('chips').addEventListener('click', e => {
   else if (L().rules[id]) toast(L().rules[id][0] + ': ' + L().rules[id][1], 3600);
 });
 $('bCont').onclick = () => { sfx('uiPri'); resumePlay(); };
+// SRC-G03/G04: reiniciar la edición explica qué se reinicia y qué se conserva, con confirmación explícita (sin doble toque temporal)
 $('bRestart').onclick = () => {
-  const b = $('bRestart');
-  if (!b.classList.contains('armed')) { b.classList.add('danger', 'armed'); b.textContent = tr('restart_sure'); sfx('ui'); clearTimeout(b._t); b._t = setTimeout(() => { b.classList.remove('danger', 'armed'); b.textContent = tr('restart_ed'); }, 4000); return; }
-  sfx('undo'); S.run.hist.push(S.run.pos); S.run.pos = {}; S.run.fut = []; S.run.trot = {}; S.trot = S.run.trot; saveRun(true); hideAll(); AU.duck(false); buildEls(); renderAll();
+  sfx('ui');
+  confirmar({ titulo: tr('restart_ed'), texto: tr('restart_body'), boton: tr('restart_ed'),
+    ok: () => { sfx('undo'); S.run.hist.push(S.run.pos); S.run.pos = {}; S.run.fut = []; S.run.trot = {}; S.trot = S.run.trot; saveRun(true); hideAll(); AU.duck(false); buildEls(); renderAll(); tutCheck(); } });
 };
 $('bHowP').onclick = () => { sfx('ui'); push('sHelp'); };
 $('bSetP').onclick = () => { sfx('ui'); push('sSet'); };
@@ -1193,9 +1335,9 @@ $('bHome').onclick = () => { sfx('ui'); saveRun(true); AU.duck(false); S.run = n
 $('back').addEventListener('click', e => {
   if (S.run && S.run.phase === 'play' && !$('game').hidden) {
     e.preventDefault(); cancelDrag(); saveRun(true);
-    modal('<div class="top"><h2>' + esc(tr('leave_t')) + '</h2></div><p class="note">' + esc(tr('leave')) + '</p><button class="btn pri" data-s>' + esc(tr('stay')) + '</button><button class="btn" data-l>' + esc(tr('leave_yes')) + '</button>', c => {
-      c.querySelector('[data-s]').onclick = closeModal; c.querySelector('[data-l]').onclick = () => { saveRun(true); location.href = 'https://jetgames.fun/'; };
-    });
+    modal('<div class="top"><h2>' + esc(tr('leave_t')) + '</h2></div><p class="note">' + esc(tr('leave')) + '</p><button class="btn pri" data-s data-foco>' + esc(tr('stay')) + '</button><button class="btn" data-l>' + esc(tr('leave_yes')) + '</button>', c => {
+      c.querySelector('[data-s]').onclick = closeModal; c.querySelector('[data-l]').onclick = () => { saveRun(true); location.href = 'https://jetgames.fun/?lang=' + LANG; };
+    }, { alerta: true });
   }
 });
 
@@ -1230,12 +1372,15 @@ $('vSfx').oninput = e => { S.set.sv = e.target.value / 100; if (!S.set.sfx) { S.
 $('vSfx').onchange = () => sfx('pairPos', 3);
 document.querySelectorAll('.seg[data-lang]').forEach(g => g.addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; sfx('ui'); setLang(b.dataset.l); }));
 $('tFs').onclick = () => { sfx('ui'); fsToggle(); };
+// SRC-G04: confirmación explícita con Cancelar enfocado y enumeración de lo que se borra; los ajustes (audio, fichas, contraste) y el idioma del sitio se conservan
 $('bErase').onclick = () => {
-  const e = $('bErase');
-  if (!e.classList.contains('armed')) { e.classList.add('armed'); e.textContent = tr('erase_sure'); sfx('ui'); clearTimeout(e._t); e._t = setTimeout(() => { e.classList.remove('armed'); e.textContent = tr('erase'); }, 4000); return; }
-  try { Object.keys(localStorage).filter(k => k.indexOf('jet-portada:') === 0 && k !== 'jet-portada:settings').forEach(k => localStorage.removeItem(k)); } catch (err) { }
-  S.prog = JSON.parse(JSON.stringify(DEF_PROG)); S.prog.seen = K.unlockedRules(S.prog); saveProg();
-  S.run = null; S.ed = null; showGame(false); toast(tr('erased')); sfx('undo'); goTitle();
+  sfx('ui');
+  confirmar({ titulo: tr('erase_title', { juego: 'JET//Portada' }), texto: tr('erase_body', { datos: tr('erase_data') }), boton: tr('erase'),
+    ok: () => {
+      try { Object.keys(localStorage).filter(k => k.indexOf('jet-portada:') === 0 && k !== 'jet-portada:settings').forEach(k => localStorage.removeItem(k)); } catch (err) { }
+      S.prog = JSON.parse(JSON.stringify(DEF_PROG)); S.prog.seen = K.unlockedRules(S.prog); saveProg();
+      S.run = null; S.ed = null; showGame(false); toast(tr('erased')); sfx('undo'); goTitle();
+    } });
 };
 
 // ───────────── pantalla completa ─────────────
@@ -1302,17 +1447,28 @@ function tutStart() {
   const k = S.run.k; S.tut = { k, step: 0 };
   if (k === 1) tutCheck(); else if (k === 2) tutSay('tut_4'); else tutSay('tut_5');
 }
+// PLAY-PORTADA-04: la guía depende del estado actual (colocar, retirar, deshacer y rehacer); cantidades reales, singular/plural resuelto
+function tableTxt(un, holes) {
+  if (un === 1 && holes === 1) return tr('one_piece_one_empty');
+  if (un === 1) return tr('one_piece_many_empty', { huecos: holes });
+  if (holes === 1) return tr('many_pieces_one_empty', { cantidad: un });
+  return tr('table_and_empty', { cantidad: un, huecos: holes });
+}
+function tutSayTxt(txt, key) { if (S.tut && S.tut.last === key) return; S.tut.last = key; const box = $('tut'); box.hidden = false; tutLast = null; const el = $('tutTxt'); clearInterval(typeT); if (RM) el.textContent = txt; else { let i = 0; el.textContent = ''; typeT = setInterval(() => { i += 2; el.textContent = txt.slice(0, i); if (i % 6 === 0) sfx('type'); if (i >= txt.length) clearInterval(typeT); }, 26); } S.tut.lastTxt = txt; positionTut(); drawTutAstro(); }
 function tutCheck() {
   const t = S.tut; if (!t || !S.run || S.run.mode !== 'tut') return;
   clearHL();
+  const un = S.ed.pieces.filter(p => !S.run.pos[p.ix]).length, holes = S.sc.holes;
   if (t.k === 1) {
     const pos = S.run.pos, tit = pos[0], foto = pos[1];
-    if (!tit || tit.y !== 0) { if (t.step !== 1) { t.step = 1; tutSay('tut_1', 'tut_tap'); } hlCells(0, 0, 3, 1); return; }
+    if (!tit || tit.y !== 0) { if (t.step !== 1) { t.step = 1; t.last = null; tutSay('tut_1', 'tut_tap'); } hlCells(0, 0, 3, 1); return; }
     const adj = S.sc.adj[1] && S.sc.adj[1].has(0);
-    if (!foto || !adj) { if (t.step !== 2) { t.step = 2; tutSay('tut_1b', 'tut_2'); } if (!foto) hlCells(0, 1, 2, 2); return; }
-    if (t.step !== 3) { t.step = 3; tutSay('tut_2b', 'tut_3'); }
+    if (!foto || !adj) { if (t.step !== 2) { t.step = 2; t.last = null; tutSay('tut_1b', 'tut_2'); } if (!foto) hlCells(0, 1, 2, 2); return; }
+    if (holes === 0) { t.step = 4; tutSayTxt(tr('full_page'), 'full'); return; }
+    if (t.step !== 3) { t.step = 3; t.last = null; tutSay('tut_2b', 'tut_3'); }
   } else if (t.k === 2) {
-    if (S.sc.holes === 0 && t.step !== 1) { t.step = 1; tutSay('tut_4b'); }
+    if (holes === 0) { t.step = 1; tutSayTxt(tr('full_page') + (un ? ' ' + tr('not_all_news') : ''), 'full:' + un); }
+    else if (t.step !== 0 || t.last) { t.step = 2; tutSayTxt(tableTxt(un, holes) + ' ' + tr('try_combination'), 'tbl:' + un + ':' + holes); }
   }
 }
 
@@ -1320,13 +1476,21 @@ function tutCheck() {
 let helpRAF = 0, helpI = 0;
 function renderHelp() {
   const keys = ['help_1', 'help_2', 'help_3', 'help_4'];
-  $('hcar').innerHTML = keys.map((k, i) => '<div class="hc"><canvas data-i="' + i + '"></canvas><div class="n">' + (i + 1) + ' / 4</div><p>' + esc(tr(k)) + '</p></div>').join('');
-  $('hdots').innerHTML = keys.map((k, i) => '<button data-i="' + i + '" aria-label="' + (i + 1) + '"></button>').join('');
-  $('helpTable').innerHTML = '<table class="ptab">' + L().table_rows.map(r => '<tr><td>' + esc(r[0]) + '</td><td class="' + (r[1][0] === '+' ? 'p' : 'n') + '">' + r[1] + '</td><td>' + esc(r[2]) + '</td></tr>').join('') + '</table>';
+  // PLAY-PORTADA-07: sólo la lámina activa queda expuesta (las demás, inert y aria-hidden); «Paso {actual} de {total}» y controles con nombre
+  $('hcar').innerHTML = keys.map((k, i) => '<div class="hc" data-i="' + i + '"><canvas data-i="' + i + '"></canvas><div class="n">' + esc(tr('help_step', { actual: i + 1, total: keys.length })) + '</div><p>' + esc(tr(k)) + '</p></div>').join('');
+  $('hdots').innerHTML = keys.map((k, i) => '<button data-i="' + i + '" aria-label="' + esc(tr('help_step', { actual: i + 1, total: keys.length })) + '"></button>').join('');
+  $('helpTable').innerHTML = pairTableHTML();
   const car = $('hcar');
-  const setDot = () => { helpI = Math.round(car.scrollLeft / Math.max(1, car.clientWidth)); $('hdots').querySelectorAll('button').forEach((b, i) => b.classList.toggle('on', i === helpI)); };
+  const setDot = () => {
+    helpI = Math.round(car.scrollLeft / Math.max(1, car.clientWidth));
+    $('hdots').querySelectorAll('button').forEach((b, i) => { b.classList.toggle('on', i === helpI); b.setAttribute('aria-current', i === helpI ? 'true' : 'false'); });
+    car.querySelectorAll('.hc').forEach((s, i) => { s.inert = i !== helpI; s.setAttribute('aria-hidden', i !== helpI ? 'true' : 'false'); });
+    $('hPrev').disabled = helpI === 0; $('hNext').disabled = helpI >= keys.length - 1;
+  };
   car.onscroll = setDot; setDot();
-  $('hdots').querySelectorAll('button').forEach(b => b.onclick = () => { car.scrollTo({ left: +b.dataset.i * car.clientWidth, behavior: RM ? 'auto' : 'smooth' }); });
+  const ir = i => { i = clamp(i, 0, keys.length - 1); car.scrollTo({ left: i * car.clientWidth, behavior: RM ? 'auto' : 'smooth' }); setTimeout(setDot, RM ? 0 : 320); };
+  $('hdots').querySelectorAll('button').forEach(b => b.onclick = () => ir(+b.dataset.i));
+  $('hPrev').onclick = () => { sfx('ui'); ir(helpI - 1); }; $('hNext').onclick = () => { sfx('ui'); ir(helpI + 1); };
   cancelAnimationFrame(helpRAF);
   const loop = () => { if (S.stack[S.stack.length - 1] !== 'sHelp') return; car.querySelectorAll('canvas').forEach(cv => helpDraw(cv, +cv.dataset.i, performance.now() / 1000)); helpRAF = requestAnimationFrame(loop); };
   loop();
@@ -1443,6 +1607,8 @@ function boot() {
   document.body.classList.toggle('contrast', !!S.set.contrast);
   applyLang(); syncLangSegs(); applyAudioPrefs(); layout();
   if (!canStore) setTimeout(() => toast(tr('no_storage'), 3200), 600);
+  // SRC-G05: el juego quedó listo; el estado de carga del HTML pasa a «listo»
+  if (window.JETCarga) window.JETCarga.listo();
   if (QS.has('demo')) { demo(); return; }
   if (QS.get('seed') && /^[A-Za-z]{6}$/.test(QS.get('seed'))) { sdel('run-free'); newRun({ mode: 'free', seed: QS.get('seed').toUpperCase(), diff: 'r' }); return; }
   goTitle();

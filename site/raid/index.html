@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#050d14">
 <title>JET//Raid</title>
 <meta name="description" content="JET//Raid: pilota un aerodeslizador, captura banderas, corre contra el reloj y rescata suministros en 16 misiones sobre el agua. Un juego de JET//Games." data-en-content="JET//Raid: pilot a hovercraft, capture flags, race against the clock and rescue supplies in 16 missions on the water. A JET//Games game.">
@@ -68,7 +68,8 @@
         <h3 id="b-sum-t" data-en="Mission summary">Resumen de misión</h3>
         <div class="legend" id="b-legend"></div>
         <p class="sum-note" id="b-note"></p>
-        <div class="deploy-row"><span id="b-seed" class="seed"></span><button type="button" class="linkbtn" data-act="redeploy" id="b-redeploy" data-en="New deployment">Nuevo despliegue</button></div>
+        <div class="deploy-row"><span id="b-seed" class="seed"></span><button type="button" class="linkbtn" data-act="redeploy" id="b-redeploy" aria-describedby="b-redeploy-note" data-en="New deployment">Nuevo despliegue</button></div>
+        <p class="sum-note deploy-note" id="b-redeploy-note" hidden data-en="New deployment: changes the layout of this mission.">Nuevo despliegue: cambia la distribución de esta misión.</p>
       </section>
     </div>
     <div class="brief-info">
@@ -164,9 +165,10 @@
     <nav class="menu row" data-menu>
       <button class="btn primary" data-act="next" id="r-next" data-en="Next mission">Siguiente misión</button>
       <button class="btn" data-act="retry" id="r-retry" data-en="Retry mission">Reintentar misión</button>
-      <button class="btn" data-act="redeploy" id="r-redeploy" data-en="New deployment">Nuevo despliegue</button>
+      <button class="btn" data-act="redeploy" id="r-redeploy" aria-describedby="r-redeploy-note" data-en="New deployment">Nuevo despliegue</button>
       <button class="btn ghost" data-act="tocampaign" data-en="Back to missions">Volver a misiones</button>
     </nav>
+    <p class="muted res-note" id="r-redeploy-note" hidden data-en="Retry mission keeps this deployment. New deployment: changes the layout of this mission.">Reintentar misión conserva este despliegue. Nuevo despliegue: cambia la distribución de esta misión.</p>
   </div>
 </section>
 
@@ -235,15 +237,19 @@
   </div>
 </section>
 
-<div class="rotate" id="rotate"><div><svg viewBox="0 0 64 64"><rect x="20" y="8" width="24" height="44" rx="4" fill="none" stroke="currentColor" stroke-width="3"/><path d="M50 40a18 18 0 0 1-14 14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><path d="M36 50l0 5 5-1" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg><b data-en="Turn your device">Gira el dispositivo</b><p data-en="JET//Raid is played in landscape.">JET//Raid se juega en horizontal.</p></div></div>
+<div class="rotate" id="rotate" hidden role="dialog" aria-modal="true" aria-labelledby="rotate-title" aria-describedby="rotate-text"><div><svg viewBox="0 0 64 64" aria-hidden="true"><rect x="20" y="8" width="24" height="44" rx="4" fill="none" stroke="currentColor" stroke-width="3"/><path d="M50 40a18 18 0 0 1-14 14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><path d="M36 50l0 5 5-1" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg><b id="rotate-title" data-en="Rotate your device">Girá el dispositivo</b><p id="rotate-text" data-en="Use landscape orientation to play this mission.">Para jugar esta misión, usá la orientación horizontal.</p><button type="button" class="btn primary" id="rotate-back" data-en="Back to mission briefing">Volver a la misión</button></div></div>
 <div class="navhint" id="navhint" data-en-html="&lt;span&gt;Arrows to move&lt;/span&gt;&lt;span&gt;&lt;kbd&gt;Enter&lt;/kbd&gt; to open&lt;/span&gt;&lt;span&gt;&lt;kbd&gt;Esc&lt;/kbd&gt; to go back&lt;/span&gt;"><span>Flechas para navegar</span><span><kbd>Enter</kbd> para abrir</span><span><kbd>Esc</kbd> para volver</span></div>
-<div class="fatal" id="fatal" hidden role="alertdialog" aria-labelledby="fatal-title" aria-describedby="fatal-msg"><div>
-  <h2 id="fatal-title" data-en="We could not start the graphics">No pudimos iniciar los gráficos</h2>
-  <p id="fatal-msg" data-en="Try reloading. If it continues, check that your browser is up to date and has graphics acceleration available.">Prueba a recargar. Si continúa, revisa que el navegador esté actualizado y tenga aceleración gráfica disponible.</p>
-  <details id="fatal-details"><summary data-en="See help and details">Ver ayuda y detalles</summary>
-    <ul class="fatal-help"><li data-en="Update your browser to its latest version.">Actualiza el navegador a su última versión.</li><li data-en="Turn on hardware acceleration in your browser settings.">Activa la aceleración por hardware en la configuración del navegador.</li><li data-en="Try another browser or device.">Prueba con otro navegador o dispositivo.</li></ul>
+<div class="fatal" id="fatal" hidden role="alertdialog" aria-labelledby="fatal-title" aria-describedby="fatal-lead fatal-msg"><div>
+  <div class="logo fatal-logo" role="img" aria-label="JET//Raid"><span>JET</span><i>//</i><span>RAID</span></div>
+  <h2 id="fatal-title" tabindex="-1" data-en="Raid could not start">No se pudo iniciar Raid</h2>
+  <p class="fatal-lead" id="fatal-lead"></p>
+  <p id="fatal-msg"></p>
+  <div class="fatal-btns"><button class="btn primary" id="fatal-retry" type="button" data-en="Reload game">Volver a cargar</button><button class="btn" id="fatal-continue" type="button" hidden></button><a class="btn ghost" id="fatal-home" href="https://jetgames.fun/" data-en="Back to JET//Games">Volver a JET//Games</a></div>
+  <details id="fatal-details"><summary data-en="View help and details">Ver ayuda y detalles</summary>
+    <h3 id="fatal-help-t" data-en="Help with starting graphics">Ayuda para iniciar los gráficos</h3>
+    <ul class="fatal-help" id="fatal-help"><li data-en="Update your browser to its latest version.">Actualiza el navegador a su última versión.</li><li data-en="Turn on hardware acceleration in your browser settings.">Activa la aceleración por hardware en la configuración del navegador.</li><li data-en="Try another browser or device. Reloading does not fix an incompatibility by itself.">Prueba con otro navegador o dispositivo. Recargar no corrige por sí solo una incompatibilidad.</li></ul>
+    <h3 id="fatal-detail-t" data-en="Technical details">Detalles técnicos</h3>
     <pre id="fatal-detail"></pre></details>
-  <div class="fatal-btns"><button class="btn primary" id="fatal-retry" type="button" data-en="Try again">Reintentar</button><button class="btn" id="fatal-continue" type="button" hidden data-en="Play without them">Jugar sin ellas</button></div>
 </div></div>
 <script type="module" src="raid.js?v=fc7c3538ee29"></script>
 <script>if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js');</script>

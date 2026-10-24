@@ -307,18 +307,22 @@ input[type=range]::-moz-range-thumb{width:24px;height:24px;border-radius:50%;bac
 .campo{font:500 12.5px 'JetBrains Mono',monospace;padding:4px 8px;border-radius:8px;background:rgba(255,255,255,.04);border:1px solid var(--linea2);color:#ddd5f5;line-height:1.4}
 .fotoCaja{position:relative;flex:1 1 0;min-height:0;display:flex;flex-direction:column;overflow:hidden}
 .fotoCv{display:block;width:100%;flex:1 1 0;height:0;min-height:120px;touch-action:none;cursor:grab;border-radius:0 0 14px 14px;background:#07040f}
-.fotoCv.flash{animation:flash .3s ease}
-@keyframes flash{0%{filter:brightness(2.4) contrast(.6)}100%{filter:none}}
+/* Flash de cámara (VIS-CAJA-02): velo blanco alfa .12→0 en 140 ms, sin filtro de contraste sobre la prueba */
+.fotoCaja::after{content:'';position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none}
+.fotoCaja.flash::after{animation:flashVelo .14s ease-out}
+@keyframes flashVelo{0%{opacity:.12}100%{opacity:0}}
 .zoomCtl{position:absolute;right:10px;bottom:10px;display:flex;gap:6px}
-.zoomCtl button{width:44px;height:44px;border-radius:12px;border:1px solid var(--linea2);background:rgba(10,4,24,.82);color:var(--tinta);font:800 18px 'JetBrains Mono',monospace;padding:0}
-.zoomNiv{position:absolute;left:10px;bottom:12px;font:700 12px 'JetBrains Mono',monospace;color:var(--tinta);background:rgba(10,4,24,.8);padding:5px 8px;border-radius:8px;border:1px solid var(--linea2)}
-.desc{padding:10px 12px;font-size:14px;line-height:1.55;border-top:1px solid var(--linea2);background:rgba(0,242,207,.05)}
+.zoomCtl button{width:44px;height:44px;border-radius:10px;border:1px solid #415166;background:rgba(20,29,40,.94);color:var(--tinta);font:700 20px/1 'JetBrains Mono',monospace;padding:0}
+.zoomNiv{position:absolute;left:10px;bottom:12px;font:500 12px 'JetBrains Mono',monospace;color:var(--tinta);background:rgba(20,29,40,.94);padding:5px 8px;border-radius:8px;border:1px solid #415166}
+.desc{padding:10px 12px;font-size:15px;line-height:1.55;border-top:1px solid var(--linea2);background:rgba(255,255,255,.03);text-shadow:none}
 .telCaja{display:flex;flex-direction:column;flex:1 1 0;min-height:0;overflow:hidden}
 .telCv{display:block;width:100%;flex:1 1 0;height:0;min-height:150px;touch-action:none;cursor:crosshair}
 .telLeyenda{display:flex;flex-wrap:wrap;gap:6px 12px;padding:8px 12px 10px;font-size:13px;border-top:1px solid var(--linea2)}
-.tabla{width:100%;border-collapse:collapse;font:500 12.5px 'JetBrains Mono',monospace}
-.tabla th{position:sticky;top:-10px;background:#0d0720;text-align:right;padding:6px 6px;color:var(--dim);font-weight:700;font-size:11px}
-.tabla td{text-align:right;padding:4px 6px;border-bottom:1px solid rgba(245,240,255,.05)}
+.tabla{width:100%;border-collapse:collapse;font:500 13px 'JetBrains Mono',monospace}
+.tabla th{position:sticky;top:-12px;background:#151B25;text-align:right;padding:8px 6px;color:#CBD7E1;font-weight:700;font-size:12px}
+.tabla td{text-align:right;padding:6px 6px;height:32px;border-bottom:1px solid rgba(245,240,255,.05)}
+.tabla tbody tr:nth-child(even){background:rgba(255,255,255,.02)}
+#sJuego.wide .tabla th{top:-16px}
 .tabla td:first-child,.tabla th:first-child{text-align:left}
 .asa{grid-area:asa;display:flex;align-items:center;justify-content:center;height:22px;touch-action:none;cursor:row-resize;position:relative}
 .asa::before{content:'';position:absolute;left:0;right:0;top:-11px;bottom:-11px}
@@ -576,3 +580,97 @@ html.quieto *,html.quieto *::before,html.quieto *::after{animation-duration:.01m
 #dialogo{z-index:66}
 /* Teléfonos de 320: el nombre de la tripulación usa todo el ancho; el parche baja a la línea del rol */
 @media (max-width:359px){.crew .nom{grid-column:2/4;grid-row:1}.crew .pa{grid-row:2;grid-column:3}}
+
+/* ══ Auditoría 2026-10-22 · Caja Negra ══ */
+/* RSP-GLOBAL-01: los paneles desplazables aceptan pellizco para ampliar; el pointer solo se retiene sobre lienzos */
+.regBody,.infBody,.bancoBody,.scr,.capa{touch-action:pan-y pinch-zoom}
+/* RSP-MODALS-01: nada detrás de una capa recibe foco ni se ve interactivo */
+[inert]{pointer-events:none}
+/* Diálogo con título propio (borrado, compartir) */
+.dlgTit{font-size:19px;font-weight:800;line-height:1.3;margin:0 0 10px}
+#dialogo .btn.peligro{margin-top:4px}
+/* Aviso con acción («Deshacer cambio») */
+#toast.accion{pointer-events:auto;display:flex;align-items:center;gap:12px;padding:8px 8px 8px 16px}
+#toast .tAcc{min-height:40px;padding:0 12px;border-radius:9px;border:0;background:#7700f4;color:#fff;font:600 13.5px Poppins,sans-serif;white-space:nowrap}
+#toast .tAcc:focus-visible{outline:2px solid #140a2a;outline-offset:2px}
+/* Apertura del expediente (PLAY-CAJA-05): botón visible y enfocable en lugar de «toca para empezar» */
+#apertura .abrirExp{width:min(440px,100%);margin:14px 0 0;min-height:48px;font-size:15px}
+#apertura .abrirExp:focus-visible{outline:2px solid #fff;outline-offset:3px}
+/* Pista inicial del informe (PLAY-CAJA-02) */
+.infBody .pista{margin:2px 0 8px;font:500 13px Poppins,sans-serif;color:var(--dim);line-height:1.45}
+/* El campo que se está editando se distingue del resaltado de evidencia: anillo blanco además del color de categoría */
+.hueco.act{outline:2px solid rgba(246,250,252,.85);outline-offset:2px}
+/* Campo vaciado/cambiado: la acción está en el banco y en el menú del campo */
+.bancoCab #jVaciar{border-color:rgba(255,68,102,.5);color:#ff9fb2}
+.bancoCab #jVaciar[hidden]{display:none}
+/* Botón «Volver a mostrar consejo» en la barra (PLAY-CAJA-06) */
+.barra .consejo{max-width:40vw;white-space:normal;line-height:1.15;text-align:left}
+.barra .consejo[hidden]{display:none}
+#globo{padding-right:44px}
+#globo .gX{position:absolute;top:6px;right:6px;width:32px;height:32px;border-radius:8px;border:0;background:rgba(20,10,42,.08);color:#140a2a;display:grid;place-items:center;padding:0}
+#globo .gX svg{width:16px;height:16px}
+#globo .gX:focus-visible{outline:2px solid #7700f4;outline-offset:1px}
+#globo.der::after,#globo.izq::after{top:var(--fy,50%);left:-6px;margin-top:-7px;transform:rotate(45deg)}
+#globo.izq::after{left:auto;right:-6px}
+.regCab .transc{color:var(--dim2);font-size:11px;white-space:normal}
+/* Ampliar registro (PLAY-CAJA-01): el visor ocupa la mesa sin perder selección ni respuestas */
+#sJuego.ampliado .visor{position:absolute;left:var(--sal);right:var(--sar);top:calc(52px + var(--sat));bottom:0;z-index:9;margin:0 10px 10px}
+#sJuego.ampliado.port .visor{bottom:calc(8px + var(--sab))}
+#sJuego.ampliado .pest,#sJuego.ampliado .informe,#sJuego.ampliado .banco,#sJuego.ampliado .pie,#sJuego.ampliado .asa{visibility:hidden}
+#sJuego .chipBtn.amp[aria-pressed=true]{border-color:var(--cyan);color:var(--cyan)}
+/* Historial de intentos (PLAY-CAJA-03): instantánea de cada hipótesis; la comparación solo marca diferencias entre hipótesis */
+#historial .card{max-width:560px;max-height:calc(100vh - 32px);display:flex;flex-direction:column}
+#historial .listaEnv{overflow-y:auto;min-height:0}
+.env{flex-direction:column;align-items:stretch;gap:8px}
+.env .envCab{display:flex;align-items:center;gap:12px}
+.env .envCab span:nth-child(2){flex:1}
+.env .envAcc{display:flex;flex-wrap:wrap;gap:6px}
+.env .envInf{font:500 14px/1.9 Poppins,sans-serif;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.03);border:1px solid var(--linea2)}
+.env .envInf[hidden]{display:none}
+.env .envInf .hueco{min-height:28px;font-size:13px;cursor:default}
+.env .sinHip{font:500 12px Poppins,sans-serif;color:var(--dim)}
+.hueco.dif{outline:2px dashed rgba(246,250,252,.8);outline-offset:2px}
+/* Vista ampliada de «Cómo se sabía» */
+#lupa .card .cab h2{font-size:18px}
+
+/* ── VIS-CAJA-01 · Mesa de investigación: tokens de superficie CN_ART (no sustituyen --c-* ni --m*) ── */
+:root{--cn-art-fondo:#0C1018;--cn-art-visor:#151B25;--cn-art-informe:#1B222D;--cn-art-ctrl:#101620;--cn-art-borde:#344251;--cn-art-sombra:0 6px 18px rgba(0,0,0,.20);--cn-art-meta:#AEBCCB;--cn-art-tab:#253447;--fs-reg:15px;--fs-inf:16px}
+#sJuego.on{background:var(--cn-art-fondo)}
+#sJuego .visor{background:var(--cn-art-visor);border:1px solid var(--cn-art-borde);border-radius:10px;box-shadow:var(--cn-art-sombra)}
+#sJuego .informe{background:var(--cn-art-informe);border:1px solid var(--cn-art-borde);border-radius:10px;box-shadow:var(--cn-art-sombra)}
+#sJuego.land .banco,#sJuego.wide .banco,#sJuego.port .banco{background:var(--cn-art-ctrl);border:1px solid var(--cn-art-borde);border-radius:10px}
+#sJuego .barra .ibtn,#sJuego .chipBtn,#sJuego .pie .bancoBtn,#sJuego .mchip{background:var(--cn-art-ctrl);border-color:var(--cn-art-borde)}
+#sJuego .regCab{padding:12px 16px}
+#sJuego .regCab b{font-size:18px;font-weight:600}
+#sJuego .regCab small{font-size:12px;color:var(--cn-art-meta)}
+#sJuego .regBody{padding:12px;font-size:var(--fs-reg);line-height:1.65}
+#sJuego.wide .regBody{padding:16px}
+#sJuego .infBody{font-size:var(--fs-inf);line-height:1.6}
+#sJuego .infBody p{margin:0 0 8px}
+#sJuego .hueco{margin:3px 1px}
+#sJuego .nomCaso small,#sJuego .bancoCab b{color:var(--cn-art-meta)}
+#sJuego .tab{border-radius:8px;background:transparent}
+#sJuego .tab[aria-selected=true]{background:var(--cn-art-tab);border-color:transparent}
+#sJuego .tab[aria-selected=true]::after{background:var(--cyan);height:2px;border-radius:0}
+html.contraste #sJuego .tab[aria-selected=true]{border-color:var(--cyan)}
+html.contraste #sJuego .visor,html.contraste #sJuego .informe{border-width:2px;border-color:#9DB4C4}
+.crew .cs{background:rgba(37,52,71,.9);border-color:var(--cn-art-borde)}
+
+/* ── VIS-CAJA-04 · Marcado de pistas y estados: mismos 6 patrones y tonos m0…m5, relleno .18–.25, subrayado 3 px ── */
+.ent.mk{color:#F6FAFC}
+.mk.mk0{background:repeating-linear-gradient(135deg,rgba(255,122,162,.25) 0 6px,rgba(255,122,162,.18) 6px 12px)}
+.mk.mk1{background:repeating-linear-gradient(45deg,rgba(212,255,90,.24) 0 6px,rgba(212,255,90,.18) 6px 12px)}
+.mk.mk2{background:repeating-linear-gradient(90deg,rgba(125,211,252,.25) 0 5px,rgba(125,211,252,.18) 5px 10px)}
+.mk.mk3{background:repeating-linear-gradient(0deg,rgba(255,179,138,.25) 0 4px,rgba(255,179,138,.18) 4px 8px)}
+.mk.mk4{background:rgba(233,226,255,.2)}
+.mk.mk5{background:repeating-linear-gradient(135deg,rgba(192,132,252,.25) 0 3px,rgba(192,132,252,.18) 3px 9px)}
+.linea.resalta{background:rgba(255,209,102,.08);box-shadow:inset 3px 0 0 var(--oro)}
+.ent:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.ent.destello{animation:destelloAnillo .12s ease;transition:background .12s}
+@keyframes destelloAnillo{0%{outline:2px solid rgba(246,250,252,.9);outline-offset:1px}100%{outline:2px solid transparent;outline-offset:1px}}
+.tab .punto{box-shadow:none;border:1px solid var(--cn-art-fondo);width:8px;height:8px}
+.tab.late .punto{animation:late .5s ease 3}
+.casoF.disp{border-color:#7D92AF;animation:none}
+.ileg{animation-duration:1.6s}
+html.quieto .ileg,html.contraste .ileg{animation:none}
+@media (prefers-reduced-motion:reduce){.ileg{animation:none}}

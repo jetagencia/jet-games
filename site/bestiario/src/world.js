@@ -1146,8 +1146,8 @@ export function buildWorld(scene, theme = THEMES[0]) {
         fx.active += ((on ? 1 : 0) - fx.active) * Math.min(1, dt * 8);
         const pulse = 1 + 0.035 * Math.sin(t * 3 + z.x);
         fx.ring.scale.setScalar(pulse); fx.fill.scale.setScalar(pulse);
-        fx.ringMat.opacity = 0.55 + 0.18 * Math.sin(t * 3 + z.x) + 0.25 * fx.active;
-        fx.fillMat.opacity = 0.12 + 0.2 * fx.active;
+        fx.ringMat.opacity = 0.45 + 0.40 * fx.active;   // VIS-BESTIARIO-03: .45 inactivo / .85 activo, sin oscilación extra
+        fx.fillMat.opacity = 0.06 + 0.12 * fx.active;
       }
     },
   };

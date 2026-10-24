@@ -349,3 +349,22 @@ input.vol { width: min(100%, 320px); margin: 10px 0 2px; accent-color: #b98cff; 
 .rt .langseg button { min-width: 52px; min-height: 40px; padding: 0 14px; border-radius: 999px; background: transparent; color: #b5a8d8; font: 700 13px/1 var(--mono, monospace); letter-spacing: .08em; }
 .rt .langseg button:hover { background: rgba(119,0,244,.18); color: #f5f0ff; }
 .rt .langseg button.sel { background: linear-gradient(135deg, #7700f4, #00f2cf); color: #fff; }
+
+/* ---------- VIS-BESTIARIO-04: fichas y tienda con jerarquía cálida ---------- */
+#mcard { background: #0e1117; border-color: rgba(233,230,223,.14); }
+#mhead h2 { font-size: 20px; font-weight: 700; letter-spacing: .02em; text-transform: none; }
+.row, .cc { background: #191e25; border-color: rgba(233,230,223,.14); }
+.tx b { font-weight: 700; }
+.tx small { line-height: 1.4; }
+.pr { font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.row.dim { opacity: 1; }           /* la opción no disponible sigue legible: sólo se atenúa la ilustración */
+.row.dim .ic { opacity: .5; }
+.row.gold { border-width: 2px; border-color: rgba(224,176,64,.6); background: #191e25; }
+@media (min-width: 561px) and (min-height: 461px) { .tx b { font-size: 16px; } .tx small { font-size: 13px; } }
+@media (max-height: 460px) { #mhead h2 { font-size: 15px; } }
+@media (max-width: 560px) and (min-height: 461px) { #mhead h2 { font-size: 17px; } }
+/* ---------- VIS-BESTIARIO-05: barras de vida/experiencia legibles ---------- */
+.bar { height: 8px; border-radius: 4px; background: #323b46; }
+.bar i { border-radius: 4px; transition: width .18s linear; }
+.hp span { font-size: 13px; font-variant-numeric: tabular-nums; opacity: .9; }
+@media (prefers-reduced-motion: reduce) { .bar i { transition: none; } }

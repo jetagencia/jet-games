@@ -53,11 +53,17 @@ function aplicarTextos() {
   $$('[data-ta]').forEach((e) => { e.setAttribute('aria-label', tx(e.dataset.ta)); e.title = tx(e.dataset.ta); });
   $('#ctlTxt').textContent = tactil ? tx('how.ctlTouch') + ' ' + tx('how.ctlKeys') : tx('how.ctlKeys') + ' ' + tx('how.ctlTouch');
   $('#ladoKeys').innerHTML = AJ.lang === 'es'
-    ? '<kbd>←</kbd><kbd>↑</kbd><kbd>→</kbd><kbd>↓</kbd> moverte<br><kbd>Espacio</kbd> esperar · <kbd>Z</kbd> deshacer<br><kbd>R</kbd> sostenida: rebobinar<br><kbd>Tab</kbd> ver el futuro · <kbd>P</kbd> pausa'
-    : '<kbd>←</kbd><kbd>↑</kbd><kbd>→</kbd><kbd>↓</kbd> move<br><kbd>Space</kbd> wait · <kbd>Z</kbd> undo<br>Hold <kbd>R</kbd>: rewind<br><kbd>Tab</kbd> see the future · <kbd>P</kbd> pause';
+    ? '<kbd>←</kbd><kbd>↑</kbd><kbd>→</kbd><kbd>↓</kbd> moverte<br><kbd>Espacio</kbd> esperar · <kbd>Z</kbd> deshacer<br><kbd>R</kbd> sostenida: rebobinar<br><kbd>[</kbd><kbd>]</kbd> ver otro turno · <kbd>P</kbd> pausa'
+    : '<kbd>←</kbd><kbd>↑</kbd><kbd>→</kbd><kbd>↓</kbd> move<br><kbd>Space</kbd> wait · <kbd>Z</kbd> undo<br>Hold <kbd>R</kbd>: rewind<br><kbd>[</kbd><kbd>]</kbd> view another turn · <kbd>P</kbd> pause';
+  $('#sala').setAttribute('aria-describedby', 'mapaA11y');
+  $('#capVolver').setAttribute('aria-label', tx(capVista ? 'btn.backChapters' : 'btn.backMenu')); $('#capVolver').title = tx(capVista ? 'btn.backChapters' : 'btn.backMenu');
   refrescarInicio();
-  if (J) { hudNivel(); actualizarHud(); }
+  if (J) { hudNivel(); actualizarHud(); pintarMetas(); }
+  if (J && J.modoRep) pintarRepCtl();
 }
+// metas de estrellas del nivel (PLAY-ANTES-02): en pausa y en el resultado, con los valores reales del nivel
+function textoMeta(lv) { return tx(lv.copias === 1 ? 'goal.stars1' : 'goal.stars', { copias: lv.copias, segundos: lv.seg }); }
+function pintarMetas() { if (!J) return; $('#pausaMeta').textContent = textoMeta(J.lv) + ' · ' + tx('hud.think'); $('#resMeta').textContent = textoMeta(J.lv); }
 
 // ───────────────────────── dispositivo ─────────────────────────
 let tactil = matchMedia('(pointer: coarse)').matches;
@@ -270,7 +276,7 @@ function rechazar(a, prev) {
     else if (dv.beam[celda]) motivo = 'why.laser';
     else if (st.boxes0.some((_, j) => s2[n + j] === celda)) motivo = 'why.box';
   }
-  avisar(tx(motivo), 'mal');
+  avisar(tx(motivo), 'mal'); anunciar(tx('a11y.blocked', { motivo: tx(motivo) }));
   sfx('rechazo'); vibrar(40);
   const fx = celda >= 0 ? celda : yo;
   J.flash = { x: fx % W, y: (fx / W) | 0, t0: performance.now() };
@@ -328,6 +334,20 @@ function deshacer() {
   else if (J.recs.length > 0) { J.cur = J.recs.pop(); simular(); AUDIO.capas(nA()); sfx('rebobinar'); J.anim = { tipo: 'fundido', t0: performance.now(), dur: 260 }; }
   else return;
   MET.deshacer++; guardarPartida(); actualizarHud(); AUDIO.tension(false);
+  // PLAY-ANTES-06: el anuncio describe el estado vigente tras deshacer (segundo y puertas del tablero actual)
+  { const ps = estadoPuertas(); let msg = ps.length ? tx('a11y.undo', { n: J.cur.length, puerta: ps[0].id, estado: tx(ps[0].ab ? 'a11y.open' : 'a11y.closed') }) : tx('a11y.undo0', { n: J.cur.length }); for (const p of ps.slice(1)) msg += ' ' + tx('a11y.doorState', { puerta: p.id, estado: tx(p.ab ? 'a11y.open' : 'a11y.closed') }) + '.'; anunciar(msg); }
+}
+function estadoPuertas() { if (!J) return []; const st = J.st, h = J.hist[J.hist.length - 1], dv = derive(st, h.s, nA()); return st.doors.map((d, j) => ({ id: 'ABCD'[d.key], ab: !!dv.open[j], i: d.i })); }
+// representación accesible del tablero vigente (PLAY-ANTES-06): posición, copia, puertas, placas y salida con sus identificadores reales
+function pintarMapaA11y() {
+  const el = $('#mapaA11y'); if (!el) return; if (!J) { el.textContent = ''; return; }
+  const st = J.st, W = st.W, n = nA(), h = J.hist[J.hist.length - 1], yo = h.s[n - 1], dv = derive(st, h.s, n);
+  const cel = (c) => ' (' + (c % W) + ',' + ((c / W) | 0) + ')';
+  const partes = [];
+  st.doors.forEach((d, j) => partes.push(tx('a11y.doorState', { puerta: 'ABCD'[d.key], estado: tx(dv.open[j] ? 'a11y.open' : 'a11y.closed') }) + cel(d.i)));
+  for (let k = 0; k < 4; k++) for (const c of st.plates[k]) partes.push(tx('a11y.plate', { placa: 'ABCD'[k] }) + cel(c) + (dv.pk[k] ? ' ✓' : ''));
+  partes.push(tx('a11y.exit') + cel(st.exit));
+  el.textContent = yo < 0 ? '' : tx('a11y.map', { x: yo % W, y: (yo / W) | 0, dir: tx('a11y.dir' + (J.facing[n - 1] || 'D')), k: n, n: MAX_COPIAS, elementos: partes.join('. ') + '.' });
 }
 function rebobinar(auto) {
   if (!J || J.fin || pausado() || J.modoRep || J.anim) return;
@@ -350,21 +370,18 @@ function finDeBucle() {
   if (nA() >= MAX_COPIAS) { avisar(tx('why.max'), 'mal'); return; }
   setTimeout(() => { if (J && !J.fin && !J.anim && J.cur.length >= J.lv.N && !pausado()) rebobinar(true); }, 260);
 }
-let confReinicio = 0;
+// SRC-AN01: una sola confirmación explícita (HUD y pausa) cuando hay pasos o copias; Cancelar recibe el foco
 function reiniciarNivel(confirmado) {
   if (!J) return;
-  const n = J.recs.length + (J.cur.length ? 1 : 0);
-  if (!confirmado && n > 0 && Date.now() - confReinicio > 4000) {
-    confReinicio = Date.now(); $('#txtReiniciar').textContent = n > 1 ? tx('restart.confirm', { n }) : tx('restart.confirm1');
-    avisar(n > 1 ? tx('restart.confirm', { n }) : tx('restart.confirm1'));
-    setTimeout(() => { $('#txtReiniciar').textContent = tx('btn.restart'); }, 4000);
-    return false;
-  }
-  confReinicio = 0; $('#txtReiniciar').textContent = tx('btn.restart');
+  if (!confirmado && (J.recs.length > 0 || J.cur.length > 0)) { abrirConfReinicio(); return false; }
   const reinicios = J.reinicios + 1, inicio = J.inicio;
   cargarNivel(J.lv, { reinicios, inicio });
   return true;
 }
+function textoConfReinicio() { if (!J) return ''; const copias = J.recs.length + (J.cur.length ? 1 : 0); if (J.recs.length === 0) return tx('restart.attempt'); return copias === 1 ? tx('restart.one') : tx('restart.copies', { n: copias }); }
+function abrirConfReinicio() { $('#crTxt').textContent = textoConfReinicio(); abrir('confReinicio'); }
+$('#crNo').addEventListener('click', () => { sfx('ui'); cerrar('confReinicio'); });
+$('#crSi').addEventListener('click', () => { sfx('ui'); cerrar('confReinicio'); if (abierto('pausa')) cerrar('pausa'); reiniciarNivel(true); });
 
 // ───────────────────────── carga de niveles ─────────────────────────
 function cargarNivel(lv, o = {}) {
@@ -405,7 +422,8 @@ function actualizarHud() {
   cop.title = tx('hud.copies') + ': ' + n;
   const r = $('#reloj'); r.innerHTML = String(J.cur.length).padStart(2, '0') + '<span> / ' + String(J.lv.N).padStart(2, '0') + '</span>';
   r.classList.toggle('tens', J.lv.N - J.cur.length <= 3 && J.cur.length > 0);
-  r.setAttribute('aria-label', tx('hud.second', { t: J.cur.length, N: J.lv.N }));
+  r.setAttribute('aria-label', tx('hud.copyTime', { actual: J.cur.length, 'límite': J.lv.N })); r.title = tx('hud.copyTime', { actual: J.cur.length, 'límite': J.lv.N }) + ' · ' + tx('hud.think');
+  pintarMapaA11y();
   $('#bDeshacer').disabled = J.cur.length === 0 && J.recs.length === 0;
   $('#bRebobinar').disabled = J.cur.length === 0 || n >= MAX_COPIAS;
   // panel lateral
@@ -423,15 +441,16 @@ function dibujarLinea() {
   const tl = $('#tl'); if (!J || !tl.width) return;
   const c = tl.getContext('2d'), dpr = Math.min(3, devicePixelRatio || 1), W = tl.width / dpr, H = tl.height / dpr;
   c.setTransform(dpr, 0, 0, dpr, 0, 0); c.clearRect(0, 0, W, H);
-  const N = J.lv.N, pad = 10, paso = (W - pad * 2) / N, t = J.cur.length;
+  const N = J.lv.N, pad = 10, paso = (W - pad * 2) / N, t = J.modoRep ? J.modoRep.k : J.cur.length;
   const filas = J.recs.length; const baseY = H - 14; const fh = Math.min(7, (baseY - 6) / Math.max(1, filas + 1));
   // fondo
   c.fillStyle = 'rgba(20,12,40,.7)'; c.beginPath(); c.roundRect ? c.roundRect(0, 0, W, H, 12) : c.rect(0, 0, W, H); c.fill();
   c.strokeStyle = 'rgba(245,240,255,.1)'; c.lineWidth = 1; c.stroke();
   // pasado
   c.fillStyle = 'rgba(0,242,207,.14)'; c.fillRect(pad, baseY - 4, paso * t, 8);
-  // marcas
-  for (let k = 0; k <= N; k++) { const x = pad + k * paso; c.fillStyle = k === N ? 'rgba(255,68,102,.8)' : 'rgba(181,168,216,.45)'; c.fillRect(x - 0.5, baseY - (k % 5 === 0 ? 6 : 3), 1, k % 5 === 0 ? 12 : 6); }
+  // marcas: 0, múltiplos de 5 y final; rótulos numéricos solo cuando caben (VIS-ANTES-04)
+  const rotular = paso * 5 >= 26 && H >= 48;
+  for (let k = 0; k <= N; k++) { const x = pad + k * paso, mayor = k === 0 || k === N || k % 5 === 0; c.fillStyle = k === N ? 'rgba(255,68,102,.8)' : 'rgba(181,168,216,.45)'; c.fillRect(x - 0.5, baseY - (mayor ? 6 : 3), 1, mayor ? 12 : 6); if (rotular && mayor) { c.fillStyle = k === N ? 'rgba(255,68,102,.85)' : 'rgba(181,168,216,.75)'; c.font = '600 8px JetBrains Mono, monospace'; c.textAlign = k === N ? 'right' : k === 0 ? 'left' : 'center'; c.textBaseline = 'top'; c.fillText(String(k), x + (k === N ? 2 : k === 0 ? -2 : 0), baseY + 6); } }
   // filas de ecos
   for (let i = 0; i < filas; i++) {
     const y = 6 + i * fh + fh / 2, col = colEco(i), r = J.recs[i];
@@ -448,11 +467,23 @@ function dibujarLinea() {
       c.globalAlpha = 1;
     }
   }
-  // cursor
+  // cursor del tiempo actual (triángulo) y de la vista (círculo); rótulos Ahora / Vista (VIS-ANTES-04)
   const xc = pad + t * paso; c.fillStyle = '#f5f0ff'; c.fillRect(xc - 1, 2, 2, H - 4);
   c.beginPath(); c.moveTo(xc - 5, H - 2); c.lineTo(xc + 5, H - 2); c.lineTo(xc, H - 8); c.closePath(); c.fill();
-  if (J.vistaT != null) { const xv = pad + J.vistaT * paso; c.fillStyle = '#00f2cf'; c.fillRect(xv - 1, 2, 2, H - 4); c.beginPath(); c.arc(xv, 6, 4, 0, 7); c.fill(); }
+  const enVista = J.vistaT != null && !J.modoRep;
+  if (enVista) { const xv = pad + J.vistaT * paso; c.fillStyle = '#00f2cf'; c.fillRect(xv - 1, 2, 2, H - 4); c.beginPath(); c.arc(xv, 6, 4, 0, 7); c.fill(); }
+  if (!J.modoRep && W >= 120) {
+    const rotulo = (x, txt, col) => { c.font = '700 11px JetBrains Mono, monospace'; const tw = c.measureText(txt).width + 8; const lx = Math.max(2, Math.min(W - 2 - tw, x - tw / 2)); c.fillStyle = 'rgba(5,1,8,.88)'; if (c.roundRect) { c.beginPath(); c.roundRect(lx, 1, tw, 14, 4); c.fill(); } else c.fillRect(lx, 1, tw, 14); c.fillStyle = col; c.textAlign = 'left'; c.textBaseline = 'middle'; c.fillText(txt, lx + 4, 8.5); };
+    if (enVista && J.vistaT === t) rotulo(xc, tx('tl.nowView'), '#00f2cf');
+    else { rotulo(xc, tx('tl.now'), '#f5f0ff'); if (enVista) rotulo(pad + J.vistaT * paso, tx('tl.view'), '#00f2cf'); }
+  }
+  const bp = $('#bVistaPrev'), bn = $('#bVistaSig');
+  if (bp && bn) { const bloqueo = J.fin || !!J.modoRep; bp.disabled = bloqueo || J.vistaT == null; bn.disabled = bloqueo || (J.vistaT ?? t) >= t + (J.fut ? J.fut.length : 0); }
 }
+// RSP-ANTES-01: la vista temporal se mueve con los botones de la barra o con [ y ]; nunca con Tab
+function moverVista(d) { if (!J || J.fin || pausado() || J.modoRep) return; const t = J.cur.length; fijarVista((J.vistaT ?? t) + d); sfx('ui'); }
+$('#bVistaPrev').addEventListener('click', () => moverVista(-1));
+$('#bVistaSig').addEventListener('click', () => moverVista(1));
 function tlAPos(e) { const r = $('#tl').getBoundingClientRect(); const pad = 10; const paso = (r.width - pad * 2) / J.lv.N; return Math.max(0, Math.min(J.lv.N, Math.round((e.clientX - r.left - pad) / paso))); }
 function fijarVista(tv) {
   if (!J) return; const t = J.cur.length;
@@ -508,7 +539,7 @@ function dibujarJuego(ahora, dt, tm) {
     const h = J.hist[J.hist.length - 1];
     if (J.vistaT != null && J.fut[J.vistaT - J.cur.length - 1]) {
       const fs = J.fut[J.vistaT - J.cur.length - 1].s;
-      f = frameBase(fs, fs, 1, n, n - 1, { vista: true });
+      f = frameBase(fs, fs, 1, n, n - 1, { vista: true, vistaRotulo: tx('tl.view') + ' · ' + tx('hud.second', { t: J.vistaT, N: J.lv.N }) });
       if (J.fut[J.vistaT - J.cur.length - 1].sinJugador) f.ocultos = new Set([n - 1]);
     } else f = frameBase(h.s, h.s, 1, n, n - 1, {});
     if (A && A.tipo === 'fundido') { if (ahora - A.t0 >= A.dur) terminarAnim(); }
@@ -594,8 +625,9 @@ function mostrarResultado(copias, seg) {
   }
   ultimoRes = Object.assign(ultimoRes || {}, { e, copias, seg, record, finJuego });
   cerrarTut();
-  pintarResultado(lv, copias, seg, record);
+  pintarResultado(lv, copias, seg, record); pintarMetas();
   const stars = $$('#resStars svg'); stars.forEach((s) => s.classList.remove('on'));
+  $('#resStars').setAttribute('aria-label', tx('lvl.status', { n: lv.diario ? tx('daily.title') : lv.id, nombre: lv.diario ? '' : lv.nombre[AJ.lang], estrellas: e }).replace(': .', '.'));
   stars.forEach((s, i) => { if (i < e) setTimeout(() => { s.classList.add('on'); sfx('estrella', { i }); if (i === e - 1 && record) setTimeout(() => sfx('record'), 260); }, 380 + i * 220); });
   const sig = siguienteTrasResultado();
   const r0 = ultimoRes || {}; const haySig = !!(sig || lv.diario || r0.finJuego || r0.finCap || r0.nuevoCap); // el final y el cierre de capítulo siempre tienen su botón principal
@@ -648,10 +680,29 @@ function iniciarRepeticion(recs, vel, etiqueta, alTerminar) {
     const acts = recs.map((r) => r[t] || 'W'); const p = pasoSimN(s, n, acts);
     if (!p) break; frames.push(p); s = p.s; if (p.win) break;
   }
-  J.modoRep = { frames, k: 0, t0: performance.now(), dur: 160 / vel, n, facing: new Array(n).fill('D'), alTerminar, recs, vel };
+  J.modoRep = { frames, k: 0, t0: performance.now(), dur: 160 / vel, n, facing: new Array(n).fill('D'), alTerminar, recs, vel, paused: false };
   $('#repTxt').textContent = repEtiqueta(); $('#modoRep').classList.add('on');
-  $('#ctrl').style.visibility = 'hidden';
+  $('#ctrl').style.visibility = 'hidden'; $('#lado').setAttribute('aria-hidden', 'true');
+  pintarRepCtl(); hudRep();
+  if (!tactil) setTimeout(() => $('#repPausa').focus({ preventScroll: true }), 40);
 }
+// PLAY-ANTES-04: controles de la repetición (pausa, paso a paso, reinicio, velocidad) y reloj sincronizado con el cabezal
+function facingEn(R, k) { const f = new Array(R.n).fill('D'); R.recs.forEach((r, i) => { for (let j = 0; j < k; j++) { const a = r[j]; if (a && a !== 'W') f[i] = a; } }); return f; }
+function hudRep() { const R = J && J.modoRep; if (!R) return; const N = R.frames.length - 1, k = R.k; const r = $('#reloj'); r.innerHTML = String(k).padStart(2, '0') + '<span> / ' + String(N).padStart(2, '0') + '</span>'; r.classList.remove('tens'); r.setAttribute('aria-label', tx('hud.second', { t: k, N })); r.title = ''; dibujarLinea(); }
+function repSet(k) { const R = J && J.modoRep; if (!R) return; R.k = Math.max(0, Math.min(R.frames.length - 1, k)); R.t0 = performance.now(); R.facing = facingEn(R, R.k); hudRep(); pintarRepCtl(); }
+function pintarRepCtl() {
+  const R = J && J.modoRep; if (!R) return;
+  const b = $('#repPausa'); b.setAttribute('aria-pressed', R.paused ? 'true' : 'false'); b.setAttribute('aria-label', tx(R.paused ? 'rep.resume' : 'rep.pause')); b.title = tx(R.paused ? 'rep.resume' : 'rep.pause');
+  if (b.dataset.p !== String(R.paused)) { b.dataset.p = String(R.paused); b.innerHTML = R.paused ? '<svg style="transform:rotate(90deg)"><use href="#i-arrow"/></svg>' : '<svg><use href="#i-pause"/></svg>'; }
+  $$('#segRep button').forEach((x) => { const on = +x.dataset.v === R.vel; x.classList.toggle('on', on); x.setAttribute('aria-pressed', on ? 'true' : 'false'); x.setAttribute('aria-label', tx('rep.speed') + ' ' + tx('rep.rate', { velocidad: x.dataset.v })); });
+  $('#repPrev').disabled = R.k <= 0; $('#repNext').disabled = R.k >= R.frames.length - 1;
+  $('#bFinRep').textContent = tx(J.fin ? 'rep.back' : 'btn.stopReplay');
+}
+$('#repPausa').addEventListener('click', () => { const R = J && J.modoRep; if (!R) return; R.paused = !R.paused; if (!R.paused) R.t0 = performance.now(); pintarRepCtl(); sfx('ui'); });
+$('#repPrev').addEventListener('click', () => { const R = J && J.modoRep; if (!R) return; R.paused = true; repSet(R.k - 1); sfx('ui'); });
+$('#repNext').addEventListener('click', () => { const R = J && J.modoRep; if (!R) return; R.paused = true; repSet(R.k + 1); sfx('ui'); });
+$('#repReiniciar').addEventListener('click', () => { const R = J && J.modoRep; if (!R) return; R.paused = false; repSet(0); sfx('ui'); });
+$$('#segRep button').forEach((x) => x.addEventListener('click', () => { const R = J && J.modoRep; if (!R) return; R.vel = +x.dataset.v; R.dur = 160 / R.vel; R.t0 = performance.now(); pintarRepCtl(); sfx('toggle'); }));
 function pasoSimN(s, n, acts) { // todas son ecos: nadie se rechaza
   const st = J.st, dv0 = derive(st, s, n);
   const r = step(st, s, n, acts, -1, dv0); if (!r) return null;
@@ -660,12 +711,13 @@ function pasoSimN(s, n, acts) { // todas son ecos: nadie se rechaza
   return { s: r.s, win: r.win, mov, push, bump, desv: r.vanished };
 }
 function frameRepeticion(ahora, dt, tm) {
-  const R = J.modoRep; let q = (ahora - R.t0) / R.dur;
-  if (q >= 1) {
+  const R = J.modoRep; let q = R.paused ? 0 : (ahora - R.t0) / R.dur;
+  if (q >= 1 && !R.paused) {
     R.k++; R.t0 = ahora; q = 0;
     if (R.k >= R.frames.length - 1) { R.k = 0; R.t0 = ahora + 900; R.facing = new Array(R.n).fill('D'); }
     const p = R.frames[R.k + 1]; if (p) R.recs.forEach((r, i) => { const a = r[R.k]; if (a && a !== 'W') R.facing[i] = a; });
     if (p && p.mov.size) sfx('paso', { eco: true });
+    hudRep(); pintarRepCtl();
   }
   const a = R.frames[R.k], b = R.frames[Math.min(R.frames.length - 1, R.k + 1)];
   const p = easeOut(Math.max(0, Math.min(1, q)));
@@ -677,25 +729,46 @@ function frameRepeticion(ahora, dt, tm) {
 }
 function terminarRepeticion() {
   if (!J || !J.modoRep) return; const fn = J.modoRep.alTerminar; J.modoRep = null;
-  $('#modoRep').classList.remove('on'); $('#ctrl').style.visibility = '';
+  $('#modoRep').classList.remove('on'); $('#ctrl').style.visibility = ''; $('#lado').removeAttribute('aria-hidden'); actualizarHud();
   V.puertas = []; V.laser = [];
   if (fn) fn();
 }
 
 // ───────────────────────── pantallas ─────────────────────────
-const OVS = ['pausa', 'pista', 'resultado', 'como', 'ajustes', 'diario', 'finCap', 'final'];
+const OVS = ['pausa', 'pista', 'resultado', 'como', 'ajustes', 'diario', 'finCap', 'final', 'confBorrar', 'confReinicio', 'compartirFb'];
 let pilaOv = [];
-const OV_PAUSA = ['pausa', 'pista', 'como', 'ajustes'];
+const OV_PAUSA = ['pausa', 'pista', 'como', 'ajustes', 'confReinicio', 'confBorrar'];
 function atenuarAudio() { AUDIO.atenuar(pantalla === 'juego' && pilaOv.some((x) => OV_PAUSA.includes(x))); }
+// RSP-MODALS-01: cada superposición es un diálogo con nombre; el fondo y las capas inferiores quedan inertes;
+// el foco entra al abrir (Cancelar en confirmaciones) y vuelve al activador al cerrar. El ciclo Tab de más abajo se conserva.
 const focoPrevio = {};
-function abrir(id) { const el = document.getElementById(id); if (!el.classList.contains('on')) focoPrevio[id] = document.activeElement; el.classList.add('on'); pilaOv = pilaOv.filter((x) => x !== id); pilaOv.push(id); atenuarAudio(); const b = el.querySelector('.btn.pri, .x, button'); if (b && !tactil) setTimeout(() => b.focus({ preventScroll: true }), 30); }
-function cerrar(id) { const el = document.getElementById(id); const tenia = el.contains(document.activeElement); el.classList.remove('on'); pilaOv = pilaOv.filter((x) => x !== id); atenuarAudio();
-  if (tenia && !tactil) { const sig = pilaOv.length ? document.getElementById(pilaOv[pilaOv.length - 1]) : null; const prev = focoPrevio[id]; if (sig) { const b = sig.querySelector('.btn.pri, .x, button'); if (b) b.focus({ preventScroll: true }); } else if (prev && prev.isConnected && prev.offsetParent !== null) prev.focus({ preventScroll: true }); else if (document.activeElement) document.activeElement.blur(); } }
+const BASE_INERT = ['#juego', '#inicio', '#capitulos', '#topMenu'];
+function actualizarInert() {
+  const top = pilaOv[pilaOv.length - 1] || null;
+  for (const s of BASE_INERT) { const el = $(s); if (el) el.inert = !!top; }
+  for (const id of OVS) { const el = document.getElementById(id); if (el) el.inert = el.classList.contains('on') && id !== top; }
+}
+function primerFoco(el) { return el.querySelector('[data-foco-inicial]') || el.querySelector('.btn.pri, .x, button, a[href], input, textarea') || el.querySelector('h1, h2'); }
+function abrir(id, activador) {
+  const el = document.getElementById(id); if (!el.classList.contains('on')) focoPrevio[id] = activador || document.activeElement;
+  el.classList.add('on'); pilaOv = pilaOv.filter((x) => x !== id); pilaOv.push(id); atenuarAudio(); actualizarInert();
+  const b = primerFoco(el); if (b) { if (!b.hasAttribute('tabindex') && !/^(BUTTON|A|INPUT|TEXTAREA|SUMMARY)$/.test(b.tagName)) b.setAttribute('tabindex', '-1'); setTimeout(() => { if (el.classList.contains('on')) b.focus({ preventScroll: true }); }, 30); }
+}
+function cerrar(id) {
+  const el = document.getElementById(id); const tenia = el.contains(document.activeElement) || document.activeElement === document.body; el.classList.remove('on'); pilaOv = pilaOv.filter((x) => x !== id); atenuarAudio(); actualizarInert();
+  if (!tenia) return;
+  const sig = pilaOv.length ? document.getElementById(pilaOv[pilaOv.length - 1]) : null; const prev = focoPrevio[id]; delete focoPrevio[id];
+  const visible = (x) => x && x.isConnected && x.offsetParent !== null && !x.disabled && !x.closest('[inert]') && x.getClientRects().length;
+  if (sig) { const b = sig.contains(prev) && visible(prev) ? prev : primerFoco(sig); if (b) b.focus({ preventScroll: true }); }
+  else if (visible(prev)) prev.focus({ preventScroll: true });
+  else if (pantalla === 'juego' && J) $('#sala').focus({ preventScroll: true });
+  else { const sc = document.querySelector('.scr.on'); const b = sc && sc.querySelector('.btn.pri, button'); if (b) b.focus({ preventScroll: true }); }
+}
 // Tab no se escapa del panel abierto: recorre solo sus controles
 addEventListener('keydown', (e) => {
   if (e.key !== 'Tab' || !pilaOv.length) return;
   const ov = document.getElementById(pilaOv[pilaOv.length - 1]);
-  const fs = [...ov.querySelectorAll('button, a[href], input, summary')].filter((x) => !x.disabled && x.offsetParent !== null && x.getClientRects().length);
+  const fs = [...ov.querySelectorAll('button, a[href], input, textarea, summary, [tabindex="0"]')].filter((x) => !x.disabled && x.offsetParent !== null && x.getClientRects().length);
   if (!fs.length) return;
   const i = fs.indexOf(document.activeElement);
   if (i < 0) { e.preventDefault(); fs[e.shiftKey ? fs.length - 1 : 0].focus(); return; }
@@ -765,6 +838,7 @@ function irCapitulos(c) {
 function pintarCapitulos() {
   const lista = $('#listaCaps'), vista = $('#vistaCap');
   $('#capStars').innerHTML = '<b>★</b> ' + estrellasTotales() + ' / 120';
+  $('#capVolver').setAttribute('aria-label', tx(capVista ? 'btn.backChapters' : 'btn.backMenu')); $('#capVolver').title = tx(capVista ? 'btn.backChapters' : 'btn.backMenu');
   if (!capVista) {
     $('#capTit').textContent = tx('chap.title');
     lista.style.display = ''; vista.style.display = 'none'; lista.innerHTML = '';
@@ -795,11 +869,15 @@ function pintarCapitulos() {
       const ab = nivelAbierto(n.id); const b = document.createElement('button'); b.className = 'lvl' + (pend && pend.id === n.id ? ' cur' : '');
       if (!ab) b.disabled = true;
       const e = estrellasNivel(n.id);
-      b.innerHTML = '<span class="id"></span><span class="nm"></span><span class="st"></span>';
+      b.innerHTML = '<span class="id"></span><span class="nm"></span><span class="st" aria-hidden="true"></span><span class="meta-n" aria-hidden="true"></span><span class="est" aria-hidden="true"></span>';
       b.querySelector('.id').textContent = n.id; b.querySelector('.nm').textContent = n.nombre[AJ.lang];
       b.querySelector('.st').innerHTML = '<b>' + '★'.repeat(e) + '</b>' + '★'.repeat(3 - e);
+      b.querySelector('.meta-n').textContent = textoMeta(n);
+      b.querySelector('.est').textContent = !ab ? tx('lvl.locked') : hecho(n.id) ? tx('res.done') : tx('lvl.available');
+      // PLAY-ANTES-05: nombre accesible con estrellas reales y estado; las estrellas visuales no se leen como tres ganadas
+      b.setAttribute('aria-label', tx('lvl.status', { n: n.id, nombre: n.nombre[AJ.lang], estrellas: e }) + ' ' + (!ab ? tx('lvl.locked') : hecho(n.id) ? tx('res.done') + '.' : tx('lvl.available') + '.') + ' ' + textoMeta(n));
       if (saltado(n.id)) { const t = document.createElement('span'); t.className = 'tagx'; t.textContent = tx('chap.skipped'); b.appendChild(t); }
-      if (!ab) { const t = document.createElement('span'); t.className = 'tagx'; t.innerHTML = '<svg width="14" height="14"><use href="#i-lock"/></svg>'; b.appendChild(t); b.title = tx('lock.level'); }
+      if (!ab) { const t = document.createElement('span'); t.className = 'tagx'; t.innerHTML = '<svg width="14" height="14" aria-hidden="true"><use href="#i-lock"/></svg>'; b.appendChild(t); b.title = tx('lvl.locked'); }
       b.addEventListener('click', () => { sfx('ui'); const p = leer(K.partida, null); if (p && p.nivel === n.id) cargarNivel(n, { recs: p.grabaciones, cur: p.actual, reinicios: p.reinicios, inicio: p.inicio }); else cargarNivel(n); });
       g.appendChild(b);
     }
@@ -812,6 +890,7 @@ function pintarMini(cvm, lv, w, h, cap) {
   });
 }
 $('#capVolver').addEventListener('click', () => { sfx('ui'); if (capVista) { capVista = null; pintarCapitulos(); } else irInicio(); });
+$('#capVolver').setAttribute('type', 'button');
 
 // ───────────────────────── avisos y tutorial ─────────────────────────
 let avisoT = 0, tutActual = null;
@@ -859,12 +938,13 @@ function pausar(auto) {
   $('#pSaltar').style.display = puedeSaltar ? '' : 'none'; $('#pSaltarConf').style.display = 'none';
   $('#pausaDonde').textContent = tx('pause.where', { nivel: nombreNivel(J.lv), k: nA(), t: J.cur.length, N: J.lv.N });
   $('#pPista').style.display = J.lv.diario ? 'none' : '';
+  pintarMetas();
   abrir('pausa'); sfx('ui');
 }
 function continuar() { cerrar('pausa'); AUDIO.reanudar(); }
 $('#bPausa').addEventListener('click', () => pausar());
 $('#pContinuar').addEventListener('click', () => { sfx('ui'); continuar(); });
-$('#pReiniciar').addEventListener('click', () => { sfx('ui'); cerrar('pausa'); reiniciarNivel(true); });
+$('#pReiniciar').addEventListener('click', () => { sfx('ui'); if (!reiniciarNivel(false)) return; cerrar('pausa'); });
 $('#pComo').addEventListener('click', () => { sfx('ui'); abrirComo(); });
 $('#pAjustes').addEventListener('click', () => { sfx('ui'); abrirAjustes(); });
 $('#pSalir').addEventListener('click', () => { sfx('ui'); const c = J && J.lv.cap; irCapitulos(c || null); });
@@ -906,7 +986,7 @@ $('#bFinRep').addEventListener('click', () => { sfx('ui'); const vuelve = J && J
 $('#rSiguiente').addEventListener('click', () => { sfx('ui'); trasResultado(); });
 $('#rOtra').addEventListener('click', () => { sfx('ui'); cerrar('resultado'); cargarNivel(J.lv); });
 $('#rCaps').addEventListener('click', () => { sfx('ui'); const r = ultimoRes || {}; if (r.finCap || r.nuevoCap || r.finJuego) { trasResultado(); return; } irCapitulos(J.lv.cap); });
-$('#rRep').addEventListener('click', () => { sfx('ui'); cerrar('resultado'); const recs = J.recs.concat([J.cur]); iniciarRepeticion(recs, 2, () => tx('btn.replay') + ' · 2×', () => abrir('resultado')); });
+$('#rRep').addEventListener('click', () => { sfx('ui'); cerrar('resultado'); const recs = J.recs.concat([J.cur]); iniciarRepeticion(recs, 2, () => tx('rep.title'), () => abrir('resultado')); });
 $('#rCompartir').addEventListener('click', () => { sfx('ui'); compartir(textoCompartir(J.lv, ultimoRes)); });
 function textoCompartir(lv, r) {
   const em = ['🟦', '🟪', '🟨', '🟥', '🟩', '🟧'];
@@ -916,11 +996,20 @@ function textoCompartir(lv, r) {
   const racha = lv.diario && rachaVigente() ? '  🔥 ' + rachaVigente() : '';
   return `${cab}${cron}\n${rombos} ${k === 1 ? tx('share.copy1') : tx('share.copies', { k })} · ⏱ ${r.seg} s\n${'★'.repeat(r.e)}${'☆'.repeat(3 - r.e)}${racha}\njetgames.fun/antes/`;
 }
-async function compartir(texto) {
-  try { if (navigator.share) { await navigator.share({ text: texto, url: 'https://jetgames.fun/antes/' }); return; } } catch (e) { if (e && e.name === 'AbortError') return; }
-  try { await navigator.clipboard.writeText(texto); avisarMenu(tx('copied')); $('#tostada').classList.remove('mal'); }
-  catch { const ta = document.createElement('textarea'); ta.value = texto; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); avisarMenu(tx('copied')); $('#tostada').classList.remove('mal'); } catch { avisarMenu(tx('shareFail')); } ta.remove(); }
+// SRC-G06: compartir solo por acción del usuario; éxito solo confirmado; si no se puede copiar, el texto queda íntegro y seleccionable
+async function copiarTexto(texto) {
+  try { await navigator.clipboard.writeText(texto); return true; } catch {}
+  try { const act = document.activeElement; const ta = document.createElement('textarea'); ta.value = texto; ta.setAttribute('readonly', ''); ta.style.cssText = 'position:fixed;left:-9999px;top:0'; document.body.appendChild(ta); ta.select(); const ok = document.execCommand('copy') === true; ta.remove(); if (act && act.focus && act !== document.body) act.focus({ preventScroll: true }); return ok; } catch { return false; }
 }
+async function compartir(texto) {
+  const activador = document.activeElement;
+  try { if (navigator.share) { await navigator.share({ text: texto, url: 'https://jetgames.fun/antes/' }); return; } } catch (e) { if (e && e.name === 'AbortError') return; }
+  if (await copiarTexto(texto)) { avisarMenu(tx('copied')); $('#tostada').classList.remove('mal'); return; }
+  $('#cfTa').value = texto; abrir('compartirFb', activador); setTimeout(() => { const ta = $('#cfTa'); ta.focus({ preventScroll: true }); ta.select(); }, 80);
+}
+$('#cfCopiar').addEventListener('click', async () => { const ta = $('#cfTa'); if (await copiarTexto(ta.value)) { cerrar('compartirFb'); avisarMenu(tx('copied')); $('#tostada').classList.remove('mal'); } else { ta.focus(); ta.select(); } });
+$('#cfCerrar').addEventListener('click', () => { sfx('ui'); cerrar('compartirFb'); });
+$('#cfX').addEventListener('click', () => { sfx('ui'); cerrar('compartirFb'); });
 
 // ───────────────────────── fin de capítulo y final ─────────────────────────
 let finCapActual = null;
@@ -1118,7 +1207,7 @@ function pintarAjustes() {
   pintarIdioma();
   $$('#segVel button').forEach((b) => b.classList.toggle('on', b.dataset.v === AJ.velocidad));
   $('#sinGuardar').style.display = puedeGuardar ? 'none' : '';
-  ['#volMus', '#volSfx'].forEach((s) => $(s).setAttribute('aria-label', tx('set.volume')));
+  $('#volMus').setAttribute('aria-label', tx('set.musicVol')); $('#volSfx').setAttribute('aria-label', tx('set.sfxVol'));
 }
 function cambiar(k, v) { AJ[k] = v; guardarAj(); audioPrefs(); pintarAjustes(); sfx('toggle'); document.body.classList.toggle('zurdo', AJ.zurdo); document.body.classList.toggle('hc', AJ.hc); if (J) actualizarHud(); }
 $('#tgMus').addEventListener('click', () => cambiar('music', !AJ.music));
@@ -1151,22 +1240,20 @@ addEventListener('jet-idioma', () => {
   else { clearTimeout(avisoT); const ts = $('#tostada'); ts.className = ''; ts.style.zIndex = ''; } // un aviso suelto en el idioma anterior se retira
   $('#vivo').textContent = ''; // el lector de pantalla no repite un anuncio viejo en el otro idioma
   if (J && $('#pSaltarConf').style.display !== 'none') { const q = 1 - saltosUsados(J.lv.cap); $('#pSaltarTxt').textContent = q > 0 ? tx('skip.ask', { n: q }) : tx('skip.none'); }
-  if (J && Date.now() - confReinicio < 4000) { const n = J.recs.length + (J.cur.length ? 1 : 0); $('#txtReiniciar').textContent = n > 1 ? tx('restart.confirm', { n }) : tx('restart.confirm1'); }
-  if (borrarArmado && Date.now() - borrarArmado < 4000) $('#bBorrar').textContent = tx('set.erase2');
+  if (abierto('confReinicio')) $('#crTxt').textContent = textoConfReinicio();
+  if (abierto('confBorrar')) pintarConfBorrar();
+  if (J && J.modoRep) pintarRepCtl();
 });
 $$('#segVel button').forEach((b) => b.addEventListener('click', () => cambiar('velocidad', b.dataset.v)));
-let borrarArmado = 0;
-$('#bBorrar').addEventListener('click', () => {
-  const b = $('#bBorrar');
-  if (Date.now() - borrarArmado < 4000) {
-    for (const k of [K.prog, K.partida, K.diario, K.visto, K.met]) borrar(k);
-    PROG.niveles = {}; PROG.saltos = {}; DIARIO.dias = {}; DIARIO.racha = 0; DIARIO.mejorRacha = 0; DIARIO.ultimaFecha = null; for (const k in VISTO) delete VISTO[k];
-    borrarArmado = 0; b.classList.remove('armado'); b.textContent = tx('set.erased'); sfx('rechazo');
-    setTimeout(() => { b.textContent = tx('set.erase'); }, 1800);
-    cerrar('ajustes'); irInicio(); return;
-  }
-  borrarArmado = Date.now(); b.classList.add('armado'); b.textContent = tx('set.erase2'); sfx('ui');
-  setTimeout(() => { if (Date.now() - borrarArmado >= 3900) { b.classList.remove('armado'); b.textContent = tx('set.erase'); } }, 4000);
+// SRC-G04: borrado con confirmación explícita (Cancelar enfocado, datos enumerados); los ajustes y el idioma no se tocan
+function pintarConfBorrar() { $('#cbTit').textContent = tx('erase.title', { juego: 'JET//Antes' }); $('#cbTxt').textContent = tx('erase.body', { 'datos concretos': tx('erase.data') }); }
+$('#bBorrar').addEventListener('click', () => { sfx('ui'); pintarConfBorrar(); abrir('confBorrar'); });
+$('#cbNo').addEventListener('click', () => { sfx('ui'); cerrar('confBorrar'); });
+$('#cbSi').addEventListener('click', () => {
+  for (const k of [K.prog, K.partida, K.diario, K.visto, K.met]) borrar(k);
+  PROG.niveles = {}; PROG.saltos = {}; DIARIO.dias = {}; DIARIO.racha = 0; DIARIO.mejorRacha = 0; DIARIO.ultimaFecha = null; for (const k in VISTO) delete VISTO[k];
+  for (const k in MET) MET[k] = typeof MET[k] === 'number' ? 0 : null;
+  cerrar('confBorrar'); cerrar('ajustes'); irInicio(); avisarMenu(tx('set.erased')); sfx('rechazo');
 });
 $('#ajX').addEventListener('click', () => { sfx('ui'); cerrar('ajustes'); });
 $('#bAjMenu').addEventListener('click', () => { sfx('ui'); abrirAjustes(); });
@@ -1210,32 +1297,37 @@ addEventListener('keydown', (e) => {
     return;
   }
   if (pausado() || J.modoRep) return;
+  // RSP-NATIVE-KEYS-01: Enter/Espacio/flechas sobre un control nativo (HUD, acciones, pad) activan ese control; no duplican órdenes de juego
+  if (e.target && e.target.closest && e.target.closest('button,a[href],input,textarea,select,summary,[contenteditable=true]')) return;
+  // RSP-ANTES-01: [ y ] mueven la vista temporal; solo con el foco en la sala o en el documento, sin Ctrl/Meta/Alt. Tab queda libre.
+  if ((e.key === '[' || e.key === ']') && !e.ctrlKey && !e.metaKey && !e.altKey) { const ae = document.activeElement; if (!ae || ae === document.body || ae === $('#sala')) { e.preventDefault(); moverVista(e.key === ']' ? 1 : -1); } return; }
   if (TECLA[e.key]) { e.preventDefault(); hacer(salaDir(TECLA[e.key])); return; }
-  if (e.key === ' ' || e.key === '.') { e.preventDefault(); if (!e.repeat || true) hacer('W'); return; }
+  if (e.key === ' ' || e.key === '.') { e.preventDefault(); hacer('W'); return; }
   if ((e.key === 'z' || e.key === 'Z' || e.key === 'Backspace') && !e.repeat) { e.preventDefault(); deshacer(); return; }
   if ((e.key === 'r' || e.key === 'R') && !e.repeat) { e.preventDefault(); iniciarSostener('r'); return; }
   if ((e.key === 't' || e.key === 'T') && !e.repeat) { e.preventDefault(); iniciarSostener('t'); return; }
-  if (e.key === 'Tab') { e.preventDefault(); const t = J.cur.length; fijarVista((J.vistaT ?? t) + (e.shiftKey ? -1 : 1)); return; }
 });
 addEventListener('keyup', (e) => { if (e.key === 'r' || e.key === 'R') soltarSostener('r'); if (e.key === 't' || e.key === 'T') soltarSostener('t'); });
-// sostener: rebobinar (350 ms) y reiniciar (600 ms)
+// sostener: rebobinar (HOLD_R ms) y reiniciar (HOLD_T ms; la pulsación mantenida es la confirmación)
+const HOLD_R = 350, HOLD_T = 600;
 let sost = null;
 function iniciarSostener(tipo) {
   if (!J || J.fin || J.anim || pausado()) return;
   if (tipo === 'r' && (J.cur.length === 0 || nA() >= MAX_COPIAS)) { rebobinar(); return; }
-  const dur = tipo === 'r' ? 350 : 600; const t0 = performance.now();
+  const dur = tipo === 'r' ? HOLD_R : HOLD_T; const t0 = performance.now();
   sost = { tipo, t0, dur }; if (tipo === 'r') { sfx('carga'); $('#bRebobinar').classList.add('down'); }
   const ring = $('#bRebobinar .ring');
   const tick = () => {
-    if (!sost || sost.t0 !== t0) { ring.style.transform = 'scaleX(0)'; return; }
+    if (!sost || sost.t0 !== t0) { ring.style.transform = 'scaleX(0)'; ring.setAttribute('aria-valuenow', '0'); return; }
     const q = Math.min(1, (performance.now() - t0) / dur);
-    if (tipo === 'r') ring.style.transform = `scaleX(${q})`;
-    if (q >= 1) { sost = null; ring.style.transform = 'scaleX(0)'; $('#bRebobinar').classList.remove('down'); if (tipo === 'r') rebobinar(); else reiniciarNivel(true); return; }
+    if (tipo === 'r') { ring.style.transform = `scaleX(${q})`; ring.setAttribute('aria-valuenow', String(Math.round(q * 100))); }
+    if (q >= 1) { sost = null; ring.style.transform = 'scaleX(0)'; ring.setAttribute('aria-valuenow', '0'); $('#bRebobinar').classList.remove('down'); if (tipo === 'r') rebobinar(); else reiniciarNivel(true); return; }
     requestAnimationFrame(tick);
   };
   requestAnimationFrame(tick);
 }
-function soltarSostener(tipo) { if (sost && sost.tipo === tipo) { const q = (performance.now() - sost.t0) / sost.dur; sost = null; if (tipo === 'r' && q < 1) AUDIO.cancelarCarga(); $('#bRebobinar').classList.remove('down'); if (tipo === 'r' && q < 1 && tactil) avisar(tx('tut.hold')); } }
+// PLAY-ANTES-03: una pulsación corta no simula éxito; informa la duración real configurada del gesto
+function soltarSostener(tipo) { if (sost && sost.tipo === tipo) { const q = (performance.now() - sost.t0) / sost.dur; sost = null; if (tipo === 'r' && q < 1) AUDIO.cancelarCarga(); $('#bRebobinar').classList.remove('down'); $('#bRebobinar .ring').setAttribute('aria-valuenow', '0'); if (tipo === 'r' && q < 1) avisar(tactil ? tx('tut.hold') : tx('act.holdDur', { 'duración': (HOLD_R / 1000).toLocaleString(AJ.lang === 'es' ? 'es' : 'en') })); } }
 
 // ───────────────────────── entrada: táctil y ratón ─────────────────────────
 function botonRepetible(el, fn) {
@@ -1278,8 +1370,8 @@ $('#bReiniciar').addEventListener('click', () => reiniciarNivel(false));
   s.addEventListener('pointercancel', () => { ini = null; });
 })();
 addEventListener('contextmenu', (e) => { if (pantalla === 'juego') e.preventDefault(); });
-document.addEventListener('gesturestart', (e) => e.preventDefault());
-document.addEventListener('dblclick', (e) => e.preventDefault(), { passive: false });
+// RSP-GLOBAL-01: sin bloqueos de gesto a nivel documento; el doble toque solo se neutraliza sobre las superficies de juego
+document.addEventListener('dblclick', (e) => { if (e.target && e.target.closest && e.target.closest('#sala, #cv, #ctrl, #barra')) e.preventDefault(); }, { passive: false });
 
 // ───────────────────────── ciclo de vida: pestaña, pantalla completa ─────────────────────────
 document.addEventListener('visibilitychange', () => {
@@ -1292,7 +1384,8 @@ document.addEventListener('fullscreenchange', alCambioFS); document.addEventList
 addEventListener('pagehide', () => { if (J && !J.fin) guardarPartida(); });
 
 // botones de los overlays: Escape/fuera para cerrar lo cerrable
-for (const id of ['como', 'ajustes', 'diario', 'pista']) document.getElementById(id).addEventListener('pointerdown', (e) => { if (e.target.id === id) { cerrar(id); } });
+for (const id of ['como', 'ajustes', 'diario', 'pista', 'compartirFb']) document.getElementById(id).addEventListener('pointerdown', (e) => { if (e.target.id === id) { cerrar(id); } });
+$('#crNo').setAttribute('data-foco-inicial', ''); $('#cbNo').setAttribute('data-foco-inicial', '');
 
 // ───────────────────────── gancho de pruebas ─────────────────────────
 window.ANTES = {
@@ -1317,6 +1410,7 @@ document.body.classList.toggle('zurdo', AJ.zurdo); document.body.classList.toggl
 aplicarTextos();
 layout();
 requestAnimationFrame(fotograma);
+if (window.__antesCarga) window.__antesCarga.listo(); // SRC-G05: el módulo arrancó; se retira el estado de carga
 (async () => {
   const qn = QS.get('nivel');
   if (QS.has('todo')) todoAbierto = true;

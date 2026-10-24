@@ -49,9 +49,19 @@ const quality = resolveQuality();
 
 // ---------------------------------------------------------------- render
 const canvas = $('c');
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+// estados de carga (loading / error / ready) viven en index.html (window.JJBoot); aquí sólo se informan
+const Boot = window.JJBoot || { state: 'loading', progress() {}, fail() {}, ready() {}, relang() {} };
+let renderer;
+try {
+  // el contexto WebGL se comprueba antes de pedir un solo recurso 3D: un fallo gráfico no es un fallo de red
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+  if (!renderer.getContext()) throw new Error('WebGL context unavailable');
+} catch (e) {
+  Boot.fail('webgl', e && e.message || e);
+  throw e;
+}
 // si la placa de video se queda sin memoria, se vuelve a cargar en calidad liviana
-canvas.addEventListener('webglcontextlost', (e) => { e.preventDefault(); store.set('nopost', true); loadFail(T.load.lost); });
+canvas.addEventListener('webglcontextlost', (e) => { e.preventDefault(); store.set('nopost', true); loadFail('lost', 'webglcontextlost'); });
 renderer.setPixelRatio(quality.pr);
 renderer.setSize(innerWidth, innerHeight);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -60,16 +70,12 @@ renderer.shadowMap.enabled = true; renderer.shadowMap.type = quality.hd ? THREE.
 
 // ---------------------------------------------------------------- carga
 const manager = new THREE.LoadingManager();
-manager.onProgress = (_, done, total) => {
-  $('load-bar').style.width = (done / total * 100).toFixed(0) + '%';
-  const pb = $('load-prog'); pb.setAttribute('aria-valuemax', total); pb.setAttribute('aria-valuenow', done);
-  $('load-txt').textContent = T.load.progress(done, total);
-};
-function loadFail(msg) {
-  const L = $('load'); L.hidden = false; L.classList.remove('gone');
-  $('load-txt').textContent = msg; const b = $('load-retry'); b.textContent = T.load.retry; b.hidden = false; b.onclick = () => location.reload(); b.focus();
-}
-$('load-txt').textContent = T.load.title;
+// un único estado de progreso: barra, aria-valuenow y texto salen del mismo par done/total (el total crece con recursos anidados);
+// tras un fallo, los avances tardíos se ignoran y no pisan el mensaje de error
+manager.onProgress = (_, done, total) => { Boot.progress(done, total); };
+// kind: 'network' (descarga fallida confirmada) | 'webgl' | 'lost' | 'unknown'
+function loadFail(kind, detail) { Boot.fail(kind, detail); }
+const isNetErr = (e) => !!e && (e instanceof Response || e.type === 'error' || e.type === 'abort' || /fetch|network|404|Failed to load|Couldn't load|Could not load|HTTP/i.test(e.message || String(e)));
 const gl = new GLTFLoader(manager), tl = new THREE.TextureLoader(manager), hl = new RGBELoader(manager);
 const TL = (u) => tl.loadAsync(u);
 let A;
@@ -84,7 +90,7 @@ try {
   ]);
   A = { horse, rider, helmet, venue, parts, skyHdr, skyJpg, sand, sandN, sandR, grass, grassN, crowd, trees, planter, brick, brickN, trees3d, crowd3d, clips };
 } catch (e) {
-  loadFail(T.load.error);
+  loadFail(isNetErr(e) ? 'network' : 'unknown', e && (e.message || e.statusText || e.type) || e);
   throw e;
 }
 for (const t of [A.planter, A.brick]) t.colorSpace = THREE.SRGBColorSpace;
@@ -600,7 +606,7 @@ function results() {
   if (R.stats.jumps) lines.push(Rz.distance(R.stats.perfect, R.stats.jumps));
   if (isBest) lines.push(`<b>${Rz.best}</b> ${Rz.bestRule}`);
   openModal(`<div class="eyebrow">${Rz.eyebrow(course.name)}</div><h2 id="modal-title">${title}</h2>
-    <div class="score"><div><b>${fmt.points(R.faults)}</b><small>${Rz.penalty}</small></div><div><b>${fmt.secFinal(R.time)} s</b><small>${Rz.time}</small></div></div>
+    <div class="score"><div role="group" aria-label="${Rz.penaltyFull(R.faults)}"><b>${fmt.points(R.faults)}</b><small>${Rz.penalty}</small></div><div role="group" aria-label="${Rz.timeFull(fmt.secFinal(R.time))}"><b>${fmt.secFinal(R.time)} s</b><small>${Rz.time}</small></div></div>
     ${lines.map((l) => `<p>${l}</p>`).join('')}
     <div class="btns"><button class="btn primary" data-a="again" data-autofocus><span>${Rz.retry}</span><span aria-hidden="true">↻</span></button><button class="btn" data-a="menu"><span>${Rz.home}</span></button></div>`, '', { escape: () => {} });
 }
@@ -703,7 +709,7 @@ addEventListener('blur', () => { if (state === 'play' && !paused && ride && !rid
 // cambio de idioma en vivo (evento de jet-idioma.js): todo se repinta al instante, sin recargar ni tocar la partida
 addEventListener('jet-idioma', () => {
   applyStatic(); menuTexts(); relangSigns();
-  if ($('load').hidden) $('load-txt').textContent = T.load.title;
+  Boot.relang();   // el cargador traduce el estado vigente (carga o error), nunca vuelve a «Cargando» sobre un error
   for (const p of bannerPaint) p();
   if (ride && state === 'play') { $('h-ta').textContent = course.ta ? `${T.hud.time} · ${T.hud.limit(course.ta).toLowerCase()}` : ''; $('h-pen-l').textContent = T.hud.penalty; camLabel(); keyHelp(); hud(0); if (marker) { const l = marker.userData.label; if (l) $('arrow').setAttribute('aria-label', T.hud.next(l)); } }
   ui && ui.relang();
@@ -718,7 +724,7 @@ menuRanch(0, true);
 renderer.setAnimationLoop(frame);
 // pre-compilar sombras y materiales antes de mostrar el menú
 renderer.compile(S, chase.cam); renderer.compile(ranch.scene, ranch.cam);
-$('load').classList.add('gone'); setTimeout(() => { $('load').hidden = true; }, 700);
+Boot.ready();   // listo: el cargador sale del foco y del árbol accesible; los guardados no se tocan
 $('menu').classList.remove('hidden'); showBest();
 window.__jj = { ui, ranch, stable, startRun, say, sound, get settings() { return settings; }, get ride() { return ride; }, horse, cam: chase.cam, chase, scene: S, world, dust, get post() { return post; }, startGame, get state() { return state; }, fences: () => fences, setGear: (g) => { ride.setGear(g); updateGear(); } };
 // actualizaciones: una pestaña que quedó abierta días no se entera sola de una versión nueva. Al volver a la

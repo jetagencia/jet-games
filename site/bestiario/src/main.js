@@ -25,8 +25,8 @@ const canvas = $('gl');
 let renderer;
 try {
   renderer = new THREE.WebGLRenderer({ canvas, antialias: !LOW, powerPreference: 'high-performance' });
-} catch (e) {   // sin WebGL no hay juego: se dice con claridad en vez de dejar la pantalla negra
-  if (window.__bootFail) window.__bootFail(L('Tu navegador no puede mostrar gráficos 3D. Activa la aceleración por hardware o usa Chrome, Safari o Firefox actualizados.', 'Your browser can’t display 3D graphics. Turn on hardware acceleration or use an up-to-date Chrome, Safari or Firefox.'));
+} catch (e) {   // sin WebGL no hay juego: se dice con claridad en vez de dejar la pantalla negra (el texto lo pone el estado de arranque de index.html)
+  if (window.__bootFail) window.__bootFail('webgl', String(e && e.message || e));
   throw e;
 }
 let pixelRatio = Math.min(devicePixelRatio || 1, DPR_MAX);
@@ -296,7 +296,7 @@ function talk() {
   else panels.openCage(actTarget.cage.species);
 }
 actBtn.addEventListener('click', talk);
-addEventListener('keydown', (e) => { if ((e.code === 'Space' || e.code === 'Enter') && !e.repeat && !e.ctrlKey && !e.metaKey && actTarget && !panels.isOpen()) { e.preventDefault(); talk(); } });
+addEventListener('keydown', (e) => { if ((e.code === 'Space' || e.code === 'Enter') && !e.repeat && !e.ctrlKey && !e.metaKey && actTarget && !panels.isOpen() && !titleOn && !battle.active && !(e.target && e.target.closest && e.target.closest('button, a, input, select, textarea, [contenteditable=true], [role=button]'))) { e.preventDefault(); talk(); } });
 // la jaula más cercana: estando dentro de ella o frente a su puerta
 function nearestCage() {
   const p = player.pos; let best = null, bd = Infinity;
@@ -499,6 +499,7 @@ updateCamera(0, true);
 render();
 measureReserved(); updateGoal();
 document.body.classList.add('ready');
+if (window.__bootReady) window.__bootReady();   // listo: el cargador sale del árbol accesible y el HUD recupera el foco (la portada vuelve a aislarlo)
 setTimeout(() => { const b = $('boot'); if (b) b.remove(); }, 900);
 requestAnimationFrame((n) => { last = n; frame(n); });
 
@@ -572,12 +573,22 @@ if (document.fullscreenEnabled) {
 // La portada aparece al abrir el juego: Continuar / Jugar, Nueva partida, Cómo jugar y Ajustes. Su primer toque arranca la música.
 var titleOn = true, titleCam = false;
 var titleCage = world.cages.find((c) => c.species.id === 'fenix') || world.cages[0] || null;   // la portada mira al fénix (y al dragón y al gato de brasa, sus vecinos)
+// Controles del mundo (no la portada): inertes mientras la portada, un panel o un combate estén activos. Cerrar un panel con la
+// portada aún abierta no debe devolverles el foco; panels.setInert avisa por hooks.afterInert y se vuelve a calcular aquí.
+const WORLD_UI = ['labels', 'zone', 'rot', 'coins', 'goal', 'act', 'esc', 'esc-panel', 'cam', 'cam-panel', 'fs', 'hint', 'menu', 'toast'].map($);
+function syncWorldInert() {
+  const worldDisabled = titleOn || panels.isOpen() || battle.active;
+  for (const x of WORLD_UI) if (x) { if (worldDisabled) x.setAttribute('inert', ''); else x.removeAttribute('inert'); }
+  const t = $('title'); if (t) { if (panels.isOpen()) t.setAttribute('inert', ''); else t.removeAttribute('inert'); }
+}
+panels.hooks.afterInert = syncWorldInert;
 function showTitle(on) {
   titleOn = on; const t = $('title'); t.hidden = !on; document.body.classList.toggle('title-on', on);
+  syncWorldInert();
   if (on) {
     paintTitle();
     if (!coarse) setTimeout(() => { if (titleOn) $('t-play').focus({ preventScroll: true }); }, 60);
-  } else { updateGoal(); measureReserved(); }
+  } else { updateGoal(); measureReserved(); if (!panels.isOpen() && !coarse) { const c = $('gl'); if (c && !(document.activeElement && document.activeElement !== document.body && document.activeElement.closest('[data-ui]'))) c.focus({ preventScroll: true }); } }
 }
 function paintTitle() {
   const has = G.hasGame();

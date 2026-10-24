@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <script>
 /* Puente de mudanza (2026-10-22): jetflow.jetgames.fun -> jetgames.fun/flow/. El index viejo del subdominio
    manda todo su localStorage en #jet-migrar=<base64 de JSON>; aquí se importa solo lo que aún no existe. */
@@ -82,7 +82,21 @@ button,a{touch-action:manipulation}
 html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:Poppins,system-ui,sans-serif;overflow:hidden;overscroll-behavior:none}
 #cv{position:fixed;left:0;top:0;width:100%;height:100%;display:block;touch-action:none;outline:none}
 #probe{position:fixed;left:0;top:0;visibility:hidden;pointer-events:none;padding:var(--sat) var(--sar) var(--sab) var(--sal)}
-.scr{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;padding:calc(14px + var(--sat)) calc(14px + var(--sar)) calc(14px + var(--sab)) calc(14px + var(--sal));background:rgba(7,3,14,.62);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);z-index:10;overflow-y:auto;touch-action:pan-y}
+/* Controles reales del HUD (pausa y liberar/acelerar) sobre el lienzo: el dibujo queda en el canvas, el botón DOM aporta foco, nombre y estado (RSP-FLOW-02) */
+#hudDom{position:fixed;inset:0;pointer-events:none;z-index:5}
+#hudDom[hidden]{display:none}
+#hudDom button{position:absolute;pointer-events:auto;min-width:44px;min-height:44px;margin:0;padding:0;border:0;border-radius:14px;background:transparent;color:transparent;font-size:0;cursor:pointer;touch-action:manipulation}
+#hudDom button:disabled{cursor:default}
+#hudDom button:focus-visible{outline:2px solid var(--cyan);outline-offset:3px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+#review{position:fixed;left:50%;bottom:calc(16px + var(--sab));transform:translateX(-50%);z-index:12;display:none}
+#review.on{display:block}
+#review .btn{width:auto;margin:0;padding:0 22px}
+.zone{margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+.btn.danger{border-color:rgba(255,77,109,.5);color:#ffb3c1;background:rgba(255,77,109,.1)}
+.btn.danger:hover{background:rgba(255,77,109,.18);border-color:rgba(255,77,109,.8)}
+.status{min-height:1.2em;margin:6px 0 0;font:500 12px 'JetBrains Mono',monospace;color:var(--dim);text-align:center}
+.scr{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;padding:calc(14px + var(--sat)) calc(14px + var(--sar)) calc(14px + var(--sab)) calc(14px + var(--sal));background:rgba(7,3,14,.62);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);z-index:10;overflow-y:auto;touch-action:pan-y pinch-zoom}
 .scr.on{display:flex;animation:fade .22s ease}
 .scr.lite{background:rgba(7,3,14,.35);-webkit-backdrop-filter:none;backdrop-filter:none}
 @keyframes fade{from{opacity:0}to{opacity:1}}
@@ -166,7 +180,8 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .seg button[aria-pressed="true"]{background:var(--violet);color:#fff}
 .seg button:focus-visible{outline:2px solid var(--cyan);outline-offset:1px}
 .foot .seg{margin-left:-2px}
-@media (max-width:359px){.grid{grid-template-columns:repeat(3,1fr)}.lvl{aspect-ratio:auto;min-height:54px}}
+/* a 3 columnas hasta 419 px (celdas de al menos 48 px de alto); 6 columnas desde 420 px (RSP-FLOW-01) */
+@media (max-width:419px){.grid{grid-template-columns:repeat(3,minmax(0,1fr))}.lvl{aspect-ratio:1.2;min-height:48px}}
 /* deja sitio al enlace de vuelta en las pantallas de menú */
 @media (max-width:739px){#sTitle,#sFinal{padding-top:calc(62px + var(--sat))}}
 @media (prefers-reduced-motion:reduce){.scr.on,.card{animation:none}}
@@ -175,6 +190,13 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 <body>
 <a id="back" href="https://jetgames.fun/" target="_top" rel="noopener" aria-label="Volver a JET//Games" data-ia="aBack">‹ JET<i>//</i>Games</a>
 <canvas id="cv" tabindex="-1" aria-label="Tablero de JET//Flow" data-ia="aBoard"></canvas>
+<div id="hudDom" hidden>
+ <button type="button" id="flow-pause" data-i="pauseBtn">Pausar</button>
+ <button type="button" id="flow-release" aria-describedby="flow-release-help">Liberar plasma</button>
+ <span id="flow-release-help" class="sr" data-i="plasmaHelp"></span>
+</div>
+<div id="review"><button type="button" class="btn cy" id="bBackResult" data-i="backResult">Volver al resultado</button></div>
+<div id="a11y" class="sr" aria-live="polite" aria-atomic="true"></div>
 <div id="probe"></div>
 
 <section class="scr" id="sTitle" aria-label="Menú principal" data-ia="mainMenu">
@@ -184,7 +206,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
   <p class="sub" data-i="sub">El plasma sale del reactor en segundos. Instala las tuberías antes de que llegue y no dejes que se derrame.</p>
   <button class="btn pri" id="bPlay">Jugar</button>
   <div class="menu2">
-   <button class="btn" id="bLevels" data-i="levels">Niveles</button>
+   <button class="btn" id="bLevels" data-i="levels">Ver niveles</button>
    <button class="btn" id="bHelp" data-i="howTo">Cómo jugar</button>
   </div>
   <button class="btn" id="bSet" style="margin-top:10px" data-i="settings">Ajustes</button>
@@ -192,14 +214,14 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
  </div>
 </section>
 
-<section class="scr" id="sLevels" aria-label="Niveles" data-ia="levels">
+<section class="scr" id="sLevels" role="dialog" aria-modal="true" aria-label="Niveles" data-ia="levels">
  <div class="card wide">
   <div class="top"><h2 data-i="circuits">Circuitos de la nave</h2><span class="chip" id="lvTot">★ 0</span><button class="x" data-back aria-label="Volver" data-ia="back">✕</button></div>
   <div id="lvList"></div>
  </div>
 </section>
 
-<section class="scr" id="sHelp" aria-label="Cómo jugar" data-ia="howTo">
+<section class="scr" id="sHelp" role="dialog" aria-modal="true" aria-label="Cómo jugar" data-ia="howTo">
  <div class="card wide">
   <div class="top"><h2 data-i="howTo">Cómo jugar</h2><button class="x" data-back aria-label="Volver" data-ia="back">✕</button></div>
   <canvas id="helpCv"></canvas>
@@ -214,51 +236,63 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
  </div>
 </section>
 
-<section class="scr" id="sSet" aria-label="Ajustes" data-ia="settings">
+<section class="scr" id="sSet" role="dialog" aria-modal="true" aria-labelledby="hSet" data-ia="settings">
  <div class="card">
-  <div class="top"><h2 data-i="settings">Ajustes</h2><button class="x" data-back aria-label="Volver" data-ia="back">✕</button></div>
-  <div class="set"><label for="rMus" data-i="music">Música</label><input type="range" id="rMus" min="0" max="100"><button class="tog" id="tMus" aria-label="Música" data-ia="music"></button></div>
+  <div class="top"><h2 id="hSet" data-i="settings">Ajustes</h2><button class="x" data-back aria-label="Volver" data-ia="back">✕</button></div>
+  <div class="set"><label for="rMus" data-i="music">Música</label><input type="range" id="rMus" min="0" max="100" data-focus><button class="tog" id="tMus" aria-label="Música" data-ia="music"></button></div>
   <div class="set"><label for="rSfx" data-i="sfx">Efectos</label><input type="range" id="rSfx" min="0" max="100"><button class="tog" id="tSfx" aria-label="Efectos" data-ia="sfx"></button></div>
   <div class="set"><label data-i="vibration">Vibración</label><button class="tog" id="tVib" aria-label="Vibración" data-ia="vibration"></button></div>
   <div class="set"><label data-i="language">Idioma</label><div class="seg" role="group" aria-label="Idioma" data-ia="language"><button type="button" data-lang="es" lang="es">ES</button><button type="button" data-lang="en" lang="en">EN</button></div></div>
-  <button class="btn" id="bReset" style="margin-top:14px">Borrar progreso</button>
   <button class="btn pri" data-back data-i="done">Listo</button>
+  <div class="zone">
+   <button class="btn danger" id="bReset" data-i="reset">Borrar progreso</button>
+   <p class="status" id="resetStatus" role="status"></p>
+  </div>
  </div>
 </section>
 
-<section class="scr" id="sPause" aria-label="Pausa" data-ia="pause">
+<section class="scr" id="sConfirm" role="alertdialog" aria-modal="true" aria-labelledby="cfT" aria-describedby="cfB" data-ia="confirm">
+ <div class="card">
+  <h2 class="res-t" id="cfT" style="font-size:22px"></h2>
+  <p class="res-s" id="cfB" style="margin:8px 0 18px"></p>
+  <div class="row"><button class="btn" id="cfCancel" data-focus data-i="cancel">Cancelar</button><button class="btn danger" id="cfOk"></button></div>
+ </div>
+</section>
+
+<section class="scr" id="sPause" role="dialog" aria-modal="true" aria-labelledby="hPause" data-ia="pause">
  <div class="card">
   <div class="kick" id="pLv" style="margin-bottom:4px"></div>
-  <h2 style="font-size:26px;font-weight:800;margin-bottom:16px" data-i="pause">Pausa</h2>
-  <button class="btn pri" id="bResume" data-i="resume">Continuar</button>
+  <h2 id="hPause" style="font-size:26px;font-weight:800;margin-bottom:16px" data-i="pause">Pausa</h2>
+  <button class="btn pri" id="bResume" data-i="resume">Reanudar partida</button>
   <div class="menu2">
-   <button class="btn" id="bRestart" data-i="restart">Reiniciar</button>
-   <button class="btn" id="bPLevels" data-i="levels">Niveles</button>
+   <button class="btn" id="bRestart" data-i="restart">Reiniciar circuito</button>
+   <button class="btn" id="bPLevels" data-i="levels">Ver niveles</button>
    <button class="btn" id="bPHelp" data-i="howTo">Cómo jugar</button>
    <button class="btn" id="bPSet" data-i="settings">Ajustes</button>
   </div>
-  <button class="btn" id="bQuit" style="margin-top:10px" data-i="mainMenu">Menú principal</button>
+  <button class="btn" id="bQuit" style="margin-top:10px" data-i="toMenu">Volver al menú</button>
  </div>
 </section>
 
-<section class="scr lite" id="sIntro" aria-label="Inicio de nivel" data-ia="levelStart">
+<section class="scr lite" id="sIntro" role="dialog" aria-modal="true" aria-labelledby="iT" data-ia="levelStart">
  <div class="card">
   <div class="intro-n" id="iN"></div>
-  <div class="intro-t" id="iT"></div>
+  <h2 class="intro-t" id="iT"></h2>
   <div class="chips" id="iChips"></div>
   <div class="newtip" id="iTip"></div>
-  <button class="btn cy" id="bGo"><span data-i="start">Empezar</span> <small id="iKey" data-i="space">Espacio</small></button>
+  <button class="btn cy" id="bGo"><span data-i="start">Comenzar circuito</span> <small id="iKey" data-i="space">Espacio</small></button>
  </div>
 </section>
 
-<section class="scr" id="sResult" aria-label="Resultado" data-ia="result">
+<section class="scr" id="sResult" role="dialog" aria-modal="true" aria-labelledby="rT" aria-describedby="rS" data-ia="result">
  <div class="card">
-  <div class="res-t" id="rT"></div>
-  <div class="res-s" id="rS"></div>
+  <h2 class="res-t" id="rT"></h2>
+  <p class="res-s" id="rS"></p>
   <div class="stars" id="rStars"></div>
   <div class="lines" id="rLines"></div>
   <button class="btn pri" id="bNext">Siguiente</button>
-  <div class="row"><button class="btn" id="bRetry" data-i="retry">Reintentar</button><button class="btn" id="bRLevels" data-i="levels">Niveles</button></div>
+  <button class="btn" id="bInspect" data-i="inspectLeak">Revisar la fuga</button>
+  <div class="row"><button class="btn" id="bRetry" data-i="retry">Reintentar circuito</button><button class="btn" id="bRLevels" data-i="levels">Ver niveles</button></div>
  </div>
 </section>
 
@@ -269,7 +303,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
   <p class="sub" data-i="finSub">Reparaste los 36 circuitos. El reactor ronronea, el puente tiene luz y la tripulación te debe una.</p>
   <div class="chips" style="justify-content:center" id="fChips"></div>
   <button class="btn pri" id="bFLevels" data-i="moreStars">Mejorar estrellas</button>
-  <button class="btn" id="bFMenu" data-i="mainMenu">Menú principal</button>
+  <button class="btn" id="bFMenu" data-i="toMenu">Volver al menú</button>
  </div>
 </section>
 
@@ -362,28 +396,37 @@ const T={
   docTitle:'JET//Flow · Tuberías de la nave',
   desc:'Repara las tuberías de la nave antes de que salga el plasma. Un puzle de tuberías contrarreloj con 36 circuitos, para teléfono, tableta y computadora.',
   ogDesc:'Repara las tuberías de la nave antes de que salga el plasma.',
-  aBack:'Volver a JET//Games',aBoard:'Tablero de JET//Flow',mainMenu:'Menú principal',back:'Volver',
+  aBack:'Volver a JET//Games',aBoard:'Tablero de JET//Flow',mainMenu:'Menú principal',toMenu:'Volver al menú',back:'Volver',
   kick:'Tuberías de la nave · 36 circuitos',
   sub:'El plasma sale del reactor en segundos. Instala las tuberías antes de que llegue y no dejes que se derrame.',
-  play:'Jugar',cont:n=>'Continuar <small>circuito '+n+'</small>',levels:'Niveles',howTo:'Cómo jugar',settings:'Ajustes',stars:'Estrellas',language:'Idioma',
+  play:'Jugar',cont:n=>'Continuar partida <small>circuito '+n+'</small>',levels:'Ver niveles',howTo:'Cómo jugar',settings:'Ajustes',stars:'Estrellas',language:'Idioma',
   circuits:'Circuitos de la nave',
   tip1:'<b>Instala la pieza marcada AHORA</b> <span id="hCtl"></span>. Las piezas llegan en orden y no se giran.',
   tip2:'Cuando termina la cuenta, <b>el plasma sale del reactor</b> y avanza tubo por tubo. Si encuentra un hueco, se derrama.',
   tip3:'<b>Completa los tramos pedidos</b> antes del derrame. Desde el Laboratorio, el circuito debe terminar en el <b>motor</b>.',
   tip4:'Puedes <b>reemplazar</b> una pieza vacía: cuesta 50 puntos y un instante. Las soldadas y las que tienen plasma no se tocan.',
-  tip5:'<b>Puntos extra:</b> cruce usado dos veces +500, depósito +300, motor +1000. Con <b>Acelerar</b> cada tramo vale el doble. Cada pieza sin usar resta 50.',
+  tip5:'<b>Puntos extra:</b> cruce usado dos veces +500, depósito +300, motor +1000. Con <b>«Acelerar plasma»</b> cada tramo vale el doble. Cada pieza sin usar resta 50.',
   ctlTouch:'tocando cualquier casilla',ctlMouse:'con un clic o con flechas + Espacio',
-  gotIt:'Entendido',music:'Música',sfx:'Efectos',vibration:'Vibración',done:'Listo',
-  reset:'Borrar progreso',resetConfirm:'Toca otra vez para confirmar',resetDone:'Progreso borrado',
-  pause:'Pausa',resume:'Continuar',restart:'Reiniciar',
-  levelStart:'Inicio de nivel',start:'Empezar',space:'Espacio',
-  result:'Resultado',retry:'Reintentar',next:'Siguiente circuito',seeEnding:'Ver final',
+  gotIt:'Entendido',music:'Música',sfx:'Efectos',vibration:'Vibración',done:'Listo',cancel:'Cancelar',
+  reset:'Borrar progreso',resetDone:'Progreso borrado',
+  deleteTitle:'¿Borrar todo el progreso de JET//Flow?',deleteBody:'Se eliminarán tus circuitos completados, estrellas y récords guardados. Esta acción no se puede deshacer.',
+  pause:'Pausa',resume:'Reanudar partida',restart:'Reiniciar circuito',
+  restartTitle:'¿Reiniciar el circuito?',leaveTitle:'¿Salir del circuito?',discard:'Vas a perder los cambios de este intento.',
+  pauseBtn:'Pausar',release:'Liberar plasma',boost:'Acelerar plasma',boosting:'Plasma acelerado',
+  plasmaHelp:'Cuando el recorrido esté listo, tocá «Liberar plasma». Después podés acelerar el flujo para duplicar los puntos por tramo.',
+  curPiece:'Pieza actual',nextPiece:'Próxima pieza',cellAt:(f,c,w)=>'Fila '+f+', columna '+c+': '+w,
+  cellEmpty:'vacía',cellBlocked:'bloqueada',cellSrc:'reactor',cellExit:'motor',cellTank:'depósito',cellFixed:'pieza soldada',
+  pieceName:{H:'tubo horizontal',V:'tubo vertical',NE:'codo arriba-derecha',ES:'codo derecha-abajo',SW:'codo abajo-izquierda',WN:'codo izquierda-arriba',X:'cruce'},
+  placed:(w,f,c)=>'Instalada: '+w+' en fila '+f+', columna '+c,
+  inspectLeak:'Revisar la fuga',backResult:'Volver al resultado',
+  levelStart:'Inicio de nivel',start:'Comenzar circuito',space:'Espacio',
+  result:'Resultado',retry:'Reintentar circuito',replay:'Repetir circuito',next:'Siguiente circuito',seeEnding:'Ver final',
   ending:'Final',finKick:'Puente de mando · circuito 36',finTitle:'¡Nave a salvo!',
   finSub:'Reparaste los 36 circuitos. El reactor ronronea, el puente tiene luz y la tripulación te debe una.',
   moreStars:'Mejorar estrellas',points:'Puntos',
   sect:['Bodega de carga','Sala de máquinas','Laboratorio','Invernadero orbital','Núcleo del reactor','Puente de mando'],
   tips:{
-   0:'Toca la casilla que <b>brilla</b> para instalar la pieza marcada <b>AHORA</b>. Con los tramos listos, toca <b>Acelerar</b>: cada tramo vale el doble.',
+   0:'Toca la casilla que <b>brilla</b> para instalar la pieza marcada <b>AHORA</b>. Cuando el recorrido esté listo, tocá <b>«Liberar plasma»</b>. Después podés acelerar el flujo para duplicar los puntos por tramo.',
    2:'Llegan los <b>cruces</b> (+500 si el flujo pasa dos veces por el mismo) y los primeros <b>bloqueos</b>: ahí no se puede instalar nada.',
    6:'<b>Piezas soldadas</b>: vienen fijas, no se reemplazan, pero el flujo pasa por ellas.',
    8:'<b>Depósitos</b>: tardan en llenarse y valen +300. Te dan tiempo para seguir construyendo.',
@@ -395,43 +438,52 @@ const T={
   circuitN:n=>'CIRCUITO '+n,circuitW:n=>'Circuito '+n,
   goEngine:'Lleva el flujo hasta el motor',connect:n=>'Conecta '+n+' '+pl(n,'tramo','tramos'),
   cTiles:'Tramos',cFlowIn:'Flujo en',cBest:'Récord',
-  rOk:'¡Circuito completo!',rExit:'¡Motor en marcha!',rShort:'¡Fuga de plasma!',rNoexit:'¡No llegó al motor!',rEarly:'¡Llegó al motor antes de tiempo!',
-  sShort:n=>(n===1?'Faltó 1 tramo':'Faltaron '+n+' tramos')+'. El plasma se derramó antes.',
+  rOk:'¡Circuito completo!',rExit:'¡Motor en marcha!',rShort:'El plasma se escapó del circuito.',rNoexit:'El plasma no llegó al motor.',rEarly:'Faltan tramos para llegar al objetivo.',
+  sShort:n=>n===1?'Faltó 1 tramo para completar el objetivo.':'Faltaron '+n+' tramos para completar el objetivo.',
   sNoexit:'Completaste los tramos, pero el circuito debe terminar en el motor.',
-  sEarly:(a,b)=>'El flujo llegó al motor con '+a+' de '+b+' tramos.',
+  sEarly:(a,b)=>'El plasma llegó al motor antes de completar los tramos requeridos ('+a+' de '+b+').',
   lTiles:(a,b)=>'Tramos '+a+' / '+b,lCross:n=>'Cruces dobles × '+n,lEngine:'Motor',lRepl:n=>'Reemplazos × '+n,lUnused:n=>'Piezas sin usar × '+n,lTotal:'Total',lRecord:'RÉCORD',
   hCircuit:'CIRCUITO',hScore:'PUNTOS',hBest:'RÉCORD',hTiles:'TRAMOS',hFlowIn:'FLUJO EN',hBoosted:'ACELERADO',hFlowing:'FLUYENDO',
-  hSealed:'VÁLVULA SELLADA',hEngine:'MOTOR EN MARCHA',hSpill:'DERRAME',hPieces:'PIEZAS',hNow:'AHORA',hRelease:'LIBERAR',hBoost:'ACELERAR',
+  hSealed:'VÁLVULA SELLADA',hEngine:'MOTOR EN MARCHA',hSpill:'DERRAME',hPieces:'PIEZAS',hNow:'AHORA',hRelease:'LIBERAR PLASMA',hBoost:'ACELERAR PLASMA',
   fBoosted:'ACELERADO ×2',fCross:'CRUCE DOBLE +500',fTilesDone:'¡TRAMOS COMPLETOS!',fEngine:'MOTOR +1000',fMissing:n=>n===1?'FALTA 1 TRAMO':'FALTAN '+n+' TRAMOS',
   fFull:'CON PLASMA',fFixed:'SOLDADA',fBlocked:'BLOQUEADO',
-  gReadyRelease:'¡LISTO! TOCA LIBERAR: ×2',gTapBoost:'TOCA ACELERAR: ×2',gSwapHere:'CÁMBIALA: TOCA AQUÍ',gTapSwap:'TOCA AQUÍ PARA CAMBIARLA',
+  gReadyRelease:'¡LISTO! LIBERAR PLASMA: ×2',gTapBoost:'ACELERAR PLASMA: ×2',gSwapHere:'CÁMBIALA: TOCA AQUÍ',gTapSwap:'TOCA AQUÍ PARA CAMBIARLA',
   gJoin:'TOCA AQUÍ: UNE LOS TUBOS',gFurther:'VA AQUÍ, MÁS ADELANTE',gOneMore:'UN TRAMO MÁS: MÁS PUNTOS',gTap:'TOCA AQUÍ',gStep:'VA AQUÍ, UN PASO ADELANTE',gPark:'NO SIRVE AÚN: DÉJALA AQUÍ'},
  en:{
   docTitle:'JET//Flow · Ship Pipes',
   desc:'Fix the ship’s pipes before the plasma comes out. A race-against-the-clock pipe puzzle with 36 circuits, for phone, tablet and computer.',
   ogDesc:'Fix the ship’s pipes before the plasma comes out.',
-  aBack:'Back to JET//Games',aBoard:'JET//Flow board',mainMenu:'Main menu',back:'Back',
+  aBack:'Back to JET//Games',aBoard:'JET//Flow board',mainMenu:'Main menu',toMenu:'Back to menu',back:'Back',
   kick:'Ship pipes · 36 circuits',
   sub:'Plasma leaves the reactor in seconds. Lay the pipes before it gets there, and don’t let it spill.',
-  play:'Play',cont:n=>'Continue <small>circuit '+n+'</small>',levels:'Levels',howTo:'How to play',settings:'Settings',stars:'Stars',language:'Language',
+  play:'Play',cont:n=>'Continue game <small>circuit '+n+'</small>',levels:'View levels',howTo:'How to play',settings:'Settings',stars:'Stars',language:'Language',
   circuits:'Ship circuits',
   tip1:'<b>Place the piece marked NOW</b> <span id="hCtl"></span>. Pieces arrive in order and can’t be rotated.',
   tip2:'When the countdown ends, <b>plasma leaves the reactor</b> and moves pipe by pipe. If it finds a gap, it spills.',
   tip3:'<b>Complete the required sections</b> before it spills. From the Laboratory on, the circuit must end at the <b>engine</b>.',
   tip4:'You can <b>replace</b> an empty piece: it costs 50 points and a moment. Welded pieces and pieces with plasma can’t be touched.',
-  tip5:'<b>Bonus:</b> crossing used twice +500, tank +300, engine +1,000. With <b>Boost</b>, every section is worth double. Each unused piece costs 50.',
+  tip5:'<b>Bonus:</b> crossing used twice +500, tank +300, engine +1,000. With <b>“Speed up plasma”</b>, every section is worth double. Each unused piece costs 50.',
   ctlTouch:'by tapping any square',ctlMouse:'with a click, or with the arrow keys + Space',
-  gotIt:'Got it',music:'Music',sfx:'Sound effects',vibration:'Vibration',done:'Done',
-  reset:'Reset progress',resetConfirm:'Tap again to confirm',resetDone:'Progress reset',
-  pause:'Paused',resume:'Resume',restart:'Restart',
-  levelStart:'Level start',start:'Start',space:'Space',
-  result:'Result',retry:'Retry',next:'Next circuit',seeEnding:'See the ending',
+  gotIt:'Got it',music:'Music',sfx:'Sound effects',vibration:'Vibration',done:'Done',cancel:'Cancel',
+  reset:'Delete progress',resetDone:'Progress deleted',
+  deleteTitle:'Delete all progress in JET//Flow?',deleteBody:'Your completed circuits, stars and saved best scores will be deleted. This cannot be undone.',
+  pause:'Paused',resume:'Resume game',restart:'Restart circuit',
+  restartTitle:'Restart the circuit?',leaveTitle:'Leave the circuit?',discard:'You’ll lose the changes made in this attempt.',
+  pauseBtn:'Pause',release:'Release plasma',boost:'Speed up plasma',boosting:'Plasma sped up',
+  plasmaHelp:'When the route is ready, select “Release plasma”. You can then speed up the flow to double the points per section.',
+  curPiece:'Current piece',nextPiece:'Next piece',cellAt:(f,c,w)=>'Row '+f+', column '+c+': '+w,
+  cellEmpty:'empty',cellBlocked:'blocked',cellSrc:'reactor',cellExit:'engine',cellTank:'tank',cellFixed:'welded piece',
+  pieceName:{H:'horizontal pipe',V:'vertical pipe',NE:'elbow up-right',ES:'elbow right-down',SW:'elbow down-left',WN:'elbow left-up',X:'crossing'},
+  placed:(w,f,c)=>'Placed: '+w+' at row '+f+', column '+c,
+  inspectLeak:'Inspect the leak',backResult:'Back to results',
+  levelStart:'Level start',start:'Start circuit',space:'Space',
+  result:'Result',retry:'Retry circuit',replay:'Replay circuit',next:'Next circuit',seeEnding:'See the ending',
   ending:'Ending',finKick:'Command bridge · circuit 36',finTitle:'Ship saved!',
   finSub:'You repaired all 36 circuits. The reactor is humming, the bridge has power and the crew owes you one.',
   moreStars:'Earn more stars',points:'Points',
   sect:['Cargo hold','Engine room','Laboratory','Orbital greenhouse','Reactor core','Command bridge'],
   tips:{
-   0:'Tap the <b>glowing</b> square to place the piece marked <b>NOW</b>. Once the sections are done, tap <b>Boost</b>: every section is worth double.',
+   0:'Tap the <b>glowing</b> square to place the piece marked <b>NOW</b>. When the route is ready, select <b>“Release plasma”</b>. You can then speed up the flow to double the points per section.',
    2:'Here come the <b>crossings</b> (+500 if the flow passes through the same one twice) and the first <b>blocks</b>: nothing can be placed there.',
    6:'<b>Welded pieces</b>: they come fixed and can’t be replaced, but the flow runs through them.',
    8:'<b>Tanks</b>: they take a while to fill and are worth +300. They give you time to keep building.',
@@ -443,16 +495,16 @@ const T={
   circuitN:n=>'CIRCUIT '+n,circuitW:n=>'Circuit '+n,
   goEngine:'Bring the flow to the engine',connect:n=>'Connect '+n+' '+pl(n,'section','sections'),
   cTiles:'Sections',cFlowIn:'Flow in',cBest:'Best',
-  rOk:'Circuit complete!',rExit:'Engine running!',rShort:'Plasma leak!',rNoexit:'It didn’t reach the engine!',rEarly:'It reached the engine too soon!',
-  sShort:n=>n+' '+pl(n,'section','sections')+' short. The plasma spilled first.',
+  rOk:'Circuit complete!',rExit:'Engine running!',rShort:'Plasma leaked out of the circuit.',rNoexit:'Plasma did not reach the engine.',rEarly:'More sections are needed to reach the target.',
+  sShort:n=>n===1?'You needed 1 more section to reach the target.':'You needed '+n+' more sections to reach the target.',
   sNoexit:'You completed the sections, but the circuit must end at the engine.',
-  sEarly:(a,b)=>'The flow reached the engine with '+a+' of '+b+' sections.',
+  sEarly:(a,b)=>'Plasma reached the engine before the required sections were completed ('+a+' of '+b+').',
   lTiles:(a,b)=>'Sections '+a+' / '+b,lCross:n=>'Double crossings × '+n,lEngine:'Engine',lRepl:n=>'Replacements × '+n,lUnused:n=>'Unused pieces × '+n,lTotal:'Total',lRecord:'NEW BEST',
   hCircuit:'CIRCUIT',hScore:'SCORE',hBest:'BEST',hTiles:'SECTIONS',hFlowIn:'FLOW IN',hBoosted:'BOOSTED',hFlowing:'FLOWING',
-  hSealed:'VALVE SEALED',hEngine:'ENGINE RUNNING',hSpill:'SPILL',hPieces:'PIECES',hNow:'NOW',hRelease:'RELEASE',hBoost:'BOOST',
+  hSealed:'VALVE SEALED',hEngine:'ENGINE RUNNING',hSpill:'SPILL',hPieces:'PIECES',hNow:'NOW',hRelease:'RELEASE PLASMA',hBoost:'SPEED UP PLASMA',
   fBoosted:'BOOSTED ×2',fCross:'CROSSING ×2 +500',fTilesDone:'SECTIONS COMPLETE!',fEngine:'ENGINE +1,000',fMissing:n=>n+' '+pl(n,'SECTION','SECTIONS')+' SHORT',
   fFull:'HAS PLASMA',fFixed:'WELDED',fBlocked:'BLOCKED',
-  gReadyRelease:'READY! TAP RELEASE: ×2',gTapBoost:'TAP BOOST: ×2',gSwapHere:'SWAP IT: TAP HERE',gTapSwap:'TAP HERE TO SWAP IT',
+  gReadyRelease:'READY! RELEASE PLASMA: ×2',gTapBoost:'SPEED UP PLASMA: ×2',gSwapHere:'SWAP IT: TAP HERE',gTapSwap:'TAP HERE TO SWAP IT',
   gJoin:'TAP HERE: JOIN THE PIPES',gFurther:'IT GOES HERE, FURTHER ON',gOneMore:'ONE MORE SECTION: MORE POINTS',gTap:'TAP HERE',gStep:'IT GOES HERE, ONE STEP AHEAD',gPark:'NOT USEFUL YET: LEAVE IT HERE'}
 };
 let LANG=window.JETIdioma?JETIdioma.get():'es';if(!T[LANG])LANG='es';
@@ -774,13 +826,33 @@ function flange(g,s,d){
  g.fillStyle='#2a2440';g.beginPath();g.arc(-w*.36,-h+dp/2,s*.022,0,7);g.arc(w*.36,-h+dp/2,s*.022,0,7);g.fill();
  g.restore();
 }
-function drawTube(g,s,a,b,flanges){
+// recorrido paralelo al eje del tubo, desplazado hacia la luz (arriba-izquierda): sirve para el brillo fino de la arista
+function tubePathOff(g,s,a,b,off){
+ const A=ePt(s,a),Bp=ePt(s,b);g.beginPath();
+ if(a<0||b<0||a===OPP(b)){const dx=Bp[0]-A[0],dy=Bp[1]-A[1],len=Math.hypot(dx,dy)||1;let nx=-dy/len,ny=dx/len;if(nx+ny>0){nx=-nx;ny=-ny;}
+  g.moveTo(A[0]+nx*off,A[1]+ny*off);g.lineTo(Bp[0]+nx*off,Bp[1]+ny*off);return;}
+ const h=s/2,cx=h+(DX[a]+DX[b])*h,cy=h+(DY[a]+DY[b])*h,r=(cx<=h||cy<=h)?h-off:h+off;
+ const a0=Math.atan2(A[1]-cy,A[0]-cx),a1=Math.atan2(Bp[1]-cy,Bp[0]-cx);let da=a1-a0;while(da>Math.PI)da-=2*Math.PI;while(da<-Math.PI)da+=2*Math.PI;
+ g.arc(cx,cy,r,a0,a0+da,da<0);
+}
+/* Material del tubo (VIS-FLOW-01): borde exterior oscuro de 1,5 px CSS (#090610), cuerpo frío y un solo brillo fino en la arista.
+   El trazado (tubePath) y los puertos no cambian; `shadow` añade la sombra corta del puente superior de los cruces. */
+function drawTube(g,s,a,b,flanges,shadow){
  g.lineCap='butt';g.lineJoin='round';
  g.save();g.translate(0,s*.035);tubePath(g,s,a,b);g.strokeStyle='rgba(0,0,0,.42)';g.lineWidth=s*.5;g.stroke();g.restore();
- const L=[[.46,'#06030c'],[.40,'#3b4062'],[.32,'#5b6386'],[.24,'#8a93b9'],[.19,'#0b0716']];
- for(const [w,c] of L){tubePath(g,s,a,b);g.strokeStyle=c;g.lineWidth=s*w;g.stroke();}
+ if(shadow){g.save();g.shadowColor='rgba(0,0,0,.45)';g.shadowBlur=3;g.shadowOffsetY=2;tubePath(g,s,a,b);g.strokeStyle='#090610';g.lineWidth=s*.40+3;g.stroke();g.restore();}
+ const L=[[s*.40+3,'#090610'],[s*.40,'#3b4062'],[s*.32,'#5b6386'],[s*.24,'#8a93b9'],[s*.19,'#0b0716']];
+ for(const [w,c] of L){tubePath(g,s,a,b);g.strokeStyle=c;g.lineWidth=w;g.stroke();}
  tubePath(g,s,a,b);g.strokeStyle='rgba(119,0,244,.38)';g.lineWidth=s*.06;g.stroke();
+ tubePathOff(g,s,a,b,s*.165);g.strokeStyle='rgba(183,191,220,.8)';g.lineWidth=1;g.stroke();
  if(flanges!==false){if(a>=0)flange(g,s,a);if(b>=0)flange(g,s,b);}
+}
+// flecha pequeña junto al puerto del reactor/motor: muestra la orientación del puerto ya visible, sin tapar el canal (VIS-FLOW-02)
+function portArrow(g,s,d,inward){
+ const h=s/2;g.save();g.translate(h,h);g.rotate(d*Math.PI/2);
+ const ax=s*.34,ay=-h+s*.19,w=s*.12,l=s*.18,k=inward?1:-1;
+ g.fillStyle='#D9E2F2';g.beginPath();g.moveTo(ax,ay+k*l/2);g.lineTo(ax-w/2,ay-k*l/2);g.lineTo(ax+w/2,ay-k*l/2);g.closePath();g.fill();
+ g.restore();
 }
 function plate(g,s,col){
  const i=s*.06;rr(g,i,i,s-2*i,s-2*i,s*.12);g.fillStyle='#241a3b';g.fill();g.strokeStyle=col||'rgba(253,216,53,.5)';g.lineWidth=Math.max(1,s*.025);g.stroke();
@@ -795,7 +867,7 @@ function pipeSprite(m,s,fixed){
   else{const d=dirsOf(m);drawTube(g,s,d[0],d[1]);}
  });
 }
-function crossTop(s){return sprite('Xv',s,(g,s)=>{drawTube(g,s,0,2);
+function crossTop(s){return sprite('Xv',s,(g,s)=>{drawTube(g,s,0,2,undefined,true);
  g.fillStyle='#06030c';g.fillRect(s*.25,s*.29,s*.5,s*.05);g.fillRect(s*.25,s*.66,s*.5,s*.05);
  const gr=g.createLinearGradient(s*.25,0,s*.75,0);gr.addColorStop(0,'#4a5072');gr.addColorStop(.5,'#aab2d2');gr.addColorStop(1,'#4a5072');g.fillStyle=gr;g.fillRect(s*.26,s*.3,s*.48,s*.035);g.fillRect(s*.26,s*.665,s*.48,s*.035);});}
 function tankGeom(s,horiz){const L=s*.84,T=s*.62,wl=s*.6,wt=s*.3;return horiz?{x:(s-L)/2,y:(s-T)/2,w:L,h:T,wx:(s-wl)/2,wy:(s-wt)/2,ww:wl,wh:wt}:{x:(s-T)/2,y:(s-L)/2,w:T,h:L,wx:(s-wt)/2,wy:(s-wl)/2,ww:wt,wh:wl};}
@@ -813,7 +885,7 @@ function tankSprite(m,s){
  });
 }
 function srcSprite(d,s){
- return sprite('S'+d,s,(g,s)=>{plate(g,s,'rgba(119,0,244,.7)');drawTube(g,s,-1,d,true);
+ return sprite('S'+d,s,(g,s)=>{plate(g,s,'rgba(119,0,244,.7)');drawTube(g,s,-1,d,true);portArrow(g,s,d,false);
   const h=s/2;g.fillStyle='rgba(0,0,0,.45)';g.beginPath();g.arc(h,h+s*.04,s*.37,0,7);g.fill();
   const gr=g.createRadialGradient(h-s*.1,h-s*.12,s*.04,h,h,s*.37);gr.addColorStop(0,'#c9d0ea');gr.addColorStop(1,'#33385a');
   g.fillStyle=gr;g.beginPath();g.arc(h,h,s*.36,0,7);g.fill();g.strokeStyle='#06030c';g.lineWidth=Math.max(1,s*.02);g.stroke();
@@ -823,7 +895,7 @@ function srcSprite(d,s){
  });
 }
 function exitSprite(d,s){
- return sprite('E'+d,s,(g,s)=>{plate(g,s,'rgba(0,242,207,.7)');drawTube(g,s,d,-1,true);
+ return sprite('E'+d,s,(g,s)=>{plate(g,s,'rgba(0,242,207,.7)');drawTube(g,s,d,-1,true);portArrow(g,s,d,true);
   const h=s/2;g.fillStyle='rgba(0,0,0,.45)';g.beginPath();g.arc(h,h+s*.04,s*.38,0,7);g.fill();
   const gr=g.createRadialGradient(h-s*.1,h-s*.12,s*.04,h,h,s*.38);gr.addColorStop(0,'#d8def2');gr.addColorStop(1,'#2e3352');
   g.fillStyle=gr;g.beginPath();g.arc(h,h,s*.37,0,7);g.fill();g.strokeStyle='#06030c';g.lineWidth=Math.max(1,s*.02);g.stroke();
@@ -837,7 +909,10 @@ function cellBg(g,x,y,s,v){
  g.fillStyle='#0d0819';g.fillRect(x,y,s,s);
  const gr=g.createLinearGradient(x,y,x+s,y+s);gr.addColorStop(0,'#1e1535');gr.addColorStop(1,'#140d26');
  g.fillStyle=gr;rr(g,x+1.2,y+1.2,s-2.4,s-2.4,s*.07);g.fill();
- g.strokeStyle='rgba(255,255,255,.05)';g.lineWidth=1;g.stroke();
+ // borde interior más oscuro y junta continua de 1 px (#473B61 al 65 %) entre casillas (VIS-FLOW-01)
+ g.strokeStyle='rgba(0,0,0,.35)';g.lineWidth=1;g.stroke();
+ g.strokeStyle='rgba(71,59,97,.65)';g.lineWidth=1;g.strokeRect(x+.5,y+.5,s-1,s-1);
+ if(s<34)return;   // casilla chica: sin remaches ni detalle decorativo
  g.fillStyle='#2b2349';for(const [a,b] of [[.1,.1],[.9,.1],[.1,.9],[.9,.9]]){g.beginPath();g.arc(x+s*a,y+s*b,s*.025,0,7);g.fill();}
  g.strokeStyle='rgba(0,0,0,.28)';g.lineWidth=Math.max(1,s*.025);
  if(v===1){for(let k=0;k<3;k++){g.beginPath();g.moveTo(x+s*.34,y+s*(.4+k*.1));g.lineTo(x+s*.66,y+s*(.4+k*.1));g.stroke();}}
@@ -918,7 +993,7 @@ function buildBoardCache(V,ledsOn){
    Estado del juego
    ===================================================================== */
 const G={phase:'menu',paused:false,li:0,lv:null,B:null,V:null,sim:null,queue:[],bag:[],score:0,cd:0,cdMax:1,fast:false,cool:0,
- cur:{x:0,y:0},showCur:false,astro:null,fx:[],texts:[],spill:null,alarm:0,endT:0,outcome:null,st:null,shake:0,lastTick:0,T:0,flash:0,exitWon:false};
+ cur:{x:0,y:0},showCur:false,astro:null,fx:[],texts:[],spill:null,alarm:0,endT:0,outcome:null,st:null,shake:0,lastTick:0,T:0,flash:0,exitWon:false,review:false,tickAt:null};
 function mkAstro(){return {x:0,y:0,sx:0,sy:0,tx:0,ty:0,mt:1,md:.2,f:'d',face:'d',ph:0,mv:0,push:0,pushT:0,mood:0,idle:0};}
 function astroGo(a,px,py,face){a.sx=a.x;a.sy=a.y;a.tx=px;a.ty=py;a.mt=0;const d=Math.hypot(px-a.x,py-a.y);a.md=clamp(d/1100,.07,.26);a.face=face;
  if(d>2)a.f=Math.abs(px-a.x)>Math.abs(py-a.y)*.6?(px>a.x?'r':'l'):(py>a.y?'d':'u');a.idle=0;}
@@ -984,11 +1059,27 @@ function layout(){
  if(G.B){const tr=land?G.B.rows>G.B.cols:G.B.cols>G.B.rows;G.V=makeView(G.B,L.area[0],L.area[1],L.area[2],L.area[3],tr,96);buildBoardCache(G.V);
   if(G.astro&&G.phase!=='menu'){const sp=astroSpot(G.V,G.cur.x,G.cur.y);G.astro.x=G.astro.tx=sp[0];G.astro.y=G.astro.ty=sp[1];G.astro.mt=G.astro.md;}}
  DEMO.layout();
+ hudKey='';syncHudDom();if(G.review)placeReview();
+}
+/* Botones DOM del HUD: misma posición y tamaño que LY.pause / LY.fast; nombre y estado real del segundo (RSP-FLOW-02, PLAY-FLOW-05) */
+let hudKey='';
+function syncHudDom(){
+ const hd=$('hudDom');if(!LY||!hd)return;
+ const inGame=!!G.B&&!curScr&&!G.review&&(G.phase==='count'||G.phase==='flow'||G.phase==='ending');
+ const act=G.phase==='count'||(G.phase==='flow'&&!G.fast);
+ const key=[inGame,G.phase,G.fast,LANG,W,H,SAFE.t,SAFE.l].join('|');if(key===hudKey)return;hudKey=key;
+ hd.hidden=!inGame;if(!inGame)return;
+ const pb=$('flow-pause'),fb=$('flow-release');
+ const set=(el,r)=>{el.style.left=r.x+'px';el.style.top=r.y+'px';el.style.width=r.w+'px';el.style.height=r.h+'px';};
+ set(pb,LY.pause);set(fb,LY.fast);
+ pb.textContent=TX('pauseBtn');
+ const lbl=G.phase==='count'?TX('release'):(G.phase==='flow'&&G.fast)?TX('boosting'):TX('boost');
+ fb.textContent=lbl;fb.disabled=!act;fb.setAttribute('aria-disabled',String(!act));
 }
 let BG=null;
 function buildBg(){
  const c=document.createElement('canvas');c.width=Math.ceil(W*DPR);c.height=Math.ceil(H*DPR);const g=c.getContext('2d');g.scale(DPR,DPR);
- const gr=g.createRadialGradient(W*.5,-H*.1,0,W*.5,-H*.1,Math.max(W,H)*1.1);gr.addColorStop(0,'#2a1250');gr.addColorStop(.55,'#0d0619');gr.addColorStop(1,'#07030f');
+ const gr=g.createRadialGradient(W*.5,-H*.1,0,W*.5,-H*.1,Math.max(W,H)*1.1);gr.addColorStop(0,'#2a1250');gr.addColorStop(.55,'#0d0619');gr.addColorStop(1,'#0a0512');
  g.fillStyle=gr;g.fillRect(0,0,W,H);
  const r=mulberry32(42);
  for(const [x,y,rad,col] of [[W*.15,H*.8,Math.max(W,H)*.45,'rgba(0,242,207,.05)'],[W*.9,H*.3,Math.max(W,H)*.5,'rgba(119,0,244,.10)']]){const ng=g.createRadialGradient(x,y,0,x,y,rad);ng.addColorStop(0,col);ng.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=ng;g.fillRect(0,0,W,H);}
@@ -1016,7 +1107,15 @@ function tileTime(c){
  const base=G.lv.P.tile*Math.max(.72,Math.pow(.986,G.sim.filled));
  const k=c.k==='s'?.55:c.k==='x'?.45:c.tk?2.8:1;return base*k*(G.fast?.125:1);
 }
-function beginPlay(){if(G.phase!=='intro')return;hideScreens();G.phase='count';AU.int(2);cv.focus({preventScroll:true});}
+function beginPlay(){if(G.phase!=='intro')return;hideScreens();G.phase='count';AU.int(2);cv.focus({preventScroll:true});
+ announce(TX('curPiece')+': '+pieceWord(G.queue[0])+'. '+TX('nextPiece')+': '+pieceWord(G.queue[1])+'.');}
+/* Salida accesible (PLAY-FLOW-05): anuncia casilla/pieza al mover el cursor o instalar, nunca por fotograma */
+let a11yTm=0;
+function announce(t){const el=$('a11y');if(!el)return;clearTimeout(a11yTm);a11yTm=setTimeout(()=>{el.textContent='';el.textContent=t;},80);}
+const pieceWord=k=>k?(TX('pieceName')[k]||k):'';
+function cellWord(x,y){const c=cellAt(G.B,x,y);if(!c)return '';
+ if(c.k==='s')return TX('cellSrc');if(c.k==='x')return TX('cellExit');if(c.k==='b')return TX('cellBlocked');
+ if(c.k==='p')return c.tk?TX('cellTank'):c.fx?TX('cellFixed'):pieceWord(c.p);return TX('cellEmpty');}
 function release(){
  if(G.paused)return;
  if(G.phase==='count'){G.cd=0;G.fast=true;startFlow();AU.int(4);}
@@ -1152,6 +1251,7 @@ function place(x,y){
   burst(cx,cy,14,'#9aa2c4',130,.5);}
  else AU.fx('place');
  c.k='p';c.p=G.queue.shift();c.fx=false;c.tk=false;c.ch=[];c.used=0;c.pt=arrive;G.queue.push(nextPiece());vib(12);
+ announce(TX('placed',pieceWord(c.p),y+1,x+1)+'. '+TX('curPiece')+': '+pieceWord(G.queue[0])+'.');
  return true;
 }
 function finish(){
@@ -1180,7 +1280,7 @@ function update(dt){
  if(G.astro)astroUpd(G.astro,dt);
  if(G.cool>0)G.cool-=dt;
  if(G.phase==='count'){
-  G.cd-=dt;const s=Math.ceil(G.cd);if(s<G.lastTick&&s<=3&&s>=1){AU.fx('tick',s);}G.lastTick=s;
+  G.cd-=dt;const s=Math.ceil(G.cd);if(s<G.lastTick){G.tickAt=G.T;if(s<=3&&s>=1)AU.fx('tick',s);}G.lastTick=s;
   if(G.cd<=0){G.cd=0;startFlow();}
  }else if(G.phase==='flow'){G.sim.step(dt,tileTime);}
  else if(G.phase==='ending'){G.endT-=dt;if(G.spill)G.spill.t+=dt;if(G.endT<=0)finish();}
@@ -1214,27 +1314,32 @@ function drawBoard(c,V,T,o){
  const B=V.B,s=V.cs,tr=V.tr,col=o.fluid,front=o.sim&&!o.sim.done?o.sim.f:null;
  if(V.cache)c.drawImage(V.cache,V.ox-V.cachePad,V.oy-V.cachePad,V.cache.width/DPR,V.cache.height/DPR);
  // luces de las consolas
- for(const [x,y] of B.leds){const [px,py]=cellXY(V,x,y);const on=Math.sin(T*3+x*2+y)>0;c.fillStyle=on?'#3ddc84':'#173a26';c.beginPath();c.arc(px+s*.78,py+s*.72,s*.035,0,7);c.fill();}
+ for(const [x,y] of B.leds){const [px,py]=cellXY(V,x,y);const on=reduceMotion?((x+y)%2===0):Math.sin(T*3+x*2+y)>0;c.fillStyle=on?'#3ddc84':'#173a26';c.beginPath();c.arc(px+s*.78,py+s*.72,s*.035,0,7);c.fill();}
  for(let y=0;y<B.rows;y++)for(let x=0;x<B.cols;x++){
   const cl=cellAt(B,x,y);if(cl.k==='e'||cl.k==='b')continue;
   const [px,py]=cellXY(V,x,y);c.save();c.translate(px,py);
   if(cl.k==='s'){
    c.drawImage(srcSprite(sdir(cl.d,tr),s),0,0,s,s);
    const ch=cl.ch[0];if(ch)drawFluid(c,s,-1,sdir(ch.b,tr),ch.p,col,T,front&&front.ch===ch);
-   const h=s/2,pulse=.6+.4*Math.sin(T*(o.cdFrac!=null&&o.cdFrac<.3?14:5));
+   // pulso del origen: constante (0,8) con movimiento reducido (VIS-FLOW-02/04)
+   const h=s/2,pulse=reduceMotion?.8:.6+.4*Math.sin(T*(o.cdFrac!=null&&o.cdFrac<.3?14:5));
    const gr=c.createRadialGradient(h,h,0,h,h,s*.24);gr.addColorStop(0,'rgba(255,255,255,'+(.7*pulse)+')');gr.addColorStop(.4,'rgba('+col.rgb+','+(.85*pulse)+')');gr.addColorStop(1,'rgba('+col.rgb+',0)');
    c.fillStyle=gr;c.beginPath();c.arc(h,h,s*.24,0,7);c.fill();
-   if(o.cdFrac!=null&&o.cdFrac>0){c.strokeStyle=o.cdFrac<.3?'#ff4d6d':'#00f2cf';c.lineWidth=s*.06;c.lineCap='round';c.beginPath();c.arc(h,h,s*.42,-Math.PI/2,-Math.PI/2+Math.PI*2*o.cdFrac);c.stroke();}
+   // arco de cuenta: 0,05·s con borde oscuro de 1 px para que se lea sobre el origen
+   if(o.cdFrac!=null&&o.cdFrac>0){c.lineCap='round';c.beginPath();c.arc(h,h,s*.42,-Math.PI/2,-Math.PI/2+Math.PI*2*o.cdFrac);
+    c.strokeStyle='rgba(0,0,0,.6)';c.lineWidth=s*.05+2;c.stroke();c.strokeStyle=o.cdFrac<.3?'#ff4d6d':'#00f2cf';c.lineWidth=s*.05;c.stroke();}
   }else if(cl.k==='x'){
    c.drawImage(exitSprite(sdir(cl.d,tr),s),0,0,s,s);
    const ch=cl.ch[0];if(ch)drawFluid(c,s,sdir(ch.a,tr),-1,ch.p,col,T,front&&front.ch===ch);
-   const h=s/2,spd=o.exitWon?14:1.4;c.save();c.translate(h,h);c.rotate(T*spd);
+   const h=s/2,spd=o.exitWon?14:1.4;c.save();c.translate(h,h);c.rotate(reduceMotion?0:T*spd);
    for(let k=0;k<6;k++){c.rotate(Math.PI/3);c.fillStyle=o.exitWon?col.core:'#7c85aa';c.beginPath();c.moveTo(0,0);c.quadraticCurveTo(s*.1,-s*.06,s*.24,-s*.02);c.lineTo(s*.22,s*.05);c.closePath();c.fill();}
    c.fillStyle='#c9d0ea';c.beginPath();c.arc(0,0,s*.05,0,7);c.fill();c.restore();
   }else{
    const m=mapMask(PM[cl.p],tr);
-   let sc=1,alpha=1;if(cl.pt!=null){const d=T-cl.pt;if(d<0){alpha=.35;sc=.9;}else if(d<.22){const k=d/.22;sc=1+Math.sin(k*Math.PI)*.12;}}
+   // confirmación de colocación (VIS-FLOW-04): escala máx. 1,08 durante 160 ms; con movimiento reducido sólo un borde cian de 2 px
+   let sc=1,alpha=1,fb=0;if(cl.pt!=null){const d=T-cl.pt;if(d<0){alpha=.35;sc=.9;}else if(d<.16){const k=d/.16;if(!reduceMotion)sc=1+Math.sin(k*Math.PI)*.08;fb=1-k;}}
    c.globalAlpha=alpha;if(sc!==1){c.translate(s/2,s/2);c.scale(sc,sc);c.translate(-s/2,-s/2);}
+   if(fb>0){c.strokeStyle='rgba(0,242,207,'+(.9*fb)+')';c.lineWidth=2;rr(c,1,1,s-2,s-2,s*.1);c.stroke();}
    if(cl.tk){const horiz=!!(m&2);c.drawImage(tankSprite(m,s),0,0,s,s);const ch=cl.ch[0];if(ch){const a=sdir(ch.a,tr),b=sdir(ch.b,tr);
      const p=ch.p;
      // tramo de entrada, depósito, tramo de salida
@@ -1260,7 +1365,7 @@ function drawBoard(c,V,T,o){
   c.restore();
  }
 }
-function panel(c,r,rad){rr(c,r.x,r.y,r.w,r.h,rad||12);c.fillStyle='rgba(22,13,42,.88)';c.fill();c.strokeStyle='rgba(255,255,255,.09)';c.lineWidth=1;c.stroke();}
+function panel(c,r,rad){rr(c,r.x,r.y,r.w,r.h,rad||12);c.fillStyle='rgba(22,13,42,.94)';c.fill();c.strokeStyle='rgba(81,68,102,.6)';c.lineWidth=1;c.stroke();}
 function drawPieceIcon(c,key,x,y,s){const m=mapMask(PM[key],G.V?G.V.tr:false);c.drawImage(pipeSprite(m,Math.round(s)),x,y,Math.round(s),Math.round(s));}
 function drawHud(c,T){
  const L=LY,lv=G.lv,k=L.k;
@@ -1268,47 +1373,56 @@ function drawHud(c,T){
  const p=L.pause;panel(c,p,12);c.fillStyle='#f5f2ff';c.fillRect(p.x+16,p.y+14,4,16);c.fillRect(p.x+24,p.y+14,4,16);
  // título
  c.textBaseline='alphabetic';c.textAlign='left';
- c.fillStyle='#00f2cf';c.font='700 '+Math.max(11,Math.round(11*k))+'px '+MONO;c.fillText(TX('hCircuit')+' '+(G.li+1)+'/'+NLV,L.title.x,L.title.y+15);
+ c.fillStyle='#00f2cf';c.font='700 '+Math.max(12,Math.round(12*k))+'px '+MONO;c.fillText(TX('hCircuit')+' '+(G.li+1)+'/'+NLV,L.title.x,L.title.y+15);
  c.fillStyle='#f5f2ff';let fs=Math.round(15*k);c.font='600 '+fs+'px '+SANS;
  let tt=secN(lv.P.s);if(L.title.maxW){while(c.measureText(tt).width>L.title.maxW&&fs>10){fs--;c.font='600 '+fs+'px '+SANS;}}
  c.fillText(tt,L.title.x,L.title.y+36);
  // puntos
- c.textAlign=L.score.left?'left':'right';c.fillStyle='#a49bc4';c.font='600 '+Math.max(11,Math.round(11*k))+'px '+MONO;c.fillText(TX('hScore'),L.score.x,L.score.y+(L.score.left?14:15));
+ c.textAlign=L.score.left?'left':'right';c.fillStyle='#a49bc4';c.font='600 '+Math.max(12,Math.round(12*k))+'px '+MONO;c.fillText(TX('hScore'),L.score.x,L.score.y+(L.score.left?14:15));
  c.fillStyle='#fff';c.font='800 '+Math.round((L.land?24:22)*k)+'px '+MONO;c.fillText(fmt(Math.max(0,G.score)),L.score.x,L.score.y+(L.score.left?16:17)+Math.round((L.land?24:22)*k));
- if(L.score.left&&SAVE.best[G.li]){c.textAlign='right';c.fillStyle='#fdd835';c.font='600 '+Math.max(11,Math.round(11*k))+'px '+MONO;c.fillText(TX('hBest')+' '+fmt(SAVE.best[G.li]),L.score.x+L.bar1.w,L.score.y+14);}
+ if(L.score.left&&SAVE.best[G.li]){c.textAlign='right';c.fillStyle='#fdd835';c.font='600 '+Math.max(12,Math.round(12*k))+'px '+MONO;c.fillText(TX('hBest')+' '+fmt(SAVE.best[G.li]),L.score.x+L.bar1.w,L.score.y+14);}
  // tramos
  const b1=L.bar1;panel(c,b1,10);const req=lv.P.req,done=G.st.tiles,okT=done>=req;
- c.textAlign='left';c.fillStyle='#a49bc4';c.font='600 '+Math.max(11,Math.round(11*k))+'px '+MONO;c.fillText(TX('hTiles'),b1.x+10,b1.y+14);
+ c.textAlign='left';c.fillStyle='#a49bc4';c.font='600 '+Math.max(12,Math.round(12*k))+'px '+MONO;c.fillText(TX('hTiles'),b1.x+10,b1.y+14);
  c.textAlign='right';c.fillStyle=okT?'#3ddc84':'#fff';c.font='800 '+Math.max(12,Math.round(12*k))+'px '+MONO;c.fillText(Math.min(done,999)+'/'+req+(okT?' ✓':''),b1.x+b1.w-10,b1.y+14);
  rr(c,b1.x+10,b1.y+21,b1.w-20,6,3);c.fillStyle='rgba(255,255,255,.1)';c.fill();
  rr(c,b1.x+10,b1.y+21,Math.max(6,(b1.w-20)*clamp(done/req,0,1)),6,3);c.fillStyle=okT?'#3ddc84':lv.fluid.core;c.fill();
  // flujo
- const b2=L.bar2;panel(c,b2,10);let lab,val,frac,colr;
- if(G.phase==='intro'||G.phase==='count'){lab=TX('hFlowIn');val=Math.ceil(G.cd)+' s';frac=G.cd/G.cdMax;colr=frac<.3?'#ff4d6d':'#b14dff';}
+ const b2=L.bar2;panel(c,b2,10);let lab,val,frac,colr;const counting=G.phase==='intro'||G.phase==='count';
+ if(counting){lab=TX('hFlowIn');val=Math.ceil(G.cd)+' s';frac=G.cd/G.cdMax;colr=frac<.3?'#ff4d6d':'#b14dff';}
  else if(G.phase==='flow'){lab=TX(G.fast?'hBoosted':'hFlowing');val=G.fast?'×2':'';frac=1;colr=G.fast?'#00f2cf':lv.fluid.core;}
  else{lab=TX(G.outcome==='ok'?'hSealed':G.outcome==='exit'?'hEngine':'hSpill');val='';frac=1;colr=(G.outcome==='ok'||G.outcome==='exit')?'#3ddc84':'#ff4d6d';}
- c.textAlign='left';c.fillStyle=G.phase==='ending'&&!(G.outcome==='ok'||G.outcome==='exit')?'#ff8fa3':'#a49bc4';c.font='600 '+Math.max(11,Math.round(11*k))+'px '+MONO;c.fillText(lab,b2.x+10,b2.y+14);
- c.textAlign='right';c.fillStyle='#fff';c.font='800 '+Math.max(12,Math.round(12*k))+'px '+MONO;if(val)c.fillText(val,b2.x+b2.w-10,b2.y+14);
- rr(c,b2.x+10,b2.y+21,b2.w-20,6,3);c.fillStyle='rgba(255,255,255,.1)';c.fill();
- if(G.phase==='flow'&&!reduceMotion){c.save();rr(c,b2.x+10,b2.y+21,b2.w-20,6,3);c.clip();c.fillStyle=colr;c.fillRect(b2.x+10,b2.y+21,b2.w-20,6);c.fillStyle='rgba(255,255,255,.5)';const o=(T*(G.fast?240:70))%24;for(let x=b2.x+10-24+o;x<b2.x+b2.w;x+=24)c.fillRect(x,b2.y+21,8,6);c.restore();}
- else{rr(c,b2.x+10,b2.y+21,Math.max(6,(b2.w-20)*clamp(frac,0,1)),6,3);c.fillStyle=colr;c.fill();}
+ c.textAlign='left';c.fillStyle=G.phase==='ending'&&!(G.outcome==='ok'||G.outcome==='exit')?'#ff8fa3':'#a49bc4';c.font='600 '+Math.max(12,Math.round(12*k))+'px '+MONO;c.fillText(lab,b2.x+10,b2.y+14);
+ // la cuenta vive sólo en el HUD (20 px, peso 800) con realce de borde de 150 ms al cambiar de segundo (VIS-FLOW-05)
+ let valW=0;c.textAlign='right';c.fillStyle='#fff';
+ if(counting){c.font='800 20px '+MONO;c.fillText(val,b2.x+b2.w-10,b2.y+25);valW=c.measureText(val).width+12;
+  if(G.tickAt!=null&&G.T-G.tickAt<.15){c.strokeStyle=colr;c.lineWidth=2;rr(c,b2.x,b2.y,b2.w,b2.h,10);c.stroke();}}
+ else{c.font='800 '+Math.max(12,Math.round(12*k))+'px '+MONO;if(val)c.fillText(val,b2.x+b2.w-10,b2.y+14);}
+ const bw2=b2.w-20-valW;
+ rr(c,b2.x+10,b2.y+21,bw2,6,3);c.fillStyle='rgba(255,255,255,.1)';c.fill();
+ if(G.phase==='flow'&&!reduceMotion){c.save();rr(c,b2.x+10,b2.y+21,bw2,6,3);c.clip();c.fillStyle=colr;c.fillRect(b2.x+10,b2.y+21,bw2,6);c.fillStyle='rgba(255,255,255,.5)';const o=(T*(G.fast?240:70))%24;for(let x=b2.x+10-24+o;x<b2.x+b2.w;x+=24)c.fillRect(x,b2.y+21,8,6);c.restore();}
+ else{rr(c,b2.x+10,b2.y+21,Math.max(6,bw2*clamp(frac,0,1)),6,3);c.fillStyle=colr;c.fill();}
  // cola de piezas
- c.textAlign=L.qlabel.center?'center':'left';c.fillStyle='#a49bc4';c.font='600 '+Math.max(11,Math.round(11*k))+'px '+MONO;c.fillText(TX('hPieces'),L.qlabel.x,L.qlabel.y);
+ c.textAlign=L.qlabel.center?'center':'left';c.fillStyle='#a49bc4';c.font='600 '+Math.max(12,Math.round(12*k))+'px '+MONO;c.fillText(TX('hPieces'),L.qlabel.x,L.qlabel.y);
  L.slots.forEach((r,i)=>{
   rr(c,r.x,r.y,r.w,r.h,i?10:14);c.fillStyle=i?'rgba(22,13,42,.85)':'rgba(40,18,80,.95)';c.fill();
   c.strokeStyle=i?'rgba(255,255,255,.08)':'#00f2cf';c.lineWidth=i?1:2;c.stroke();
-  const key=G.queue[i];if(key){const sm=r.w<66,ps=r.w*(i?.78:sm?.52:.62);c.globalAlpha=i?.85:1;drawPieceIcon(c,key,r.x+(r.w-ps)/2,r.y+(r.h-ps)/2+(i?0:r.h*(sm?.13:.08)),ps);c.globalAlpha=1;}
-  if(!i){c.fillStyle='#00f2cf';c.font='800 '+Math.max(11,Math.round(10*k))+'px '+MONO;c.textAlign='center';c.fillText(TX('hNow'),r.x+r.w/2,r.y+12);}
+  const key=G.queue[i];if(key){const sm=r.w<66,ps=r.w*(i?.78:sm?.52:.62);c.globalAlpha=i?.95:1;drawPieceIcon(c,key,r.x+(r.w-ps)/2,r.y+(r.h-ps)/2+(i?0:r.h*(sm?.13:.08)),ps);c.globalAlpha=1;}
+  if(!i){c.fillStyle='#00f2cf';c.font='800 '+Math.max(12,Math.round(11*k))+'px '+MONO;c.textAlign='center';c.fillText(TX('hNow'),r.x+r.w/2,r.y+12);}
  });
- // botón acelerar
+ // botón liberar / acelerar (el botón DOM #flow-release se superpone exactamente aquí); desactivado reconocible por borde e icono (VIS-FLOW-03)
  const f=L.fast,act=G.phase==='count'||(G.phase==='flow'&&!G.fast);
  rr(c,f.x,f.y,f.w,f.h,16);
  if(act){const gr=c.createLinearGradient(f.x,f.y,f.x+f.w,f.y+f.h);gr.addColorStop(0,'#00f2cf');gr.addColorStop(1,'#00b0c4');c.fillStyle=gr;c.fill();}
- else{c.fillStyle='rgba(22,13,42,.85)';c.fill();c.strokeStyle='rgba(255,255,255,.08)';c.lineWidth=1;c.stroke();}
- const ic=act?'#071512':'#5b5275';c.fillStyle=ic;const cx=f.x+f.w/2,cy=f.y+f.h/2-(f.h>60?8:6),a=Math.min(f.h*.16,13);
+ else{c.fillStyle='rgba(22,13,42,.85)';c.fill();c.strokeStyle='rgba(102,91,125,.65)';c.lineWidth=1;c.stroke();}
+ const lbl=TX(G.phase==='count'?'hRelease':'hBoost'),fsz=Math.max(12,Math.round(12*k));c.font='800 '+fsz+'px '+MONO;
+ const two=c.measureText(lbl).width>f.w-12;
+ const ic=act?'#071512':'#8D83A5';c.fillStyle=ic;const cx=f.x+f.w/2,a=Math.min(f.h*.16,13),cy=two?f.y+a+8:f.y+f.h/2-(f.h>60?8:6);
  for(const o of [-a*.9,a*.1]){c.beginPath();c.moveTo(cx+o,cy-a);c.lineTo(cx+o+a*1.1,cy);c.lineTo(cx+o,cy+a);c.closePath();c.fill();}
- c.textAlign='center';c.font='800 '+Math.max(12,Math.round(12*k))+'px '+MONO;c.fillText(TX(G.phase==='count'?'hRelease':'hBoost'),cx,f.y+f.h-(f.h>60?12:8));
- if(fineP&&act){c.font='700 '+Math.max(11,Math.round(10*k))+'px '+MONO;c.textAlign='right';c.fillText('F',f.x+f.w-8,f.y+14);}
+ c.textAlign='center';
+ if(!two)c.fillText(lbl,cx,f.y+f.h-(f.h>60?12:8));
+ else{const parts=lbl.split(' ');const l1=parts.shift(),l2=parts.join(' ');c.fillText(l1,cx,f.y+f.h-fsz-(f.h>60?12:8));c.fillText(l2,cx,f.y+f.h-(f.h>60?10:6));}
+ if(fineP&&act){c.font='700 '+Math.max(12,Math.round(11*k))+'px '+MONO;c.textAlign='right';c.fillText('F',f.x+f.w-8,f.y+14);}
 }
 function render(){
  const c=ctx;c.setTransform(DPR,0,0,DPR,0,0);
@@ -1319,30 +1433,29 @@ function render(){
  if(G.shake>0&&!reduceMotion){c.translate((Math.random()-.5)*G.shake*14,(Math.random()-.5)*G.shake*14);}
  const V=G.V;
  drawBoard(c,V,T,{fluid:G.lv.fluid,sim:G.sim,cdFrac:(G.phase==='count'||G.phase==='intro')?G.cd/G.cdMax:null,exitWon:G.exitWon});
- // cursor y pieza fantasma
- if((G.showCur||fineP&&G.hover)&&(G.phase==='count'||G.phase==='flow')&&!G.paused){
-  const [px,py]=cellXY(V,G.cur.x,G.cur.y),s=V.cs,r=canPlace(G.cur.x,G.cur.y),okc=r==='ok'||r==='replace';
-  if(okc&&G.queue[0]){c.globalAlpha=.42;drawPieceIcon(c,G.queue[0],px,py,s);c.globalAlpha=1;}
-  c.strokeStyle=okc?(r==='replace'?'#fdd835':'#00f2cf'):'#ff4d6d';c.lineWidth=2.5;const l=s*.26;
-  c.beginPath();for(const [x0,y0,dx,dy] of [[px,py,1,1],[px+s,py,-1,1],[px,py+s,1,-1],[px+s,py+s,-1,-1]]){c.moveTo(x0+dx*2,y0+dy*(l));c.lineTo(x0+dx*2,y0+dy*2);c.lineTo(x0+dx*l,y0+dy*2);}c.stroke();
- }
- // derrame
+ const curOn=(G.showCur||fineP&&G.hover)&&(G.phase==='count'||G.phase==='flow')&&!G.paused;
+ // pieza fantasma sólo en la casilla objetivo (0,42 de opacidad); el marco del cursor se dibuja al final, por encima del astronauta
+ if(curOn){const [px,py]=cellXY(V,G.cur.x,G.cur.y),s=V.cs,r=canPlace(G.cur.x,G.cur.y);if((r==='ok'||r==='replace')&&G.queue[0]){c.globalAlpha=.42;drawPieceIcon(c,G.queue[0],px,py,s);c.globalAlpha=1;}}
+ // derrame (en «Revisar la fuga» queda congelado y marcado)
  if(G.spill){const sp=G.spill,k=clamp(sp.t/.6,0,1),col=G.lv.fluid;
   if(sp.ok){c.strokeStyle='rgba(0,242,207,'+(1-k*.6)+')';c.lineWidth=3;c.beginPath();c.arc(sp.x,sp.y,V.cs*(.2+k*.3),0,7);c.stroke();
    c.fillStyle='#00f2cf';c.beginPath();c.arc(sp.x,sp.y,V.cs*.14,0,7);c.fill();c.fillStyle='#071512';c.fillRect(sp.x-V.cs*.08,sp.y-V.cs*.02,V.cs*.16,V.cs*.04);}
-  else{const R=V.cs*(.15+k*.42);const gr=c.createRadialGradient(sp.x,sp.y,0,sp.x,sp.y,R*1.4);gr.addColorStop(0,col.hot);gr.addColorStop(.4,'rgba('+col.rgb+',.85)');gr.addColorStop(1,'rgba('+col.rgb+',0)');
-   c.fillStyle=gr;c.beginPath();for(let a=0;a<=24;a++){const an=a/24*Math.PI*2,rr2=R*(1+.18*Math.sin(an*5+T*6));const x=sp.x+Math.cos(an)*rr2,y=sp.y+Math.sin(an)*rr2;a?c.lineTo(x,y):c.moveTo(x,y);}c.fill();
-   if(Math.random()<.5)burst(sp.x,sp.y,1,col.core,120,.5);}
+  else{const R=V.cs*(.15+k*.42),wob=G.review||reduceMotion?0:T*6;const gr=c.createRadialGradient(sp.x,sp.y,0,sp.x,sp.y,R*1.4);gr.addColorStop(0,col.hot);gr.addColorStop(.4,'rgba('+col.rgb+',.85)');gr.addColorStop(1,'rgba('+col.rgb+',0)');
+   c.fillStyle=gr;c.beginPath();for(let a=0;a<=24;a++){const an=a/24*Math.PI*2,rr2=R*(1+.18*Math.sin(an*5+wob));const x=sp.x+Math.cos(an)*rr2,y=sp.y+Math.sin(an)*rr2;a?c.lineTo(x,y):c.moveTo(x,y);}c.fill();
+   if(G.phase==='ending'&&Math.random()<.5)burst(sp.x,sp.y,1,col.core,120,.5);
+   if(G.review){c.strokeStyle='#ff4d6d';c.lineWidth=3;c.setLineDash([6,5]);c.beginPath();c.arc(sp.x,sp.y,V.cs*.62,0,7);c.stroke();c.setLineDash([]);}}
  }
  for(const p of G.fx){c.globalAlpha=1-p.t/p.life;c.fillStyle=p.col;c.beginPath();c.arc(p.x,p.y,p.r,0,7);c.fill();}c.globalAlpha=1;
- if(G.astro)astroDraw(c,G.astro,V.cs*.74,T);
+ if(G.astro)drawAstroClear(c,V,T);
+ if(curOn){
+  const [px,py]=cellXY(V,G.cur.x,G.cur.y),s=V.cs,r=canPlace(G.cur.x,G.cur.y),okc=r==='ok'||r==='replace';
+  c.strokeStyle=okc?(r==='replace'?'#fdd835':'#00f2cf'):'#ff4d6d';c.lineWidth=2.5;const l=s*.26;
+  c.beginPath();for(const [x0,y0,dx,dy] of [[px,py,1,1],[px+s,py,-1,1],[px,py+s,1,-1],[px+s,py+s,-1,-1]]){c.moveTo(x0+dx*2,y0+dy*(l));c.lineTo(x0+dx*2,y0+dy*2);c.lineTo(x0+dx*l,y0+dy*2);}c.stroke();
+ }
  for(const t of G.texts){const k=t.t/(t.big?1.6:1);c.globalAlpha=k>.7?1-(k-.7)/.3:1;c.fillStyle=t.col;c.textAlign='center';c.textBaseline='middle';
   c.font='800 '+Math.round((t.big?16:13)*LY.k)+'px '+MONO;const y=t.y-k*(t.big?26:34);
   if(t.big){const w=c.measureText(t.txt).width+20;c.fillStyle='rgba(10,5,18,.8)';rr(c,t.x-w/2,y-13,w,26,13);c.fill();c.fillStyle=t.col;}
   c.fillText(t.txt,t.x,y);}c.globalAlpha=1;c.textBaseline='alphabetic';
- // cuenta regresiva grande
- if(G.phase==='count'&&G.cd<=3.2&&G.cd>0){const n=Math.ceil(G.cd),fr=G.cd-Math.floor(G.cd);c.globalAlpha=.25+fr*.5;c.fillStyle='#fff';c.textAlign='center';c.textBaseline='middle';
-  c.font='800 '+Math.round(V.cs*2*(1+(1-fr)*.15))+'px '+MONO;c.fillText(n,V.ox+V.bw/2,V.oy+V.bh/2);c.globalAlpha=1;c.textBaseline='alphabetic';}
  c.restore();
  // alarma
  if(G.alarm>0&&!reduceMotion){const a=(Math.sin(T*14)*.5+.5)*clamp(G.alarm,0,1);const gr=c.createRadialGradient(W/2,H/2,Math.min(W,H)*.3,W/2,H/2,Math.max(W,H)*.75);gr.addColorStop(0,'rgba(255,40,70,0)');gr.addColorStop(1,'rgba(255,40,70,'+(.45*a)+')');c.fillStyle=gr;c.fillRect(0,0,W,H);
@@ -1352,6 +1465,22 @@ function render(){
  if(G.flash>0){c.fillStyle='rgba(0,242,207,'+(G.flash*.25)+')';c.fillRect(0,0,W,H);}
  drawHud(c,T);
  drawGuide(c,T);
+ syncHudDom();
+}
+/* El astronauta acompaña sin tapar: si su dibujo pisa la casilla del cursor, el reactor, el motor o la casilla de la guía,
+   se reduce a 0,55·cs y se corre lateralmente sólo en el dibujo. astroGo/astroSpot y los tiempos no cambian (VIS-FLOW-05). */
+function drawAstroClear(c,V,T){
+ const a=G.astro;let sz=V.cs*.74;
+ const rects=[];const push=(x,y)=>{const [px,py]=cellXY(V,x,y);rects.push([px,py,px+V.cs,py+V.cs]);};
+ if((G.showCur||fineP&&G.hover)&&(G.phase==='count'||G.phase==='flow'))push(G.cur.x,G.cur.y);
+ push(G.B.src.x,G.B.src.y);if(G.B.exit)push(G.B.exit.x,G.B.exit.y);
+ const gd=G.li===0?guide():null;if(gd&&gd.x!=null)push(gd.x,gd.y);
+ const hit=(x,sz)=>{const x0=x-sz*.5,x1=x+sz*.5,y0=a.y-sz*.5,y1=a.y+sz*.42;return rects.find(r=>x0<r[2]&&x1>r[0]&&y0<r[3]&&y1>r[1]);};
+ let r=hit(a.x,sz),ad=a;
+ if(r){sz=V.cs*.55;let x=a.x;const side=a.x>=(r[0]+r[2])/2?1:-1;
+  for(let k=0;k<18&&hit(x,sz);k++){x+=side*V.cs*.1;}
+  ad=Object.assign({},a,{x:clamp(x,sz*.5,W-sz*.5)});}
+ astroDraw(c,ad,sz,T);
 }
 
 /* =====================================================================
@@ -1414,18 +1543,34 @@ const HELP={on:false,cv:null,c:null,V:null,w:0,h:0,
 /* =====================================================================
    Pantallas (DOM)
    ===================================================================== */
-const SCR=['sTitle','sLevels','sHelp','sSet','sPause','sIntro','sResult','sFinal'];
+const SCR=['sTitle','sLevels','sHelp','sSet','sConfirm','sPause','sIntro','sResult','sFinal'];
 let curScr=null,backTo=null;
 const MENU_SCR=['sTitle','sFinal'];
-function show(id,back){for(const s of SCR)$(s).classList.toggle('on',s===id);curScr=id;backTo=back||null;
+const OPENER={};   // qué control abrió cada pantalla, para devolverle el foco al cerrar
+function show(id,back,focusEl){
+ const prev=document.activeElement;
+ for(const s of SCR)$(s).classList.toggle('on',s===id);
+ if(curScr!==id)OPENER[id]=prev&&prev!==document.body?prev:null;
+ curScr=id;backTo=back||null;
  $('back').classList.toggle('on',MENU_SCR.includes(id)&&!G.B);
  if(id!=='sHelp'&&HELP.on)HELP.close();
- const first=$(id).querySelector('.btn.pri,.btn.cy,.lvl.cur,.btn');if(first&&!('ontouchstart' in window))setTimeout(()=>{try{first.focus({preventScroll:true});}catch(e){}},30);}
-function hideScreens(){for(const s of SCR)$(s).classList.remove('on');curScr=null;$('back').classList.remove('on');if(HELP.on)HELP.close();}
+ G.review=false;$('review').classList.remove('on');syncHudDom();
+ // foco inicial: [data-focus] (p. ej. el primer control de sonido o Cancelar), si no la acción principal visible
+ const cands=[...$(id).querySelectorAll('[data-focus],.btn.pri,.btn.cy,.lvl.cur,.btn,button,input')].filter(el=>el.offsetParent!==null&&!el.disabled);
+ const first=focusEl||cands.find(el=>el.hasAttribute('data-focus'))||cands.find(el=>el.matches('.btn.pri,.btn.cy,.lvl.cur'))||cands[0];
+ if(first)setTimeout(()=>{try{first.focus({preventScroll:true});}catch(e){}},30);}
+function hideScreens(){for(const s of SCR)$(s).classList.remove('on');curScr=null;$('back').classList.remove('on');if(HELP.on)HELP.close();syncHudDom();}
 function fillTitle(){$('bPlay').innerHTML=SAVE.unl>1?TX('cont',Math.min(SAVE.unl,NLV)):TX('play');
  $('tStars').textContent='★ '+totalStars()+'/'+NLV*3;}
-function goMenu(){G.phase='menu';G.paused=false;G.B=null;layout();
- fillTitle();show('sTitle');AU.int(1);}
+function goMenu(focusEl){G.phase='menu';G.paused=false;G.B=null;G.review=false;layout();
+ fillTitle();show('sTitle',null,focusEl);AU.int(1);}
+/* Confirmación explícita (SRC-G04/SRC-F02): Cancelar enfocado al abrir, botón de peligro separado; `back` devuelve a la pantalla anterior */
+let cfOkFn=null;
+function openConfirm(o){$('cfT').textContent=o.title;$('cfB').textContent=o.body;$('cfOk').textContent=o.ok;cfOkFn=o.onOk;show('sConfirm',o.back);}
+$('cfCancel').onclick=()=>{AU.fx('click');goBack();};
+$('cfOk').onclick=()=>{const f=cfOkFn;cfOkFn=null;if(f)f();};
+// ¿hay un intento con cambios que se perdería? (piezas instaladas por el jugador, o el flujo ya salió)
+const hasMoves=()=>!!G.B&&(G.phase!=='count'||G.B.cells.some(c=>c.k==='p'&&!c.fx));
 function buildLevels(){
  const box=$('lvList');box.innerHTML='';
  SECT.forEach((S,s)=>{
@@ -1452,12 +1597,14 @@ function openSet(back){show('sSet',back);syncSet();}
 function syncSet(){$('rMus').value=Math.round(SAVE.set.mv*100);$('rSfx').value=Math.round(SAVE.set.sv*100);
  $('tMus').classList.toggle('on',SAVE.set.mus);$('tSfx').classList.toggle('on',SAVE.set.sfx);$('tVib').classList.toggle('on',SAVE.set.vib);
  for(const id of ['tMus','tSfx','tVib'])$(id).setAttribute('aria-pressed',$(id).classList.contains('on'));}
-function goBack(){AU.fx('click');const b=backTo;
+function goBack(){AU.fx('click');const b=backTo,op=OPENER[curScr];
  if(curScr==='sHelp'&&!SAVE.help){SAVE.help=true;save();}
- if(b==='pause'){show('sPause');}
+ const ret=id=>op&&$(id).contains(op)?op:undefined;   // el foco vuelve al control que abrió la pantalla
+ if(typeof b==='function'){b();}
+ else if(b==='pause'){show('sPause',null,ret('sPause'));}
  else if(b==='intro'){showIntro();}
  else if(b&&b.startsWith&&b.startsWith('start:')){startLevel(+b.slice(6));}
- else goMenu();}
+ else goMenu(ret('sTitle'));}
 function fillIntro(){
  const lv=G.lv,P=lv.P;$('iN').textContent=TX('circuitN',G.li+1)+' · '+secN(P.s).toUpperCase();
  $('iT').textContent=P.exit?TX('goEngine'):TX('connect',P.req);
@@ -1483,7 +1630,17 @@ function fillResult(r){
  L.push('<div class="tot"><span>'+TX('lTotal')+(r.rec?'<span class="rec">'+TX('lRecord')+'</span>':'')+'</span><span>'+fmt(r.final)+'</span></div>');
  $('rLines').innerHTML=L.join('');
  $('bNext').textContent=G.li>=NLV-1?TX('seeEnding'):TX('next');
+ $('bRetry').textContent=ok?TX('replay'):TX('retry');   // Repetir si se ganó, Reintentar si se perdió (SRC-F01)
+ $('bInspect').style.display=(!ok&&G.spill)?'':'none';   // sólo cuando hubo una fuga que revisar
 }
+/* Revisar la fuga (PLAY-FLOW-04): oculta el resultado y muestra el tablero congelado con la fuga marcada; no reanuda la partida */
+function placeReview(){const el=$('review'),L=LY;if(!L)return;el.style.bottom='auto';
+ if(L.land){el.style.left=(L.bar2.x+L.bar2.w/2)+'px';el.style.top=(L.bar2.y+L.bar2.h+12)+'px';}   // columna derecha, bajo las barras
+ else{el.style.left=(W/2)+'px';el.style.top=Math.max(L.bar1.y+L.bar1.h+8,L.qlabel.y-70)+'px';}   // encima de la cola de piezas
+}
+function inspectLeak(){if(!G.spill||G.phase!=='result')return;AU.fx('click');hideScreens();G.review=true;placeReview();$('review').classList.add('on');setTimeout(()=>$('bBackResult').focus({preventScroll:true}),30);}
+function backToResult(){G.review=false;$('review').classList.remove('on');show('sResult',null,$('bInspect'));}
+$('bInspect').onclick=inspectLeak;$('bBackResult').onclick=()=>{AU.fx('click');backToResult();};
 function showResult(r){
  const ok=r.ok;lastRes=r;fillResult(r);
  const sv='<svg viewBox="0 0 24 24"><path fill="#fdd835" stroke="#7a5f00" stroke-width=".8" d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z"/></svg>';
@@ -1506,11 +1663,17 @@ $('bSet').onclick=()=>{AU.fx('click');openSet('menu');};
 $('bHelpOk').onclick=goBack;
 document.querySelectorAll('[data-back]').forEach(b=>b.onclick=goBack);
 $('bResume').onclick=()=>{AU.fx('click');resume();};
-$('bRestart').onclick=()=>{AU.fx('click');startLevel(G.li);};
-$('bPLevels').onclick=()=>{AU.fx('click');openLevels('menu');};
+// Reiniciar / Ver niveles / Volver al menú desde la pausa descartan el intento: se confirma si hubo cambios (SRC-F02)
+function pauseLeave(btn,title,ok,fn){AU.fx('click');if(!hasMoves()){fn();return;}
+ openConfirm({title,body:TX('discard'),ok,onOk:fn,back:()=>show('sPause',null,btn)});}
+$('bRestart').onclick=()=>pauseLeave($('bRestart'),TX('restartTitle'),TX('restart'),()=>startLevel(G.li));
+$('bPLevels').onclick=()=>pauseLeave($('bPLevels'),TX('leaveTitle'),TX('levels'),()=>openLevels('menu'));
 $('bPHelp').onclick=()=>{AU.fx('click');openHelp('pause');};
 $('bPSet').onclick=()=>{AU.fx('click');openSet('pause');};
-$('bQuit').onclick=()=>{AU.fx('click');goMenu();};
+$('bQuit').onclick=()=>pauseLeave($('bQuit'),TX('leaveTitle'),TX('toMenu'),()=>goMenu());
+$('flow-pause').addEventListener('click',e=>{e.stopPropagation();AU.unlock();AU.fx('click');pause();});
+$('flow-release').addEventListener('click',e=>{e.stopPropagation();AU.unlock();release();});
+for(const ev of ['pointerdown','pointerup','pointermove'])$('hudDom').addEventListener(ev,e=>e.stopPropagation());
 $('bGo').onclick=()=>{AU.fx('click');beginPlay();};
 $('bNext').onclick=()=>{AU.fx('click');if(G.li>=NLV-1){showFinal();}else startLevel(G.li+1);};
 $('bRetry').onclick=()=>{AU.fx('click');startLevel(G.li);};
@@ -1525,13 +1688,14 @@ $('tVib').onclick=()=>{SAVE.set.vib=!SAVE.set.vib;save();syncSet();vib(30);};
 $('rMus').oninput=e=>{SAVE.set.mv=e.target.value/100;SAVE.set.mus=SAVE.set.mv>0;syncSet();AU.apply();save();};
 $('rSfx').oninput=e=>{SAVE.set.sv=e.target.value/100;SAVE.set.sfx=SAVE.set.sv>0;syncSet();AU.apply();save();};
 $('rSfx').onchange=()=>AU.fx('place');
-// borrar progreso: doble confirmación sin confirm(); el estado del botón vive en resetSt para poder repintarlo en otro idioma
-let resetArm=0,resetSt='reset',resetTm=0;
-function fillReset(){$('bReset').textContent=TX(resetSt);}
-$('bReset').onclick=()=>{clearTimeout(resetTm);
- if(resetSt==='resetConfirm'&&Date.now()-resetArm<3000){SAVE.unl=1;SAVE.stars=[];SAVE.best=[];SAVE.done=false;save();resetSt='resetDone';resetArm=0;}
- else{resetArm=Date.now();resetSt='resetConfirm';}
- fillReset();resetTm=setTimeout(()=>{resetSt='reset';fillReset();},3000);};
+// borrar progreso: diálogo de confirmación explícita (PLAY-FLOW-01, SRC-G04). Borra circuitos completados, estrellas y récords;
+// conserva ajustes de sonido/vibración, idioma y la marca de haber leído la ayuda.
+let resetDone=false;
+function fillReset(){$('resetStatus').textContent=resetDone?TX('resetDone'):'';}
+$('bReset').onclick=()=>{AU.fx('click');const sb=backTo;resetDone=false;fillReset();
+ const back=()=>show('sSet',sb,$('bReset'));
+ openConfirm({title:TX('deleteTitle'),body:TX('deleteBody'),ok:TX('reset'),back,
+  onOk:()=>{SAVE.unl=1;SAVE.stars=[];SAVE.best=[];SAVE.done=false;save();resetDone=true;fillTitle();back();fillReset();}});};
 
 /* ---- Idioma: textos fijos, selector ES | EN y repintado en vivo (sin tocar la partida) ---- */
 function applyLang(){
@@ -1543,6 +1707,8 @@ function applyLang(){
  document.querySelectorAll('[data-ia]').forEach(el=>{el.setAttribute('aria-label',TX(el.dataset.ia));});
  document.querySelectorAll('.seg [data-lang]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.lang===LANG)));
  fillHelp();fillReset();fillTitle();
+ if(curScr!=='sConfirm')$('cfOk').textContent=TX('reset');
+ hudKey='';syncHudDom();
  if(curScr==='sLevels')buildLevels();
  if(curScr==='sIntro'&&G.lv)fillIntro();
  if(curScr==='sResult'&&lastRes)fillResult(lastRes);
@@ -1592,19 +1758,28 @@ addEventListener('keydown',e=>{
   if(curScr==='sResult'&&k===' '&&document.activeElement===document.body){e.preventDefault();($('bNext').style.display!=='none'?$('bNext'):$('bRetry')).click();return;}
   if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(k)&&!(document.activeElement&&document.activeElement.type==='range'&&(k==='ArrowLeft'||k==='ArrowRight'))){
    const f=[...$(curScr).querySelectorAll('button:not([disabled]),input')].filter(el=>el.offsetParent!==null);if(!f.length)return;
-   let i=f.indexOf(document.activeElement);const isL=document.activeElement&&document.activeElement.classList.contains('lvl');
-   const step=(k==='ArrowDown'||k==='ArrowRight')?1:-1;let n=i<0?0:i+step*(isL&&(k==='ArrowUp'||k==='ArrowDown')?6:1);
-   if(isL&&(k==='ArrowUp'||k==='ArrowDown')){const t=f[n];if(!t||!t.classList.contains('lvl'))n=i+step;}
-   n=(n+f.length)%f.length;f[n].focus();e.preventDefault();if(f[n].classList.contains('lvl'))f[n].scrollIntoView({block:'nearest'});}
+   const cur=document.activeElement;let i=f.indexOf(cur);const isL=cur&&cur.classList.contains('lvl'),vert=k==='ArrowUp'||k==='ArrowDown';
+   const step=(k==='ArrowDown'||k==='ArrowRight')?1:-1;let target=null;
+   if(isL&&vert){ // columnas reales de la grilla enfocada; mantiene la columna y avanza una fila (RSP-FLOW-01)
+    const grid=cur.parentElement,kids=[...grid.children],idx=kids.indexOf(cur),cols=Math.max(1,getComputedStyle(grid).gridTemplateColumns.split(' ').length),col=idx%cols;
+    const sib=(g,dir)=>{let el=g;while((el=dir>0?el.nextElementSibling:el.previousElementSibling))if(el.classList.contains('grid'))return el;return null;};
+    if(step>0){if(idx+cols<kids.length)target=kids[idx+cols];else{const ng=sib(grid,1);if(ng)target=ng.children[Math.min(col,ng.children.length-1)];}}
+    else{if(idx-cols>=0)target=kids[idx-cols];else{const pg=sib(grid,-1);if(pg){const n=pg.children.length,start=(Math.ceil(n/cols)-1)*cols;target=pg.children[Math.min(start+col,n-1)];}}}
+    if(target&&target.disabled){e.preventDefault();return;}   // nivel bloqueado: el foco no se mueve a un control arbitrario
+   }
+   if(!target){let n=i<0?0:i+step;n=(n+f.length)%f.length;target=f[n];}
+   target.focus();e.preventDefault();if(target.classList.contains('lvl'))target.scrollIntoView({block:'nearest'});}
   return;
  }
  if(!G.B)return;
+ if(G.review){if(k==='Escape'){e.preventDefault();backToResult();}return;}
  if(k==='Escape'||k==='p'||k==='P'){pause();e.preventDefault();return;}
  if(k==='m'||k==='M'){SAVE.set.mus=!SAVE.set.mus;save();AU.apply();return;}
+ if(e.target&&e.target.closest&&e.target.closest('button,a,input,select,textarea'))return;   // Enter/Espacio activan el control enfocado (botones del HUD)
  if(G.phase!=='count'&&G.phase!=='flow')return;
  const mv={ArrowUp:[0,-1],ArrowDown:[0,1],ArrowLeft:[-1,0],ArrowRight:[1,0],w:[0,-1],s:[0,1],a:[-1,0],d:[1,0]}[k];
  if(mv){e.preventDefault();G.showCur=true;const V=G.V;let sx=V.tr?G.cur.y:G.cur.x,sy=V.tr?G.cur.x:G.cur.y;sx=clamp(sx+mv[0],0,V.sc-1);sy=clamp(sy+mv[1],0,V.sr-1);
-  G.cur=V.tr?{x:sy,y:sx}:{x:sx,y:sy};return;}
+  G.cur=V.tr?{x:sy,y:sx}:{x:sx,y:sy};announce(TX('cellAt',G.cur.y+1,G.cur.x+1,cellWord(G.cur.x,G.cur.y)));return;}
  if(k===' '||k==='Enter'){e.preventDefault();G.showCur=true;place(G.cur.x,G.cur.y);return;}
  if(k==='f'||k==='F'){e.preventDefault();release();}
 });

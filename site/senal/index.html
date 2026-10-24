@@ -44,7 +44,7 @@
     if (b) { b.addEventListener('click', function () { location.reload(); }); b.focus(); }
   }
   window.JETCarga = {
-    error: function (tipo) { if (estado === 'listo') return; clearTimeout(timer); estado = tipo === 'red' ? 'red' : 'error'; pintar(); },
+    error: function (tipo) { if (estado !== 'cargando') return; clearTimeout(timer); estado = tipo === 'red' ? 'red' : 'error'; pintar(); },
     listo: function () { clearTimeout(timer); estado = 'listo'; pintar(); window.removeEventListener('error', alError, true); }
   };
   function alError(e) {
@@ -102,7 +102,7 @@
     <div id="zSonda" class="zona">
       <canvas id="cvSonda" aria-hidden="true"></canvas>
       <div class="hud hud-l"><span id="hudTitulo"></span></div>
-      <div class="hud hud-r" id="hudR"><span id="hudLbl"></span> <b id="hudN" class="odo">0</b><span id="hudTotal" class="hud-sub"></span><span id="hudDelta" class="delta"></span></div>
+      <div class="hud hud-r" id="hudR" role="group"><span id="hudLbl"></span> <b id="hudN" class="odo">0</b><span id="hudTotal" class="hud-sub"></span><span id="hudDelta" class="delta"></span></div>
       <div id="sondaVivo" class="sr" aria-live="polite"></div>
     </div>
     <div id="zRegistro" class="zona">

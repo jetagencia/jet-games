@@ -67,6 +67,10 @@ export function createPanels({ say, onSkins, onNewGame, onFeed, themeEnv }) {
   let confirmKey = null, confirmT = 0;   // botón de compra que espera su segundo toque
   const applyConfirm = () => { if (!confirmKey) return; for (const x of body.querySelectorAll('[data-confirm]')) if (x.dataset.act + ':' + (x.dataset.id || '') === confirmKey) { x.textContent = x.dataset.ctext || L('Confirmar', 'Confirm'); x.classList.add('warn'); } };
   let leadOpen = false, pointerDown = false, lastMg = 0, opener = null, replacing = false;
+  let pendingStart = null;   // inicio elegido que espera la confirmación de reemplazar la partida actual (SRC-BE01)
+  let pendingFuse = null;    // par de criaturas que espera la confirmación de fusión (SRC-BE02)
+  const lossText = () => { const nR = S().roster.length; return L(`${nR} ${nR === 1 ? 'criatura' : 'criaturas'}, ${S().coins} monedas, tus emblemas y todos los objetos`, `${nR} ${nR === 1 ? 'creature' : 'creatures'}, ${S().coins} coins, your emblems and every item`); };
+  const focusAuto = () => { const f = body.querySelector('[data-autofocus]'); if (f) f.focus({ preventScroll: true }); };
   let mg = null;        // ejercicio de entrenamiento en curso
   const hooks = {};     // sparring(creatureId): lo conecta el módulo de combate
 
@@ -318,7 +322,12 @@ export function createPanels({ say, onSkins, onNewGame, onFeed, themeEnv }) {
     return lead(L(`Combinar cuesta ${G.FUSE_COST} monedas: se queda la criatura de más nivel (o con más manzanas), conserva lo mejor de las dos (estadísticas, manzanas, poderes y aspectos), sube de nivel (más cuanto más fuerte sea la absorbida) y gana +1 en cada estadística. La absorbida desaparece.`, `Combining costs ${G.FUSE_COST} coins: the higher-level creature (or the one with more apples) stays, keeps the best of both (stats, apples, powers and looks), levels up (more the stronger the absorbed one is) and gains +1 in every stat. The absorbed one disappears.`)) + pairs.map(([a, b]) => {
       const keep = (a.level + (a.apples || 0) * 0.1) >= (b.level + (b.apples || 0) * 0.1) ? a : b, gone = keep === a ? b : a;
       const nl = Math.min(G.MAX_LEVEL, Math.max(a.level, b.level) + 1 + Math.floor(Math.min(a.level, b.level) / 5));
-      return row(ICON.beast(css(ELEMENTS[sp.element].color)), `${keep.name} + ${gone.name}`, L(`${keep.name} absorbe a ${gone.name}, que desaparece. Nivel ${keep.level} → ${nl}.`, `${keep.name} absorbs ${gone.name}, who disappears. Level ${keep.level} → ${nl}.`), price(G.FUSE_COST) + `<button data-act="fuse" data-confirm="1" data-ctext="${L(`Confirmar: ${gone.name} desaparece`, `Confirm: ${gone.name} disappears`)}" data-id="${a.id}|${b.id}"${S().coins < G.FUSE_COST ? ' class="poor"' : ''}>${L('Combinar', 'Combine')}</button>`);
+      const pid = `${a.id}|${b.id}`;
+      if (pendingFuse === pid) {
+        const cost = L(`${G.FUSE_COST} monedas`, `${G.FUSE_COST} coins`);
+        return row(ICON.beast(css(ELEMENTS[sp.element].color)), L('Fusionar criaturas', 'Fuse creatures'), `${L(`${keep.name} se conserva. ${gone.name} desaparecerá.`, `${keep.name} will be kept. ${gone.name} will disappear.`)}<br>${L(`Nivel: ${keep.level} → ${nl}`, `Level: ${keep.level} → ${nl}`)} · ${L(`Costo: ${cost}`, `Cost: ${cost}`)}`, `<button data-act="fusecancel" class="alt" data-autofocus>${L('Cancelar', 'Cancel')}</button><button data-act="fuseok" class="danger" data-id="${pid}"${S().coins < G.FUSE_COST ? ' disabled' : ''}>${L(`Fusionar y consumir ${gone.name}`, `Fuse and consume ${gone.name}`)}</button>`, 'gold');
+      }
+      return row(ICON.beast(css(ELEMENTS[sp.element].color)), `${keep.name} + ${gone.name}`, L(`${keep.name} absorbe a ${gone.name}, que desaparece. Nivel ${keep.level} → ${nl}.`, `${keep.name} absorbs ${gone.name}, who disappears. Level ${keep.level} → ${nl}.`), price(G.FUSE_COST) + `<button data-act="fuse" data-id="${pid}"${S().coins < G.FUSE_COST ? ' class="poor"' : ''}>${L('Fusionar criaturas', 'Fuse creatures')}</button>`);
     }).join('');
   }
 
@@ -466,13 +475,16 @@ export function createPanels({ say, onSkins, onNewGame, onFeed, themeEnv }) {
     const nR = S().roster.length, loss = L(`${nR} ${nR === 1 ? 'criatura' : 'criaturas'}, ${S().coins} monedas, tus emblemas y todos los objetos`, `${nR} ${nR === 1 ? 'creature' : 'creatures'}, ${S().coins} coins, your emblems and every item`);
     return row(ICON.beast(m ? m.color : '#888'), `${L('Inicio', 'Start')}: ${m ? m.name : '—'}`, L(`Emblemas ${G.leagueBeaten()}/${LEAGUE.length} · Bestiario ${G.dexCount()}/${SPECIES.length} · ${S().stats.wins} combates ganados`, `Emblems ${G.leagueBeaten()}/${LEAGUE.length} · Bestiary ${G.dexCount()}/${SPECIES.length} · ${S().stats.wins} battles won`), '') +
       lead(L('La partida se guarda sola en este dispositivo después de cada acción. Puedes empezar otra desde cero con cualquiera de los tres inicios.', 'Your game saves itself on this device after every action. You can start a new one from scratch with any of the three starts.')) +
-      (confirmNew ? `<div class="row"><div class="tx"><b>${L('¿Borrar esta partida?', 'Delete this game?')}</b><small>${L(`Perderás ${loss}. No se puede deshacer.`, `You will lose ${loss}. This can’t be undone.`)}</small></div><div class="rt"><button data-act="newgo" class="danger">${L('Sí, borrar y empezar otra', 'Yes, delete it and start over')}</button><button data-act="newno" class="alt">${L('Cancelar', 'Cancel')}</button></div></div>` :
-        `<div class="row"><div class="tx"><b>${L('Empezar otra partida', 'Start another game')}</b><small>${modesTxt}</small></div><div class="rt"><button data-act="newask">${L('Nueva partida', 'New game')}</button></div></div>`) + exitRow();
+      `<div class="row"><div class="tx"><b>${L('Empezar otra partida', 'Start another game')}</b><small>${modesTxt} ${L(`Tu partida actual (${loss}) no se borra hasta que confirmes el nuevo inicio.`, `Your current game (${loss}) isn’t deleted until you confirm the new start.`)}</small></div><div class="rt"><button data-act="newgo">${L('Nueva partida', 'New game')}</button></div></div>` + exitRow();
   }
 
   // ============================ ELECCIÓN DE INICIO ============================
   function viewInicio() {
-    const warn = replacing && G.hasGame() ? `<p class="lead empty">${L('Al elegir un inicio se borra tu partida actual. Si te arrepientes, vuelve a tu partida.', 'Choosing a start deletes your current game. If you change your mind, go back to your game.')}</p>` : '';
+    const warn = replacing && G.hasGame() ? `<p class="lead empty">${L('Elige un inicio. Antes de reemplazar tu partida actual se pedirá confirmación; si te arrepientes, vuelve a tu partida.', 'Choose a start. You will be asked to confirm before your current game is replaced; if you change your mind, go back to your game.')}</p>` : '';
+    if (pendingStart && G.hasGame()) {
+      const pm = START_MODES.find((x) => x.id === pendingStart);
+      return `<div class="row gold"><div class="tx"><b>${L('Reemplazar partida actual', 'Replace current game')}</b><small>${L(`Nuevo inicio: ${pm ? pm.name : pendingStart}. Se perderán ${lossText()}. Esta acción no se puede deshacer.`, `New start: ${pm ? pm.name : pendingStart}. You’ll lose ${lossText()}. This cannot be undone.`)}</small></div><div class="rt"><button data-act="startcancel" class="alt" data-autofocus>${L('Cancelar', 'Cancel')}</button><button data-act="startok" class="danger" data-id="${pendingStart}">${L('Borrar y empezar', 'Delete and start')}</button></div></div>`;
+    }
     return lead(L(`Tu meta: vencer a los ${LEAGUE.length} maestros de la Liga y coronarte Campeón del Bestiario. Las criaturas nacen de huevos que se compran en Criaderos y tardan 5 minutos en eclosionar.`, `Your goal: defeat the ${LEAGUE.length} League masters and be crowned Bestiary Champion. Creatures hatch from eggs bought at the Breeding Grounds, which take 5 minutes to hatch.`)) + warn +
       `<div class="modes">${START_MODES.map((m) => `<div class="mode" style="--c:${m.color}"><h3>${m.name}</h3><small>${m.tag}</small><ul>${m.bullets.map((b) => `<li>${b}</li>`).join('')}</ul><button data-act="startmode" data-id="${m.id}">${L('Empezar', 'Start')}</button></div>`).join('')}</div>` +
       (G.hasGame() ? `<div class="backgame"><button data-act="backgame">${L('Volver a mi partida', 'Back to my game')}</button></div>` : '');
@@ -486,7 +498,7 @@ export function createPanels({ say, onSkins, onNewGame, onFeed, themeEnv }) {
     mochila: { title: () => L('Mochila', 'Backpack'), css: '#9fd0ff', tabs: bagTabs, view: { criaturas: viewCriaturas, objetos: viewObjetos, huevos: viewHuevos, progreso: viewProgreso } },
     menu: { title: () => L('Menú', 'Menu'), css: '#b98cff', tabs: menuTabs, view: { ajustes: viewAjustes, ayuda: viewAyuda, partida: viewPartida } },
     pelea: { title: () => L('Zona de pelea', 'Arena'), css: '#ff5a3c', tabs: peleaTabs, view: { liga: viewLiga, pelear: viewPelear, reglas: viewReglas } },
-    inicio: { title: () => L('JET//Bestiario', 'JET//Bestiary'), css: '#e8c05a', tabs: () => [], view: { inicio: viewInicio } },
+    inicio: { title: () => (replacing && G.hasGame() ? L('Elegir nueva partida', 'Choose a new game') : L('JET//Bestiario', 'JET//Bestiary')), css: '#e8c05a', tabs: () => [], view: { inicio: viewInicio } },
   };
   const canClose = () => !(ctx && ctx.kind === 'inicio' && !G.hasGame());
 
@@ -535,7 +547,7 @@ export function createPanels({ say, onSkins, onNewGame, onFeed, themeEnv }) {
   function open(kind, npc = null, tab = null, species = null) {
     if (mg) { cancelAnimationFrame(mg.raf); mg = null; }
     ctx = { kind, npc, species, tab: tab || VIEWS[kind].tabs()[0]?.[0] || kind };
-    confirmNew = false;
+    confirmNew = false; pendingStart = null; pendingFuse = null;
     modal.hidden = false; document.body.classList.add('modal-open'); Sound.sfx('open');
     msg.textContent = npc ? npc.line : ''; msg.className = 'say'; autoClear();
     card.style.setProperty('--accent', VIEWS[kind].css);
@@ -548,13 +560,13 @@ export function createPanels({ say, onSkins, onNewGame, onFeed, themeEnv }) {
     if (!ctx || !canClose()) return;
     if (mg) { cancelAnimationFrame(mg.raf); mg = null; }
     ctx = null; modal.hidden = true; document.body.classList.remove('modal-open'); preview.stop();
-    setInert(false); replacing = false;
+    setInert(false); replacing = false; pendingStart = null; pendingFuse = null;
     if (opener && opener.isConnected && opener.getClientRects().length) { try { opener.focus({ preventScroll: true }); } catch (e) { /* sin foco */ } }
     opener = null;
   }
   // mientras hay un menú abierto, lo de detrás no recibe foco ni toques
   const BG = ['labels', 'zone', 'rot', 'coins', 'goal', 'act', 'esc', 'esc-panel', 'cam', 'cam-panel', 'fs', 'hint', 'menu', 'title'].map($);
-  function setInert(on) { for (const x of BG) if (x) { if (on) x.setAttribute('inert', ''); else x.removeAttribute('inert'); } }
+  function setInert(on) { for (const x of BG) if (x) { if (on) x.setAttribute('inert', ''); else x.removeAttribute('inert'); } if (hooks.afterInert) hooks.afterInert(); }
 
   modal.addEventListener('pointerdown', (e) => { if (e.target === modal) close(); });
   $('mclose').addEventListener('click', close);
@@ -610,13 +622,18 @@ export function createPanels({ say, onSkins, onNewGame, onFeed, themeEnv }) {
       case 'buyEgg': done(G.buyEgg(id)); break;
       case 'warm': { const [eg, ap] = id.split('|'); done(G.warmEgg(eg, ap)); break; }
       case 'hatch': { const r = done(G.hatchEgg(id)); if (r.ok) { Sound.sfx('hatch'); sel = S().roster.findIndex((c) => c === r.creature); } break; }
-      case 'fuse': { const [a, c2] = id.split('|'); done(G.fuse(a, c2)); break; }
+      case 'fuse': pendingFuse = id; Sound.sfx('click'); render(); focusAuto(); break;
+      case 'fusecancel': pendingFuse = null; render(); break;
+      case 'fuseok': { if (pendingFuse !== id) break; pendingFuse = null; b.disabled = true; const [a, c2] = id.split('|'); done(G.fuse(a, c2)); render(); break; }
       case 'use': { const c = creature(); if (!c) { flash(L('Primero necesitas una criatura.', 'You need a creature first.'), false); break; } done(G.useItem(id, c.id)); break; }
       case 'newask': confirmNew = true; render(); break;
       case 'newno': confirmNew = false; render(); break;
       case 'newgo': confirmNew = false; replacing = true; open('inicio'); replacing = true; render(); break;   // la partida actual no se borra hasta elegir un inicio
       case 'backgame': close(); break;
-      case 'startmode': G.startGame(id); onNewGame(); ctx = { ...ctx, kind: 'mochila' }; close(); Sound.sfx('ok'); say(L(`Partida nueva: ${START_MODES.find((m) => m.id === id).name}.`, `New game: ${START_MODES.find((m) => m.id === id).name}.`)); break;
+      case 'startmode': if (G.hasGame()) { pendingStart = id; Sound.sfx('click'); render(); focusAuto(); break; }   // con progreso: confirmar antes de reemplazar
+        pendingStart = null; G.startGame(id); onNewGame(); ctx = { ...ctx, kind: 'mochila' }; close(); Sound.sfx('ok'); say(L(`Partida nueva: ${START_MODES.find((m) => m.id === id).name}.`, `New game: ${START_MODES.find((m) => m.id === id).name}.`)); break;
+      case 'startcancel': pendingStart = null; render(); break;
+      case 'startok': { if (pendingStart !== id) break; pendingStart = null; b.disabled = true; G.startGame(id); onNewGame(); ctx = { ...ctx, kind: 'mochila' }; close(); Sound.sfx('ok'); say(L(`Partida nueva: ${START_MODES.find((m) => m.id === id).name}.`, `New game: ${START_MODES.find((m) => m.id === id).name}.`)); break; }
     }
   });
 

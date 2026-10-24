@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="mobile-web-app-capable" content="no">
 <meta name="apple-mobile-web-app-capable" content="no">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -133,7 +133,6 @@
     font-family:'Poppins', system-ui, sans-serif;
     overflow:hidden;
     overscroll-behavior:none;
-    touch-action:none;
     -webkit-font-smoothing:antialiased;
     position:fixed;
     top:0; left:0; right:0; bottom:0;
@@ -2471,25 +2470,26 @@ button.action.big {
 .config-card { gap:0.55rem; }
 .modes-pills { margin-bottom:0.55rem; }
 .records { margin:0.3rem 0 0.6rem; }
-/* En pantallas anchas las 8 pills caben en 4 columnas (2 filas) */
-@media (min-width: 560px) {
+/* RSP-BALL-05: cuatro columnas sólo cuando la tarjeta real admite cuatro de ≥110 px (container query) */
+.config-card { container-type:inline-size; }
+@container (min-width: 470px) {
   .modes-pills { grid-template-columns:repeat(4, minmax(0,1fr)); }
 }
-/* FIX overflow: las etiquetas se quedan a tamaño completo y legible;
-   fitModePills() (JS) mide cada etiqueta real y SOLO achica la que no
-   entra (p.ej. SUPERVIVENCIA), lo mínimo necesario.
-   overflow:hidden + min-width:0 = red de seguridad absoluta. */
+/* RSP-BALL-05: etiquetas a 12 px, hasta dos líneas; sin reducción dinámica (fitModePills ya no achica) */
 .mode-pill {
   min-width:0;
-  overflow:hidden;
-  padding:0.6rem 0.35rem;
+  overflow:visible;
+  padding:8px 6px;
+  min-height:48px;
 }
 .mode-pill span {
   display:block;
   max-width:100%;
-  white-space:nowrap;
-  letter-spacing:0.07em;
-  font-size:0.66rem;
+  white-space:normal;
+  letter-spacing:0.05em;
+  font-size:12px;
+  line-height:1.25;
+  overflow-wrap:anywhere;
 }
 /* Ningún botón del overlay puede empujar fuera de su contenedor */
 .ov-buttons button { min-width:0; }
@@ -2841,20 +2841,22 @@ body.theme-light .inv-slot[data-id="shield"].has{color:#685000!important}
 .overlay{overflow-x:hidden}
 .overlay .ov-buttons::before{left:0!important;right:0!important}
 #game{top:0}
-.hud-top,.hud-top.dim{top:6px;left:6px;right:6px;height:40px;min-height:0;padding:0;box-sizing:border-box;flex-wrap:nowrap;align-items:center;gap:8px;background:none;border:0;pointer-events:none}
+.hud-top,.hud-top.dim{top:calc(6px + var(--st));left:calc(6px + var(--sl));right:calc(6px + var(--sr));height:auto;min-height:40px;padding:0;box-sizing:border-box;flex-wrap:nowrap;align-items:flex-start;gap:8px;background:none;border:0;pointer-events:none}
 .hud-top #btnHome,.hud-top #btnQuickReset{display:none!important}
 .hud-top .game-nav{width:auto;flex:none;margin-left:auto;gap:0;pointer-events:none}
 .hud-top #btnMenu.nav-button{width:auto!important;min-width:64px!important;min-height:36px!important;padding:6px 9px;font-size:11px;line-height:1.2;border:1px solid #829a94!important;background:rgba(15,27,25,.6)!important;color:#e7f3ef!important;box-shadow:none;opacity:.42!important;transition:opacity .15s;pointer-events:auto}
 .hud-top #btnMenu.nav-button:hover,.hud-top #btnMenu.nav-button:focus-visible{opacity:1!important}
 .nav-button kbd{display:none}
-.hud-top .hud-pill,.hud-top.dim .hud-pill{position:static;max-width:calc(100% - 86px);min-width:0;font-size:10px;gap:5px;padding:5px 6px;border:0;background:rgba(12,10,22,.45);box-shadow:none;overflow:hidden;pointer-events:none;opacity:.65}
+/* PLAY-BALL-03 / VIS-BALL-03: grupos con etiqueta, 14 px, panel casi opaco; se reparte en dos filas antes de recortar */
+.hud-top .hud-pill,.hud-top.dim .hud-pill{position:static;max-width:calc(100% - 86px);min-width:0;font-size:14px;gap:4px 10px;padding:6px 10px;border:1px solid rgba(82,69,102,.65);border-radius:10px;background:rgba(11,7,21,.94);box-shadow:none;overflow:visible;flex-wrap:wrap;white-space:normal;line-height:1.1;pointer-events:none;opacity:.85}
 .hud-spacer{display:none}
-.active-fx{top:54px}
+/* RSP-BALL-01 / RSP-BALL-03: efectos activos debajo de la barra de poderes (altura publicada por JS) y dentro de los márgenes seguros */
+.active-fx{top:calc(58px + var(--st) + var(--powerbar-height,0px) + 8px);left:calc(8px + var(--sl));max-width:calc(100% - 16px - var(--sl) - var(--sr))}
 .overlay-tools{display:flex;justify-content:center;gap:24px;margin:18px auto 4px;max-width:100%;flex-wrap:wrap}
 .overlay-tools label{display:flex;align-items:center;gap:8px;font:12px Poppins,sans-serif;color:var(--ink);max-width:100%}
 .overlay-tools .icon-btn{opacity:1;pointer-events:auto;flex:none;min-width:40px;min-height:40px;background:#171329;color:#fff}
 .overlay .ov-buttons button.action{box-sizing:border-box;white-space:normal;overflow-wrap:anywhere;line-height:1.4}
-@media(max-width:700px){.hud-top .nav-button{flex:none}.hud-top .hud-pill .hud-extra,.hud-top .hud-pill .hud-best-cell,.hud-top .hud-pill .hud-best-sep{display:none!important}.active-fx{top:54px}.overlay-tools{gap:14px}.overlay-tools label{font-size:11px}}
+@media(max-width:700px){.hud-top .nav-button{flex:none}.hud-top .hud-pill .hud-best-cell,.hud-top .hud-pill .hud-best-sep{display:none!important}.active-fx{top:calc(58px + var(--st) + var(--powerbar-height,0px) + 8px)}.overlay-tools{gap:14px}.overlay-tools label{font-size:11px}}
 
 
 /* Fit content to the existing viewport; never shrink the game canvas. */
@@ -2886,14 +2888,19 @@ body.theme-light .inv-slot[data-id="shield"].has{color:#685000!important}
    y los poderes guardados aparecen como botones tocables abajo a la izquierda. Esc/P, dos dedos y 1/2/3 siguen como atajos. */
 .hud-top #btnMenu.nav-button{display:flex!important;opacity:.6!important}
 @media(pointer:coarse){.hud-top #btnMenu.nav-button{opacity:.78!important;min-height:40px!important}}
-#inventoryReadout{position:absolute;top:calc(50px + var(--st,0px));left:50%;transform:translateX(-50%);z-index:30;display:flex;gap:6px;pointer-events:none;color:#fff;font:11px Poppins,sans-serif;max-width:calc(100% - 16px)}
-.pw-btn{pointer-events:auto;display:flex;align-items:center;gap:5px;padding:4px 9px;min-height:32px;opacity:.85;border:1px solid rgba(0,242,207,.75);border-radius:10px;background:rgba(8,4,18,.86);color:#f7f3ff;font:600 12px Poppins,sans-serif;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.5);touch-action:manipulation;-webkit-tap-highlight-color:transparent;animation:pwIn .35s ease}
+#inventoryReadout{position:absolute;top:calc(58px + var(--st,0px));left:50%;transform:translateX(-50%);z-index:30;display:flex;gap:6px;pointer-events:none;color:#fff;font:11px Poppins,sans-serif;max-width:calc(100% - 16px - var(--sl) - var(--sr))}
+#inventoryReadout:empty{display:none}
+.pw-btn .pw-top{display:inline-flex;align-items:center;gap:5px}
+.pw-btn{pointer-events:auto;display:flex;align-items:center;gap:5px;padding:4px 9px;min-width:44px;min-height:44px;opacity:.85;border:1px solid rgba(0,242,207,.75);border-radius:10px;background:rgba(8,4,18,.86);color:#f7f3ff;font:600 12px Poppins,sans-serif;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.5);touch-action:manipulation;-webkit-tap-highlight-color:transparent;animation:pwIn .35s ease}
 .pw-btn .pw-ic{font-size:14px;line-height:1}.pw-btn b{font-weight:700}.pw-btn kbd{font:10px monospace;border:1px solid #79bdb4;border-radius:4px;padding:1px 4px;opacity:.8}
 .pw-btn:active{transform:scale(.95)}.pw-btn:focus-visible{outline:3px solid #00f2cf;outline-offset:3px}
 .pw-btn[data-id="freeze"]{color:#9ff3ff}.pw-btn[data-id="slowmo"]{color:#ffc58a}.pw-btn[data-id="shield"]{color:#fff59e}
 @keyframes pwIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 @media(pointer:coarse){.pw-btn kbd{display:none}}
-@media(max-width:700px){.pw-btn span:not(.pw-ic){display:none}}
+/* RSP-BALL-02: en pantallas estrechas, tres columnas; icono + cantidad arriba, nombre legible abajo */
+@media(max-width:700px){#inventoryReadout{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));width:min(360px,calc(100% - 16px - var(--sl) - var(--sr)));gap:6px}
+ .pw-btn{flex-direction:column;justify-content:center;gap:2px;min-height:56px;padding:6px 4px;min-width:0}
+ .pw-btn .pw-name{font-size:11px;white-space:normal;line-height:1.2;min-width:0;text-align:center;overflow-wrap:anywhere}}
 body.theme-light .pw-btn{background:#fff;color:#075a70;border-color:#075a70}
 #overlay .inventory{display:none!important;position:static!important;transform:none!important;width:100%;max-width:360px;flex-direction:row;justify-content:center;gap:8px;margin:8px 0;flex-shrink:0}
 #overlay.pause .inventory{display:flex!important}
@@ -2912,7 +2919,7 @@ body.theme-light .pw-btn{background:#fff;color:#075a70;border-color:#075a70}
 
 /* JET//BALL stage language: one hierarchy, with each world's accent. */
 .stage-identity,#stagePreviewSlot{display:none}
-#overlay.intermediate{--stage-accent:#35e9cf;background:radial-gradient(ellipse at 50% 0%,#20213f 0%,#100e20 55%,#090914 100%)!important;gap:12px!important;padding:28px 18px!important;color:#f3f2fb!important;overflow-y:auto!important;overflow-x:hidden!important;justify-content:safe center!important}
+#overlay.intermediate{--stage-accent:#35e9cf;background:radial-gradient(ellipse at 50% 0%,#20213f 0%,#100e20 55%,#090914 100%)!important;gap:12px!important;padding:calc(28px + var(--st)) calc(18px + var(--sr)) calc(28px + var(--sb)) calc(18px + var(--sl))!important;color:#f3f2fb!important;overflow-y:auto!important;overflow-x:hidden!important;justify-content:safe center!important}
 #overlay.intermediate[data-mode="extreme"]{--stage-accent:#ff9261}
 #overlay.intermediate[data-mode="ocean"]{--stage-accent:#71d9ff}
 #overlay.intermediate[data-mode="space"]{--stage-accent:#b8a0ff}
@@ -2938,7 +2945,7 @@ body.theme-light .pw-btn{background:#fff;color:#075a70;border-color:#075a70}
 #overlay.intermediate button.action:hover{filter:brightness(1.12)}
 #overlay.intermediate .power-help,#overlay.intermediate .play-controls{font-size:11px!important;line-height:1.5!important;margin:0!important;color:#afadc2!important}
 #overlay.intermediate .overlay-tools{margin:0!important}#overlay.intermediate .sound-settings{width:min(460px,100%);margin:0}
-@media(max-height:600px){#overlay.intermediate{gap:8px!important;padding:16px 12px!important}#stagePreviewSlot .hero-preview{height:76px}#overlay.intermediate .ov-title{font-size:26px!important}}
+@media(max-height:600px){#overlay.intermediate{gap:8px!important;padding:calc(16px + var(--st)) calc(12px + var(--sr)) calc(16px + var(--sb)) calc(12px + var(--sl))!important}#stagePreviewSlot .hero-preview{height:76px}#overlay.intermediate .ov-title{font-size:26px!important}}
 
 
 #overlay.intermediate .ov-buttons{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -2984,6 +2991,69 @@ body.jb-menu #overlay.show{padding-top:calc(58px + var(--st,0px))!important}
 @media (max-width:899px){.hud-top .hud-pill,.hud-top.dim .hud-pill{font-size:11px!important}}
 .stage-identity strong{text-transform:none!important;letter-spacing:-.01em!important}
 #overlay button:focus-visible,#overlay select:focus-visible,#overlay summary:focus-visible{outline:2px solid #00f2cf;outline-offset:3px}
+
+/* ===== 2026-10-24 · auditoría de interfaz (ball) ===== */
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap}
+#game:focus-visible{outline:2px solid #00f2cf;outline-offset:-2px}
+/* RSP-GLOBAL-01: los paneles se desplazan y amplían; el control táctil vive en el lienzo */
+.overlay{touch-action:pan-y pinch-zoom}
+button,.mode-pill,.diff-btn,.inv-slot,.pw-btn{touch-action:manipulation}
+/* PLAY-BALL-03 / VIS-BALL-03: lectura instrumental del HUD */
+.hud-pill .stat{display:inline-flex;align-items:baseline;gap:4px;white-space:nowrap}
+.hud-pill .lbl{font:600 12px/1.3 Poppins,sans-serif;letter-spacing:.03em;text-transform:none;color:#c9c3dc;text-shadow:none;opacity:1}
+.hud-top .hud-pill .val,.hud-pill .val{font-weight:800;font-variant-numeric:tabular-nums;text-shadow:none!important;font-size:14px;line-height:1.1}
+.hud-pill .val.best{font-size:12px;font-weight:600}
+.hud-pill .val.success{animation:successPulse .3s ease-in-out 1}
+.hud-pill .sep{opacity:.5}
+body.theme-light .hud-top .hud-pill,body.theme-light .hud-top.dim .hud-pill{background:rgba(255,255,255,.94);border-color:rgba(82,69,102,.5);color:#1a1530}
+body.theme-light .hud-pill .lbl{color:#4a4160}
+@media (max-width:360px){.hud-top .hud-pill,.hud-top.dim .hud-pill{font-size:13px;gap:3px 8px;padding:5px 8px}.hud-pill .val{font-size:13px}.hud-pill .lbl{font-size:12px}}
+/* VIS-BALL-04: en movimiento reducido el estado se indica de forma estática */
+body.reduced-motion .hud-pill .val.danger,body.reduced-motion .hud-pill .val.success,body.reduced-motion .hud-pill .val.rising{animation:none!important}
+body.reduced-motion .hud-pill .val.danger{color:var(--danger);outline:2px solid currentColor;outline-offset:1px;border-radius:3px}
+body.reduced-motion .hud-top.level-reveal{animation:none!important}
+/* VIS-BALL-04: celebración breve, detrás de las estadísticas y nunca sobre el botón principal */
+.ov-state-fx .cf{animation-duration:.6s!important;animation-delay:0s!important}
+.overlay .ov-buttons,.overlay .ov-stats,.overlay .records{position:relative;z-index:1}
+/* PLAY-BALL-06 / PLAY-BALL-08 / SRC-B02: texto secundario bajo los botones y control de avance automático */
+.ov-note{display:block;grid-column:1/-1;width:100%;font:500 12px/1.4 Poppins,sans-serif;color:#c1bfd2;text-align:center;margin:-2px 0 2px}
+body.theme-light .overlay.show:not(.intermediate) .ov-note{color:#4a4160}
+.auto-adv{display:flex;align-items:center;justify-content:center;gap:8px;grid-column:1/-1;width:100%;min-height:44px;font:500 12px Poppins,sans-serif;color:#d9d6e7;cursor:pointer}
+.auto-adv input{width:20px;height:20px;accent-color:#35e9cf;margin:0;cursor:pointer}
+.auto-adv input:focus-visible{outline:2px solid #00f2cf;outline-offset:3px}
+#overlay.intermediate #btnStopAdvance{grid-column:1/-1}
+#overlay.pause.no-powers .inventory{display:none!important}
+/* PLAY-BALL-02: la guía se centra sobre el tablero y queda por encima del HUD */
+.coach{left:50%;top:50%;transform:translate(-50%,-50%);max-width:min(340px,calc(100% - 32px));z-index:60;border-radius:12px}
+.coach .body{font-size:0.8rem;color:var(--ink);letter-spacing:0.01em;line-height:1.5}
+.coach .ttl{font-size:1rem}
+.coach button{font-size:0.7rem;min-height:44px;padding:0 14px}
+.coach.show{animation:none}
+/* PLAY-BALL-01: ajustes secundarios plegados */
+.more-settings{width:min(460px,100%);margin:6px auto 0;flex-shrink:0}
+.more-settings>summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px;min-height:44px;padding:10px 14px;border:1px solid #555269;border-radius:10px;background:#201e32;color:#edeaf9;font:600 12px Poppins,sans-serif;letter-spacing:.04em;text-transform:uppercase}
+.more-settings>summary::-webkit-details-marker{display:none}
+.more-settings>summary::after{content:'+';color:#35e9cf;font-size:15px}
+.more-settings[open]>summary::after{content:'–'}
+.more-settings[open]>summary{margin-bottom:8px}
+.more-settings .sound-settings{margin:10px auto 0}
+body.theme-light .overlay.show:not(.intermediate) .more-settings>summary{background:#fff;color:#1a1530;border-color:#b9b2cc}
+#overlay.intermediate>.more-settings,#overlay.intermediate .more-settings{flex-shrink:0}
+#overlay.intermediate .ov-buttons,#overlay.intermediate .overlay-tools{flex-shrink:0}
+/* PLAY-BALL-01: escritorio, panel de 960 px con resumen a la izquierda y configuración + Jugar a la derecha */
+.home-col{display:contents}
+.home-howto{display:none}
+@media (min-width:900px) and (min-height:600px){
+  #overlay.show:not(.intermediate){flex-direction:row;flex-wrap:nowrap;align-items:flex-start;justify-content:center;gap:32px;padding-left:max(1rem,calc(50% - 480px));padding-right:max(1rem,calc(50% - 480px))}
+  #overlay.show:not(.intermediate) .home-col{display:flex;flex-direction:column;align-items:center;flex:1 1 0;min-width:0;max-width:460px}
+  #overlay.show:not(.intermediate) .home-col.home-right{position:sticky;top:0}
+  #overlay.show:not(.intermediate) .home-howto{display:block;width:100%;max-width:400px;margin:6px 0 10px;padding:14px 16px;border:1px solid var(--card-border);border-radius:12px;background:var(--card-bg);text-align:left;font:400 13px/1.55 Poppins,sans-serif;color:var(--ink-2)}
+  #overlay.show:not(.intermediate) .home-howto h2{font:700 12px Poppins,sans-serif;letter-spacing:.2em;text-transform:uppercase;color:#00f2cf;margin:0 0 6px}
+  #overlay.show:not(.intermediate) .home-howto p{margin:0 0 6px}
+  #overlay.show:not(.intermediate) .home-howto p:last-child{margin:0}
+  #overlay.show:not(.intermediate) .config-card{margin-top:0}
+  #overlay.show:not(.intermediate) .hero-mode .hero-preview{height:96px}
+}
 </style>
 </head>
 <body>
@@ -3004,23 +3074,27 @@ body.jb-menu #overlay.show{padding-top:calc(58px + var(--st,0px))!important}
 </a>
 
 <div id="app">
-  <canvas id="game"></canvas>
+  <canvas id="game" tabindex="0" aria-label="Tablero de JET//Ball" aria-describedby="kbHelp"></canvas>
+  <p id="kbHelp" class="sr-only">Flechas: mover el cursor. H: barrera horizontal. V: barrera vertical. Enter o Espacio: construir.</p>
+  <div id="kbStatus" class="sr-only" aria-live="polite"></div>
 
   <div class="hud-top">
     <div class="hud-pill" id="hudPill">
-      <span class="stat hud-mode-stat"><span class="val accent" id="hudMode">CLA</span></span>
-      <span class="sep hud-extra">·</span>
-      <span class="stat hud-extra"><span class="lbl">N</span><span class="val" id="hudLevel">01</span></span>
-      <span class="sep">·</span>
-      <span class="stat" id="hudLivesCell"><span class="val" id="hudLives">♥♥</span></span>
-      <span class="sep" id="hudLivesSep">·</span>
-      <span class="stat"><span class="val accent" id="hudPct">0%</span></span>
-      <span class="sep" id="hudTimerSep" style="display:none">·</span>
-      <span class="stat" id="hudTimerCell" style="display:none"><span class="val warn" id="hudTimer">90</span></span>
-      <span class="sep">·</span>
-      <span class="stat"><span class="val warn" id="hudScore">0</span></span>
-      <span class="sep hud-best-sep">·</span>
-      <span class="stat hud-best-cell"><span class="val best" id="hudBest" style="display:none">BEST</span></span>
+      <span class="stat hud-mode-stat"><span class="val accent" id="hudMode">CLÁSICO</span></span>
+      <span class="sep hud-extra" aria-hidden="true">·</span>
+      <span class="stat hud-extra"><span class="lbl">Nivel</span><span class="val" id="hudLevel">1</span></span>
+      <span class="sep" aria-hidden="true">·</span>
+      <span class="stat" id="hudLivesCell"><span class="lbl">Vidas:</span><span class="val" id="hudLives">3</span></span>
+      <span class="sep" id="hudLivesSep" aria-hidden="true">·</span>
+      <span class="stat"><span class="lbl" id="hudPctLbl">Capturado:</span><span class="val accent" id="hudPct">0%</span></span>
+      <span class="sep" id="hudTargetSep" aria-hidden="true">·</span>
+      <span class="stat" id="hudTargetCell"><span class="lbl">Meta:</span><span class="val" id="hudTarget">75%</span></span>
+      <span class="sep" id="hudTimerSep" style="display:none" aria-hidden="true">·</span>
+      <span class="stat" id="hudTimerCell" style="display:none"><span class="lbl">Tiempo:</span><span class="val warn" id="hudTimer">90 s</span></span>
+      <span class="sep" aria-hidden="true">·</span>
+      <span class="stat"><span class="lbl">Puntos:</span><span class="val warn" id="hudScore">0</span></span>
+      <span class="sep hud-best-sep" aria-hidden="true">·</span>
+      <span class="stat hud-best-cell"><span class="val best" id="hudBest" style="display:none">Mejor nivel: 1</span></span>
       <span class="hud-extra-only" id="hudDiff" style="display:none">FAC</span>
     </div>
     <div class="hud-spacer"></div>
@@ -3052,7 +3126,7 @@ body.jb-menu #overlay.show{padding-top:calc(58px + var(--st,0px))!important}
     <div class="ttl" id="coachTitle">Traza tu primera pared</div>
     <div class="body" id="coachBody"></div>
     <div class="actions">
-      <button class="skip" id="coachSkip">Saltar</button>
+      <button class="skip" id="coachSkip">Omitir tutorial</button>
       <button id="coachNext">Entendido</button>
     </div>
   </div>
@@ -3199,10 +3273,14 @@ body.jb-menu #overlay.show{padding-top:calc(58px + var(--st,0px))!important}
     <div class="records" id="ovRecords"></div>
 
     <div class="ov-buttons">
-      <button class="action resume" id="btnResume" style="display:none">▶ CONTINUAR PARTIDA</button>
-      <button class="action primary big" id="btnStart">▶ JUGAR</button>
-      <button class="action danger" id="btnReset" style="display:none">↺ Reiniciar</button>
-      <button class="action" id="btnMenuHome" style="display:none">⌂ Volver al menú</button>
+      <button class="action resume" id="btnResume" style="display:none">Continuar partida</button>
+      <span class="ov-note" id="resumeNote" style="display:none"></span>
+      <button class="action primary big" id="btnStart">Jugar</button>
+      <span class="ov-note" id="ovBtnNote" style="display:none"></span>
+      <label class="auto-adv" id="autoAdvWrap" style="display:none"><input type="checkbox" id="autoAdvance"> <span>Avance automático</span></label>
+      <button class="action" id="btnStopAdvance" style="display:none">Detener avance</button>
+      <button class="action danger" id="btnReset" style="display:none"><span aria-hidden="true">↺</span> Reiniciar partida</button>
+      <button class="action" id="btnMenuHome" style="display:none">Volver al menú</button>
     </div>
 
   <div class="inventory" id="inventory">
@@ -3222,8 +3300,10 @@ body.jb-menu #overlay.show{padding-top:calc(58px + var(--st,0px))!important}
       <span class="inv-count">0</span>
     </button>
   </div>
-    <p class="power-help">Elegir un poder lo activa y reanuda la partida.</p>
+    <p class="power-help" id="powerHelp">Elegir un poder lo activa y reanuda la partida.</p>
     <p class="play-controls">Pausa: Esc / P o dos dedos. Poderes: 1 / 2 / 3 o desde Pausa.</p>
+    <details class="more-settings" id="moreSettings">
+    <summary>Más ajustes</summary>
     <div class="overlay-tools">
       <label><button class="icon-btn" id="btnAudio" aria-label="Audio">♪</button><span>Audio</span></label>
       <label><button class="icon-btn" id="btnFs" aria-label="Pantalla completa">⛶</button><span>Pantalla completa</span></label>
@@ -3247,6 +3327,7 @@ body.jb-menu #overlay.show{padding-top:calc(58px + var(--st,0px))!important}
         <span class="th-label">Claro</span>
       </button>
     </div>
+    </details>
 
   </div>
 </div>
@@ -6736,8 +6817,8 @@ return { init, play, stop, setVolume };
       powerupCount: 2,
     },
     expert: {
-      name: 'DIFÍCIL',
-      short: 'DIF',
+      name: 'EXPERTO',   // PLAY-BALL-04: mismo nombre que el botón del menú
+      short: 'EXP',
       desc: 'Bolas +35% más rápidas, −2 vidas, eventos desde nivel 1',
       // +35% sobre NORMAL
       ballSpeedBase: 3.24,   // 2.4 * 1.35
@@ -7744,6 +7825,7 @@ return { init, play, stop, setVolume };
       if (w.y > H + w.r * 1.5) w.y = -w.r * 1.5;
       const breath = 0.55 + 0.45 * Math.sin(now / 1500 + w.seed);
       ctx.save();
+      ctx.globalAlpha *= 0.75; // VIS-BALL-01: factor decorativo (sólo adornos no semánticos)
       ctx.translate(w.x, w.y);
       ctx.rotate(w.rot);
       // Halo difuso atrás
@@ -10831,6 +10913,7 @@ return { init, play, stop, setVolume };
                    : L >= 4  ? 0.70
                    : 0.75;
     }
+    if (typeof kbReset === 'function') kbReset(); // RSP-BALL-04: cursor en una celda válida al armar el nivel
     nextEventAt = performance.now() + 8000 + Math.random()*6000;
     nextPowerupAt = performance.now() + 6000 + Math.random()*4000;
     updateHUD();
@@ -10883,7 +10966,7 @@ return { init, play, stop, setVolume };
         msg += `\n\n🎨  Color objetivo: ${tname} (×1.5 puntaje)`;
       }
       const title = isBoss ? `JEFE · NIVEL ${state.level}` : `NIVEL ${state.level}`;
-      showOverlay(`// nivel ${String(state.level).padStart(2,'0')}`, title, msg, '▶ Continuar', false, false);
+      showOverlay(`// nivel ${state.level}`, title, msg, `Empezar nivel ${state.level}`, false, false);
     }
   }
 
@@ -11075,8 +11158,9 @@ return { init, play, stop, setVolume };
     document.getElementById('configCard').style.display = 'flex';
     document.getElementById('themeSwitch').style.display = 'flex';
     ui.btnReset.style.display = 'none';
-    ui.btnStart.textContent = '▶ JUGAR';
+    ui.btnStart.textContent = 'Jugar';
     ui.btnStart.classList.add('big');
+    setBtnNote(''); showAutoAdvance(false);
     // UX v4: en el home no hay stats chips ni fx de estado
     if (ui.ovStats) { ui.ovStats.style.display = 'none'; ui.ovStats.innerHTML = ''; }
     const _menuFx = document.getElementById('ovStateFx');
@@ -11089,11 +11173,15 @@ return { init, play, stop, setVolume };
       const _rb = document.getElementById('btnResume');
       if (_rb) {
         const _run = JSON.parse(localStorage.getItem('jetball.run') || 'null');
+        const _rn = document.getElementById('resumeNote');
         if (_run && _run.level > 1 && MODES[_run.mode]) {
-          _rb.textContent = `▶ CONTINUAR · ${MODES[_run.mode].name} · NIVEL ${_run.level}`;
+          // SRC-B02: la acción es «Continuar partida»; modo y nivel guardados van como texto secundario
+          _rb.textContent = 'Continuar partida';
           _rb.style.display = 'block';
+          if (_rn) { _rn.textContent = `Modo guardado: ${modeTitle(_run.mode)} · Nivel guardado: ${_run.level}`; _rn.style.display = 'block'; }
         } else {
           _rb.style.display = 'none';
+          if (_rn) _rn.style.display = 'none';
         }
       }
     } catch(_e) {}
@@ -11174,17 +11262,9 @@ return { init, play, stop, setVolume };
   // UX v4.3b: ajuste exacto de etiquetas de modo — mide cada etiqueta real
   // y reduce SOLO la que no entra en su pill, lo mínimo necesario.
   // Las cortas (ZEN, ARTE…) quedan siempre a tamaño completo.
+  // RSP-BALL-05: ya no se achica ninguna etiqueta (mínimo 12 px, hasta dos líneas por CSS); sólo se limpian estilos inline viejos
   function fitModePills() {
-    document.querySelectorAll('.mode-pill span').forEach(sp => {
-      sp.style.fontSize = '';                 // reset al tamaño base de CSS
-      const avail = sp.clientWidth;
-      if (!avail) return;                     // pill no visible: medir después
-      const need = sp.scrollWidth;
-      if (need > avail) {
-        const base = parseFloat(getComputedStyle(sp).fontSize) || 10.56;
-        sp.style.fontSize = Math.max(7.5, base * (avail / need) * 0.97) + 'px';
-      }
-    });
+    document.querySelectorAll('.mode-pill span').forEach(sp => { sp.style.fontSize = ''; });
   }
   let _fitPillsT = null;
   window.addEventListener('resize', () => {
@@ -11196,45 +11276,37 @@ return { init, play, stop, setVolume };
 
   // UX v4.2: auto-avance en victoria — cuenta regresiva en el botón.
   // Tocar cualquier parte del overlay (menos el botón) la cancela.
-  let _vcTimer = null;
-  function _vcCancelHandler(e) {
-    if (ui.btnStart && (e.target === ui.btnStart || ui.btnStart.contains(e.target))) return;
-    cancelVictoryCountdown(true);
+  // PLAY-BALL-06 / SRC-B01 (decisión 4): el botón principal no cambia de nombre; el destino y la cuenta viven en un texto
+  // secundario. Avance automático desactivado por defecto, opt-in persistente (settings.autoAdvance) y cancelable con
+  // «Detener avance». Empezar manualmente cancela el temporizador (hideOverlay) y nunca hay dos lanzamientos.
+  let _vcTimer = null, _vcTarget = 0;
+  function setBtnNote(text) {
+    const n = document.getElementById('ovBtnNote'); if (!n) return;
+    n.textContent = text || ''; n.style.display = text ? 'block' : 'none';
   }
-  function cancelVictoryCountdown(restoreLabel) {
+  function showAutoAdvance(on) {
+    const w = document.getElementById('autoAdvWrap'), cb = document.getElementById('autoAdvance'), stop = document.getElementById('btnStopAdvance');
+    if (w) w.style.display = on ? 'flex' : 'none';
+    if (cb) cb.checked = !!(settings && settings.autoAdvance);
+    if (stop) stop.style.display = 'none';
+  }
+  function cancelVictoryCountdown() {
     if (_vcTimer) { clearInterval(_vcTimer); _vcTimer = null; }
-    if (ui.overlay) ui.overlay.removeEventListener('pointerdown', _vcCancelHandler, true);
-    if (ui.btnStart && ui.btnStart.dataset.baseLabel) {
-      if (restoreLabel) ui.btnStart.textContent = ui.btnStart.dataset.baseLabel;
-      delete ui.btnStart.dataset.baseLabel;
-    }
-  }
-  // "▶ NIVEL 3 EN 5 SEGUNDOS" — plantilla traducida vía diccionario integrado
-  function _cdLabel(base, n) {
-    const key = (n === 1) ? 'EN 1 SEGUNDO' : 'EN {N} SEGUNDOS';
-    let tpl = key;
-    try {
-      const i = _txIdx();
-      if (i !== -1 && _TX[key] && _TX[key][i]) tpl = _TX[key][i];
-    } catch(_e) {}
-    return `${base} ${tpl.replace('{N}', n)}`;
+    const stop = document.getElementById('btnStopAdvance'); if (stop) stop.style.display = 'none';
+    if (_vcTarget && ui.overlay && ui.overlay.classList.contains('victory')) setBtnNote(`Nivel ${_vcTarget}`);
   }
   function startVictoryCountdown() {
-    cancelVictoryCountdown(false);
-    if (settings && settings.autoAdvance === false) return;
+    cancelVictoryCountdown();
+    _vcTarget = state ? state.level : 0;
+    if (!settings || !settings.autoAdvance) return;   // OFF por defecto
     let remain = 6;
-    const base = ui.btnStart.textContent;
-    ui.btnStart.dataset.baseLabel = base;
-    ui.btnStart.textContent = _cdLabel(base, remain);
-    ui.overlay.addEventListener('pointerdown', _vcCancelHandler, true);
+    const stop = document.getElementById('btnStopAdvance'); if (stop) stop.style.display = 'block';
+    const paint = () => setBtnNote(`Nivel ${_vcTarget} · Avance automático en ${remain} s`);
+    paint();
     _vcTimer = setInterval(() => {
       remain--;
-      if (remain <= 0) {
-        cancelVictoryCountdown(false);
-        if (ui.btnStart) ui.btnStart.click();
-        return;
-      }
-      if (ui.btnStart) ui.btnStart.textContent = _cdLabel(ui.btnStart.dataset.baseLabel, remain);
+      if (remain <= 0) { cancelVictoryCountdown(); if (ui.btnStart && pendingNext) ui.btnStart.click(); return; }
+      paint();
     }, 1000);
   }
 
@@ -11247,6 +11319,8 @@ return { init, play, stop, setVolume };
     ui.ovTitle.textContent = title;
     ui.ovMsg.textContent = msg;
     ui.btnStart.textContent = btnLabel;
+    setBtnNote(''); showAutoAdvance(false);
+    const _rn = document.getElementById('resumeNote'); if (_rn) _rn.style.display = 'none';
     ui.ovTitle.style.display = 'block';
     ui.ovMsg.style.display = 'block';
     document.getElementById('configCard').style.display = 'none';
@@ -11267,7 +11341,7 @@ return { init, play, stop, setVolume };
     ui.overlay.classList.toggle('intermediate', isIntermediate);
     // UX v4.4: en pausa y derrota siempre hay salida directa al menú inicio
     const _mh = document.getElementById('btnMenuHome');
-    if (_mh) _mh.style.display = (isPause || isDefeat) ? 'block' : 'none';
+    if (_mh) _mh.style.display = (isPause || isDefeat || isVictory) ? 'block' : 'none';
     ui.overlay.dataset.mode = (state && state.mode) || '';
     // Inyectar contenedor de decoración por mapa
     let deco = document.getElementById('mapDeco');
@@ -11288,6 +11362,8 @@ return { init, play, stop, setVolume };
     document.getElementById('stagePreviewSlot').appendChild(document.getElementById('heroPreview'));
     startHeroPreview(state.mode);
     paused = true;
+    // foco: en pausa va al CTA (Reanudar partida); en resultados, al título para que el lector lo anuncie
+    try { if (isPause) ui.btnStart.focus({ preventScroll: true }); else { ui.ovTitle.setAttribute('tabindex', '-1'); ui.ovTitle.focus({ preventScroll: true }); } } catch(_e) {}
   }
 
   function resumeGameClocks() {
@@ -11328,22 +11404,25 @@ return { init, play, stop, setVolume };
     }
     // Forzar resize al cerrar overlay - mobile puede haber cambiado viewport
     scheduleResize();
+    // RSP-BALL-04: la superficie de juego recibe el foco (teclado operativo, sin dejarlo en un botón oculto)
+    try { canvas.focus({ preventScroll: true }); } catch(_e) {}
   }
 
+  function modeTitle(m) { const n = (MODES[m] && MODES[m].name) || String(m); return n.charAt(0) + n.slice(1).toLowerCase(); }
   function renderRecordsUI(includeCurrent, isNew) {
     const rec = records[selectedMode] || 0;
     let html = '';
     if (includeCurrent) {
       // Game over: mostrar la partida actual junto con el récord
       html += `<div class="rec ${isNew?'new-record':''}">
-        <div class="rec-lbl">Esta partida</div>
-        <div class="rec-val">${String(state.level).padStart(2,'0')}</div>
+        <div class="rec-lbl">Nivel alcanzado</div>
+        <div class="rec-val">${state.level}</div>
         <div class="rec-tier">${tierForLevel(state.level).name}</div>
       </div>`;
       html += `<div class="rec">
-        <div class="rec-lbl">Mejor · ${MODES[selectedMode].short}</div>
-        <div class="rec-val">${rec > 0 ? String(rec).padStart(2,'0') : '—'}</div>
-        <div class="rec-tier">${rec > 0 ? tierForLevel(rec).name : '—'}</div>
+        <div class="rec-lbl">Récord · ${modeTitle(selectedMode)}</div>
+        <div class="rec-val">${rec > 0 ? rec : '—'}</div>
+        <div class="rec-tier">${rec > 0 ? 'Nivel · ' + tierForLevel(rec).name : '—'}</div>
       </div>`;
     } else {
       // Main menu: 2 cards lado a lado con stats reales
@@ -11354,14 +11433,14 @@ return { init, play, stop, setVolume };
       // Cuántos modos jugaste
       const modesTried = (typeof modesPlayed !== 'undefined') ? modesPlayed.size : 0;
       html += `<div class="rec rec-half">
-        <div class="rec-lbl">Mejor · ${MODES[selectedMode].short}</div>
-        <div class="rec-val">${rec > 0 ? String(rec).padStart(2,'0') : '—'}</div>
-        <div class="rec-tier">${rec > 0 ? tierForLevel(rec).name : 'sin partidas'}</div>
+        <div class="rec-lbl">Récord · ${modeTitle(selectedMode)}</div>
+        <div class="rec-val">${rec > 0 ? rec : '—'}</div>
+        <div class="rec-tier">${rec > 0 ? 'Nivel · ' + tierForLevel(rec).name : 'sin partidas'}</div>
       </div>`;
       html += `<div class="rec rec-half">
         <div class="rec-lbl">Logros</div>
         <div class="rec-val">${unlockedAchs}<span class="rec-frac">/${totalAchs}</span></div>
-        <div class="rec-tier">${modesTried} modos jugados</div>
+        <div class="rec-tier">${modesTried === 1 ? '1 modo jugado' : modesTried + ' modos jugados'}</div>
       </div>`;
     }
     ui.ovRecords.innerHTML = html;
@@ -11381,24 +11460,24 @@ return { init, play, stop, setVolume };
 
   function updateHUD() {
     // Mostrar el nombre completo del modo (no abreviatura) cuando hay espacio
-    const isCompactMode = window.innerWidth < 420;
-    ui.hudMode.textContent = isCompactMode ? MODES[state.mode].short : MODES[state.mode].name;
+    ui.hudMode.textContent = MODES[state.mode].name; // PLAY-BALL-05: sin abreviaturas crípticas
     ui.hudDiff.textContent = diff().short;
     if (ui.hudScore) {
       tickDisplayScore();
-      ui.hudScore.textContent = Math.round(_displayScore).toLocaleString();
+      let _loc; try { _loc = _gameLang(); Number(1).toLocaleString(_loc); } catch(_e) { _loc = undefined; }
+      ui.hudScore.textContent = Math.round(_displayScore).toLocaleString(_loc);
       // Glow al subir
       ui.hudScore.classList.toggle('rising', _displayScore < (state.score || 0) - 5);
     }
     // Best record visible junto al score (si existe)
     const best = records[selectedMode] || 0;
     if (best > 0 && ui.hudBest) {
-      ui.hudBest.textContent = 'BEST L' + String(best).padStart(2,'0');
+      ui.hudBest.textContent = 'Mejor nivel: ' + best;
       ui.hudBest.style.display = '';
     } else if (ui.hudBest) {
       ui.hudBest.style.display = 'none';
     }
-    ui.hudLevel.textContent = String(state.level).padStart(2,'0');
+    ui.hudLevel.textContent = String(state.level);
     const livesSep = document.getElementById('hudLivesSep');
     if (state.mode === 'zen') {
       ui.hudLivesCell.style.display = 'none';
@@ -11406,25 +11485,30 @@ return { init, play, stop, setVolume };
     } else {
       ui.hudLivesCell.style.display = 'inline-flex';
       if (livesSep) livesSep.style.display = 'inline';
-      const livesStr = state.lives <= 0 ? '—'
+      const livesStr = state.lives <= 0 ? '0'
                      : state.lives === Infinity ? '∞'
-                     : state.lives > 5 ? state.lives + '♥'
-                     : '♥'.repeat(state.lives);
+                     : String(state.lives); // «Vidas: {n}» siempre con etiqueta y número (PLAY-BALL-03)
       ui.hudLives.textContent = livesStr;
       ui.hudLives.classList.remove('warn', 'danger');
       if (state.lives === 1) ui.hudLives.classList.add('danger');
       else if (state.lives <= 2) ui.hudLives.classList.add('warn');
     }
+    const _tc = document.getElementById('hudTargetCell'), _ts = document.getElementById('hudTargetSep'), _pl = document.getElementById('hudPctLbl'), _tv = document.getElementById('hudTarget');
     if (state.mode === 'arte_mimic') {
       const painting = getArtePainting(state.level);
       const similarity = calculateArteSimilarity(painting);
+      if (_pl) _pl.textContent = 'Parecido:';
+      if (_tc) _tc.style.display = 'none'; if (_ts) _ts.style.display = 'none';
       ui.hudPct.textContent = Math.round(similarity * 100) + '%';
       ui.hudPct.classList.remove('warn', 'success');
       if (similarity >= 0.7) ui.hudPct.classList.add('success');
       else if (similarity >= 0.5) ui.hudPct.classList.add('warn');
     } else {
       const tgt = state.target || 0.75;
-      ui.hudPct.textContent = Math.round(capturedRatio * 100) + '% / ' + Math.round(tgt * 100) + '%';
+      if (_pl) _pl.textContent = 'Capturado:';
+      if (_tc) _tc.style.display = ''; if (_ts) _ts.style.display = '';
+      ui.hudPct.textContent = Math.round(capturedRatio * 100) + '%';
+      if (_tv) _tv.textContent = Math.round(tgt * 100) + '%';
       ui.hudPct.classList.remove('warn', 'success');
       if (capturedRatio >= tgt) ui.hudPct.classList.add('success');
       else if (capturedRatio >= tgt * 0.66) ui.hudPct.classList.add('warn');
@@ -11433,13 +11517,13 @@ return { init, play, stop, setVolume };
     if (state.mode === 'time') {
       ui.hudTimerCell.style.display = 'inline-flex';
       if (timerSep) timerSep.style.display = 'inline';
-      ui.hudTimer.textContent = Math.max(0, Math.ceil(timerSeconds));
+      ui.hudTimer.textContent = Math.max(0, Math.ceil(timerSeconds)) + ' s';
       ui.hudTimer.classList.toggle('danger', timerSeconds < 15);
       ui.hudTimer.classList.toggle('warn', timerSeconds >= 15 && timerSeconds < 30);
     } else if (state.mode === 'extreme' && modeState.extremeTimeLeft !== undefined) {
       ui.hudTimerCell.style.display = 'inline-flex';
       if (timerSep) timerSep.style.display = 'inline';
-      ui.hudTimer.textContent = Math.max(0, Math.ceil(modeState.extremeTimeLeft));
+      ui.hudTimer.textContent = Math.max(0, Math.ceil(modeState.extremeTimeLeft)) + ' s';
       ui.hudTimer.classList.toggle('danger', modeState.extremeTimeLeft < 15);
       ui.hudTimer.classList.toggle('warn', modeState.extremeTimeLeft >= 15 && modeState.extremeTimeLeft < 30);
     } else {
@@ -12229,6 +12313,14 @@ return { init, play, stop, setVolume };
     }
     bar.addEventListener('click', go);
     bar.addEventListener('touchend', go, { passive: false });
+    // RSP-BALL-03: publicar la altura real de la barra (0 sin botones) para que los efectos activos se ubiquen debajo
+    const pub = () => {
+      const h = bar.children.length ? Math.round(bar.getBoundingClientRect().height) : 0;
+      document.documentElement.style.setProperty('--powerbar-height', h + 'px');
+    };
+    if (window.ResizeObserver) new ResizeObserver(pub).observe(bar);
+    new MutationObserver(pub).observe(bar, { childList: true });
+    pub();
   })();
   // Pistas de descubrimiento (se muestran pocas veces y quedan anotadas en localStorage)
   function _hintOnce(key, max, text, ms) {
@@ -12252,11 +12344,13 @@ return { init, play, stop, setVolume };
       // Barra de poderes en partida: un botón por poder guardado (tocar = usar). 1/2/3 siguen funcionando.
       const _keys = { freeze: '1', slowmo: '2', shield: '3' };
       const _names = { freeze: 'CONGELAR', slowmo: 'LENTO', shield: 'ESCUDO' };
+      // RSP-BALL-02: icono + cantidad en la primera línea y nombre visible en la segunda (no se oculta por ancho)
       readout.innerHTML = [['freeze','❄'],['slowmo','⏱'],['shield','⛨']]
         .filter(([id]) => inventory[id] > 0)
-        .map(([id,icon]) => `<button type="button" class="pw-btn" data-id="${id}" aria-label="${tx(_names[id])} ×${inventory[id]}"><span class="pw-ic" aria-hidden="true">${icon}</span><span>${tx(_names[id])}</span><b>×${inventory[id]}</b><kbd>${_keys[id]}</kbd></button>`)
+        .map(([id,icon]) => `<button type="button" class="pw-btn" data-id="${id}" aria-label="${tx(_names[id])} ×${inventory[id]}"><span class="pw-top"><span class="pw-ic" aria-hidden="true">${icon}</span><b>×${inventory[id]}</b><kbd aria-hidden="true">${_keys[id]}</kbd></span><span class="pw-name">${tx(_names[id])}</span></button>`)
         .join('');
     }
+    const _fx = { freeze:'congela las bolas 4 s', slowmo:'cámara lenta 6 s', shield:'absorbe un impacto' };
     const slots = root.querySelectorAll('.inv-slot');
     slots.forEach(slot => {
       const id = slot.dataset.id;
@@ -12264,13 +12358,25 @@ return { init, play, stop, setVolume };
       slot.classList.toggle('has', count > 0);
       slot.disabled = count === 0;
       const label = {freeze:'CONGELAR',slowmo:'CÁMARA LENTA',shield:'ESCUDO'}[id];
-      slot.setAttribute('aria-label', label + ': ' + count);
-      slot.title = label + ' · ' + count;
+      // PLAY-BALL-09: efecto y duración en el nombre accesible
+      slot.setAttribute('aria-label', label + ': ' + count + ' · ' + _fx[id]);
+      slot.title = label + ' · ' + count + ' · ' + _fx[id];
       const name = slot.querySelector('.inv-name');
       if (name) name.textContent = label;
       const cnt = slot.querySelector('.inv-count');
       if (cnt) cnt.textContent = count;
     });
+    if (ui.overlay && ui.overlay.classList.contains('pause')) paintPowerHelp();
+  }
+  // PLAY-BALL-09 (decisión 4): el inventario vacío explica por qué; Zen no genera poderes y no promete juntarlos
+  function paintPowerHelp() {
+    const help = document.getElementById('powerHelp'); if (!help || !state) return;
+    const total = (inventory.freeze || 0) + (inventory.slowmo || 0) + (inventory.shield || 0);
+    const zen = state.mode === 'zen';
+    ui.overlay.classList.toggle('no-powers', zen);
+    help.textContent = zen ? 'En modo Zen no aparecen poderes.'
+      : total > 0 ? 'Elegir un poder lo activa y reanuda la partida.'
+      : 'Todavía no tenés poderes. Juntalos durante la partida.';
   }
   function renderActiveFx() {
     const now = _pauseStartedAt === null ? performance.now() : _pauseStartedAt;
@@ -15065,7 +15171,9 @@ return { init, play, stop, setVolume };
         ctx.shadowBlur = 0;
         ctx.fillStyle = color;
       } else {
-        ctx.shadowBlur = b.kind==='boss' ? 30 : (b.kind==='magnetic' ? 25 : 20);
+        // VIS-BALL-02: disco sólido de radio b.r con halo acotado; algo mayor sólo para entidades especiales
+        const _special = b.kind==='boss' || b.kind==='magnetic' || b.kind==='phantom' || b.kind==='bullet' || b.kind==='explosive' || b.kind==='timebomb';
+        ctx.shadowBlur = _special ? Math.min(16, 1.5 * b.r) : Math.min(12, 1.2 * b.r);
         const grad = ctx.createRadialGradient(b.x-2, b.y-2, 0, b.x, b.y, b.r);
         grad.addColorStop(0, '#ffffff');
         grad.addColorStop(0.4, color);
@@ -15090,9 +15198,12 @@ return { init, play, stop, setVolume };
   }
 
   function draw() {
-    const sx = shake > 0 ? (Math.random()-0.5)*shake : 0;
-    const sy = shake > 0 ? (Math.random()-0.5)*shake : 0;
-    if (shake > 0) shake -= 0.8;
+    // VIS-BALL-04: sacudida visual ≤ 3 px y ~180 ms; nula con movimiento reducido (la información de daño sigue en HUD/banners)
+    const _rm = !!(settings && settings.reducedMotion);
+    const _sv = _rm ? 0 : Math.min(3, shake);
+    const sx = _sv > 0 ? (Math.random()-0.5)*2*_sv : 0;
+    const sy = _sv > 0 ? (Math.random()-0.5)*2*_sv : 0;
+    if (shake > 0) shake -= Math.max(0.8, shake / 11);
     const now = performance.now();
     const frozen = effects.freeze > now;
     const slow = effects.slowmo > now;
@@ -17172,8 +17283,7 @@ return { init, play, stop, setVolume };
     }
 
     if (flash > 0) {
-      ctx.fillStyle = `rgba(255,51,85,${flash/50})`;
-      ctx.fillRect(0,0,W,H);
+      if (!(settings && settings.reducedMotion)) { ctx.fillStyle = `rgba(255,51,85,${flash/50})`; ctx.fillRect(0,0,W,H); }
       flash--;
     }
     if (state && state.mode === 'extreme' && modeState && modeState.extremeAshUntil && performance.now() < modeState.extremeAshUntil) {
@@ -17824,6 +17934,7 @@ return { init, play, stop, setVolume };
     stepParticles();
     stepFloatingScores();
     draw();
+    drawKbCursor();
     requestAnimationFrame(loop);
   }
 
@@ -17894,19 +18005,22 @@ return { init, play, stop, setVolume };
     // UX v4.1: el destino vive en el botón (▶ NIVEL N) — sin texto redundante
     let msg = tierMsg.replace(/^\n/, '');
     if (state.mode === 'time') msg += (msg ? '\n' : '') + '⏱ El cronómetro se reinicia';
-    showOverlay(`// ¡victoria!`, `NIVEL ${String(prev).padStart(2,'0')} ✓`, msg, `▶ NIVEL ${state.level}`, false, false);
-    // UX v4.2: auto-avance — el botón cuenta 6…1 y avanza solo; tocar afuera lo cancela
+    // Decisión 4: CTA estable «Siguiente nivel», destino «Nivel {n}» como texto secundario, «Volver al menú» disponible
+    showOverlay(`// ¡victoria!`, `NIVEL ${prev} ✓`, msg, 'Siguiente nivel', false, false);
+    setBtnNote(`Nivel ${state.level}`);
+    showAutoAdvance(true);
     startVictoryCountdown();
   }
 
   // Continuar tras game over — solo se permite UNA VEZ por partida
   let _continueUsed = false;
+  const CONTINUE_LIVES = 3; // PLAY-BALL-08: vidas totales con las que se retoma (regla vigente), mostradas en el botón
   function continueAfterDeath() {
     if (_continueUsed) return;
     _continueUsed = true;
     state.running = true;
     state.gameOver = false;
-    state.lives = 3;       // mini set de vidas
+    state.lives = CONTINUE_LIVES;       // mini set de vidas
     if (state.mode === 'extreme') modeState.extremeTimeLeft = Math.max(15, modeState.extremeTimeLeft);
     if (state.mode === 'time') timerSeconds = Math.max(15, timerSeconds);
     paused = false;
@@ -17934,6 +18048,7 @@ return { init, play, stop, setVolume };
     if (state.score >= 10000) unlockAchievement('score_10k');
     const prevBest = records[selectedMode] || 0;
     const isNew = state.level > prevBest;
+    const firstResult = prevBest === 0; // PLAY-BALL-07: el primer registro no es una superación
     if (isNew) { records[selectedMode] = state.level; saveRecords(records); }
     // UX v4.2: la partida terminó — borrar checkpoint
     try { localStorage.removeItem('jetball.run'); } catch(_e) {}
@@ -17947,12 +18062,17 @@ return { init, play, stop, setVolume };
     ]);
     // UX v4.1: "Mejor: nivel X" ya lo muestra la card MEJOR de records — no repetir
     const baseMsg = reason ? `${reason}` : '';
-    const recMsg = isNew ? `${baseMsg ? '\n' : ''}¡NUEVO RÉCORD!` : '';
+    const recMsg = isNew ? `${baseMsg ? '\n' : ''}${firstResult ? 'Primer resultado guardado' : '¡Nuevo récord!'}` : '';
 
-    // Mostrar overlay con botón de continuar si no se usó aún
+    // Mostrar overlay con botón de continuar si no se usó aún (PLAY-BALL-08: la etiqueta dice las vidas reales)
     showOverlay(`// fin`, 'FIN DE PARTIDA', baseMsg + recMsg,
-                _continueUsed ? '↻ Volver al menú' : (NativeAds.native ? '▶ VER ANUNCIO · +3 VIDAS' : '✦ CONTINUAR (+3 vidas)'),
-                true, isNew);
+                _continueUsed ? 'Volver al menú' : (NativeAds.native ? `Ver anuncio · Continuar con ${CONTINUE_LIVES} vidas` : `Continuar con ${CONTINUE_LIVES} vidas`),
+                true, isNew && !firstResult);
+    if (!_continueUsed) {
+      let note = NativeAds.native ? '' : 'Una continuación gratuita por partida';
+      if (state.mode === 'survival') note += (note ? ' · ' : '') + `En Supervivencia la continuación también otorga ${CONTINUE_LIVES} vidas.`;
+      setBtnNote(note);
+    }
     // Marcar el botón con flag para que el handler sepa qué hacer
     if (!_continueUsed) {
       ui.btnStart.dataset.continue = '1';
@@ -18201,7 +18321,44 @@ return { init, play, stop, setVolume };
   canvas.addEventListener('mousemove', e => {
     const p = eventToCanvas(e.clientX, e.clientY);
     _lastMousePos = p;
+    kbCursor.active = false; // el puntero vuelve a mandar; las flechas retoman desde su celda
   });
+  // RSP-BALL-04: cursor de celda propio para jugar sólo con teclado (flechas mueven, Enter/Espacio construyen con startWall)
+  const kbCursor = { x: 0, y: 0, active: false };
+  function kbClamp() { kbCursor.x = Math.max(0, Math.min(Math.max(0, GW - 1), kbCursor.x)); kbCursor.y = Math.max(0, Math.min(Math.max(0, GH - 1), kbCursor.y)); }
+  function kbReset() { kbCursor.x = Math.floor(GW / 2); kbCursor.y = Math.floor(GH / 2); kbCursor.active = false; kbClamp(); }
+  function kbFromPointer() { if (_lastMousePos.x > 0 || _lastMousePos.y > 0) { kbCursor.x = Math.floor(_lastMousePos.x / CELL); kbCursor.y = Math.floor(_lastMousePos.y / CELL); kbClamp(); } }
+  function kbStatus(extra) {
+    const el = document.getElementById('kbStatus'); if (!el || !state) return;
+    const free = !!(grid && grid[kbCursor.y * GW + kbCursor.x] === 1);
+    const estado = extra || (paused ? uiText('Pausa') : free ? uiText('Celda libre') : uiText('Celda ocupada'));
+    el.textContent = `${uiText('Fila')} ${kbCursor.y + 1}, ${uiText('columna')} ${kbCursor.x + 1}. ${uiText('Orientación')}: ${uiText(currentOrient === 'h' ? 'horizontal' : 'vertical')}. ${estado}`;
+  }
+  function kbMove(key) {
+    if (!kbCursor.active) kbFromPointer();
+    kbCursor.active = true;
+    if (key === 'ArrowLeft') kbCursor.x--; else if (key === 'ArrowRight') kbCursor.x++; else if (key === 'ArrowUp') kbCursor.y--; else if (key === 'ArrowDown') kbCursor.y++;
+    kbClamp(); kbStatus();
+  }
+  function kbBuild() {
+    if (!kbCursor.active) kbFromPointer();
+    const before = walls.length;
+    startWall(kbCursor.x, kbCursor.y, currentOrient);
+    kbStatus(walls.length > before ? uiText('Construyendo barrera') : uiText('No se puede construir aquí'));
+  }
+  function drawKbCursor() {
+    if (!kbCursor.active || !state || !state.running || paused || state.gameOver) return;
+    const x = kbCursor.x * CELL, y = kbCursor.y * CELL;
+    ctx.save();
+    ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(5,1,8,0.85)'; ctx.strokeRect(x + 1, y + 1, CELL - 2, CELL - 2);
+    ctx.lineWidth = 2; ctx.strokeStyle = '#ffffff'; ctx.strokeRect(x + 1, y + 1, CELL - 2, CELL - 2);
+    ctx.beginPath();
+    if (currentOrient === 'h') { ctx.moveTo(x - CELL, y + CELL / 2); ctx.lineTo(x + CELL * 2, y + CELL / 2); }
+    else { ctx.moveTo(x + CELL / 2, y - CELL); ctx.lineTo(x + CELL / 2, y + CELL * 2); }
+    ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(5,1,8,0.85)'; ctx.stroke();
+    ctx.lineWidth = 1.5; ctx.strokeStyle = '#ffffff'; ctx.stroke();
+    ctx.restore();
+  }
   canvas.addEventListener('mousedown', e => {
     if (!state.running || paused || tutorialActive) return;
     if (e.button !== 0 && e.button !== 2) return;
@@ -18234,32 +18391,37 @@ return { init, play, stop, setVolume };
   });
   // Bloquear menú contextual del click derecho dentro del canvas
   canvas.addEventListener('contextmenu', e => { e.preventDefault(); });
+  const KB_CONTROL_SEL = 'button,a,input,select,textarea,summary,[contenteditable="true"],[role="button"],[role="switch"],[role="slider"]';
   document.addEventListener('keydown', e => {
-    if (e.repeat) return;
+    const isArrow = /^Arrow(Left|Right|Up|Down)$/.test(e.key);
+    if (e.repeat && !isArrow) return;
     // Ignorar si está escribiendo en algún input
     if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT')) return;
-    // UX v4.1: Enter/Espacio = CTA principal cuando hay overlay visible
-    // (JUGAR / CONTINUAR / NIVEL N / reanudar pausa) — esencial en desktop/Steam
-    if ((e.key === 'Enter' || e.key === ' ') && e.target && e.target.closest && e.target.closest('button,a')) return;
-    if ((e.key === 'Enter' || e.key === ' ') && ui.overlay && ui.overlay.classList.contains('show')) {
-      e.preventDefault();
-      if (ui.btnStart) ui.btnStart.click();
+    const onControl = !!(e.target && e.target.closest && e.target.closest(KB_CONTROL_SEL));
+    const ae = document.activeElement;
+    // RSP-BALL-06: un control enfocado (botón, enlace, summary de sonido, slider…) conserva su activación nativa
+    if ((e.key === 'Enter' || e.key === ' ') && onControl) return;
+    if (tutorialActive) { if (e.key === 'Escape') { e.preventDefault(); endTutorial(); } return; }
+    if (ui.overlay && ui.overlay.classList.contains('show')) {
+      // atajo de CTA sólo desde el fondo (body, lienzo o el propio overlay), nunca desde cualquier nodo no contemplado
+      if ((e.key === 'Enter' || e.key === ' ') && (!ae || ae === document.body || ae === canvas || ae === ui.overlay || ae === ui.ovTitle)) {
+        e.preventDefault();
+        if (ui.btnStart) ui.btnStart.click();
+      }
       return;
     }
-    if (!state || !state.running || tutorialActive) return;
+    if (!state || !state.running) return;
     if (['1','2','3'].includes(e.key)) {
       e.preventDefault(); useInventoryItem(INVENTORY_TYPES[Number(e.key)-1]);
     } else if (!paused && (e.key === 'h' || e.key === 'H')) {
-      currentOrient = 'h'; updateOrientPill(); Audio.sfx.orientFlip();
+      currentOrient = 'h'; updateOrientPill(); Audio.sfx.orientFlip(); if (kbCursor.active) kbStatus();
     } else if (!paused && (e.key === 'v' || e.key === 'V')) {
-      currentOrient = 'v'; updateOrientPill(); Audio.sfx.orientFlip();
+      currentOrient = 'v'; updateOrientPill(); Audio.sfx.orientFlip(); if (kbCursor.active) kbStatus();
+    } else if (isArrow) {
+      if (paused || onControl) return;           // flechas en sliders/menús quedan para el control
+      e.preventDefault(); kbMove(e.key);
     } else if (e.key === ' ' || e.key === 'Enter') {
-      if (!paused && _lastMousePos.x > 0) {
-        e.preventDefault();
-        const gx = Math.floor(_lastMousePos.x / CELL);
-        const gy = Math.floor(_lastMousePos.y / CELL);
-        startWall(gx, gy, currentOrient);
-      }
+      if (!paused) { e.preventDefault(); kbBuild(); } // RSP-BALL-04: sin depender del ratón
     } else if (e.key === 'p' || e.key === 'P' || e.key === 'Escape') {
       if (ui.btnMenu) ui.btnMenu.click();
     } else if (e.key === 'm' || e.key === 'M') {
@@ -18359,6 +18521,42 @@ return { init, play, stop, setVolume };
   }
   bindBtn(ui.btnStart, btnStartFire);
 
+  // PLAY-BALL-02: guía breve sobre el tablero antes del primer intento (se descarta con Entendido / Omitir tutorial
+  // y no se repite; «Tutorial» en ajustes la vuelve a activar). Pausa la lógica mientras se lee; no toca la física.
+  function startTutorial() {
+    if (!settings || !settings.showTutorial || settings.tutorialSeen) return;
+    if (!state || !state.running || state.gameOver || paused || state.level !== 1) return;
+    const coach = document.getElementById('coach'); if (!coach) return;
+    const touch = !!(window.matchMedia && window.matchMedia('(pointer:coarse)').matches);
+    const step = document.getElementById('coachStep'); if (step) step.style.display = 'none';
+    document.getElementById('coachTitle').textContent = 'Tu primera barrera';
+    document.getElementById('coachBody').textContent = 'Arrastrá horizontal o verticalmente para construir una barrera. Evitá que una bola la toque antes de terminar.'
+      + (touch ? '' : ' Con el mouse: clic izquierdo construye una barrera vertical y clic derecho una horizontal. Con el teclado: flechas para mover el cursor y Enter para construir.');
+    coach.setAttribute('role', 'dialog'); coach.setAttribute('aria-modal', 'true');
+    coach.setAttribute('aria-labelledby', 'coachTitle'); coach.setAttribute('aria-describedby', 'coachBody');
+    tutorialActive = true; paused = true; _pauseStartedAt = performance.now();
+    coach.classList.add('show');
+    try { document.getElementById('coachNext').focus({ preventScroll: true }); } catch(_e) {}
+  }
+  function endTutorial() {
+    const coach = document.getElementById('coach'); if (coach) coach.classList.remove('show');
+    settings.tutorialSeen = true; saveSettings(settings);
+    if (tutorialActive) { tutorialActive = false; resumeGameClocks(); paused = false; }
+    try { canvas.focus({ preventScroll: true }); } catch(_e) {}
+  }
+  bindBtn(document.getElementById('coachNext'), endTutorial);
+  bindBtn(document.getElementById('coachSkip'), endTutorial);
+
+  // PLAY-BALL-06: avance automático opt-in persistente y «Detener avance»
+  (function bindAutoAdvance() {
+    const cb = document.getElementById('autoAdvance'), stop = document.getElementById('btnStopAdvance');
+    if (cb) cb.addEventListener('change', () => {
+      settings.autoAdvance = !!cb.checked; saveSettings(settings);
+      if (cb.checked && pendingNext && ui.overlay.classList.contains('victory')) startVictoryCountdown(); else cancelVictoryCountdown();
+    });
+    if (stop) bindBtn(stop, () => { cancelVictoryCountdown(); try { ui.btnStart.focus({ preventScroll: true }); } catch(_e) {} });
+  })();
+
   const btnPrivacyOptions = document.getElementById('btnPrivacyOptions');
   if (btnPrivacyOptions) bindBtn(btnPrivacyOptions, () => NativeAds.privacyOptions());
 
@@ -18449,8 +18647,9 @@ return { init, play, stop, setVolume };
         { lbl:'Nivel', val:String(state.level), cls:'accent' },
         { lbl:'Puntaje', val:(state.score||0).toLocaleString(), cls:'warn' }
       ]);
-      showOverlay('// pausado', 'PAUSA', 'Todo queda en pausa. Continúa cuando quieras.', '▶ Continuar', false, false);
+      showOverlay('// pausado', 'PAUSA', 'Todo queda en pausa. Continúa cuando quieras.', 'Reanudar partida', false, false);
       ui.btnReset.style.display = 'block';
+      paintPowerHelp();
     }
   });
 
@@ -18818,6 +19017,37 @@ return { init, play, stop, setVolume };
   // UI translations are local; external translation is only a fallback for other languages.
   const UI_LANGS = ['en','pt','fr','de'];
   const UI_WORDS = {
+    // 2026-10-24 · auditoría: cadenas nuevas (primero, para que la búsqueda sin distinción de mayúsculas las prefiera)
+    'Jugar':['Play','Jogar','Jouer','Spielen'], 'Continuar partida':['Continue game','Continuar partida','Continuer la partie','Spiel fortsetzen'],
+    'Reanudar partida':['Resume game','Retomar partida','Reprendre la partie','Spiel fortsetzen'],
+    'Siguiente nivel':['Next level','Próximo nível','Niveau suivant','Nächstes Level'],
+    'Avance automático':['Automatic progression','Avanço automático','Progression automatique','Automatischer Wechsel'],
+    'Avance automático en':['Automatic progression in','Avanço automático em','Progression automatique dans','Automatischer Wechsel in'],
+    'Detener avance':['Stop automatic progression','Detener avanço','Arrêter la progression','Automatischen Wechsel stoppen'],
+    'Empezar nivel':['Start level','Começar nível','Commencer le niveau','Level starten'],
+    'Modo guardado':['Saved mode','Modo salvo','Mode enregistré','Gespeicherter Modus'], 'Nivel guardado':['Saved level','Nível salvo','Niveau enregistré','Gespeichertes Level'],
+    'Omitir tutorial':['Skip tutorial','Pular tutorial','Passer le tutoriel','Tutorial überspringen'], 'Entendido':['Got it','Entendi','Compris','Verstanden'],
+    'Tu primera barrera':['Your first barrier','Sua primeira barreira','Votre première barrière','Deine erste Barriere'],
+    'Arrastrá horizontal o verticalmente para construir una barrera. Evitá que una bola la toque antes de terminar.':['Drag horizontally or vertically to build a barrier. Don’t let a ball touch it before it is complete.','Arraste na horizontal ou na vertical para construir uma barreira. Não deixe uma bola tocá-la antes de terminar.','Glissez horizontalement ou verticalement pour construire une barrière. Ne laissez aucune balle la toucher avant la fin.','Ziehe waagerecht oder senkrecht, um eine Barriere zu bauen. Lass keinen Ball sie berühren, bevor sie fertig ist.'],
+    'Con el mouse: clic izquierdo construye una barrera vertical y clic derecho una horizontal. Con el teclado: flechas para mover el cursor y Enter para construir.':['Mouse: left click builds a vertical barrier, right click a horizontal one. Keyboard: arrow keys move the cursor and Enter builds.','Mouse: clique esquerdo constrói uma barreira vertical e clique direito uma horizontal. Teclado: setas movem o cursor e Enter constrói.','Souris : clic gauche pour une barrière verticale, clic droit pour une horizontale. Clavier : flèches pour déplacer le curseur et Entrée pour construire.','Maus: Linksklick baut eine senkrechte, Rechtsklick eine waagerechte Barriere. Tastatur: Pfeiltasten bewegen den Cursor, Enter baut.'],
+    'Flechas: mover el cursor. H: barrera horizontal. V: barrera vertical. Enter o Espacio: construir.':['Arrow keys: move the cursor. H: horizontal barrier. V: vertical barrier. Enter or Space: build.','Setas: mover o cursor. H: barreira horizontal. V: barreira vertical. Enter ou Espaço: construir.','Flèches : déplacer le curseur. H : barrière horizontale. V : barrière verticale. Entrée ou Espace : construire.','Pfeiltasten: Cursor bewegen. H: waagerechte Barriere. V: senkrechte Barriere. Enter oder Leertaste: bauen.'],
+    'Fila':['Row','Linha','Ligne','Zeile'], 'columna':['column','coluna','colonne','Spalte'], 'Orientación':['Orientation','Orientação','Orientation','Ausrichtung'],
+    'horizontal':['horizontal','horizontal','horizontale','waagerecht'], 'vertical':['vertical','vertical','verticale','senkrecht'],
+    'Celda libre':['Free cell','Célula livre','Case libre','Freies Feld'], 'Celda ocupada':['Occupied cell','Célula ocupada','Case occupée','Belegtes Feld'],
+    'Construyendo barrera':['Building barrier','Construindo barreira','Construction de la barrière','Barriere wird gebaut'], 'No se puede construir aquí':['Cannot build here','Não dá para construir aqui','Impossible de construire ici','Hier kann nicht gebaut werden'],
+    'Puntos':['Points','Pontos','Points','Punkte'], 'Meta':['Target','Meta','Objectif','Ziel'], 'Parecido':['Similarity','Semelhança','Ressemblance','Ähnlichkeit'],
+    'Mejor nivel':['Best level','Melhor nível','Meilleur niveau','Bestes Level'], 'Nivel alcanzado':['Level reached','Nível alcançado','Niveau atteint','Erreichtes Level'],
+    'Récord':['Record','Recorde','Record','Rekord'], 'Primer resultado guardado':['First result saved','Primeiro resultado salvo','Premier résultat enregistré','Erstes Ergebnis gespeichert'],
+    'Nuevo récord':['New record','Novo recorde','Nouveau record','Neuer Rekord'], 'modo jugado':['mode played','modo jogado','mode joué','Modus gespielt'],
+    'Continuar con 3 vidas':['Continue with 3 lives','Continuar com 3 vidas','Continuer avec 3 vies','Mit 3 Leben weitermachen'],
+    'Una continuación gratuita por partida':['One free continuation per game','Uma continuação gratuita por partida','Une continuation gratuite par partie','Eine kostenlose Fortsetzung pro Spiel'],
+    'En Supervivencia la continuación también otorga 3 vidas.':['In Survival the continuation also grants 3 lives.','Em Sobrevivência a continuação também dá 3 vidas.','En Survie, la continuation accorde aussi 3 vies.','Auch in Überleben gibt die Fortsetzung 3 Leben.'],
+    'Ver anuncio':['Watch ad','Ver anúncio','Voir la publicité','Werbung ansehen'],
+    'Todavía no tenés poderes. Juntalos durante la partida.':['You don’t have any power-ups yet. Collect them during the game.','Você ainda não tem poderes. Colete-os durante a partida.','Vous n’avez pas encore de pouvoirs. Récupérez-les pendant la partie.','Du hast noch keine Kräfte. Sammle sie während des Spiels.'],
+    'En modo Zen no aparecen poderes.':['Power-ups do not appear in Zen mode.','No modo Zen não aparecem poderes.','Les pouvoirs n’apparaissent pas en mode Zen.','Im Zen-Modus erscheinen keine Kräfte.'],
+    'Más ajustes':['More settings','Mais ajustes','Plus de réglages','Weitere Einstellungen'], 'Cómo se juega':['How to play','Como jogar','Comment jouer','So wird gespielt'],
+    'Trazá barreras horizontales o verticales para encerrar las bolas y capturar el porcentaje de tablero que pide cada nivel.':['Draw horizontal or vertical barriers to trap the balls and capture the share of the board each level asks for.','Trace barreiras horizontais ou verticais para cercar as bolas e capturar a porcentagem do tabuleiro que cada nível pede.','Tracez des barrières horizontales ou verticales pour enfermer les balles et capturer la part du plateau demandée à chaque niveau.','Ziehe waagerechte oder senkrechte Barrieren, um die Bälle einzuschließen und den geforderten Anteil des Spielfelds zu erobern.'],
+    'Si una bola toca una barrera en construcción, perdés una vida. Los poderes guardados se usan con 1 / 2 / 3 o desde la pausa.':['If a ball hits a barrier under construction, you lose a life. Stored power-ups are used with 1 / 2 / 3 or from the pause menu.','Se uma bola tocar uma barreira em construção, você perde uma vida. Os poderes guardados se usam com 1 / 2 / 3 ou na pausa.','Si une balle touche une barrière en construction, vous perdez une vie. Les pouvoirs gardés s’utilisent avec 1 / 2 / 3 ou depuis la pause.','Berührt ein Ball eine Barriere im Bau, verlierst du ein Leben. Gespeicherte Kräfte nutzt du mit 1 / 2 / 3 oder aus der Pause.'],
     'Todo queda en pausa. Continúa cuando quieras.':['Everything is paused. Resume when you’re ready.','Tudo está pausado. Continue quando quiser.','Tout est en pause. Reprenez quand vous voulez.','Alles ist pausiert. Spiele weiter, wenn du bereit bist.'],
     'Elegir un poder lo activa y reanuda la partida.':['Choose a power to activate it and resume play.','Escolha um poder para ativá-lo e retomar o jogo.','Choisir un pouvoir l’active et reprend la partie.','Eine Kraft wählen aktiviert sie und setzt das Spiel fort.'],
     'Pausa: Esc / P o dos dedos. Poderes: 1 / 2 / 3 o desde Pausa.':['Pause: Esc / P or two fingers. Powers: 1 / 2 / 3 or from Pause.','Pausa: Esc / P ou dois dedos. Poderes: 1 / 2 / 3 ou na pausa.','Pause : Échap / P ou deux doigts. Pouvoirs : 1 / 2 / 3 ou en pause.','Pause: Esc / P oder zwei Finger. Kräfte: 1 / 2 / 3 oder im Pausenmenü.'],
@@ -18893,10 +19123,11 @@ return { init, play, stop, setVolume };
     if(s.includes('\n'))return s.split('\n').map(v=>uiText(v)).join('\n');
     if(s.includes(':'))return s.split(':').map(v=>uiText(v.trim())).join(': ');
     const revive=s.match(/^(.*)\(\+3 vidas\)$/i);if(revive)return uiText(revive[1].trim())+' (+3 '+['lives','vidas','vies','Leben'][i]+')';
+    const adv=s.match(/^Avance automático en (\d+) s$/);if(adv)return UI_WORDS['Avance automático en'][i]+' '+adv[1]+' s';
     if(s.includes('·'))return s.split('·').map(v=>uiText(v.trim())).join(' · ');
     const match=s.match(/^([^\p{L}]*)(.*?)([^\p{L}]*)$/u);
     if(match){const key=Object.keys(UI_WORDS).find(k=>k.toLocaleLowerCase()===match[2].toLocaleLowerCase());if(key)return match[1]+UI_WORDS[key][i]+match[3];}
-    return s.replace(/NIVEL|nivel|Rango|modos jugados|CONTINUAR/g,key=>UI_WORDS[key]?.[i]||key);
+    return s.replace(/NIVEL|Nivel|nivel|Rango|modos jugados|modo jugado|CONTINUAR/g,key=>UI_WORDS[key]?.[i]||key);
   }
   const uiSources=new WeakMap(),uiAttrs=new WeakMap();
   let uiLanguagePending=false;
@@ -18933,7 +19164,16 @@ return { init, play, stop, setVolume };
 
     // Sincronizar valor con localStorage o navigator
     let cur = null;
-    try { cur = localStorage.getItem('jetball.lang'); } catch(_e){}
+    // SRC-G02: ?lang=es|en de la URL manda; después la elección propia del juego; después la preferencia común
+    // de jetgames.fun (cookie jet_lang / localStorage); por último el navegador.
+    const urlLang = (location.search.match(/[?&]lang=(es|en)\b/) || [])[1] || null;
+    if (urlLang) cur = urlLang;
+    if (!cur) { try { cur = localStorage.getItem('jetball.lang'); } catch(_e){} }
+    if (!cur) {
+      const m = document.cookie.match(/(?:^|;\s*)jet_lang=(es|en)\b/);
+      if (m) cur = m[1];
+      else { try { const s = localStorage.getItem('jet_lang'); if (s === 'es' || s === 'en') cur = s; } catch(_e){} }
+    }
     if (!cur) {
       const raw = (navigator.language || 'es').toLowerCase();
       if (raw.startsWith('zh-cn') || raw === 'zh') cur = 'zh-CN';
@@ -18999,6 +19239,14 @@ return { init, play, stop, setVolume };
     sel.addEventListener('change', e => {
       const newLang = e.target.value;
       try { localStorage.setItem('jetball.lang', newLang); } catch(_e){}
+      // la elección ES/EN vuelve a la preferencia común del sitio
+      if (newLang === 'es' || newLang === 'en') {
+        try {
+          localStorage.setItem('jet_lang', newLang);
+          const dominio = /(^|\.)jetgames\.fun$/.test(location.hostname) ? '; domain=.jetgames.fun' : '';
+          document.cookie = 'jet_lang=' + newLang + '; path=/; max-age=31536000; SameSite=Lax' + dominio + (location.protocol === 'https:' ? '; Secure' : '');
+        } catch(_e){}
+      }
       if (newLang === 'es' || UI_LANGS.includes(newLang)) clearCookies();
       else setCookies(newLang);
       applyLang(newLang);
@@ -19079,6 +19327,27 @@ return { init, play, stop, setVolume };
   for (const event of ['click','touchstart','keydown']) {
     document.addEventListener(event, () => { Audio.init(); Audio.unlock(); Audio.ensureMusicPlaying(); }, {capture:true, passive:true});
   }
+  // ============== PLAY-BALL-01: home en dos columnas en escritorio ==============
+  // Los hijos del overlay se agrupan en dos contenedores que son transparentes (display:contents) salvo en la
+  // home de escritorio, donde pasan a columnas: resumen/tutorial a la izquierda, configuración y Jugar a la derecha.
+  try {
+    const ov = document.getElementById('overlay');
+    const left = document.createElement('div'); left.className = 'home-col home-left';
+    const right = document.createElement('div'); right.className = 'home-col home-right';
+    const howto = document.createElement('div'); howto.className = 'home-howto'; howto.id = 'homeHowto';
+    howto.innerHTML = '<h2>Cómo se juega</h2><p>Trazá barreras horizontales o verticales para encerrar las bolas y capturar el porcentaje de tablero que pide cada nivel.</p><p>Si una bola toca una barrera en construcción, perdés una vida. Los poderes guardados se usan con 1 / 2 / 3 o desde la pausa.</p>';
+    const pick = sel => ov.querySelector(':scope > ' + sel);
+    const L = ['.ov-brand', '.ov-tagline', '.ov-trademark', '#langSwitch'].map(pick).filter(Boolean);
+    const R = ['#ovEye', '.stage-identity', '#stagePreviewSlot', '#ovTitle', '#ovStats', '#ovMsg', '#configCard', '#ovRecords', '.ov-buttons', '#inventory', '#powerHelp', '.play-controls', '#moreSettings'].map(pick).filter(Boolean);
+    if (L.length && R.length) {
+      ov.insertBefore(left, L[0]);
+      L.forEach(el => left.appendChild(el));
+      left.appendChild(howto);
+      ov.insertBefore(right, R[0]);
+      R.forEach(el => right.appendChild(el));
+    }
+  } catch (e) { console.warn('home-cols:', e); }
+
   // ============== INIT FINAL ==============
   try {
     if (typeof resizeCanvas === 'function') resizeCanvas();

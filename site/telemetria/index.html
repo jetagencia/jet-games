@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>JET//Telemetría · Los instrumentos a veces mienten</title>
 <meta name="description" content="Eres la última persona despierta en una nave averiada. Lee sensores que a veces mienten, gasta aire con cabeza y repara la pieza correcta. Un juego de deducción para teléfono, tablet y computadora.">
 <meta name="theme-color" content="#050108">
@@ -20,13 +20,49 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="src/estilos.css?v=4">
+<link rel="stylesheet" href="src/estilos.css?v=5">
+<script>
+/* SRC-G05 — estados de carga (loading / error / ready) antes del JS del juego. Autónomo a propósito:
+   tiene que funcionar aunque falle src/textos.js, por eso lleva sus cadenas ES/EN acá. */
+(function () {
+  var L = (document.documentElement.lang === 'en') ? 'en' : 'es';
+  var T = {
+    es: { cargando: 'Cargando Telemetría…', inter: 'La carga se interrumpió. Podés volver a intentarlo.', red: 'No pudimos descargar todos los recursos.', recargar: 'Volver a cargar', juegos: 'Volver a los juegos' },
+    en: { cargando: 'Loading Telemetry…', inter: 'Loading was interrupted. You can try again.', red: 'We couldn’t download all resources.', recargar: 'Reload game', juegos: 'Back to games' }
+  }[L];
+  var estado = 'cargando', timer = 0;
+  function pintar() {
+    var c = document.getElementById('cargaTxt'); if (!c) return;
+    document.documentElement.setAttribute('data-carga', estado);
+    if (estado === 'cargando') { c.innerHTML = '<p class="carga-txt">' + T.cargando + '</p>'; return; }
+    if (estado === 'listo') return;
+    c.innerHTML = '<p class="carga-txt" role="alert">' + (estado === 'red' ? T.red : T.inter) + '</p>' +
+      '<div class="carga-acc"><button type="button" class="btn pri" id="cargaReintentar">' + T.recargar + '</button>' +
+      '<a class="btn" href="https://jetgames.fun/?lang=' + L + '" target="_top" rel="noopener">' + T.juegos + '</a></div>';
+    var b = document.getElementById('cargaReintentar');
+    if (b) { b.addEventListener('click', function () { location.reload(); }); b.focus(); }
+  }
+  window.JETCarga = {
+    error: function (tipo) { if (estado !== 'cargando') return; clearTimeout(timer); estado = tipo === 'red' ? 'red' : 'error'; pintar(); },
+    listo: function () { clearTimeout(timer); estado = 'listo'; pintar(); window.removeEventListener('error', alError, true); }
+  };
+  function alError(e) {
+    if (estado !== 'cargando') return;
+    var tg = e && e.target;
+    if (tg && tg.tagName === 'SCRIPT') { window.JETCarga.error('red'); return; }
+    if (!tg || tg === window) window.JETCarga.error('error');
+  }
+  window.addEventListener('error', alError, true);
+  timer = setTimeout(function () { if (estado === 'cargando') window.JETCarga.error('error'); }, 15000);
+  document.addEventListener('DOMContentLoaded', pintar);
+})();
+</script>
 </head>
 <body>
 <canvas id="bg" aria-hidden="true"></canvas>
 
 <header id="hdr">
-  <a id="back" href="https://jetgames.fun/" aria-label="JET//Games">‹ <span>JET<i>//</i>Games</span></a>
+  <a id="back" href="https://jetgames.fun/" aria-label="Volver a los juegos">‹ <span>JET<i>//</i>Games</span></a>
   <div id="hdrMid" aria-live="off"></div>
   <div id="hdrR">
     <button class="ib" id="bFs" type="button" hidden><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
@@ -35,6 +71,8 @@
   </div>
 </header>
 
+<!-- SRC-G05: título y estado visibles antes del JS; lo retira ui.js al terminar (JETCarga.listo) -->
+<div id="carga" class="carga" role="status" aria-live="polite"><h1 class="logo">JET<i>//</i>Telemetría</h1><div id="cargaTxt"><p class="carga-txt">Cargando Telemetría…</p></div></div>
 <section id="s-inicio" class="scr"></section>
 <section id="s-mapa" class="scr"></section>
 <section id="s-practica" class="scr"></section>
@@ -47,12 +85,20 @@
     <canvas id="cvWin" aria-hidden="true"></canvas>
   </div>
   <div class="g-nave" id="gNave"><canvas id="cvNave" aria-hidden="true"></canvas><div class="nodos" id="nodos"></div><div class="nave-info" id="naveInfo"></div></div>
-  <div class="g-lista"><div class="zonas" id="zonas" hidden></div><div class="filas" id="filas" role="list"></div></div>
-  <div class="g-ora"><div class="ora" id="ora" hidden role="status"><b>ORA</b><span class="t" id="oraT"></span><button class="ob" id="oraB" type="button" hidden></button><button class="ox" id="oraX" type="button" aria-label="×">×</button></div></div>
+  <div class="g-lista">
+    <div class="zonas" id="zonas" hidden></div>
+    <!-- PLAY-TELEMETRIA-01 / VIS-TELEMETRIA-02: encabezado «Probabilidad de avería» y marcas 0/50/100 (sólo con porcentajes visibles y fuera de Veterano) -->
+    <div class="lista-cab" id="listaCab"><span id="listaCabT" data-t="faultProb"></span><span class="ticks" aria-hidden="true"><i>0</i><i>50</i><i>100 %</i></span></div>
+    <div class="filas" id="filas" role="radiogroup" aria-labelledby="listaCabT"></div>
+  </div>
+  <div class="g-ora"><div class="ora" id="ora" hidden role="status"><b>ORA</b><span class="t" id="oraT"></span><button class="ob" id="oraTodo" type="button" hidden data-t="showAll"></button><button class="ob" id="oraB" type="button" hidden></button><button class="ox" id="oraX" type="button" data-ta="closeOra">×</button></div></div>
   <div class="g-band" id="gBand">
+    <!-- PLAY-TELEMETRIA-02/03/04: objetivo seleccionado, costes totales alternativos y saldos hipotéticos (sólo datos visibles) -->
+    <div class="band-info"><p class="sel-info" id="selInfo"></p><p class="rep-info" id="repInfo" hidden></p></div>
     <div class="sensores" id="sensores"></div>
+    <div class="leyenda" id="senLeyenda" aria-hidden="true"><span data-t="legendAlert"></span><span data-t="legendNormal"></span></div>
     <div class="acciones">
-      <button class="ab" id="bLog" type="button"><svg viewBox="0 0 24 24"><path d="M5 6h14M5 12h14M5 18h9"/></svg><span data-t="log"></span></button>
+      <button class="ab" id="bLog" type="button" aria-expanded="false" aria-controls="sheet"><svg viewBox="0 0 24 24"><path d="M5 6h14M5 12h14M5 18h9"/></svg><span data-t="log"></span></button>
       <button class="ab" id="bPista" type="button"><svg viewBox="0 0 24 24"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/></svg><span data-t="hint"></span></button>
       <button class="rep" id="bRep" type="button"><i class="fillh"></i><svg class="ring" viewBox="0 0 36 36"><circle class="bgc" cx="18" cy="18" r="15"/><circle class="fg" cx="18" cy="18" r="15"/></svg><span class="rl"><b id="repL"></b><small id="repS"></small></span></button>
     </div>
@@ -61,11 +107,13 @@
 </section>
 <section id="s-res" class="scr"></section>
 
-<div id="sheet" role="dialog" aria-modal="false"><div class="asa"></div><div class="top"><h2 data-t="log"></h2><button class="x" id="sheetX" type="button" aria-label="×">×</button></div><div class="logl" id="logSheet"></div></div>
+<!-- RSP-MODALS-01 / PLAY-TELEMETRIA-07: la hoja del registro es un diálogo con nombre; el fondo queda inerte mientras está abierta -->
+<div id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetT"><div class="asa"></div><div class="top"><h2 id="sheetT" data-t="log"></h2><button class="x" id="sheetX" type="button" data-ta="closeLog">×</button></div><div class="logl" id="logSheet"></div></div>
 <div class="ov" id="ov-pausa" role="dialog" aria-modal="true"></div>
 <div class="ov" id="ov-ajustes" role="dialog" aria-modal="true"></div>
 <div class="ov" id="ov-como" role="dialog" aria-modal="true"></div>
 <div class="ov" id="ov-diario" role="dialog" aria-modal="true"></div>
+<div class="ov" id="ov-confirm" role="alertdialog" aria-modal="true"></div>
 <div id="flash"></div>
 <div id="toast" role="status"></div>
 <div id="aria" class="sr" aria-live="polite"></div>
@@ -74,16 +122,16 @@
 <script>/* Migración única: el idioma que este juego guardaba en sus preferencias pasa a ser la elección común de jetgames.fun (jet_lang). */
 (function(){try{if(/(?:^|;\s*)jet_lang=(es|en)/.test(document.cookie)||/^(es|en)$/.test(localStorage.getItem('jet_lang')||''))return;var p=JSON.parse(localStorage.getItem('jet-telemetria:prefs')||'null');if(p&&(p.lang==='es'||p.lang==='en'))localStorage.setItem('jet_lang',p.lang);}catch(e){}})();</script>
 <script src="src/jet-idioma.js?v=1"></script>
-<script src="src/textos.js?v=4"></script>
+<script src="src/textos.js?v=5"></script>
 <script src="src/nucleo.js?v=1"></script>
 <script src="src/casos.js?v=1"></script>
 <script src="src/campana.js?v=3"></script>
 <script src="src/piloto.js?v=1"></script>
 <script src="src/astronauta-oficial.js?v=1"></script>
-<script src="src/cabina.js?v=3"></script>
+<script src="src/cabina.js?v=4"></script>
 <script src="src/audio.js?v=2"></script>
 <script src="src/sfx.js?v=2"></script>
 <script src="src/musica.js?v=2"></script>
-<script src="src/ui.js?v=7"></script>
+<script src="src/ui.js?v=8"></script>
 </body>
 </html>
