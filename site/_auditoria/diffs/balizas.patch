@@ -1,0 +1,1105 @@
+diff --git a/site/balizas/index.html b/site/balizas/index.html
+index 5a4e375..c31d39c 100644
+--- a/site/balizas/index.html
++++ b/site/balizas/index.html
+@@ -3,7 +3,7 @@
+ <head>
+ <meta charset="utf-8">
+ <script src="src/jet-idioma.js?v=7"></script>
+-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
++<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+ <title>JET//Balizas · Cruza la niebla</title>
+ <meta name="description" content="Cada día, un cinturón de asteroides en la niebla, el mismo para todos. Crúzalo, deja balizas para los que vienen detrás y mira cuántos astronautas guiaste.">
+ <meta name="theme-color" content="#050108">
+@@ -17,9 +17,28 @@
+ <link rel="apple-touch-icon" href="icon-192.png">
+ <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+ <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+-<link rel="stylesheet" href="src/style.css?v=7">
++<link rel="stylesheet" href="src/style.css?v=8">
++<script>
++/* SRC-G05 · estado de carga antes de los módulos del juego: título visible, error recuperable, sin spinner infinito. */
++(function () {
++  var es = (document.documentElement.lang || 'es') !== 'en';
++  var T = es ? { load: 'Cargando JET//Balizas…', err: 'La carga se interrumpió. Podés volver a intentarlo.', net: 'No pudimos descargar todos los recursos.', retry: 'Volver a cargar', back: 'Volver a los juegos' }
++             : { load: 'Loading JET//Balizas…', err: 'Loading was interrupted. You can try again.', net: 'We couldn’t download all resources.', retry: 'Reload game', back: 'Back to games' };
++  var listo = false, fallo = false;
++  function el(id) { return document.getElementById(id); }
++  function pintar() { var c = el('carga'); if (!c) return; el('cargaTxt').textContent = fallo ? (fallo === 'net' ? T.net : T.err) : T.load; el('cargaAcc').hidden = !fallo; el('cargaSpin').hidden = !!fallo; el('cargaRetry').textContent = T.retry; el('cargaBack').textContent = T.back; c.setAttribute('aria-busy', fallo ? 'false' : 'true'); }
++  window.__balizasCarga = {
++    listo: function () { listo = true; var c = el('carga'); if (c) c.hidden = true; clearTimeout(window.__balizasCarga.t); },
++    error: function (tipo) { if (listo) return; fallo = tipo || 'err'; pintar(); },
++    t: setTimeout(function () { if (!listo) { fallo = 'err'; pintar(); } }, 20000)
++  };
++  window.addEventListener('error', function (e) { if (listo) return; var src = e && e.target && e.target.tagName === 'SCRIPT'; window.__balizasCarga.error(src ? 'net' : 'err'); }, true);
++  document.addEventListener('DOMContentLoaded', function () { pintar(); el('cargaRetry').addEventListener('click', function () { location.reload(); }); });
++})();
++</script>
+ </head>
+ <body>
++<div id="carga" role="status" aria-live="polite" aria-busy="true"><div class="carga-in"><h1 class="logo">JET<i>//</i>Balizas</h1><p id="cargaTxt">Cargando JET//Balizas…</p><div class="spin" id="cargaSpin"></div><div id="cargaAcc" hidden><button class="btn pri" id="cargaRetry" type="button">Volver a cargar</button><a class="btn" id="cargaBack" href="https://jetgames.fun/">Volver a los juegos</a></div></div></div>
+ <canvas id="cv" tabindex="-1" aria-label="JET//Balizas"></canvas>
+ 
+ <a id="back" class="on" href="https://jetgames.fun/" target="_top" rel="noopener" data-ta="back_games">‹ JET<i>//</i>Games</a>
+@@ -63,7 +82,7 @@
+ <!-- ANTES DEL VUELO -->
+ <section id="day" class="scr" aria-labelledby="dayTitle">
+   <div class="card wide daycardx">
+-    <div class="top"><button class="x" data-close="day" data-ta="go_home">‹</button><h2 id="dayTitle"></h2><span id="dayMode" class="badge"></span></div>
++    <div class="top"><button class="x" data-close="day" data-ta="go_home" type="button">‹</button><h2 id="dayTitle"></h2><span id="dayMode" class="badge"></span></div>
+     <div class="day-grid">
+       <div class="day-l">
+         <p id="dayIntro" class="intro" hidden></p>
+@@ -73,9 +92,9 @@
+       </div>
+       <div class="day-r">
+         <ul class="facts" id="dayFacts"></ul>
+-        <div class="set" id="trailRow"><label for="trailTog" data-t="trails"></label><button class="tog" id="trailTog" role="switch" aria-checked="false"></button></div>
+-        <button id="takeoffBtn" class="btn pri big" data-t="takeoff"></button>
+-        <p class="keys" id="dayKeys" data-t="keys_line"></p>
++        <div class="set" id="trailRow"><label id="lbTrails" data-t="trails"></label><button class="tog" id="trailTog" role="switch" aria-checked="false" aria-labelledby="lbTrails" type="button"></button></div>
++        <button id="takeoffBtn" class="btn pri big" data-t="takeoff" type="button"></button>
++        <p class="keys" id="dayKeys"></p>
+       </div>
+     </div>
+   </div>
+@@ -89,19 +108,20 @@
+     <div class="hg hg-r"><div class="hv"><small data-t="hud_treasure"></small><b id="hTre">◆ 0/3</b></div>
+       <div class="hv" id="hBeacWrap"><small data-t="hud_beacons"></small><b id="hBeac">3</b></div></div>
+   </div>
+-  <button id="pauseBtn" class="ico" data-ta="pause"><svg viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></svg></button>
++  <button id="pauseBtn" class="ico" data-ta="pause" type="button"><svg viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></svg></button>
++  <span id="modeTag" class="badge modetag" hidden data-t="tut_local"></span>
+   <div id="prog"><i id="progDot"></i></div>
+-  <canvas id="mini" width="84" height="84" hidden></canvas>
++  <canvas id="mini" width="84" height="84" hidden tabindex="0" role="img" data-ta="minimap_name"></canvas>
+   <div id="tutLine" class="tutline" hidden></div>
+-  <div id="undoBar" class="undo" hidden><span data-t="beacon_placed"></span><button id="undoBtn" data-t="undo"></button><i id="undoTimer"></i></div>
++  <div id="undoBar" class="undo" hidden role="status"><span class="undo-tx"><span id="undoTxt" data-t="beacon_placed"></span><small id="undoDur"></small></span><button id="undoBtn" data-t="undo" type="button"></button><i id="undoTimer"></i></div>
+   <div id="stick" hidden><i id="stickKnob"></i></div>
+   <div id="ghost" hidden><i></i><span data-t="hint_drag"></span></div>
+   <div id="ctl">
+-    <button id="beaconBtn" class="cbtn" data-ta="beacon"><svg viewBox="-1.15 -1.15 2.3 2.3"><path d="M0 -0.78 L0.74 0.06 L0.74 0.56 L0 -0.16 L-0.74 0.56 L-0.74 0.06 Z"/></svg><b id="beaconN">3</b></button>
+-    <button id="brakeBtn" class="cbtn big" data-ta="brake"><span data-t="brake"></span></button>
++    <button id="beaconBtn" class="cbtn" data-ta="beacon" type="button"><svg viewBox="-1.15 -1.15 2.3 2.3"><path d="M0 -0.78 L0.74 0.06 L0.74 0.56 L0 -0.16 L-0.74 0.56 L-0.74 0.06 Z"/></svg><b id="beaconN">3</b></button>
++    <button id="brakeBtn" class="cbtn big" data-ta="brake" type="button"><span data-t="brake"></span></button>
+   </div>
+-  <div id="sel" class="sel" hidden role="dialog" data-ta="choose_symbol"><div class="sel-c" id="selC"></div><div class="sel-t" id="selT" data-t="choose_symbol"></div></div>
+-  <div id="dial" class="dial" hidden role="dialog" data-ta="choose_dir"><div id="dialRing"></div><div id="dialArrow"></div><div class="sel-t" data-t="choose_dir"></div><button id="dialOk" class="dial-ok" data-ta="confirm">✓</button></div>
++  <div id="sel" class="sel" hidden role="dialog" aria-modal="true" data-ta="choose_symbol"><div class="sel-c" id="selC"></div><div class="sel-t" id="selT"></div><button id="selCancel" class="btn sel-cancel" type="button" data-t="cancel"></button></div>
++  <div id="dial" class="dial" hidden role="dialog" aria-modal="true" data-ta="choose_dir"><div id="dialRing"></div><div id="dialArrow"></div><div class="sel-t" data-t="choose_dir"></div><button id="dialOk" class="dial-ok" data-ta="confirm" type="button">✓</button><button id="dialCancel" class="btn sel-cancel" type="button" data-t="cancel"></button></div>
+   <div id="count" class="count" hidden></div>
+ </div>
+ 
+@@ -110,27 +130,28 @@
+   <div class="card">
+     <h2 id="pauseTitle" class="ctitle" data-t="pause"></h2>
+     <p id="pauseInfo" class="sub small"></p>
+-    <button id="resumeBtn" class="btn pri big" data-t="resume"></button>
+-    <button id="restartBtn" class="btn" data-t="restart"></button>
+-    <div class="row"><button class="btn" id="pHow" data-t="how"></button><button class="btn" id="pSet" data-t="settings"></button></div>
+-    <div class="row"><button id="abandonBtn" class="btn danger" data-t="abandon"></button><a class="btn ghost inline" href="https://jetgames.fun/" target="_top">‹ JET<i class="cy">//</i>Games</a></div>
++    <button id="resumeBtn" class="btn pri big" data-t="resume" type="button"></button>
++    <button id="restartBtn" class="btn" data-t="restart" type="button"></button>
++    <div class="row"><button class="btn" id="pHow" data-t="how" type="button"></button><button class="btn" id="pSet" data-t="settings" type="button"></button></div>
++    <div class="row"><button id="abandonBtn" class="btn danger" data-t="abandon" type="button"></button><a class="btn ghost inline" href="https://jetgames.fun/" target="_top">‹ JET<i class="cy">//</i>Games</a></div>
++    <p class="keys" id="pauseKeys"></p>
+   </div>
+ </section>
+ 
+ <!-- RESULTADO -->
+ <section id="result" class="scr" aria-labelledby="resTitle">
+   <div class="card wide res">
+-    <div class="res-head"><div class="kick" id="resKick"></div><h2 id="resTitle" class="ctitle"></h2></div>
++    <div class="res-head"><div class="kick" id="resKick"></div><h2 id="resTitle" class="ctitle" tabindex="-1"></h2></div>
+     <div class="res-body">
+-      <div class="res-map"><canvas id="resMap" width="200" height="560"></canvas></div>
++      <figure class="res-map"><canvas id="resMap" width="200" height="560" role="img" data-ta="your_route"></canvas><figcaption id="resRoute" class="res-route" data-t="your_route"></figcaption></figure>
+       <div class="res-side">
+         <div class="lines" id="resLines"></div>
+         <div class="res-rank" id="resRank"></div>
+         <p class="note" id="resNote"></p>
+-        <button id="rateBtn" class="btn pri big" data-t="rate"></button>
+-        <button id="againBtn" class="btn pri big" data-t="fly_again" hidden></button>
+-        <div class="row"><button class="btn" id="shareBtn" data-t="share"></button><button class="btn" id="resTable" data-t="table"></button></div>
+-        <button class="btn ghost" id="resHome" data-t="go_home"></button>
++        <button id="rateBtn" class="btn pri big" data-t="rate" type="button"></button>
++        <button id="againBtn" class="btn pri big" data-t="fly_again" hidden type="button"></button>
++        <div class="row"><button class="btn" id="shareBtn" data-t="share" type="button"></button><button class="btn" id="resTable" data-t="table" type="button"></button></div>
++        <button class="btn ghost" id="resHome" data-t="go_home" type="button"></button>
+       </div>
+     </div>
+   </div>
+@@ -139,28 +160,63 @@
+ <!-- VALORAR -->
+ <section id="rate" class="scr" aria-labelledby="rateTitle">
+   <div class="card wide">
+-    <div class="top"><h2 id="rateTitle" data-t="rate_title"></h2><span class="prog-t" id="rateProg"></span></div>
++    <div class="top"><h2 id="rateTitle" tabindex="-1"></h2><span class="prog-t" id="rateProg"></span></div>
++    <p class="badge warn ratesub" id="rateSub" hidden data-t="rate_sim"></p>
+     <div class="rcards" id="rCards"></div>
+-    <p class="note center" id="rateEnd" hidden data-t="rate_thanks"></p>
+-    <div class="row"><button class="btn" id="rateSkip" data-t="skip"></button><button class="btn pri" id="rateDone" data-t="done"></button></div>
++    <p class="note center" id="rateEnd" hidden role="status"></p>
++    <div class="row"><button class="btn" id="rateSkip" data-t="skip" type="button"></button><button class="btn pri" id="rateDone" type="button" data-t="done"></button></div>
++  </div>
++</section>
++
++<!-- CIERRE DEL TUTORIAL (PLAY-BALIZAS-01/07) -->
++<section id="tutEnd" class="scr" aria-labelledby="teTitle">
++  <div class="card">
++    <div class="kick" data-t="tut_local"></div>
++    <h2 id="teTitle" class="ctitle" tabindex="-1"></h2>
++    <div class="lines" id="teLines"></div>
++    <p class="note" id="teOpt" data-t="opt_tasks"></p>
++    <button class="btn" id="teReview" type="button" data-t="review_trap"></button>
++    <button class="btn" id="teRepeat" type="button" data-t="repeat_practice"></button>
++    <button class="btn pri" id="teOfficial" type="button" data-t="view_official"></button>
++    <button class="btn ghost" id="teHome" type="button" data-t="go_home"></button>
++  </div>
++</section>
++
++<!-- CONFIRMACIÓN (abandonar vuelo, borrar progreso) -->
++<section id="confirm" class="scr lite" role="alertdialog" aria-modal="true" aria-labelledby="cfTitle" aria-describedby="cfBody">
++  <div class="card">
++    <h2 id="cfTitle" class="ctitle"></h2>
++    <p id="cfBody" class="sub small left"></p>
++    <p id="cfKeep" class="note" hidden></p>
++    <div class="row"><button class="btn" id="cfCancel" type="button" data-t="cancel"></button><button class="btn danger" id="cfOk" type="button" data-t="reset_do"></button></div>
++  </div>
++</section>
++
++<!-- COMPARTIR: alternativa persistente (SRC-BA02 / SRC-G06) -->
++<section id="shareFb" class="scr lite" aria-labelledby="sfTitle">
++  <div class="card">
++    <div class="top"><h2 id="sfTitle" data-t="share"></h2><button class="x" id="sfX" type="button" data-ta="close">×</button></div>
++    <p class="note" data-t="share_fail"></p>
++    <textarea id="sfTa" class="sf-ta" readonly rows="5" aria-labelledby="sfTitle"></textarea>
++    <div class="row"><button class="btn pri" id="sfCopy" type="button" data-t="copy_text"></button><button class="btn" id="sfClose" type="button" data-t="close"></button></div>
+   </div>
+ </section>
+ 
+ <!-- TABLA -->
+ <section id="table" class="scr" aria-labelledby="tabTitle">
+   <div class="card wide">
+-    <div class="top"><button class="x" data-close="table" data-ta="go_home">‹</button><h2 id="tabTitle" data-t="table"></h2><span class="badge" id="tabState"></span></div>
++    <div class="top"><button class="x" data-close="table" data-ta="go_home" type="button">‹</button><h2 id="tabTitle" data-t="table"></h2><span class="badge" id="tabState"></span></div>
+     <div class="tabs" role="tablist"><button role="tab" class="tab on" id="tabToday" data-t="tab_today"></button><button role="tab" class="tab" id="tabYest" data-t="tab_yesterday"></button></div>
+     <p class="note" id="tabNote" hidden></p>
+     <div class="tbl" id="tbl"></div>
+-    <div class="alias-row"><span id="myAlias"></span><button class="link" id="rerollBtn"></button></div>
++    <div class="alias-row"><span id="myAlias"></span><button class="link" id="rerollBtn" type="button" data-t="reroll"></button></div>
+   </div>
+ </section>
+ 
+ <!-- BITÁCORA -->
+ <section id="logs" class="scr" aria-labelledby="logTitle">
+   <div class="card wide">
+-    <div class="top"><button class="x" data-close="logs" data-ta="go_home">‹</button><h2 id="logTitle" data-t="log"></h2></div>
++    <div class="top"><button class="x" data-close="logs" data-ta="go_home" type="button">‹</button><h2 id="logTitle" data-t="log"></h2></div>
+     <div class="rankbox"><canvas id="logAstro" width="96" height="96"></canvas><div><b id="logRank"></b><div class="bar"><i id="logBar"></i></div><small id="logRankTxt"></small></div></div>
+     <div id="logList" class="loglist"></div>
+   </div>
+@@ -169,7 +225,7 @@
+ <!-- ARCHIVO -->
+ <section id="arch" class="scr" aria-labelledby="archTitle">
+   <div class="card wide">
+-    <div class="top"><button class="x" data-close="arch" data-ta="go_home">‹</button><h2 id="archTitle" data-t="archive_title"></h2></div>
++    <div class="top"><button class="x" data-close="arch" data-ta="go_home" type="button">‹</button><h2 id="archTitle" data-t="archive_title"></h2></div>
+     <p class="sub small left" data-t="archive_sub"></p>
+     <div id="archList" class="archlist"></div>
+   </div>
+@@ -178,49 +234,53 @@
+ <!-- CÓMO JUGAR -->
+ <section id="help" class="scr" aria-labelledby="helpTitle">
+   <div class="card wide">
+-    <div class="top"><button class="x" data-close="help" data-ta="go_home">‹</button><h2 id="helpTitle" data-t="how_title"></h2></div>
++    <div class="top"><button class="x" data-close="help" data-ta="go_home" type="button">‹</button><h2 id="helpTitle" data-t="how_title"></h2></div>
++    <p class="keys" id="howKeys"></p>
+     <div class="vignettes">
+-      <figure><canvas class="vg" id="vg1" width="300" height="190"></canvas><figcaption data-t="how_1"></figcaption></figure>
++      <figure><canvas class="vg" id="vg1" width="300" height="190"></canvas><figcaption id="how1Cap"></figcaption></figure>
+       <figure><canvas class="vg" id="vg2" width="300" height="190"></canvas><figcaption data-t="how_2"></figcaption></figure>
+       <figure><canvas class="vg" id="vg3" width="300" height="190"></canvas><figcaption data-t="how_3"></figcaption></figure>
+     </div>
+     <p class="sub small" data-t="how_hint"></p>
+     <div class="legend" id="legend"></div>
+-    <button class="btn" id="replayTut" data-t="replay_tutorial"></button>
++    <button class="btn" id="replayTut" data-t="replay_tutorial" type="button"></button>
+   </div>
+ </section>
+ 
+ <!-- AJUSTES -->
+ <section id="settings" class="scr" aria-labelledby="setTitle">
+   <div class="card">
+-    <div class="top"><button class="x" data-close="settings" data-ta="go_home">‹</button><h2 id="setTitle" data-t="settings"></h2></div>
++    <div class="top"><button class="x" data-close="settings" data-ta="go_home" type="button">‹</button><h2 id="setTitle" data-t="settings"></h2></div>
+     <p class="note" id="noAudio" hidden data-t="no_audio"></p>
+-    <div class="set"><label data-t="set_music"></label><input type="range" id="musVol" min="0" max="100" data-ta="volume"><button class="tog" id="musTog" role="switch"></button></div>
+-    <div class="set"><label data-t="set_sfx"></label><input type="range" id="sfxVol" min="0" max="100" data-ta="volume"><button class="tog" id="sfxTog" role="switch"></button></div>
+-    <div class="set" id="vibRow"><label data-t="set_vibration"></label><button class="tog" id="vibTog" role="switch"></button></div>
+-    <div class="set"><label data-t="set_lang"></label><div class="seg langseg" id="langSeg" role="group" data-ta="set_lang"><button data-v="es" lang="es">ES</button><button data-v="en" lang="en">EN</button></div></div>
+-    <div class="set" id="fsRow"><label data-t="fullscreen"></label><button class="tog" id="fsTog" role="switch"></button></div>
+-    <div class="set"><label data-t="set_controls"></label><div class="seg" id="ctlSeg"><button data-v="thumbs" data-t="ctl_thumbs"></button><button data-v="one" data-t="ctl_one"></button></div></div>
+-    <div class="set"><label data-t="set_side"></label><div class="seg" id="sideSeg"><button data-v="right" data-t="side_right"></button><button data-v="left" data-t="side_left"></button></div></div>
+-    <div class="set"><label data-t="set_trails"></label><button class="tog" id="trailSet" role="switch"></button></div>
+-    <div class="set"><label data-t="set_minimap"></label><button class="tog" id="miniTog" role="switch"></button></div>
+-    <div class="set"><label data-t="set_shake"></label><button class="tog" id="shakeTog" role="switch"></button></div>
+-    <div class="set"><label data-t="set_contrast"></label><button class="tog" id="contrastTog" role="switch"></button></div>
+-    <button class="btn danger" id="resetBtn" data-t="reset_progress"></button>
++    <div class="sect" data-t="sect_audio"></div>
++    <div class="set"><label id="lbMus" for="musVol" data-t="set_music"></label><input type="range" id="musVol" min="0" max="100" data-ta="vol_music"><button class="tog" id="musTog" role="switch" aria-labelledby="lbMus" type="button"></button></div>
++    <div class="set"><label id="lbSfx" for="sfxVol" data-t="set_sfx"></label><input type="range" id="sfxVol" min="0" max="100" data-ta="vol_sfx"><button class="tog" id="sfxTog" role="switch" aria-labelledby="lbSfx" type="button"></button></div>
++    <div class="set" id="vibRow"><label id="lbVib" data-t="set_vibration"></label><button class="tog" id="vibTog" role="switch" aria-labelledby="lbVib" type="button"></button></div>
++    <div class="sect" data-t="sect_ctl"></div>
++    <div class="set"><label id="lbLang" data-t="set_lang"></label><div class="seg langseg" id="langSeg" role="group" aria-labelledby="lbLang"><button data-v="es" lang="es" type="button">ES</button><button data-v="en" lang="en" type="button">EN</button></div></div>
++    <div class="set" id="fsRow"><label id="lbFs" data-t="fullscreen"></label><button class="tog" id="fsTog" role="switch" aria-labelledby="lbFs" type="button"></button></div>
++    <div class="set"><label id="lbCtl" data-t="set_controls"></label><div class="seg" id="ctlSeg" role="group" aria-labelledby="lbCtl"><button data-v="thumbs" data-t="ctl_thumbs" type="button"></button><button data-v="one" data-t="ctl_one" type="button"></button></div></div>
++    <div class="set"><label id="lbSide" data-t="set_side"></label><div class="seg" id="sideSeg" role="group" aria-labelledby="lbSide"><button data-v="right" data-t="side_right" type="button"></button><button data-v="left" data-t="side_left" type="button"></button></div></div>
++    <div class="sect" data-t="sect_vis"></div>
++    <div class="set"><label id="lbTrailSet" data-t="set_trails"></label><button class="tog" id="trailSet" role="switch" aria-labelledby="lbTrailSet" type="button"></button></div>
++    <div class="set"><label id="lbMini" data-t="set_minimap"></label><button class="tog" id="miniTog" role="switch" aria-labelledby="lbMini" type="button"></button></div>
++    <div class="set"><label id="lbShake" data-t="set_shake"></label><button class="tog" id="shakeTog" role="switch" aria-labelledby="lbShake" type="button"></button></div>
++    <div class="set"><label id="lbContrast" data-t="set_contrast"></label><button class="tog" id="contrastTog" role="switch" aria-labelledby="lbContrast" type="button"></button></div>
++    <button class="btn danger" id="resetBtn" data-t="reset_progress" type="button"></button>
+   </div>
+ </section>
+ 
+ <div id="toast" class="toast" role="status" aria-live="polite"></div>
+-<div id="mapBig" hidden><canvas id="mapBigCv"></canvas></div>
++<div id="mapBig" hidden role="img" data-ta="minimap_name"><canvas id="mapBigCv"></canvas></div>
+ <div id="fade"></div>
+ 
+-<script src="src/gen.js?v=7"></script>
+-<script src="src/sim.js?v=7"></script>
+-<script src="src/astro.js?v=7"></script>
+-<script src="src/i18n.js?v=7"></script>
+-<script src="src/audio.js?v=7"></script>
+-<script src="src/render.js?v=7"></script>
+-<script src="src/net.js?v=7"></script>
+-<script src="src/main.js?v=7"></script>
++<script src="src/gen.js?v=8"></script>
++<script src="src/sim.js?v=8"></script>
++<script src="src/astro.js?v=8"></script>
++<script src="src/i18n.js?v=8"></script>
++<script src="src/audio.js?v=8"></script>
++<script src="src/render.js?v=8"></script>
++<script src="src/net.js?v=8"></script>
++<script src="src/main.js?v=8"></script>
+ </body>
+ </html>
+diff --git a/site/balizas/src/i18n.js b/site/balizas/src/i18n.js
+index c7b4f63..1ed6d5d 100644
+--- a/site/balizas/src/i18n.js
++++ b/site/balizas/src/i18n.js
+@@ -4,34 +4,41 @@
+ const T = {
+ es: {
+   title: 'JET//Balizas', doc_title: 'JET//Balizas · Cruza la niebla', doc_desc: 'Cada día, un cinturón de asteroides en la niebla, el mismo para todos. Crúzalo, deja balizas para los que vienen detrás y mira cuántos astronautas guiaste.', back_games: 'Volver a JET//Games', tagline: 'Cruza la niebla. Deja luz para los demás.',
+-  play_today: 'Volar el campo de hoy', learn: 'Aprender a volar', continue_run: 'Continuar vuelo', free_flight: 'Vuelo libre', fly_again: 'Otra vez',
+-  how: 'Cómo jugar', table: 'Tabla', log: 'Bitácora', archive: 'Archivo', settings: 'Ajustes', fullscreen: 'Pantalla completa', exit_fullscreen: 'Salir de pantalla completa',
++  play_today: 'Volar el campo de hoy', learn: 'Aprender a volar', continue_run: 'Continuar vuelo', free_flight: 'Vuelo libre', fly_again: 'Repetir vuelo',
++  how: 'Cómo jugar', table: 'Clasificación', log: 'Bitácora', archive: 'Archivo', settings: 'Ajustes', fullscreen: 'Pantalla completa', exit_fullscreen: 'Salir de pantalla completa',
+   day_card: 'Campo del {date}', day_stats: '{n} astronautas · {b} balizas', u_astro: ['astronauta', 'astronautas'], u_beacon: ['baliza', 'balizas'], next_field: 'Nuevo campo en {hms}', guided_you: 'Tus balizas guiaron a {n} astronautas', guided_you1: 'Tus balizas guiaron a 1 astronauta',
+   your_today: 'Hoy: {pts} puntos · {pos}', guided_by: 'astronautas guiados por tus balizas', guided_by1: 'astronauta guiado por tus balizas', guided_yest: 'astronautas guiados ayer por tus balizas', guided_yest1: 'astronauta guiado ayer por tus balizas', streak: 'Racha', best_streak: 'Mejor racha', rank: 'Rango', offline_badge: 'Sin conexión', elapsed: 'llevas {t}',
+   practice_note: 'Aún hay pocas balizas de hoy. Mientras llegan más astronautas verás balizas de práctica de JET, marcadas con un rombo blanco.',
+   hazards_today: 'Peligros de hoy', hz_drift: 'Rocas a la deriva', hz_mines: 'Minas', hz_wells: 'Pozos de gravedad', hz_ion: 'Bruma iónica', hz_cur: 'Corrientes', hz_cracks: 'Grietas',
+-  takeoff: 'Despegar', trails: 'Estelas de los mejores vuelos', beacons_avail: 'Balizas de otros astronautas', beacons_avail_n: '{n} a la vista hoy', your_beacons: 'Puedes dejar 3 balizas', free_note: 'Vuelo libre: sin puntaje y sin dejar balizas. Sirve para mejorar tu marca y votar.', archive_note: 'Archivo: sin puntaje, con las balizas finales de ese día.',
+-  keys_line: 'WASD o flechas: pilotar · Espacio: frenar · E: baliza · Esc: pausa · M: mapa',
++  takeoff: 'Despegar', trails: 'Estelas de los mejores vuelos', beacons_avail: 'Balizas de otros astronautas', beacons_avail_n: '{n} a la vista hoy', your_beacons: 'Puedes dejar 3 balizas', free_note: 'Vuelo libre: no suma al ranking ni publica balizas. Podés mejorar tu mejor tiempo de práctica y valorar balizas. Las valoraciones de balizas reales se envían como votos.', archive_note: 'Archivo: sin puntaje, con las balizas finales de ese día.',
++  keys_steer: 'Flechas o WASD: pilotar · Espacio: frenar', keys_act: 'E: colocar baliza · M: mapa · Esc: pausa', keys_map_pause: 'M: mapa · Esc: pausa', touch_steer: 'Arrastrá para pilotar. Frená antes de las curvas.',
++  tut_local: 'Tutorial · práctica local', rate_sim: 'Valoración de práctica · no se publica', rate_practice_title: 'Valorá esta baliza de práctica', rate_practice_fb: 'Valoración de práctica registrada. No se publica.', rate_finish: 'Terminar valoración', tut_done: 'Tutorial completado', repeat_practice: 'Repetir práctica', view_official: 'Ver preparación del vuelo oficial', review_trap: 'Revisar la baliza engañosa', hull_pct: 'Casco: {porcentaje}%', tre_opt: 'Tesoros: {recogidos}/{total} · opcionales', goal_done: 'Objetivo cumplido: llegar a la Puerta Norte.', opt_tasks: 'Recoger tesoros, colocar una baliza y valorar la baliza de práctica son opcionales.',
++  minimap_name: 'Mapa de la zona explorada', enlarge_map: 'Ampliar mapa', buoy_name: 'Boya de anclaje', hazard_name: 'Peligro activo', your_route: 'Tu recorrido',
++  place_sym: 'Colocar {símbolo}', beacons_available: 'Tus balizas disponibles: {cantidad}', undo_dur: 'Podés deshacer durante {segundos} segundos desde la colocación.', undo_expired: 'Ya no se puede deshacer esta colocación.',
++  vol_music: 'Volumen de música', vol_sfx: 'Volumen de efectos', back_help: 'Volver a Cómo jugar', back_pause: 'Volver a la pausa', sect_audio: 'Sonido', sect_ctl: 'Controles', sect_vis: 'Visual',
++  abandon_title: '¿Abandonar el vuelo?', abandon_effects: 'Al abandonar, {consecuencias}.', cons_oficial: 'el vuelo se publica como abandonado con tu ruta y tus balizas, y el campo de hoy queda cerrado para vos', cons_libre: 'perdés este intento y no se publica nada',
++  reset_title: '¿Borrar todo el progreso de {juego}?', reset_body: 'Se borrarán {datos concretos}. Esta acción no se puede deshacer.', reset_data: 'tu perfil (tutorial, racha y rango), los vuelos y votos guardados de los últimos días y los envíos pendientes', reset_keep: 'Los ajustes y tu identificador de jugador se conservan.', reset_do: 'Borrar progreso',
++  share_fail: 'No pudimos copiarlo automáticamente. Seleccioná y copiá este texto.', copy_text: 'Copiar texto', close: 'Cerrar',
+   hint_drag: 'Arrastra para pilotar', hint_drift: 'Suelta: la nave sigue derivando. Frena con el botón.', hint_keys: 'Pilota con WASD o las flechas', hint_drift_keys: 'Suelta: la nave sigue derivando. Frena con Espacio.',
+   slow_to_mark: 'Frena para marcar', no_beacons_left: 'Ya usaste tus 3 balizas', near_start: 'Muy cerca de la salida', near_gate: 'Muy cerca de la Puerta', near_own: 'Muy cerca de otra baliza tuya', archive_no_mark: 'En el Archivo no se dejan balizas', free_no_mark: 'En vuelo libre las balizas no se publican',
+-  beacon_placed: 'Baliza colocada', undo: 'Deshacer', choose_symbol: 'Elige un símbolo', choose_dir: 'Orienta la baliza', cancel: 'Cancelar', confirm: 'Confirmar',
++  beacon_placed: 'Baliza colocada', undo: 'Deshacer colocación', choose_symbol: 'Elige un símbolo', choose_dir: 'Orienta la baliza', cancel: 'Cancelar', confirm: 'Confirmar',
+   sym_flecha: 'Flecha', sym_peligro: 'Peligro', sym_atajo: 'Atajo', sym_tesoro: 'Tesoro', sym_noporaqui: 'No por aquí',
+-  practice: 'Práctica', yours: 'Tuya', rescue: 'Rescate · +20 s', buoy_on: 'Boya de anclaje activada', treasure_got: 'Cápsula de datos', crack_open: 'Grieta abierta', ion_in: 'Bruma iónica: el radar se apaga', hull_low: 'Casco bajo',
++  practice: 'Baliza de práctica', yours: 'Tu baliza', rescue: 'Rescate · +20 s', buoy_on: 'Boya de anclaje activada', treasure_got: 'Cápsula de datos', crack_open: 'Grieta abierta', ion_in: 'Bruma iónica: el radar se apaga', hull_low: 'Casco bajo',
+   new_hazard_mines: 'Nuevo: minas. Se arman si te acercas.', new_hazard_wells: 'Nuevo: pozos de gravedad. Curvan tu rumbo.', new_hazard_ion: 'Nuevo: bruma iónica. Dentro solo ves de cerca.', new_hazard_cur: 'Nuevo: corrientes. Te empujan en una dirección.', new_hazard_cracks: 'Nuevo: grietas. Golpéalas rápido para abrir un atajo.',
+-  pause: 'Pausa', resume: 'Continuar', restart: 'Reiniciar', abandon: 'Abandonar', abandon_confirm: 'Toca otra vez para abandonar', go_home: 'Volver al inicio',
++  pause: 'Pausa', resume: 'Reanudar partida', restart: 'Reiniciar vuelo', abandon: 'Abandonar vuelo', abandon_confirm: 'Toca otra vez para abandonar', go_home: 'Volver al inicio',
+   arrived: 'Llegaste a la Puerta Norte', score_time: 'Tiempo', score_hull: 'Casco', score_treasure: 'Tesoros', score_flight: 'Vuelo', score_guide_pending: 'Guía: se actualiza durante el día', par: 'Par {t}', personal_best: 'Marca personal', best_free: 'Mejor libre', rank_pos: '#{p} de {n}', abandoned: 'Vuelo abandonado',
+-  rate: 'Valorar balizas', rate_title: '¿Te ayudaron estas balizas?', useful: 'Útil', misleading: 'Engañosa', you_followed: 'La seguiste', rate_thanks: 'Gracias. Tus votos ayudan a los que vienen.', skip: 'Saltar', done: 'Listo', of: '{a} de {b}',
+-  share: 'Compartir', copied: 'Copiado', new_field_now: 'Ya hay un campo nuevo',
++  rate: 'Valorar balizas', rate_title: '¿Te ayudaron estas balizas?', useful: 'Útil', misleading: 'Engañosa', you_followed: 'La seguiste', rate_thanks: 'Gracias. Tus votos ayudan a los que vienen.', skip: 'Omitir valoración', done: 'Continuar', of: '{a} de {b}',
++  share: 'Compartir resultado', copied: 'Texto copiado', new_field_now: 'Ya hay un campo nuevo',
+   tab_today: 'Hoy', tab_yesterday: 'Ayer', live: 'En vivo', final: 'Final', col_pos: '#', col_astro: 'Astronauta', col_time: 'Tiempo', col_guided: 'Guiados', col_total: 'Total', lighthouse_day: 'Faro del día',
+   few_players: 'Pocos jugadores hoy: tabla en construcción', empty_table: 'Aún nadie ha llegado hoy. Puedes ser el primero.', few_players_y: 'Pocos jugadores ese día', empty_table_y: 'Nadie llegó a la Puerta ese día.', loading: 'Cargando…', offline: 'Sin conexión: tus balizas se enviarán cuando vuelva la señal', you: 'Tú', reroll: 'Cambiar alias', reroll_left: 'quedan {n} hoy',
+   closed_round: 'Este campo ya cerró. Tu vuelo quedó en tu bitácora.', rate_limited: 'Demasiados intentos. Espera un minuto.', server_error: 'El servidor no responde. Seguimos sin conexión.',
+   log_empty: 'Aún no dejaste balizas. En tu próximo vuelo marca un peligro o un atajo.', hidden_by_votes: 'Oculta por votos', visible: 'Visible', rank_progress: '{r} · {a}/{b} guiados', rank_max: '{r} · {a} guiados', guided: 'guiados', useful_n: 'útiles', useful_n1: 'útil', misleading_n1: 'engañosa', guided1: 'guiado', misleading_n: 'engañosas',
+   archive_title: 'Archivo', archive_sub: 'Vuela los 7 días anteriores sin puntaje, con las balizas finales de cada día.', played: 'Jugado', not_played: 'Sin jugar', fly: 'Volar',
+   how_1: 'Arrastra para pilotar. La nave tiene inercia: frena antes de las curvas.', how_2: 'Las balizas de otros te avisan de lo que hay en la niebla. Síguelas si te ayudan.', how_3: 'Frena y deja hasta 3 balizas. Cuando alguien las sigue, suma a tu guía.', replay_tutorial: 'Repetir tutorial', how_title: 'Cómo jugar', how_hint: 'Llega a la Puerta Norte rápido, sin dañar el casco, y deja luz para los que vienen detrás.',
+-  set_music: 'Música', set_sfx: 'Efectos', set_vibration: 'Vibración', set_lang: 'Idioma', set_controls: 'Controles táctiles', ctl_thumbs: 'Pulgares', ctl_one: 'Un dedo', set_side: 'Lado de los botones', side_right: 'Derecha', side_left: 'Izquierda', set_trails: 'Mostrar estelas', set_minimap: 'Mapa miniatura', set_shake: 'Sacudida de pantalla', set_contrast: 'Alto contraste de balizas', reset_progress: 'Borrar progreso', reset_confirm: 'Toca otra vez para borrar todo', reset_done: 'Progreso borrado', no_audio: 'Tu navegador no permite sonido', volume: 'Volumen',
++  set_music: 'Música', set_sfx: 'Efectos', set_vibration: 'Vibración', set_lang: 'Idioma', set_controls: 'Controles táctiles', ctl_thumbs: 'Pulgares', ctl_one: 'Un dedo', set_side: 'Lado de los botones', side_right: 'Derecha', side_left: 'Izquierda', set_trails: 'Mostrar estelas', set_minimap: 'Mostrar mapa miniatura', set_shake: 'Sacudida de pantalla', set_contrast: 'Alto contraste de balizas', reset_progress: 'Borrar progreso', reset_confirm: 'Toca otra vez para borrar todo', reset_done: 'Progreso borrado', no_audio: 'Tu navegador no permite sonido', volume: 'Volumen',
+   ranks: ['Cadete', 'Piloto', 'Navegante', 'Cartógrafo', 'Faro'], days: ['Calma', 'Minado', 'Gravedad', 'Bruma', 'Corrientes', 'Grietas', 'Tormenta'],
+   weekdays: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'], weekdays_s: ['lun', 'mar', 'mié', 'jue', 'vie', 'sáb', 'dom'], months_s: ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'],
+-  tut_1: 'Arrastra para pilotar', tut_1k: 'Pilota con WASD o las flechas', tut_1b: 'Suelta: la nave sigue derivando. Frena con el botón.', tut_1bk: 'Suelta: la nave sigue derivando. Frena con Espacio.', tut_2: 'Alguien dejó una flecha. Síguela.', tut_2dead: 'Callejón. Por eso sirven las balizas.', tut_3: 'Una baliza de peligro: hay minas. Rodéalas.', tut_4: 'Este callejón no lleva a ningún lado. Frena y marca algo para el siguiente.', tut_4k: 'Este callejón no lleva a ningún lado. Frena con Espacio y marca con E.', tut_4ok: 'Así ayudas a los que vienen detrás.', tut_gate: 'Ahora sube hasta la Puerta Norte.', tut_5: 'Esta flecha te mandaba a un pozo. ¿Útil o engañosa?', tut_6: 'Ahora el campo de hoy. Lo que dejes ahí lo verán los demás.', tut_skip: 'Saltar tutorial', tut_title: 'Campo de prácticas',
++  tut_1: 'Arrastra para pilotar', tut_1k: 'Pilota con WASD o las flechas', tut_1b: 'Suelta: la nave sigue derivando. Frena con el botón.', tut_1bk: 'Suelta: la nave sigue derivando. Frena con Espacio.', tut_2: 'Alguien dejó una flecha. Síguela.', tut_2dead: 'Callejón. Por eso sirven las balizas.', tut_3: 'Una baliza de peligro: hay minas. Rodéalas.', tut_4: 'Este callejón no lleva a ningún lado. Frena y marca algo para el siguiente.', tut_4k: 'Este callejón no lleva a ningún lado. Frena con Espacio y marca con E.', tut_4ok: 'Así ayudas a los que vienen detrás.', tut_gate: 'Ahora sube hasta la Puerta Norte.', tut_5: 'Esta flecha llevaba a un pozo: marcala como engañosa.', tut_6: 'Ahora el campo de hoy. Lo que dejes ahí lo verán los demás.', tut_skip: 'Saltar tutorial', tut_title: 'Campo de prácticas',
+   share_hull: 'casco', share_beacons: 'Mis balizas', share_guided: 'Guié a {n} astronautas', share_guided1: 'Guié a 1 astronauta',
+   hud_time: 'Tiempo', hud_hull: 'Casco', hud_treasure: 'Tesoros', hud_beacons: 'Balizas', brake: 'Frenar', beacon: 'Baliza', map: 'Mapa',
+   rotate_note: 'Gira el teléfono como prefieras: ves lo mismo en vertical y en horizontal.', countdown_go: 'Adelante',
+@@ -40,34 +47,41 @@ es: {
+ },
+ en: {
+   title: 'JET//Balizas', doc_title: 'JET//Balizas · Cross the fog', doc_desc: 'Every day, an asteroid belt in the fog, the same for everyone. Cross it, leave beacons for those who come after you and see how many astronauts you guided.', back_games: 'Back to JET//Games', tagline: 'Cross the fog. Leave a light for others.',
+-  play_today: "Fly today's field", learn: 'Learn to fly', continue_run: 'Resume flight', free_flight: 'Free flight', fly_again: 'Fly again',
++  play_today: "Fly today's field", learn: 'Learn to fly', continue_run: 'Resume flight', free_flight: 'Free flight', fly_again: 'Replay flight',
+   how: 'How to play', table: 'Leaderboard', log: 'Log', archive: 'Archive', settings: 'Settings', fullscreen: 'Full screen', exit_fullscreen: 'Exit full screen',
+   day_card: 'Field for {date}', day_stats: '{n} astronauts · {b} beacons', u_astro: ['astronaut', 'astronauts'], u_beacon: ['beacon', 'beacons'], next_field: 'New field in {hms}', guided_you: 'Your beacons guided {n} astronauts', guided_you1: 'Your beacons guided 1 astronaut',
+   your_today: 'Today: {pts} points · {pos}', guided_by: 'astronauts guided by your beacons', guided_by1: 'astronaut guided by your beacons', guided_yest: 'astronauts guided by your beacons yesterday', guided_yest1: 'astronaut guided by your beacons yesterday', streak: 'Streak', best_streak: 'Best streak', rank: 'Rank', offline_badge: 'Offline', elapsed: '{t} so far',
+   practice_note: 'Few beacons so far today. Until more astronauts arrive, you will see JET practice beacons, marked with a white diamond.',
+   hazards_today: "Today's hazards", hz_drift: 'Drifting rocks', hz_mines: 'Mines', hz_wells: 'Gravity wells', hz_ion: 'Ion haze', hz_cur: 'Currents', hz_cracks: 'Cracks',
+-  takeoff: 'Take off', trails: 'Trails of the best flights', beacons_avail: 'Beacons from other astronauts', beacons_avail_n: '{n} in sight today', your_beacons: 'You can leave 3 beacons', free_note: 'Free flight: no score and no beacons. Use it to beat your time and to vote.', archive_note: "Archive: no score, with that day's final beacons.",
+-  keys_line: 'WASD or arrows: steer · Space: brake · E: beacon · Esc: pause · M: map',
++  takeoff: 'Take off', trails: 'Trails of the best flights', beacons_avail: 'Beacons from other astronauts', beacons_avail_n: '{n} in sight today', your_beacons: 'You can leave 3 beacons', free_note: 'Free flight: does not count toward the ranking or publish beacons. You can improve your best practice time and rate beacons. Ratings of real beacons are submitted as votes.', archive_note: "Archive: no score, with that day's final beacons.",
++  keys_steer: 'Arrow keys or WASD: steer · Space: brake', keys_act: 'E: place beacon · M: map · Esc: pause', keys_map_pause: 'M: map · Esc: pause', touch_steer: 'Drag to steer. Brake before turns.',
++  tut_local: 'Tutorial · local practice', rate_sim: 'Practice rating · not published', rate_practice_title: 'Rate this practice beacon', rate_practice_fb: 'Practice rating recorded. It is not published.', rate_finish: 'Finish rating', tut_done: 'Tutorial completed', repeat_practice: 'Repeat practice', view_official: 'View official flight preparation', review_trap: 'Review the misleading beacon', hull_pct: 'Hull: {porcentaje}%', tre_opt: 'Treasures: {recogidos}/{total} · optional', goal_done: 'Goal completed: reach the North Gate.', opt_tasks: 'Collecting treasures, placing a beacon, and rating the practice beacon are optional.',
++  minimap_name: 'Map of the explored area', enlarge_map: 'Enlarge map', buoy_name: 'Anchor buoy', hazard_name: 'Active hazard', your_route: 'Your route',
++  place_sym: 'Place {símbolo}', beacons_available: 'Your available beacons: {cantidad}', undo_dur: 'You can undo within {segundos} seconds of placement.', undo_expired: 'This placement can no longer be undone.',
++  vol_music: 'Music volume', vol_sfx: 'Sound effects volume', back_help: 'Back to How to play', back_pause: 'Back to pause', sect_audio: 'Sound', sect_ctl: 'Controls', sect_vis: 'Visual',
++  abandon_title: 'Abandon this flight?', abandon_effects: 'If you abandon, {consecuencias}.', cons_oficial: 'the flight is published as abandoned with your route and beacons, and today’s field is closed for you', cons_libre: 'you lose this attempt and nothing is published',
++  reset_title: 'Delete all progress in {juego}?', reset_body: '{datos concretos} will be deleted. This cannot be undone.', reset_data: 'Your profile (tutorial, streak and rank), the flights and votes saved for the last few days and the pending submissions', reset_keep: 'Settings and your player identifier are kept.', reset_do: 'Delete progress',
++  share_fail: 'We couldn’t copy it automatically. Select and copy this text.', copy_text: 'Copy text', close: 'Close',
+   hint_drag: 'Drag to steer', hint_drift: 'Let go: the ship keeps drifting. Brake with the button.', hint_keys: 'Steer with WASD or the arrows', hint_drift_keys: 'Let go: the ship keeps drifting. Brake with Space.',
+   slow_to_mark: 'Slow down to mark', no_beacons_left: 'You have used all 3 beacons', near_start: 'Too close to the launch pad', near_gate: 'Too close to the Gate', near_own: 'Too close to another beacon of yours', archive_no_mark: 'No beacons in the Archive', free_no_mark: 'Beacons are not published in free flight',
+-  beacon_placed: 'Beacon placed', undo: 'Undo', choose_symbol: 'Pick a symbol', choose_dir: 'Aim the beacon', cancel: 'Cancel', confirm: 'Confirm',
++  beacon_placed: 'Beacon placed', undo: 'Undo placement', choose_symbol: 'Pick a symbol', choose_dir: 'Aim the beacon', cancel: 'Cancel', confirm: 'Confirm',
+   sym_flecha: 'Arrow', sym_peligro: 'Danger', sym_atajo: 'Shortcut', sym_tesoro: 'Treasure', sym_noporaqui: 'Not this way',
+-  practice: 'Practice', yours: 'Yours', rescue: 'Rescue · +20 s', buoy_on: 'Anchor buoy activated', treasure_got: 'Data capsule', crack_open: 'Crack opened', ion_in: 'Ion haze: radar is down', hull_low: 'Low hull',
++  practice: 'Practice beacon', yours: 'Your beacon', rescue: 'Rescue · +20 s', buoy_on: 'Anchor buoy activated', treasure_got: 'Data capsule', crack_open: 'Crack opened', ion_in: 'Ion haze: radar is down', hull_low: 'Low hull',
+   new_hazard_mines: 'New: mines. They arm when you get close.', new_hazard_wells: 'New: gravity wells. They bend your course.', new_hazard_ion: 'New: ion haze. Inside, you only see up close.', new_hazard_cur: 'New: currents. They push you one way.', new_hazard_cracks: 'New: cracks. Hit them fast to open a shortcut.',
+-  pause: 'Paused', resume: 'Resume', restart: 'Restart', abandon: 'Abandon', abandon_confirm: 'Tap again to abandon', go_home: 'Back to start',
++  pause: 'Paused', resume: 'Resume game', restart: 'Restart flight', abandon: 'Abandon flight', abandon_confirm: 'Tap again to abandon', go_home: 'Back to home',
+   arrived: 'You reached the North Gate', score_time: 'Time', score_hull: 'Hull', score_treasure: 'Treasures', score_flight: 'Flight', score_guide_pending: 'Guidance: updates throughout the day', par: 'Par {t}', personal_best: 'Personal best', best_free: 'Best free', rank_pos: '#{p} of {n}', abandoned: 'Flight abandoned',
+-  rate: 'Rate beacons', rate_title: 'Did these beacons help?', useful: 'Useful', misleading: 'Misleading', you_followed: 'You followed it', rate_thanks: 'Thanks. Your votes help those who come next.', skip: 'Skip', done: 'Done', of: '{a} of {b}',
+-  share: 'Share', copied: 'Copied', new_field_now: 'A new field is ready',
++  rate: 'Rate beacons', rate_title: 'Did these beacons help?', useful: 'Useful', misleading: 'Misleading', you_followed: 'You followed it', rate_thanks: 'Thanks. Your votes help those who come next.', skip: 'Skip rating', done: 'Continue', of: '{a} of {b}',
++  share: 'Share result', copied: 'Text copied', new_field_now: 'A new field is ready',
+   tab_today: 'Today', tab_yesterday: 'Yesterday', live: 'Live', final: 'Final', col_pos: '#', col_astro: 'Astronaut', col_time: 'Time', col_guided: 'Guided', col_total: 'Total', lighthouse_day: 'Lighthouse of the day',
+   few_players: 'Few players today: the leaderboard is still filling up', empty_table: 'Nobody has arrived yet today. You can be the first.', few_players_y: 'Few players that day', empty_table_y: 'Nobody reached the Gate that day.', loading: 'Loading…', offline: 'Offline: your beacons will be sent when the signal returns', you: 'You', reroll: 'New alias', reroll_left: '{n} left today',
+   closed_round: 'This field has closed. Your flight is saved in your log.', rate_limited: 'Too many attempts. Please wait a minute.', server_error: 'The server is not responding. Playing offline.',
+   log_empty: 'No beacons yet. On your next flight, mark a danger or a shortcut.', hidden_by_votes: 'Hidden by votes', visible: 'Visible', rank_progress: '{r} · {a}/{b} guided', rank_max: '{r} · {a} guided', guided: 'guided', useful_n: 'useful', useful_n1: 'useful', misleading_n1: 'misleading', guided1: 'guided', misleading_n: 'misleading',
+   archive_title: 'Archive', archive_sub: "Fly the previous 7 days without score, with each day's final beacons.", played: 'Played', not_played: 'Not played', fly: 'Fly',
+   how_1: 'Drag to steer. The ship has inertia: brake before the turns.', how_2: 'Beacons from others warn you about what lies in the fog. Follow them if they help.', how_3: 'Brake and leave up to 3 beacons. When someone follows them, your guidance grows.', replay_tutorial: 'Replay tutorial', how_title: 'How to play', how_hint: 'Reach the North Gate fast, keep your hull intact, and leave light for those who come next.',
+-  set_music: 'Music', set_sfx: 'Sound effects', set_vibration: 'Vibration', set_lang: 'Language', set_controls: 'Touch controls', ctl_thumbs: 'Thumbs', ctl_one: 'One finger', set_side: 'Button side', side_right: 'Right', side_left: 'Left', set_trails: 'Show trails', set_minimap: 'Minimap', set_shake: 'Screen shake', set_contrast: 'High-contrast beacons', reset_progress: 'Reset progress', reset_confirm: 'Tap again to erase everything', reset_done: 'Progress erased', no_audio: 'Your browser does not allow sound', volume: 'Volume',
++  set_music: 'Music', set_sfx: 'Sound effects', set_vibration: 'Vibration', set_lang: 'Language', set_controls: 'Touch controls', ctl_thumbs: 'Thumbs', ctl_one: 'One finger', set_side: 'Button side', side_right: 'Right', side_left: 'Left', set_trails: 'Show trails', set_minimap: 'Show minimap', set_shake: 'Screen shake', set_contrast: 'High-contrast beacons', reset_progress: 'Reset progress', reset_confirm: 'Tap again to erase everything', reset_done: 'Progress erased', no_audio: 'Your browser does not allow sound', volume: 'Volume',
+   ranks: ['Cadet', 'Pilot', 'Navigator', 'Cartographer', 'Lighthouse'], days: ['Calm', 'Mined', 'Gravity', 'Haze', 'Currents', 'Cracks', 'Storm'],
+   weekdays: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'], weekdays_s: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], months_s: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+-  tut_1: 'Drag to steer', tut_1k: 'Steer with WASD or the arrows', tut_1b: 'Let go: the ship keeps drifting. Brake with the button.', tut_1bk: 'Let go: the ship keeps drifting. Brake with Space.', tut_2: 'Someone left an arrow. Follow it.', tut_2dead: 'Dead end. That is why beacons matter.', tut_3: 'A danger beacon: there are mines. Go around them.', tut_4: 'This dead end leads nowhere. Brake and mark it for the next pilot.', tut_4k: 'This dead end leads nowhere. Brake with Space and mark it with E.', tut_4ok: 'That is how you help those who come next.', tut_gate: 'Now head up to the North Gate.', tut_5: 'This arrow pointed at a gravity well. Useful or misleading?', tut_6: "Now today's field. What you leave there, others will see.", tut_skip: 'Skip tutorial', tut_title: 'Training field',
++  tut_1: 'Drag to steer', tut_1k: 'Steer with WASD or the arrows', tut_1b: 'Let go: the ship keeps drifting. Brake with the button.', tut_1bk: 'Let go: the ship keeps drifting. Brake with Space.', tut_2: 'Someone left an arrow. Follow it.', tut_2dead: 'Dead end. That is why beacons matter.', tut_3: 'A danger beacon: there are mines. Go around them.', tut_4: 'This dead end leads nowhere. Brake and mark it for the next pilot.', tut_4k: 'This dead end leads nowhere. Brake with Space and mark it with E.', tut_4ok: 'That is how you help those who come next.', tut_gate: 'Now head up to the North Gate.', tut_5: 'This arrow led to a gravity well: mark it as misleading.', tut_6: "Now today's field. What you leave there, others will see.", tut_skip: 'Skip tutorial', tut_title: 'Training field',
+   share_hull: 'hull', share_beacons: 'My beacons', share_guided: 'I guided {n} astronauts', share_guided1: 'I guided 1 astronaut',
+   hud_time: 'Time', hud_hull: 'Hull', hud_treasure: 'Treasures', hud_beacons: 'Beacons', brake: 'Brake', beacon: 'Beacon', map: 'Map',
+   rotate_note: 'Hold your phone any way you like: you see the same in portrait and landscape.', countdown_go: 'Go',
+@@ -83,7 +97,7 @@ const ALIAS = {
+ };
+ // Idioma único del sitio: lo decide jet-idioma.js (?lang > cookie jet_lang de .jetgames.fun > navegador).
+ const I = { lang: (window.JETIdioma && window.JETIdioma.get()) || 'es', T, ALIAS };
+-I.t = function (k, v) { let s = (T[I.lang] && T[I.lang][k]); if (s == null) s = T.es[k]; if (s == null) return k; if (v && typeof s === 'string') s = s.replace(/\{(\w+)\}/g, (m, n) => v[n] != null ? v[n] : m); return s; };
++I.t = function (k, v) { let s = (T[I.lang] && T[I.lang][k]); if (s == null) s = T.es[k]; if (s == null) return k; if (v && typeof s === 'string') s = s.replace(/\{([\p{L}\p{N}_ ]+)\}/gu, (m, n) => v[n] != null ? v[n] : m); return s; }; // nombres de parámetro con acentos o espacios ({símbolo}, {datos concretos})
+ I.alias = function (seed) { seed = seed >>> 0; const L = ALIAS[I.lang] || ALIAS.es, a = L.a[seed % L.a.length], n = L.n[Math.floor(seed / 31) % L.n.length], num = 10 + Math.floor(seed / 977) % 90; return I.lang === 'es' ? n + ' ' + a + ' ' + num : a + ' ' + n + ' ' + num; };
+ I.apply = function (root) { (root || document).querySelectorAll('[data-t]').forEach(el => { let v = null; const tv = el.getAttribute('data-tv'); if (tv) try { v = JSON.parse(tv); } catch (e) {} el.textContent = I.t(el.getAttribute('data-t'), v); }); (root || document).querySelectorAll('[data-ta]').forEach(el => { el.setAttribute('aria-label', I.t(el.getAttribute('data-ta'))); }); document.documentElement.lang = I.lang; document.title = I.t('doc_title'); const md = document.querySelector('meta[name="description"]'); if (md) md.setAttribute('content', I.t('doc_desc')); };
+ window.BalI18n = I;
+diff --git a/site/balizas/src/main.js b/site/balizas/src/main.js
+index 51dc5c9..ba8d296 100644
+--- a/site/balizas/src/main.js
++++ b/site/balizas/src/main.js
+@@ -47,21 +47,39 @@ I.lang = window.JETIdioma ? window.JETIdioma.get() : I.lang;
+ function tx(el, key, vars) { el.setAttribute('data-t', key); if (vars) el.setAttribute('data-tv', JSON.stringify(vars)); else el.removeAttribute('data-tv'); el.textContent = t(key, vars); }
+ 
+ /* ---------------- pantallas ---------------- */
+-const SCREENS = ['home', 'day', 'pause', 'result', 'rate', 'table', 'logs', 'arch', 'help', 'settings'];
++const SCREENS = ['home', 'day', 'pause', 'result', 'rate', 'tutEnd', 'confirm', 'shareFb', 'table', 'logs', 'arch', 'help', 'settings'];
++const HEAD_FOCUS = { result: 'resTitle', rate: 'rateTitle', tutEnd: 'teTitle' }; // PLAY-BALIZAS-02: el foco entra por el encabezado, no por el CTA que salta pasos
+ let overlayStack = [];
+ function show(id, keepStack) {
+   SCREENS.forEach(s => $(s).classList.toggle('on', s === id)); R.menuPos = null; setTimeout(menuShipPos, 0); setTimeout(syncOffline, 0);
+-  ST.scene = id === null ? 'flight' : id; document.body.classList.toggle('res', id === 'result' || id === 'rate');
++  ST.scene = id === null ? 'flight' : id; document.body.classList.toggle('res', id === 'result' || id === 'rate' || id === 'tutEnd');
+   const inFlight = ST.scene === 'flight' || id === 'pause';
+   $('back').classList.toggle('on', !inFlight);
+   $('topR').style.display = (ST.scene === 'flight' || id === 'pause') ? 'none' : 'flex';
+   $('fsBtn').style.display = ST.fsAPI && (id === 'home') ? '' : 'none';
+   if (!keepStack) overlayStack = [];
+-  const el = id && $(id); if (el) { el.scrollTop = 0; const f = el.querySelector('.btn.pri:not([hidden])') || el.querySelector('.btn:not([hidden]), button:not([hidden])'); if (f && !ST.touch) setTimeout(() => { try { f.focus({ preventScroll: true }); } catch (e) {} }, 30); }
++  // PLAY-BALIZAS-02/04: al cambiar de estado se sueltan las entradas, se retiran avisos efímeros y una tecla aún pulsada no activa el control recién enfocado
++  releaseStick(); IN.keys = {}; IN.brakeKey = 0; ST.keyGuard = true; clearToast(); if (id !== null) { $('tutLine').hidden = true; showBigMap(false); }
++  $('modeTag').hidden = !(ST.fl && ST.fl.mode === 'tutorial' && !ST.fl.ended && ST.scene === 'flight');
++  const el = id && $(id); if (el) { el.scrollTop = 0; const h = HEAD_FOCUS[id] && $(HEAD_FOCUS[id]); const f = id === 'confirm' ? $('cfCancel') : h || el.querySelector('.btn.pri:not([hidden])') || el.querySelector('.btn:not([hidden]), button:not([hidden])'); if (f && (!ST.touch || id === 'confirm')) setTimeout(() => { try { f.focus({ preventScroll: true }); } catch (e) {} }, 30); }
+ }
+-function openOver(id) { overlayStack.push(ST.scene); show(id, true); }
++function openOver(id) {
++  const from = ST.scene; overlayStack.push(from); show(id, true);
++  // PLAY-BALIZAS-06: la etiqueta del botón de volver nombra su destino real
++  const el = $(id); el.querySelectorAll('[data-close]').forEach(b => { const k = from === 'help' ? 'back_help' : (from === 'pause' || from === 'flight') ? 'back_pause' : 'go_home'; b.setAttribute('data-ta', k); b.setAttribute('aria-label', t(k)); b.title = t(k); });
++}
++// una tecla mantenida desde el vuelo (Espacio/Enter) no debe activar el control enfocado de la pantalla recién abierta
++window.addEventListener('keydown', e => { if (!ST.keyGuard || (e.code !== 'Space' && e.code !== 'Enter')) return; if (e.repeat) { e.preventDefault(); e.stopImmediatePropagation(); } else ST.keyGuard = false; }, true);
++window.addEventListener('keyup', e => { if (!ST.keyGuard || (e.code !== 'Space' && e.code !== 'Enter')) return; e.preventDefault(); e.stopImmediatePropagation(); ST.keyGuard = false; }, true);
++// diálogo de confirmación genérico (SRC-G04 / SRC-BA01): Cancelar enfocado; confirmar es la acción peligrosa
++function confirmDlg(o) { ST.confirmSpec = o; $('cfTitle').textContent = o.title; $('cfBody').textContent = o.body; $('cfKeep').hidden = !o.keep; $('cfKeep').textContent = o.keep || ''; $('cfOk').textContent = o.okLabel; openOver('confirm'); }
++$('cfCancel').addEventListener('click', () => { sfx('ui_back'); ST.confirmSpec = null; closeOver(); });
++$('cfOk').addEventListener('click', () => { const o = ST.confirmSpec; ST.confirmSpec = null; if (o && o.onOk) o.onOk(); });
+ function closeOver() { const prev = overlayStack.pop(); if (prev === 'flight' || prev === 'pause') { show('pause'); return; } if (prev) show(prev, true); else goHome(); }
+ document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', () => { sfx('ui_back'); if (b.dataset.close === 'day') goHome(); else closeOver(); }));
++// insets reales de la pantalla (RSP-BALIZAS-02): se miden con un elemento sonda con padding env()
++function safeInsets() { let s = $('sonda'); if (!s) { s = document.createElement('div'); s.id = 'sonda'; s.style.cssText = 'position:fixed;left:0;top:0;visibility:hidden;pointer-events:none;padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)'; document.body.appendChild(s); } const cs = getComputedStyle(s); return { t: parseFloat(cs.paddingTop) || 0, r: parseFloat(cs.paddingRight) || 0, b: parseFloat(cs.paddingBottom) || 0, l: parseFloat(cs.paddingLeft) || 0 }; }
++function keysLine(mode) { return t('keys_steer') + ' · ' + t(mode === 'oficial' || mode === 'tutorial' ? 'keys_act' : 'keys_map_pause'); }
+ 
+ /* ---------------- tamaño, pantalla completa, giro ---------------- */
+ let lastAspect = null;
+@@ -238,7 +256,7 @@ function paintDay(mode, fecha, resume, intro) {
+   const tr = ST.set.trails == null ? ST.prof.flights > 0 : !!ST.set.trails; setTog($('trailTog'), tr);
+   // peligro nuevo de la semana (una vez por tipo)
+   const nh = newHazard(f); $('dayHaz').hidden = !nh; if (nh) { $('hazTxt').textContent = t('new_hazard_' + nh); animHaz(nh); }
+-  $('dayKeys').hidden = ST.touch;
++  $('dayKeys').hidden = ST.touch; $('dayKeys').textContent = keysLine(mode);
+   $('takeoffBtn').textContent = resume ? t('continue_run') : intro ? t('play_today') : t('takeoff');
+   $('dayIntro').hidden = !intro; if (intro) $('dayIntro').textContent = t('tut_6');
+ }
+@@ -276,12 +294,14 @@ function startFlight(mode, fecha, resume) {
+   }
+   R.setField(S.f, S.ct); R.reveal = 0; R.zoomOut = 0; R.parts.length = 0;
+   R.opts.contrast = ST.set.contrast; R.opts.shake = ST.set.shake; R.opts.reduced = reducedMQ.matches;
++  clearUndo();
+   $('hud').hidden = false; show(null); onResize(); layoutControls(); updateHud(true);
+   $('mini').hidden = !ST.set.mini; $('hBeacWrap').hidden = $('beaconBtn').hidden = mode === 'archivo' || mode === 'libre';
++  $('modeTag').hidden = mode !== 'tutorial'; $('modeTag').textContent = t('tut_local');
+   $('ghost').hidden = !(ST.touch && ST.prof.flights < 3 && mode !== 'archivo'); fl.ghost = !$('ghost').hidden; $('ghost').querySelector('span').hidden = mode === 'tutorial';
+   A.play('juego'); A.final2 = 0;
+   if (fl.tut) tutStep(fl.tut.step, true);
+-  countdown(resume ? 1.5 : 1.5);
++  countdown(1.5);
+ }
+ function buildTrails(fl) {
+   if (fl.mode === 'tutorial') return [];
+@@ -294,18 +314,19 @@ function buildTrails(fl) {
+ function countdown(dur) {
+   const fl = ST.fl; fl.count = dur; fl.countN = -1; $('count').hidden = false;
+ }
+-function endFlightView() { if (ST.fl) { ST.fl.ended = true; } $('beaconBtn').classList.remove('hint'); $('hud').hidden = true; closeSelector(true); A.loopsOff(); A.duck(0); R.reveal = 0; R.zoomOut = 0; $('cv').style.filter = ''; }
++function endFlightView() { if (ST.fl) { ST.fl.ended = true; } $('beaconBtn').classList.remove('hint'); $('hud').hidden = true; $('modeTag').hidden = true; clearUndo(); $('tutLine').hidden = true; tutLine.key = null; clearToast(); closeSelector(true); A.loopsOff(); A.duck(0); R.reveal = 0; R.zoomOut = 0; $('cv').style.filter = ''; }
+ function pauseFlight(why) {
+   const fl = ST.fl; if (!fl || fl.ended || fl.arriving || ST.scene !== 'flight') return;
+   fl.paused = true; releaseStick(); closeSelector(true); A.loopsOff(); A.duck(1); saveFlight();
+   $('restartBtn').hidden = !(fl.mode === 'libre' || fl.mode === 'archivo');
+-  const ab = $('abandonBtn'); ab.classList.remove('arm'); ab.hidden = fl.mode === 'tutorial' && fl.tut.step < 2;
++  const ab = $('abandonBtn'); ab.hidden = fl.mode === 'tutorial' && fl.tut.step < 2;
+   paintPause(fl);
+   show('pause'); sfx('ui_back');
+ }
+ function paintPause(fl) {
+-  const ab = $('abandonBtn'); ab.textContent = fl.mode === 'tutorial' ? t('tut_skip') : t(ab.classList.contains('arm') ? 'abandon_confirm' : 'abandon');
+-  $('pauseInfo').textContent = (fl.mode === 'oficial' ? t('official') : fl.mode === 'libre' ? t('free') : fl.mode === 'tutorial' ? t('tut_title') : t('archive_flight', { d: fmtDate(fl.fecha) })) + ' · ' + fmtTime(fl.S.t + fl.S.pen, true);
++  const ab = $('abandonBtn'); ab.textContent = fl.mode === 'tutorial' ? t('tut_skip') : t('abandon');
++  $('pauseInfo').textContent = (fl.mode === 'oficial' ? t('official') : fl.mode === 'libre' ? t('free') : fl.mode === 'tutorial' ? t('tut_local') : t('archive_flight', { d: fmtDate(fl.fecha) })) + ' · ' + fmtTime(fl.S.t + fl.S.pen, true);
++  $('pauseKeys').hidden = ST.touch; $('pauseKeys').textContent = keysLine(fl.mode); // PLAY-BALIZAS-04: leyenda consultable durante el vuelo
+ }
+ function resumeFlight() { const fl = ST.fl; if (!fl) return; show(null); fl.paused = false; A.duck(0); A.resume(); countdown(1.5); sfx('ui_tap'); onResize(); }
+ $('pauseBtn').addEventListener('click', () => pauseFlight('btn'));
+@@ -313,12 +334,12 @@ $('resumeBtn').addEventListener('click', resumeFlight);
+ $('restartBtn').addEventListener('click', () => { const fl = ST.fl; if (!fl) return; sfx('ui_tap'); startFlight(fl.mode, fl.fecha, false); });
+ $('pHow').addEventListener('click', () => { sfx('ui_tap'); openHelp(true); });
+ $('pSet').addEventListener('click', () => { sfx('ui_tap'); openSettings(true); });
+-let abTimer = 0;
++// SRC-BA01: abandonar exige una decisión nueva en un diálogo que describe la consecuencia real del modo
+ $('abandonBtn').addEventListener('click', () => {
+-  const b = $('abandonBtn'), fl = ST.fl; if (!fl) return;
++  const fl = ST.fl; if (!fl) return;
+   if (fl.mode === 'tutorial') { finishTutorial(true); return; }
+-  if (!b.classList.contains('arm')) { b.classList.add('arm'); b.textContent = t('abandon_confirm'); sfx('ui_error'); clearTimeout(abTimer); abTimer = setTimeout(() => { b.classList.remove('arm'); b.textContent = t('abandon'); }, 3000); return; }
+-  clearTimeout(abTimer); b.classList.remove('arm'); abandonFlight();
++  sfx('ui_tap');
++  confirmDlg({ title: t('abandon_title'), body: t('abandon_effects', { consecuencias: t(fl.mode === 'oficial' ? 'cons_oficial' : 'cons_libre') }), okLabel: t('abandon'), onOk: () => { sfx('ui_back'); abandonFlight(); } });
+ });
+ function saveFlight() {
+   const fl = ST.fl; if (!fl || fl.ended) return;
+@@ -425,6 +446,7 @@ function updateHud(force) {
+   const h = Math.round(S.hull); setText('hHull', h + '%'); $('hHull').classList.toggle('low', h < 30);
+   setText('hTre', '◆ ' + S.tre.reduce((a, b) => a + b, 0) + '/' + S.tre.length);
+   const left = Sm.K.MAX_BEACONS - S.placed.length; setText('hBeac', String(left)); setText('beaconN', String(left));
++  if (hudLast.avail !== left) { hudLast.avail = left; const lb = t('beacons_available', { cantidad: left }); $('hBeacWrap').setAttribute('aria-label', lb); $('beaconBtn').setAttribute('aria-label', t('beacon') + ' · ' + lb); }
+   const why = Sm.canPlace(S), bb = $('beaconBtn'); bb.classList.toggle('dim', !!why && why !== 'too_fast' || left <= 0);
+   $('progDot').style.bottom = (Math.max(0, Math.min(1, S.y / S.f.H)) * 100).toFixed(1) + '%';
+ }
+@@ -433,9 +455,13 @@ function drawBigMap(fl) { const cv = $('mapBigCv'), S = fl.S, { w, h } = vp(), d
+ function showBigMap(v) { if (!ST.fl || ST.fl.ended) v = false; ST.mapHeld = v; $('mapBig').hidden = !v; }
+ $('mini').addEventListener('pointerdown', e => { e.preventDefault(); showBigMap(true); });
+ ['pointerup', 'pointercancel', 'pointerleave'].forEach(ev => $('mini').addEventListener(ev, () => showBigMap(false)));
++// PLAY-BALIZAS-03: el minimapa tiene nombre y se amplía también con teclado (Enter/Espacio alternan; Escape cierra); no revela zonas sin explorar
++$('mini').addEventListener('keydown', e => { if (e.code === 'Enter' || e.code === 'Space') { e.preventDefault(); e.stopPropagation(); showBigMap(!ST.mapHeld); } else if (e.code === 'Escape' && ST.mapHeld) { e.preventDefault(); e.stopPropagation(); showBigMap(false); } });
++$('mini').title = t('enlarge_map');
+ 
+ let toastT = 0;
+-function toast(msg, kind, ms) { const el = $('toast'); el.textContent = msg; el.className = 'toast on ' + (kind || ''); clearTimeout(toastT); toastT = setTimeout(() => { el.className = 'toast'; }, ms || 2000); }
++function toast(msg, kind, ms) { const el = $('toast'); el.textContent = msg; el.className = 'toast on ' + (kind || ''); clearTimeout(toastT); toastT = setTimeout(() => { el.className = 'toast'; el.textContent = ''; }, ms || 2000); }
++function clearToast() { const el = $('toast'); clearTimeout(toastT); el.className = 'toast'; el.textContent = ''; }
+ 
+ /* ---------------- controles ---------------- */
+ const IN = { kx: 0, ky: 0, keys: {}, stick: null, one: new Map(), mouse: { l: 0, r: 0, x: 0, y: 0 }, brakeBtn: 0, brakeKey: 0, gp: { ax: 0, ay: 0, br: 0 } };
+@@ -503,6 +529,7 @@ window.addEventListener('keydown', e => {
+   const fl = ST.fl, flying = fl && !fl.ended && ST.scene === 'flight';
+   if (ST.dial && flying) { dialKey(e); return; }
+   if (ST.sel && flying) { selKey(e); return; }
++  if (flying && document.activeElement === $('mini')) return; // el minimapa gestiona sus propias teclas
+   if (flying) {
+     if (GAME_KEYS.includes(e.code)) e.preventDefault();
+     if (e.code === 'Escape' || e.code === 'KeyP') { if (!e.repeat) pauseFlight('key'); return; }
+@@ -512,7 +539,7 @@ window.addEventListener('keydown', e => {
+     IN.keys[e.code] = 1; return;
+   }
+   if (ST.scene === 'pause' && (e.code === 'Escape' || e.code === 'KeyP') && !e.repeat) { e.preventDefault(); resumeFlight(); return; }
+-  if (e.code === 'Escape' && ['table', 'logs', 'arch', 'help', 'settings', 'day'].includes(ST.scene)) { e.preventDefault(); sfx('ui_back'); if (ST.scene === 'day') goHome(); else closeOver(); }
++  if (e.code === 'Escape' && ['table', 'logs', 'arch', 'help', 'settings', 'day', 'confirm', 'shareFb'].includes(ST.scene)) { e.preventDefault(); sfx('ui_back'); if (ST.scene === 'confirm') ST.confirmSpec = null; if (ST.scene === 'day') goHome(); else closeOver(); }
+ });
+ window.addEventListener('keyup', e => {
+   IN.keys[e.code] = 0;
+@@ -542,33 +569,48 @@ function openSelector(e) {
+   if (why) { const b = $('beaconBtn'); b.classList.remove('shake'); void b.offsetWidth; b.classList.add('shake'); sfx('ui_error'); toast(t(WHY_KEY[why] || 'slow_to_mark'), 'warn', 1500); vib(15); return; }
+   fl.S.autoBrake = 1; sfx('beacon_open');
+   const sel = $('sel'), c = $('selC'); c.innerHTML = '';
+-  ORDER.forEach((s, i) => { const b = document.createElement('button'); b.className = 'sym'; b.dataset.s = s; b.style.animationDelay = (i * 30) + 'ms'; b.setAttribute('aria-label', t('sym_' + s)); b.innerHTML = R.glyphSVG(s, 0) + '<span>' + t('sym_' + s) + '</span>' + (ST.touch ? '' : '<kbd>' + (i + 1) + '</kbd>'); if (fl.tut && fl.tut.step === 4 && s === 'noporaqui') b.classList.add('rec'); c.appendChild(b); });
+-  sel.hidden = false; document.body.classList.add('selecting'); ST.sel = { pid: e ? e.pointerId : null, hi: -1, sx: e ? e.clientX : 0, sy: e ? e.clientY : 0, moved: false };
++  ORDER.forEach((s, i) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'sym'; b.dataset.s = s; b.style.animationDelay = (i * 30) + 'ms'; b.setAttribute('aria-label', t('place_sym', { 'símbolo': t('sym_' + s) })); b.innerHTML = R.glyphSVG(s, 0) + '<span>' + t('sym_' + s) + '</span>' + (ST.touch ? '' : '<kbd aria-hidden="true">' + (i + 1) + '</kbd>'); if (fl.tut && fl.tut.step === 4 && s === 'noporaqui') b.classList.add('rec'); c.appendChild(b); });
++  $('selT').textContent = t('choose_symbol') + ' · ' + t('beacons_available', { cantidad: Sm.K.MAX_BEACONS - fl.S.placed.length });
++  sel.hidden = false; document.body.classList.add('selecting'); ST.sel = { pid: e ? e.pointerId : null, hi: -1, sx: e ? e.clientX : 0, sy: e ? e.clientY : 0, moved: false, opener: document.activeElement };
+   positionSelector();
+   if (!e && !ST.touch) setTimeout(() => { const f = c.querySelector('.sym'); if (f) f.focus(); }, 20);
+ }
++// RSP-BALIZAS-02: rectángulo útil con insets reales; radio acotado y reserva de crecimiento; cuadrícula si no cabe
++function usableRect() { const { w, h } = vp(), ins = safeInsets(); return { L: ins.l + 12, R: w - ins.r - 12, T: ins.t + 64, B: h - ins.b - 12 }; }
+ function positionSelector() {
+-  const S = ST.fl.S, q = R.W2S(S.x, S.y), { w, h } = vp(), rad = Math.min(w, h) < 500 ? 96 : 112;
+-  const cx = Math.max(rad + 40, Math.min(w - rad - 40, q[0])), cy = Math.max(rad + 90, Math.min(h - rad - 40, q[1]));
+-  const box = ST.sel ? $('selC') : null; if (!box) return; box.style.left = cx + 'px'; box.style.top = cy + 'px';
++  const box = ST.sel ? $('selC') : null; if (!box) return;
++  const S = ST.fl.S, q = R.W2S(S.x, S.y), U = usableRect(), uw = U.R - U.L, uh = U.B - U.T;
++  const rad = Math.min(112, (uw - 84) / 2, (uh - 84) / 2);
++  if (rad < 52) { box.classList.add('grid'); box.style.left = (U.L + uw / 2) + 'px'; box.style.top = (U.T + uh / 2) + 'px'; box.querySelectorAll('.sym').forEach(b => { b.style.left = ''; b.style.top = ''; }); return; }
++  box.classList.remove('grid');
++  const half = rad + 42; const cx = Math.max(U.L + half, Math.min(U.R - half, q[0])), cy = Math.max(U.T + half, Math.min(U.B - half - 56, q[1]));
++  box.style.left = cx + 'px'; box.style.top = cy + 'px';
+   box.querySelectorAll('.sym').forEach((b, i) => { const a = -Math.PI / 2 + i * 2 * Math.PI / 5; b.style.left = (Math.cos(a) * rad) + 'px'; b.style.top = (Math.sin(a) * rad) + 'px'; });
+ }
+-function closeSelector(silent) { document.body.classList.remove('selecting'); if (ST.sel) { $('sel').hidden = true; ST.sel = null; } if (ST.dial) { $('dial').hidden = true; ST.dial = null; } if (ST.fl) ST.fl.S.autoBrake = 0; if (!silent) sfx('ui_back'); }
++function closeSelector(silent) {
++  const inside = (ST.sel || ST.dial) && (document.activeElement && (($('sel').contains(document.activeElement)) || $('dial').contains(document.activeElement)));
++  document.body.classList.remove('selecting'); if (ST.sel) { $('sel').hidden = true; ST.sel = null; } if (ST.dial) { $('dial').hidden = true; ST.dial = null; } if (ST.fl) ST.fl.S.autoBrake = 0; if (!silent) sfx('ui_back');
++  if (inside) { const bb = $('beaconBtn'); const visible = !bb.hidden && bb.offsetParent !== null; if (visible && ST.fl && !ST.fl.ended) { try { bb.focus({ preventScroll: true }); } catch (e) {} } else { try { $('cv').focus({ preventScroll: true }); } catch (e) {} } }
++}
++$('selCancel').addEventListener('click', () => closeSelector());
++$('dialCancel').addEventListener('click', () => closeSelector());
+ function selHi(i) { const els = $('selC').querySelectorAll('.sym'); els.forEach((b, k) => b.classList.toggle('hi', k === i)); if (ST.sel && ST.sel.hi !== i && i >= 0) sfx('beacon_pick', { s: ORDER[i] }); if (ST.sel) ST.sel.hi = i; }
+ function symAt(x, y) { let best = -1, bd = 70; $('selC').querySelectorAll('.sym').forEach((b, i) => { const r = b.getBoundingClientRect(), d = Math.hypot(x - (r.left + r.width / 2), y - (r.top + r.height / 2)); if (d < bd) { bd = d; best = i; } }); return best; }
+-$('sel').addEventListener('pointerdown', e => { if (!ST.sel) return; const i = symAt(e.clientX, e.clientY); if (i < 0) { closeSelector(); return; } e.preventDefault(); selHi(i); ST.sel.pid = e.pointerId; ST.sel.tap = true; });
++$('sel').addEventListener('pointerdown', e => { if (!ST.sel) return; if (e.target.closest('#selCancel')) return; const i = symAt(e.clientX, e.clientY); if (i < 0) { closeSelector(); return; } e.preventDefault(); selHi(i); ST.sel.pid = e.pointerId; ST.sel.tap = true; });
+ window.addEventListener('pointermove', e => { if (!ST.sel || ST.sel.pid !== e.pointerId) return; if (Math.hypot(e.clientX - ST.sel.sx, e.clientY - ST.sel.sy) > 18) ST.sel.moved = true; const i = symAt(e.clientX, e.clientY); if (i !== ST.sel.hi) selHi(i); if (ST.dial && ST.dial.pid === e.pointerId) dialMove(e); });
+ window.addEventListener('pointerup', e => {
+   if (ST.sel && ST.sel.pid === e.pointerId) { const i = ST.sel.hi; if (i >= 0 && (ST.sel.moved || ST.sel.tap)) { pickSymbol(ORDER[i]); return; } ST.sel.pid = null; }
+ });
+ $('selC').addEventListener('click', e => { const b = e.target.closest('.sym'); if (b && ST.sel && e.detail === 0) pickSymbol(b.dataset.s); }); // teclado (Enter sobre el botón)
++// RSP-BALIZAS-02: solo se capturan flechas, dígitos, E y Escape; Tab recorre símbolos y Cancelar; Enter/Espacio activan el botón enfocado de forma nativa
+ function selKey(e) {
+-  e.preventDefault(); const n = ORDER.length;
+-  if (e.code === 'Escape') { closeSelector(); return; }
+-  if (/^Digit[1-5]$/.test(e.code)) { pickSymbol(ORDER[+e.code.slice(5) - 1]); return; }
+-  if (['ArrowRight', 'ArrowDown', 'KeyD', 'KeyS'].includes(e.code)) { const i = ((ST.sel.hi < 0 ? -1 : ST.sel.hi) + 1) % n; selHi(i); $('selC').children[i].focus(); }
+-  if (['ArrowLeft', 'ArrowUp', 'KeyA', 'KeyW'].includes(e.code)) { const i = ((ST.sel.hi < 0 ? 0 : ST.sel.hi) - 1 + n) % n; selHi(i); $('selC').children[i].focus(); }
+-  if (e.code === 'Enter' || e.code === 'Space' || e.code === 'KeyE') { const i = ST.sel.hi >= 0 ? ST.sel.hi : ORDER.indexOf((document.activeElement && document.activeElement.dataset.s) || ''); if (i >= 0) pickSymbol(ORDER[i]); }
++  const n = ORDER.length; if (e.ctrlKey || e.metaKey || e.altKey) return;
++  if (e.code === 'Escape') { e.preventDefault(); closeSelector(); return; }
++  if (/^Digit[1-5]$/.test(e.code)) { e.preventDefault(); pickSymbol(ORDER[+e.code.slice(5) - 1]); return; }
++  if (['ArrowRight', 'ArrowDown', 'KeyD', 'KeyS'].includes(e.code)) { e.preventDefault(); const i = ((ST.sel.hi < 0 ? -1 : ST.sel.hi) + 1) % n; selHi(i); $('selC').children[i].focus(); return; }
++  if (['ArrowLeft', 'ArrowUp', 'KeyA', 'KeyW'].includes(e.code)) { e.preventDefault(); const i = ((ST.sel.hi < 0 ? 0 : ST.sel.hi) - 1 + n) % n; selHi(i); $('selC').children[i].focus(); return; }
++  if (e.code === 'KeyE') { e.preventDefault(); const i = ST.sel.hi >= 0 ? ST.sel.hi : ORDER.indexOf((document.activeElement && document.activeElement.dataset.s) || ''); if (i >= 0) pickSymbol(ORDER[i]); return; }
++  if ((e.code === 'Enter' || e.code === 'Space') && !(document.activeElement && document.activeElement.closest('#sel button'))) { e.preventDefault(); const i = ST.sel.hi; if (i >= 0) pickSymbol(ORDER[i]); }
+ }
+ function pickSymbol(s) {
+   const fl = ST.fl; if (!fl) return; $('sel').hidden = true; ST.sel = null; document.body.classList.remove('selecting');
+@@ -578,8 +620,9 @@ function pickSymbol(s) {
+ function openDial(s) {
+   const fl = ST.fl, S = fl.S, d0 = G.dirFrom(Math.cos(S.ang), Math.sin(S.ang));
+   ST.dial = { s, dir: d0, pid: null }; const dl = $('dial'); dl.hidden = false; document.body.classList.add('selecting');
+-  const q = R.W2S(S.x, S.y), { w, h } = vp(), cx = Math.max(120, Math.min(w - 120, q[0])), cy = Math.max(170, Math.min(h - 120, q[1]));
++  const q = R.W2S(S.x, S.y), U = usableRect(), half = 100 + 12; const cx = Math.max(U.L + half, Math.min(U.R - half, q[0])), cy = Math.max(U.T + half, Math.min(U.B - half - 56, q[1]));
+   ST.dial.cx = cx; ST.dial.cy = cy;
++  if (!ST.touch) setTimeout(() => { try { $('dialOk').focus(); } catch (e) {} }, 20);
+   const ring = $('dialRing'); ring.style.left = cx + 'px'; ring.style.top = cy + 'px'; ring.innerHTML = '';
+   for (let i = 0; i < 8; i++) { const v = G.dirVec(i), k = document.createElement('i'); k.style.transform = 'translate(' + (v[0] * 100).toFixed(1) + 'px,' + (-v[1] * 100).toFixed(1) + 'px)'; ring.appendChild(k); }
+   const ok = $('dialOk'); ok.style.left = cx + 'px'; ok.style.top = cy + 'px';
+@@ -587,31 +630,35 @@ function openDial(s) {
+ }
+ function setDialDir(d) { const D = ST.dial; if (!D) return; if (D.dir !== d) sfx('beacon_pick', { s: D.s }); D.dir = d; const v = G.dirVec(d), a = $('dialArrow'); a.style.left = (D.cx + v[0] * 64) + 'px'; a.style.top = (D.cy - v[1] * 64) + 'px'; a.style.transform = 'rotate(' + (d * 45) + 'deg)'; }
+ function dialMove(e) { const D = ST.dial; if (!D) return; const dx = e.clientX - D.cx, dy = -(e.clientY - D.cy); if (Math.hypot(dx, dy) > 24) setDialDir(G.dirFrom(dx, dy)); }
+-$('dial').addEventListener('pointerdown', e => { if (!ST.dial || e.target === $('dialOk')) return; e.preventDefault(); ST.dial.pid = e.pointerId; dialMove(e); });
++$('dial').addEventListener('pointerdown', e => { if (!ST.dial || e.target === $('dialOk') || e.target.closest('#dialCancel')) return; e.preventDefault(); ST.dial.pid = e.pointerId; dialMove(e); });
+ $('dial').addEventListener('pointermove', e => { if (ST.dial && (ST.dial.pid === e.pointerId || e.pointerType === 'mouse')) dialMove(e); });
+ $('dial').addEventListener('pointerup', e => { if (ST.dial && ST.dial.pid === e.pointerId) placeBeacon(ST.dial.s, ST.dial.dir); });
+ $('dialOk').addEventListener('click', () => { if (ST.dial) placeBeacon(ST.dial.s, ST.dial.dir); });
+ function dialKey(e) {
+-  e.preventDefault(); const D = ST.dial;
+-  if (e.code === 'Escape') { closeSelector(); return; }
+-  if (e.code === 'Enter' || e.code === 'Space' || e.code === 'KeyE') { placeBeacon(D.s, D.dir); return; }
+-  if (['ArrowRight', 'KeyD'].includes(e.code)) setDialDir((D.dir + 1) % 8);
+-  if (['ArrowLeft', 'KeyA'].includes(e.code)) setDialDir((D.dir + 7) % 8);
+-  if (['ArrowUp', 'KeyW'].includes(e.code)) setDialDir(0);
+-  if (['ArrowDown', 'KeyS'].includes(e.code)) setDialDir(4);
+-}
+-let undoT = 0, undoB = null;
++  const D = ST.dial; if (e.ctrlKey || e.metaKey || e.altKey) return;
++  if (e.code === 'Escape') { e.preventDefault(); closeSelector(); return; }
++  if (e.code === 'KeyE') { e.preventDefault(); placeBeacon(D.s, D.dir); return; }
++  if ((e.code === 'Enter' || e.code === 'Space') && !(document.activeElement && document.activeElement.closest('#dial button'))) { e.preventDefault(); placeBeacon(D.s, D.dir); return; }
++  if (['ArrowRight', 'KeyD'].includes(e.code)) { e.preventDefault(); setDialDir((D.dir + 1) % 8); }
++  if (['ArrowLeft', 'KeyA'].includes(e.code)) { e.preventDefault(); setDialDir((D.dir + 7) % 8); }
++  if (['ArrowUp', 'KeyW'].includes(e.code)) { e.preventDefault(); setDialDir(0); }
++  if (['ArrowDown', 'KeyS'].includes(e.code)) { e.preventDefault(); setDialDir(4); }
++}
++// PLAY-BALIZAS-05: el plazo real de deshacer es UNDO_MS; el texto, la barra y la disponibilidad del botón usan la misma constante
++const UNDO_MS = 5000;
++let undoT = 0, undoB = null, undoHideT = 0;
++function clearUndo() { clearTimeout(undoT); clearTimeout(undoHideT); undoB = null; const ub = $('undoBar'); ub.hidden = true; ub.classList.remove('expired'); $('undoBtn').hidden = false; }
+ function placeBeacon(s, dir) {
+   const fl = ST.fl; closeSelector(true); if (!fl) return;
+   const r = Sm.place(fl.S, s, dir);
+   if (!r.ok) { sfx('ui_error'); toast(t(WHY_KEY[r.why] || 'slow_to_mark'), 'warn', 1500); return; }
+   fl.waves.push({ x: r.b.x, y: r.b.y, age: 0 }); R.burst(r.b.x, r.b.y, 24, R.SYMCOL[s], 3, 0.8, 0.06); sfx('beacon_place'); vib(20); popHud('hBeac');
+-  undoB = r.b; const ub = $('undoBar'); ub.hidden = false; const ti = $('undoTimer'); ti.style.transition = 'none'; ti.style.transform = 'scaleX(1)'; void ti.offsetWidth; ti.style.transition = 'transform 5s linear'; ti.style.transform = 'scaleX(0)';
+-  clearTimeout(undoT); undoT = setTimeout(() => { ub.hidden = true; undoB = null; }, 5000);
++  clearUndo(); undoB = r.b; const ub = $('undoBar'); ub.hidden = false; $('undoTxt').textContent = t('beacon_placed'); $('undoDur').textContent = t('undo_dur', { segundos: UNDO_MS / 1000 }); const ti = $('undoTimer'); ti.style.transition = 'none'; ti.style.transform = 'scaleX(1)'; void ti.offsetWidth; ti.style.transition = 'transform ' + (UNDO_MS / 1000) + 's linear'; ti.style.transform = 'scaleX(0)';
++  undoT = setTimeout(() => { undoB = null; if (ub.hidden) return; $('undoBtn').hidden = true; ub.classList.add('expired'); $('undoTxt').textContent = t('undo_expired'); $('undoDur').textContent = ''; undoHideT = setTimeout(() => { ub.hidden = true; ub.classList.remove('expired'); $('undoBtn').hidden = false; }, 1800); }, UNDO_MS);
+   if (fl.tut && fl.tut.step === 4) { $('beaconBtn').classList.remove('hint'); tutStep(5); }
+   saveFlight();
+ }
+-$('undoBtn').addEventListener('click', () => { const fl = ST.fl; if (fl && undoB && Sm.undo(fl.S, undoB)) { sfx('beacon_undo'); $('undoBar').hidden = true; undoB = null; clearTimeout(undoT); saveFlight(); } });
++$('undoBtn').addEventListener('click', () => { const fl = ST.fl; if (fl && undoB && Sm.undo(fl.S, undoB)) { sfx('beacon_undo'); clearUndo(); updateHud(); saveFlight(); } });
+ 
+ /* ---------------- TUTORIAL (6) ---------------- */
+ function startTutorial() { ST.prof.tutStep = Math.max(1, ST.prof.tutStep || 1); saveProf(); startFlight('tutorial', 'tutorial', false); }
+@@ -650,6 +697,20 @@ function finishTutorial(skipped) {
+   ST.prof.tut = 1; ST.prof.tutStep = 0; saveProf(); endFlightView(); ST.fl = null;
+   if (skipped) { goHome(); return; }
+ }
++// PLAY-BALIZAS-01/07: cierre del tutorial con resumen real antes de la valoración opcional; ningún botón despega ni publica
++function showTutEnd(fl, rated) {
++  endFlightView(); ST.fl = fl; fl.ended = true; R.reveal = 1; R.zoomOut = 0.55;
++  ST.prof.tut = 1; ST.prof.tutStep = 0; saveProf();
++  const S = fl.S; $('teTitle').textContent = t(rated ? 'tut_done' : 'arrived');
++  $('teLines').innerHTML = ''; const row = (txt, cls) => { const d = document.createElement('div'); if (cls) d.className = cls; d.innerHTML = '<span>' + txt + '</span><b></b>'; $('teLines').appendChild(d); d.classList.add('on'); };
++  row(t('goal_done'), 'tot'); row(t('hull_pct', { porcentaje: Math.round(S.hull) })); row(t('tre_opt', { recogidos: S.tre.reduce((a, b) => a + b, 0), total: S.tre.length }));
++  const trap = fl.beacons.find(b => b.trap); $('teReview').hidden = !trap || !!rated;
++  show('tutEnd');
++}
++$('teReview').addEventListener('click', () => { sfx('ui_tap'); if (ST.fl) openRate(ST.fl); });
++$('teRepeat').addEventListener('click', () => { sfx('ui_tap'); ST.fl = null; ST.prof.tutStep = 1; saveProf(); startTutorial(); });
++$('teOfficial').addEventListener('click', () => { sfx('ui_tap'); ST.fl = null; tutFinal(); });
++$('teHome').addEventListener('click', () => { sfx('ui_back'); ST.fl = null; goHome(); });
+ 
+ /* ---------------- LLEGADA Y RESULTADO (5.7) ---------------- */
+ function arrive() {
+@@ -690,7 +751,7 @@ function submitFlight(fl, estado) {
+     .catch(e => { fl.sendErr = e; if (e && e.code === 'closed') { const d = loadDay(fl.fecha); d.closedLate = 1; saveDay(fl.fecha, d); } if (e && e.code === 'rate_limited') toast(t('rate_limited'), 'warn', 2500); return null; });
+ }
+ function showResult(fl) {
+-  if (fl.mode === 'tutorial') { tutStep(5, true); openRate(fl); return; }
++  if (fl.mode === 'tutorial') { showTutEnd(fl, false); return; }
+   endFlightView(); ST.fl = fl; fl.ended = true; R.reveal = 1; R.zoomOut = 0.55;
+   const S = fl.S, sc = fl.score;
+   const lines = $('resLines'); lines.innerHTML = '';
+@@ -709,6 +770,7 @@ function showResult(fl) {
+   $('rateBtn').hidden = !canRate; $('againBtn').hidden = !(fl.mode === 'libre' || fl.mode === 'archivo');
+   if (!canRate && fl.mode !== 'oficial') { $('againBtn').classList.add('pri'); }
+   $('shareBtn').hidden = fl.mode !== 'oficial';
++  $('resRoute').hidden = !(S.samples && S.samples.length > 1); // VIS-BALIZAS-04: leyenda solo cuando el recorrido es real
+   show('result');
+   drawResultMap(fl);
+ }
+@@ -745,10 +807,13 @@ $('shareBtn').addEventListener('click', () => { sfx('ui_tap'); share(ST.fl); });
+ 
+ /* ---------------- VALORAR (3.8, 5.8) ---------------- */
+ function openRate(fl) {
+-  if (fl.mode === 'tutorial') { endFlightView(); ST.fl = fl; fl.ended = true; R.reveal = 1; }
++  const tut = fl.mode === 'tutorial';
++  if (tut) { endFlightView(); ST.fl = fl; fl.ended = true; R.reveal = 1; }
+   const list = fl.rateList || rateCandidates(fl); fl.rateList = list; const box = $('rCards'); box.innerHTML = ''; const d = loadDay(fl.fecha);
+-  $('rateEnd').hidden = true; let voted = 0;
+-  if (fl.mode === 'tutorial') { const p = document.createElement('p'); p.className = 'note'; tx(p, 'tut_5'); box.appendChild(p); }
++  $('rateEnd').hidden = true; $('rateEnd').textContent = ''; let voted = 0;
++  // PLAY-BALIZAS-01: la valoración del tutorial se identifica como simulación local, nunca como voto público
++  tx($('rateTitle'), tut ? 'rate_practice_title' : 'rate_title'); $('rateSub').hidden = !tut; tx($('rateDone'), tut ? 'rate_finish' : 'done');
++  if (tut) { const p = document.createElement('p'); p.className = 'note'; tx(p, 'tut_5'); box.appendChild(p); }
+   list.forEach((it, i) => {
+     const b = it.b, card = document.createElement('div'); card.className = 'rcard';
+     card.innerHTML = '<canvas width="192" height="192"></canvas><div class="rc-b"><div class="rc-h">' + R.glyphSVG(b.s, b.d) + '<span data-t="sym_' + b.s + '">' + t('sym_' + b.s) + '</span></div><div class="rc-s">' + (it.followed ? '<span class="rc-f" data-t="you_followed">' + t('you_followed') + '</span>' : '&nbsp;') + '</div><div class="row"><button class="btn vote-up" data-t="useful">' + t('useful') + '</button><button class="btn vote-dn" data-t="misleading">' + t('misleading') + '</button></div></div>';
+@@ -759,7 +824,7 @@ function openRate(fl) {
+       sfx(v > 0 ? 'vote_up' : 'vote_down'); vib(10); card.querySelector('.vote-up').classList.toggle('sel', v > 0); card.querySelector('.vote-dn').classList.toggle('sel', v < 0);
+       if (!it.tut) { const dd = loadDay(fl.fecha); dd.votes[b.id] = v; saveDay(fl.fecha, dd); N.send('voto', { fecha: fl.fecha, jugador: PLAYER, baliza: +b.id, valor: v }, 'voto:' + fl.fecha + ':' + b.id).catch(e => { if (e && e.code === 'rate_limited') toast(t('rate_limited'), 'warn', 2500); }); }
+       if (!card.dataset.v) { voted++; } card.dataset.v = v; tx($('rateProg'), 'of', { a: voted, b: list.length });
+-      setTimeout(() => { card.classList.add('out'); setTimeout(() => { card.style.display = 'none'; if (voted >= list.length) { $('rateEnd').hidden = false; if (it.tut) tutStep(6, true); } }, 280); }, 260);
++      setTimeout(() => { card.classList.add('out'); setTimeout(() => { card.style.display = 'none'; if (voted >= list.length) { const re = $('rateEnd'); re.hidden = false; tx(re, it.tut ? 'rate_practice_fb' : 'rate_thanks'); } }, 280); }, 260);
+     };
+     card.querySelector('.vote-up').addEventListener('click', () => vote(1)); card.querySelector('.vote-dn').addEventListener('click', () => vote(-1));
+   });
+@@ -769,7 +834,7 @@ function openRate(fl) {
+ }
+ function rateClose() {
+   const fl = ST.fl; sfx('ui_tap');
+-  if (fl && fl.mode === 'tutorial') { ST.prof.tut = 1; ST.prof.tutStep = 0; saveProf(); ST.fl = null; tutFinal(); return; }
++  if (fl && fl.mode === 'tutorial') { showTutEnd(fl, true); return; } // vuelve al cierre del tutorial con destinos explícitos
+   if (fl && fl.ended) show('result'); else goHome();
+ }
+ $('rateDone').addEventListener('click', rateClose); $('rateSkip').addEventListener('click', rateClose);
+@@ -787,8 +852,16 @@ async function share(fl) {
+   lines.push('jetgames.fun/balizas');
+   const text = lines.join('\n');
+   try { if (navigator.share) { await navigator.share({ text }); return; } } catch (e) { if (e && e.name === 'AbortError') return; }
+-  try { await navigator.clipboard.writeText(text); toast(t('copied'), 'good'); } catch (e) { const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); toast(t('copied'), 'good'); } catch (er) {} ta.remove(); }
++  if (await copyText(text)) { toast(t('copied'), 'good'); return; }
++  // SRC-BA02 / SRC-G06: sin copia confirmada no se anuncia éxito; el texto íntegro queda seleccionable
++  $('sfTa').value = text; openOver('shareFb'); setTimeout(() => { const ta = $('sfTa'); try { ta.focus({ preventScroll: true }); ta.select(); } catch (e) {} }, 60);
+ }
++async function copyText(text) {
++  try { await navigator.clipboard.writeText(text); return true; } catch (e) {}
++  try { const act = document.activeElement; const ta = document.createElement('textarea'); ta.value = text; ta.setAttribute('readonly', ''); ta.style.cssText = 'position:fixed;left:-9999px;top:0'; document.body.appendChild(ta); ta.select(); const ok = document.execCommand('copy') === true; ta.remove(); if (act && act.focus && act !== document.body) act.focus({ preventScroll: true }); return ok; } catch (e) { return false; }
++}
++$('sfCopy').addEventListener('click', async () => { const ta = $('sfTa'); if (await copyText(ta.value)) { closeOver(); toast(t('copied'), 'good'); } else { ta.focus(); ta.select(); } });
++$('sfClose').addEventListener('click', () => { sfx('ui_back'); closeOver(); }); $('sfX').addEventListener('click', () => { sfx('ui_back'); closeOver(); });
+ 
+ /* ---------------- TABLA (5.9) ---------------- */
+ let tabDay = 'today';
+@@ -856,6 +929,9 @@ let helpRaf = 0;
+ function openHelp(fromPause) {
+   openOver('help'); renderLegend();
+   $('replayTut').hidden = !!fromPause;
++  // PLAY-BALIZAS-04: la guía corresponde a las entradas disponibles; en escritorio no exige arrastrar
++  $('howKeys').hidden = ST.touch; $('howKeys').textContent = keysLine('oficial');
++  $('how1Cap').textContent = ST.touch ? t('touch_steer') + ' ' + t('how_1').split('. ').slice(1).join('. ') : t('how_1').replace(/^[^.]+\.\s*/, '');
+   const cvs = [1, 2, 3].map(i => $('vg' + i)); const dpr = Math.min(2, devicePixelRatio || 1); cvs.forEach(c => { c.width = 300 * dpr; c.height = 190 * dpr; });
+   const t0 = performance.now(); cancelAnimationFrame(helpRaf);
+   (function fr(now) {
+@@ -864,7 +940,12 @@ function openHelp(fromPause) {
+     if (ST.scene === 'help') helpRaf = requestAnimationFrame(fr);
+   })(t0);
+ }
+-function renderLegend() { const lg = $('legend'); lg.innerHTML = ''; ORDER.forEach(s => { const d = document.createElement('div'); d.innerHTML = R.glyphSVG(s, 0) + '<span>' + t('sym_' + s) + '</span>'; lg.appendChild(d); }); }
++function renderLegend() {
++  const lg = $('legend'); lg.innerHTML = ''; ORDER.forEach(s => { const d = document.createElement('div'); d.innerHTML = R.glyphSVG(s, 0) + '<span>' + t('sym_' + s) + '</span>'; lg.appendChild(d); });
++  // PLAY-BALIZAS-03: boya y peligro activo con forma propia, además del color
++  const extra = [['buoy_name', '<svg viewBox="-12 -12 24 24" aria-hidden="true"><circle r="9" fill="none" stroke="#00f2cf" stroke-width="2" stroke-dasharray="3 4"/><circle r="5" fill="none" stroke="#00f2cf" stroke-width="2"/><circle r="1.8" fill="#00f2cf"/></svg>'], ['hazard_name', '<svg viewBox="-12 -12 24 24" aria-hidden="true"><circle r="5.5" fill="#2a1830" stroke="#ff4466" stroke-width="1.6"/><path d="M0-8V-6M0 6v2M-8 0h2M6 0h2M-5.7-5.7l1.4 1.4M4.3 4.3l1.4 1.4M5.7-5.7l-1.4 1.4M-4.3 4.3l-1.4 1.4" stroke="#ff4466" stroke-width="1.6"/></svg>']];
++  extra.forEach(([k, svg]) => { const d = document.createElement('div'); d.innerHTML = svg + '<span>' + t(k) + '</span>'; lg.appendChild(d); });
++}
+ function vignette(i, c, s) {
+   const u = s % 4;
+   if (i === 0) { // inercia y freno
+@@ -897,7 +978,7 @@ function syncSettings() {
+   $('ctlSeg').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.v === s.ctl));
+   $('sideSeg').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.v === s.side));
+   $('fsRow').hidden = !ST.fsAPI; $('vibRow').hidden = !navigator.vibrate; syncFsUI();
+-  const rb = $('resetBtn'); rb.classList.remove('arm'); rb.textContent = t('reset_progress');
++  const rb = $('resetBtn'); rb.textContent = t('reset_progress');
+ }
+ function openSettings(fromPause) { openOver('settings'); syncSettings(); }
+ function bindTog(id, key, after) { $(id).addEventListener('click', () => { ST.set[key] = ST.set[key] ? 0 : 1; if (key === 'trails') ST.set.trails = $(id).classList.contains('on') ? 0 : 1; saveSet(); syncSettings(); sfx('ui_toggle'); if (after) after(); }); }
+@@ -924,17 +1005,21 @@ function relang() {
+   if (has('table')) renderTable();
+   if (has('logs')) { setRank(ST.prof.guided); renderLog(); }
+   if (has('arch')) renderArchive();
+-  if (has('help')) renderLegend();
++  if (has('help')) { renderLegend(); $('howKeys').textContent = keysLine('oficial'); $('how1Cap').textContent = ST.touch ? t('touch_steer') + ' ' + t('how_1').split('. ').slice(1).join('. ') : t('how_1').replace(/^[^.]+\.\s*/, ''); }
++  if (fl && fl.ended && fl.mode === 'tutorial' && has('tutEnd')) showTutEnd(fl, $('teReview').hidden);
++  if (has('confirm') && ST.confirmSpec) { const o = ST.confirmSpec; if (o.re) { const n = o.re(); Object.assign(o, n); } $('cfTitle').textContent = o.title; $('cfBody').textContent = o.body; $('cfKeep').textContent = o.keep || ''; $('cfOk').textContent = o.okLabel; }
++  if (fl && !fl.ended) { $('modeTag').textContent = t('tut_local'); if (fl.paused) paintPause(fl); }
++  $('mini').title = t('enlarge_map'); if (undoB) { $('undoTxt').textContent = t('beacon_placed'); $('undoDur').textContent = t('undo_dur', { segundos: UNDO_MS / 1000 }); }
+ }
+ $('ctlSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; ST.set.ctl = b.dataset.v; saveSet(); syncSettings(); sfx('ui_toggle'); });
+ $('sideSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; ST.set.side = b.dataset.v; saveSet(); syncSettings(); layoutControls(); sfx('ui_toggle'); });
+-let resetT = 0;
++// SRC-G04: borrado con confirmación explícita que enumera lo que se borra; ajustes e identificador se conservan
+ $('resetBtn').addEventListener('click', () => {
+-  const b = $('resetBtn');
+-  if (!b.classList.contains('arm')) { b.classList.add('arm'); b.textContent = t('reset_confirm'); sfx('ui_error'); clearTimeout(resetT); resetT = setTimeout(() => { b.classList.remove('arm'); b.textContent = t('reset_progress'); }, 3000); return; }
+-  clearTimeout(resetT);
+-  try { for (let i = localStorage.length - 1; i >= 0; i--) { const k = localStorage.key(i); if (k && k.startsWith(P) && k !== P + 'id' && k !== P + 'ajustes') localStorage.removeItem(k); } } catch (e) {}
+-  ST.prof = Object.assign({}, DEF_PROF); ST.fl = null; toast(t('reset_done'), 'good'); sfx('ui_back'); overlayStack = []; goHome();
++  sfx('ui_tap');
++  confirmDlg({ title: t('reset_title', { juego: 'JET//Balizas' }), body: t('reset_body', { 'datos concretos': t('reset_data') }), keep: t('reset_keep'), okLabel: t('reset_do'), onOk: () => {
++    try { for (let i = localStorage.length - 1; i >= 0; i--) { const k = localStorage.key(i); if (k && k.startsWith(P) && k !== P + 'id' && k !== P + 'ajustes') localStorage.removeItem(k); } } catch (e) {}
++    N.queue = []; ST.prof = Object.assign({}, DEF_PROF); ST.fl = null; ST.dia = {}; sfx('ui_back'); overlayStack = []; goHome(); toast(t('reset_done'), 'good');
++  } });
+ });
+ 
+ /* ---------------- ganchos de prueba ---------------- */
+@@ -963,6 +1048,7 @@ function boot() {
+   if (!ST.fsAPI) $('fsHome').hidden = true;
+   goHome();
+   requestAnimationFrame(t0 => { last = t0; requestAnimationFrame(loop); });
++  if (window.__balizasCarga) window.__balizasCarga.listo(); // SRC-G05: arrancó; se retira el estado de carga
+   if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
+ }
+ boot();
+diff --git a/site/balizas/src/render.js b/site/balizas/src/render.js
+index 98c6e2d..032c492 100644
+--- a/site/balizas/src/render.js
++++ b/site/balizas/src/render.js
+@@ -73,8 +73,9 @@ function chunk(ix, iy) {
+   x.fillStyle = '#24153f'; x.fillRect(x0 - 1, y0 - 1, CH + 2, CH + 2);
+   // cráteres y vetas, deterministas por trozo
+   const rnd = G.mulberry32((ix * 73856093) ^ (iy * 19349663) ^ 0x5bd1);
+-  for (let i = 0; i < 14; i++) { const cx = x0 + rnd() * CH, cy = y0 + rnd() * CH, r = 0.15 + rnd() * 0.55; x.fillStyle = 'rgba(12,5,26,.5)'; x.beginPath(); x.arc(cx, cy, r, 0, 7); x.fill(); x.strokeStyle = 'rgba(180,140,255,.14)'; x.lineWidth = 0.05; x.beginPath(); x.arc(cx + 0.03, cy + 0.03, r, 2.2, 5.2); x.stroke(); }
+-  for (let i = 0; i < 26; i++) { x.fillStyle = 'rgba(180,140,255,' + (0.03 + rnd() * 0.05).toFixed(3) + ')'; x.fillRect(x0 + rnd() * CH, y0 + rnd() * CH, 0.06, 0.06); }
++  // VIS-BALIZAS-01: vetas decorativas más tenues (mismas semillas, posiciones y conteos); la silueta y las grietas no cambian
++  for (let i = 0; i < 14; i++) { const cx = x0 + rnd() * CH, cy = y0 + rnd() * CH, r = 0.15 + rnd() * 0.55; x.fillStyle = 'rgba(12,5,26,.5)'; x.beginPath(); x.arc(cx, cy, r, 0, 7); x.fill(); x.strokeStyle = 'rgba(180,140,255,.10)'; x.lineWidth = 0.05; x.beginPath(); x.arc(cx + 0.03, cy + 0.03, r, 2.2, 5.2); x.stroke(); }
++  for (let i = 0; i < 26; i++) { x.fillStyle = 'rgba(180,140,255,' + (0.02 + rnd() * 0.03).toFixed(3) + ')'; x.fillRect(x0 + rnd() * CH, y0 + rnd() * CH, 0.06, 0.06); }
+   // grietas frágiles: vetas cian
+   for (let yy = y0; yy < y0 + CH; yy++) for (let xx = x0; xx < x0 + CH; xx++) {
+     if (xx < 0 || yy < 0 || xx >= f.W || yy >= f.H || R.g[yy * f.W + xx] !== 2) continue;
+@@ -83,8 +84,8 @@ function chunk(ix, iy) {
+     x.stroke(); x.fillStyle = 'rgba(0,242,207,.12)'; x.fillRect(xx, yy, 1, 1);
+   }
+   x.restore();
+-  // borde interior violeta
+-  x.lineJoin = 'round'; x.strokeStyle = 'rgba(119,0,244,.75)'; x.lineWidth = 0.2;
++  // borde interior violeta: una línea principal nítida y una segunda más tenue
++  x.lineJoin = 'round'; x.strokeStyle = 'rgba(119,0,244,.60)'; x.lineWidth = 0.16;
+   x.beginPath(); for (const l of R.loopsS) { x.moveTo(l[0], l[1]); for (let i = 2; i < l.length; i += 2) x.lineTo(l[i], l[i + 1]); x.closePath(); } x.stroke();
+   x.strokeStyle = 'rgba(190,150,255,.22)'; x.lineWidth = 0.04; x.stroke();
+   R.chunks.set(key, c); if (R.chunks.size > 70) R.chunks.delete(R.chunks.keys().next().value);
+@@ -106,6 +107,7 @@ function rankStroke(c, rank, x, y, r) {
+ }
+ // Pulso por símbolo (0..1 brillo)
+ function pulse(s, t, near) {
++  if (R.opts.reduced) return 1; // VIS-BALIZAS-03: glifos y rangos estáticos con movimiento reducido
+   if (s === 'flecha') { const u = t % 1.2; return u < 0.18 ? 1 - u / 0.18 * 0.6 : 0.4; }
+   if (s === 'peligro') { const u = t % 1.4; return (u < 0.12 || (u > 0.24 && u < 0.36)) ? 1 : 0.35; }
+   if (s === 'atajo') return 0.55 + 0.45 * Math.abs(Math.sin(t * 2.4));
+@@ -123,7 +125,8 @@ R.drawBeacon = function (c, b, sx, sy, sz, t, a, near, unfold) {
+   const col = SYMCOL[b.s], p = pulse(b.s, t + (((+b.id || 0) + (b.x || 0) * 7 + (b.y || 0) * 3) % 7) * 0.13, near), k = unfold == null ? 1 : unfold;
+   c.save(); c.globalAlpha = a;
+   // halo de luz
+-  const g = c.createRadialGradient(sx, sy, 0, sx, sy, sz * 2.6); g.addColorStop(0, hexA(col, 0.38 * p)); g.addColorStop(1, hexA(col, 0)); c.fillStyle = g; c.beginPath(); c.arc(sx, sy, sz * 2.6, 0, 7); c.fill();
++  // VIS-BALIZAS-03: halo 2,2·sz y alpha .26·p; base y glifo conservan su tamaño
++  const g = c.createRadialGradient(sx, sy, 0, sx, sy, sz * 2.2); g.addColorStop(0, hexA(col, 0.26 * p)); g.addColorStop(1, hexA(col, 0)); c.fillStyle = g; c.beginPath(); c.arc(sx, sy, sz * 2.2, 0, 7); c.fill();
+   // mástil y base
+   c.strokeStyle = 'rgba(245,240,255,.55)'; c.lineWidth = Math.max(1.2, sz * 0.09); c.beginPath(); c.moveTo(sx, sy + sz * 0.9); c.lineTo(sx, sy + sz * 0.35); c.stroke();
+   c.fillStyle = 'rgba(10,4,24,.82)'; c.beginPath(); c.arc(sx, sy, sz * 0.92 * k, 0, 7); c.fill();
+@@ -131,7 +134,7 @@ R.drawBeacon = function (c, b, sx, sy, sz, t, a, near, unfold) {
+   if (b.s === 'atajo') { c.strokeStyle = hexA(col, 0.9); c.lineWidth = sz * 0.1; c.beginPath(); const a0 = t * 3.2; c.arc(sx, sy, sz * 1.22, a0, a0 + 1.4); c.stroke(); }
+   if (b.practice) { c.strokeStyle = 'rgba(255,255,255,.9)'; c.lineWidth = Math.max(1.2, sz * 0.08); c.beginPath(); c.moveTo(sx, sy - sz * 1.42); c.lineTo(sx + sz * 1.42, sy); c.lineTo(sx, sy + sz * 1.42); c.lineTo(sx - sz * 1.42, sy); c.closePath(); c.stroke(); }
+   c.restore();
+-  R.drawGlyph(c, b.s, sx, sy, sz * 0.62 * k, b.d, a * (0.55 + 0.45 * p));
++  R.drawGlyph(c, b.s, sx, sy, sz * 0.62 * k, b.d, a * Math.max(0.8, 0.55 + 0.45 * p)); // el glifo es el elemento de mayor contraste (alpha mínimo .80)
+   if (b.votes && (b.u + b.e) >= 3 && a > 0.5) { const tot = b.u + b.e, wv = sz * 1.8; c.save(); c.globalAlpha = a * 0.9; c.fillStyle = 'rgba(255,68,102,.85)'; c.fillRect(sx - wv / 2, sy + sz * 1.25, wv, 3); c.fillStyle = '#00f2cf'; c.fillRect(sx - wv / 2, sy + sz * 1.25, wv * b.u / tot, 3); c.restore(); }
+ };
+ function hexA(hex, a) { const n = parseInt(hex.slice(1), 16); return 'rgba(' + (n >> 16) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + a.toFixed(3) + ')'; }
+@@ -178,7 +181,8 @@ R.frame = function (S, view, t, dt) {
+   c.setTransform(dpr, 0, 0, dpr, shx * dpr, shy * dpr);
+   // fondo
+   c.fillStyle = '#04020a'; c.fillRect(-10, -10, R.w + 20, R.h + 20);
+-  for (let L = 0; L < 2; L++) { const par = L ? 0.35 : 0.15, ox = -((R.cam.x * R.ppc * par) % 512 + 512) % 512, oy = ((R.cam.y * R.ppc * par) % 512 + 512) % 512; c.globalAlpha = L ? 0.45 : 0.25; for (let yy = oy - 512; yy < R.h; yy += 512) for (let xx = ox; xx < R.w; xx += 512) c.drawImage(R.stars, xx, yy); }
++  // VIS-BALIZAS-02: estrellas de vuelo a .18/.28 (misma textura, densidad y parallax, siempre bajo la niebla)
++  for (let L = 0; L < 2; L++) { const par = L ? 0.35 : 0.15, ox = -((R.cam.x * R.ppc * par) % 512 + 512) % 512, oy = ((R.cam.y * R.ppc * par) % 512 + 512) % 512; c.globalAlpha = L ? 0.28 : 0.18; for (let yy = oy - 512; yy < R.h; yy += 512) for (let xx = ox; xx < R.w; xx += 512) c.drawImage(R.stars, xx, yy); }
+   c.globalAlpha = 1;
+   // estelas (bajo la niebla)
+   if (view.trails) for (const tr of view.trails) { c.strokeStyle = tr.practice ? 'rgba(245,240,255,.16)' : 'rgba(0,242,207,.2)'; c.lineWidth = 2; c.setLineDash(tr.practice ? [3, 7] : [6, 6]); c.beginPath(); tr.pts.forEach((p, i) => { const q = W2S(p[0], p[1]); i ? c.lineTo(q[0], q[1]) : c.moveTo(q[0], q[1]); }); c.stroke(); c.setLineDash([]); }
+@@ -265,8 +269,8 @@ R.frame = function (S, view, t, dt) {
+     // onda de baliza: despeja 1 s
+     if (view.clearWaves) for (const w of view.clearWaves) { const q = W2S(w.x, w.y), a = 1 - w.age; if (a <= 0) continue; const r3 = 3 * R.ppc * fs * Math.min(1, w.age * 3 + 0.3); const g3 = fc.createRadialGradient(q[0] * fs, q[1] * fs, 0, q[0] * fs, q[1] * fs, r3); g3.addColorStop(0, 'rgba(0,0,0,' + a.toFixed(2) + ')'); g3.addColorStop(1, 'rgba(0,0,0,0)'); fc.fillStyle = g3; fc.beginPath(); fc.arc(q[0] * fs, q[1] * fs, r3, 0, 7); fc.fill(); }
+     // vida de la niebla: ruido que se desplaza
+-    fc.globalCompositeOperation = 'source-atop'; const nsz = 128 * 7 * fs * (R.ppc / 30);
+-    for (let L = 0; L < 2; L++) { fc.globalAlpha = L ? 0.32 : 0.4; const ox = ((t * (L ? 6 : -4) - R.cam.x * R.ppc * fs * 0.9) % nsz + nsz) % nsz - nsz, oy = ((t * (L ? -3 : 5) + R.cam.y * R.ppc * fs * 0.9) % nsz + nsz) % nsz - nsz; for (let yy = oy; yy < fh; yy += nsz) for (let xx = ox; xx < fw; xx += nsz) fc.drawImage(R.noise, xx, yy, nsz, nsz); }
++    fc.globalCompositeOperation = 'source-atop'; const nsz = 128 * 7 * fs * (R.ppc / 30); const td = R.opts.reduced ? 0 : t; // con movimiento reducido el ruido no se desplaza; cobertura y opacidad idénticas
++    for (let L = 0; L < 2; L++) { fc.globalAlpha = L ? 0.32 : 0.4; const ox = ((td * (L ? 6 : -4) - R.cam.x * R.ppc * fs * 0.9) % nsz + nsz) % nsz - nsz, oy = ((td * (L ? -3 : 5) + R.cam.y * R.ppc * fs * 0.9) % nsz + nsz) % nsz - nsz; for (let yy = oy; yy < fh; yy += nsz) for (let xx = ox; xx < fw; xx += nsz) fc.drawImage(R.noise, xx, yy, nsz, nsz); }
+     fc.globalAlpha = 1; fc.globalCompositeOperation = 'source-over';
+     c.globalAlpha = 1 - R.reveal; c.imageSmoothingEnabled = true; c.drawImage(R.fogCv, 0, 0, R.w, R.h); c.globalAlpha = 1;
+   }
+@@ -315,14 +319,17 @@ function mapPath(g, H) { // Path2D en coordenadas de mundo (roca = rectángulo +
+   m = { fill, line, zeros }; mapCache.set(g, m); return m;
+ }
+ R.mapPath = mapPath;
++// VIS-BALIZAS-04: tokens compartidos del mapa (miniatura, mapa grande, resultado, tarjetas de voto, bitácora)
++const MAP = { bg: '#05020b', rock: '#24153f', edge: 'rgba(119,0,244,.65)', route: '#00f2cf', ship: '#ffffff', shipEdge: 'rgba(5,1,8,.9)' };
++R.MAP = MAP;
+ R.drawMap = function (c, S, f, x, y, w, h, opt) {
+   opt = opt || {}; const g = S ? S.f.g : f.g, H = f.H, view = opt.view || { x0: 0, x1: f.W, y0: 0, y1: H };
+   const s2 = Math.min(w / (view.x1 - view.x0), h / (view.y1 - view.y0)), ox = x + (w - (view.x1 - view.x0) * s2) / 2 - view.x0 * s2, oy = y + (h - (view.y1 - view.y0) * s2) / 2 + view.y1 * s2;
+   const X = wx => ox + wx * s2, Y = wy => oy - wy * s2;
+   c.save(); c.beginPath(); c.rect(x, y, w, h); c.clip();
+-  c.fillStyle = '#05020b'; c.fillRect(x, y, w, h);
++  c.fillStyle = MAP.bg; c.fillRect(x, y, w, h);
+   const mp = mapPath(g, H);
+-  c.save(); c.transform(s2, 0, 0, -s2, ox, oy); c.fillStyle = '#24153f'; c.fill(mp.fill, 'evenodd'); c.strokeStyle = 'rgba(119,0,244,.9)'; c.lineWidth = Math.max(0.12, 1.4 / s2); c.lineJoin = 'round'; c.stroke(mp.line); c.restore();
++  c.save(); c.transform(s2, 0, 0, -s2, ox, oy); c.fillStyle = MAP.rock; c.fill(mp.fill, 'evenodd'); c.strokeStyle = MAP.edge; c.lineWidth = Math.max(0.12, 1.4 / s2); c.lineJoin = 'round'; c.stroke(mp.line); c.restore();
+   // niebla sobre lo no explorado
+   if (!opt.all && S) {
+     const mc = R.maskCv || (R.maskCv = document.createElement('canvas')); if (mc.width !== f.W || mc.height !== H) { mc.width = f.W; mc.height = H; }
+@@ -330,10 +337,12 @@ R.drawMap = function (c, S, f, x, y, w, h, opt) {
+     for (let yy = 0; yy < H; yy++) for (let xx = 0; xx < f.W; xx++) { const i = ((H - 1 - yy) * f.W + xx) * 4; d[i] = 16; d[i + 1] = 8; d[i + 2] = 32; d[i + 3] = e[yy * f.W + xx] ? 0 : 240; }
+     mx.putImageData(id, 0, 0); c.imageSmoothingEnabled = true; c.drawImage(mc, X(0), Y(H), f.W * s2, H * s2);
+   }
+-  if (opt.route && opt.route.length) { c.strokeStyle = '#00f2cf'; c.lineWidth = Math.max(1.6, s2 * 0.3); c.lineJoin = 'round'; c.lineCap = 'round'; c.shadowColor = 'rgba(0,242,207,.6)'; c.shadowBlur = 6; c.beginPath(); const n = Math.max(2, Math.floor(opt.route.length * (opt.progress == null ? 1 : opt.progress))); for (let i = 0; i < n && i < opt.route.length; i++) { const p = opt.route[i]; i ? c.lineTo(X(p[0] / 4), Y(p[1] / 4)) : c.moveTo(X(p[0] / 4), Y(p[1] / 4)); } c.stroke(); c.shadowBlur = 0; }
+-  if (opt.gate) { c.strokeStyle = '#00f2cf'; c.lineWidth = 2; c.beginPath(); c.ellipse(X(f.gate[0]), Y(f.gate[1]), Math.max(4, s2 * 1.6), Math.max(2.5, s2 * 0.8), 0, 0, 7); c.stroke(); }
++  // ruta: trazo sólido (sin desenfoque) de al menos 1,8 px; mismos puntos, sin suavizar
++  if (opt.route && opt.route.length) { c.strokeStyle = MAP.route; c.lineWidth = Math.max(1.8, s2 * 0.3); c.lineJoin = 'round'; c.lineCap = 'round'; c.beginPath(); const n = Math.max(2, Math.floor(opt.route.length * (opt.progress == null ? 1 : opt.progress))); for (let i = 0; i < n && i < opt.route.length; i++) { const p = opt.route[i]; i ? c.lineTo(X(p[0] / 4), Y(p[1] / 4)) : c.moveTo(X(p[0] / 4), Y(p[1] / 4)); } c.stroke(); }
++  if (opt.gate) { c.strokeStyle = MAP.route; c.lineWidth = 2; c.beginPath(); c.ellipse(X(f.gate[0]), Y(f.gate[1]), Math.max(4, s2 * 1.6), Math.max(2.5, s2 * 0.8), 0, 0, 7); c.stroke(); }
+   if (opt.beacons) for (const b of opt.beacons) { const bx = X(b.x), by = Y(b.y), r = Math.max(7, s2 * 0.8); c.fillStyle = 'rgba(10,4,24,.85)'; c.beginPath(); c.arc(bx, by, r * 1.1, 0, 7); c.fill(); R.drawGlyph(c, b.s, bx, by, r * 0.8, b.d, 1); }
+-  if (opt.ship && S) { const sx = X(S.x), sy = Y(S.y); c.fillStyle = '#fff'; c.shadowColor = '#fff'; c.shadowBlur = 6; c.beginPath(); c.arc(sx, sy, Math.max(3, s2 * 0.5), 0, 7); c.fill(); c.shadowBlur = 0; }
++  // nave: punto blanco con contorno oscuro de 1 px (mismo radio, sin halo)
++  if (opt.ship && S) { const sx = X(S.x), sy = Y(S.y); c.fillStyle = MAP.ship; c.beginPath(); c.arc(sx, sy, Math.max(3, s2 * 0.5), 0, 7); c.fill(); c.strokeStyle = MAP.shipEdge; c.lineWidth = 1; c.stroke(); }
+   c.restore();
+ };
+ 
+@@ -341,21 +350,23 @@ R.drawMap = function (c, S, f, x, y, w, h, opt) {
+ R.menu = function (t, dt) {
+   const c = R.cx, w = R.w, h = R.h, dpr = R.dpr; c.setTransform(dpr, 0, 0, dpr, 0, 0);
+   const bg = c.createLinearGradient(0, 0, 0, h); bg.addColorStop(0, '#0a0418'); bg.addColorStop(1, '#050108'); c.fillStyle = bg; c.fillRect(0, 0, w, h);
+-  for (let L = 0; L < 2; L++) { const ox = -((t * (L ? 9 : 4)) % 512), oy = ((t * (L ? 3 : 1.5)) % 512); c.globalAlpha = L ? 0.7 : 0.4; for (let yy = oy - 512; yy < h; yy += 512) for (let xx = ox; xx < w; xx += 512) c.drawImage(R.stars, xx, yy); }
++  // VIS-BALIZAS-02: menú con estrellas .25/.40 y niebla .18; con movimiento reducido el tiempo decorativo queda fijo
++  const td = R.opts.reduced ? 0 : t;
++  for (let L = 0; L < 2; L++) { const ox = -((td * (L ? 9 : 4)) % 512), oy = ((td * (L ? 3 : 1.5)) % 512); c.globalAlpha = L ? 0.40 : 0.25; for (let yy = oy - 512; yy < h; yy += 512) for (let xx = ox; xx < w; xx += 512) c.drawImage(R.stars, xx, yy); }
+   c.globalAlpha = 1;
+   const u = Math.min(w, h) / 10, land = w > h * 1.15;
+   const bx = [[0.07, 0.22, 'flecha', 1], [0.93, 0.15, 'atajo', 7], [0.08, 0.86, 'peligro', 0], [0.92, 0.82, 'tesoro', 0]];
+   // niebla en capas
+-  c.save(); c.globalAlpha = 0.28; const nsz = 1100; for (let L = 0; L < 2; L++) { const ox = ((t * (L ? 7 : -5)) % nsz + nsz) % nsz - nsz, oy = ((t * (L ? -2 : 3)) % nsz + nsz) % nsz - nsz; for (let yy = oy; yy < h; yy += nsz) for (let xx = ox; xx < w; xx += nsz) c.drawImage(R.noise, xx, yy, nsz, nsz); } c.restore();
++  c.save(); c.globalAlpha = 0.18; const nsz = 1100; for (let L = 0; L < 2; L++) { const ox = ((td * (L ? 7 : -5)) % nsz + nsz) % nsz - nsz, oy = ((td * (L ? -2 : 3)) % nsz + nsz) % nsz - nsz; for (let yy = oy; yy < h; yy += nsz) for (let xx = ox; xx < w; xx += nsz) c.drawImage(R.noise, xx, yy, nsz, nsz); } c.restore();
+   // las balizas de fondo se apagan suavemente si caen debajo de un texto o botón (R.menuAvoid lo llena main.js)
+   R.menuFade = R.menuFade || [1, 1, 1, 1];
+-  bx.forEach((b, i) => { const x = b[0] * w + Math.sin(t * 0.3 + i) * 6, y = b[1] * h + Math.cos(t * 0.25 + i) * 5, rr = u * 0.34 + 18;
++  bx.forEach((b, i) => { const x = b[0] * w + Math.sin(td * 0.3 + i) * 6, y = b[1] * h + Math.cos(td * 0.25 + i) * 5, rr = u * 0.34 + 18;
+     const hid = (R.menuAvoid || []).some(q => x + rr > q[0] && x - rr < q[2] && y + rr > q[1] && y - rr < q[3]);
+     R.menuFade[i] += ((hid ? 0 : 1) - R.menuFade[i]) * Math.min(1, (dt || 0.016) * 6);
+     if (R.menuFade[i] < 0.02) return; c.save(); c.globalAlpha = R.menuFade[i]; R.drawBeacon(c, { s: b[2], d: b[3], id: i + 1, rank: i % 5 }, x, y, u * 0.34, t, 0.95, false, 1); c.restore(); });
+   // nave del astronauta
+-  const mp = R.menuPos || { x: w * 0.5, y: h * 0.5, s: 1 }, sx = mp.x, sy = mp.y + Math.sin(t * 1.1) * u * 0.08; const u2 = u * (mp.s || 1);
+-  if (R.menuShip !== false && mp.s > 0) { const a = Math.PI / 2 + Math.sin(t * 0.6) * 0.12; R.drawShip(c, sx, sy, a, u2 * 1.25, 0.35 + 0.15 * Math.sin(t * 3), 0, t, 1); if (!R.opts.reduced && Math.random() < 0.5) { R.menuParts = R.menuParts || []; R.menuParts.push({ x: sx - Math.cos(a) * u2 * 0.6, y: sy + u2 * 0.6, vx: (Math.random() - 0.5) * 20, vy: 40 + Math.random() * 30, l: 0.8 }); } }
++  const mp = R.menuPos || { x: w * 0.5, y: h * 0.5, s: 1 }, sx = mp.x, sy = mp.y + Math.sin(td * 1.1) * u * 0.08; const u2 = u * (mp.s || 1);
++  if (R.menuShip !== false && mp.s > 0) { const a = Math.PI / 2 + Math.sin(td * 0.6) * 0.12; R.drawShip(c, sx, sy, a, u2 * 1.25, 0.35 + 0.15 * Math.sin(td * 3), 0, t, 1); if (!R.opts.reduced && Math.random() < 0.5) { R.menuParts = R.menuParts || []; R.menuParts.push({ x: sx - Math.cos(a) * u2 * 0.6, y: sy + u2 * 0.6, vx: (Math.random() - 0.5) * 20, vy: 40 + Math.random() * 30, l: 0.8 }); } }
+   if (R.menuParts) { c.save(); c.globalCompositeOperation = 'lighter'; for (let i = R.menuParts.length - 1; i >= 0; i--) { const p = R.menuParts[i]; p.l -= dt; if (p.l <= 0) { R.menuParts.splice(i, 1); continue; } p.x += p.vx * dt; p.y += p.vy * dt; c.globalAlpha = p.l; c.fillStyle = '#00f2cf'; c.beginPath(); c.arc(p.x, p.y, 2, 0, 7); c.fill(); } c.restore(); c.globalAlpha = 1; }
+   const vg = c.createRadialGradient(w / 2, h / 2, Math.min(w, h) * 0.3, w / 2, h / 2, Math.max(w, h) * 0.75); vg.addColorStop(0, 'rgba(5,1,8,0)'); vg.addColorStop(1, 'rgba(5,1,8,.7)'); c.fillStyle = vg; c.fillRect(0, 0, w, h);
+ };
+diff --git a/site/balizas/src/style.css b/site/balizas/src/style.css
+index 64d1dfa..2011311 100644
+--- a/site/balizas/src/style.css
++++ b/site/balizas/src/style.css
+@@ -15,12 +15,13 @@ h1,h2,h3,p,ul,figure{margin:0}
+ .ico svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+ .ico:active{transform:scale(.92)}.ico:hover,.ico:focus-visible{border-color:var(--cyan);outline:none}
+ .pill-warn{position:fixed;top:calc(62px + var(--sat));left:50%;transform:translateX(-50%);z-index:45;max-width:calc(100% - 32px);padding:8px 14px;border-radius:99px;background:rgba(40,18,10,.85);border:1px solid rgba(255,176,32,.45);color:#ffd9a0;font:500 12px 'JetBrains Mono',monospace;text-align:center}
+-.scr{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;padding:calc(64px + var(--sat)) calc(16px + var(--sar)) calc(16px + var(--sab)) calc(16px + var(--sal));background:rgba(5,1,8,.55);z-index:20;overflow-y:auto;overflow-x:hidden;touch-action:pan-y;-webkit-overflow-scrolling:touch}
++.scr{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;padding:calc(64px + var(--sat)) calc(16px + var(--sar)) calc(16px + var(--sab)) calc(16px + var(--sal));background:rgba(5,1,8,.55);z-index:20;overflow-y:auto;overflow-x:hidden;touch-action:pan-y pinch-zoom;-webkit-overflow-scrolling:touch}
+ .scr.on{display:flex;animation:fadeIn .22s var(--ease)}
+ .scr.lite{background:rgba(5,1,8,.5);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+ #home{background:transparent}
+ @keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+-.card{width:100%;max-width:520px;margin:auto;background:var(--card);border:1px solid var(--line);border-radius:22px;padding:22px 20px;box-shadow:0 30px 80px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.06)}
++/* VIS-BALIZAS-05: paneles de lectura con base ciruela sobria */
++.card{width:100%;max-width:520px;margin:auto;background:#100920;border:1px solid rgba(245,240,255,.16);border-radius:18px;padding:22px 20px;box-shadow:0 12px 32px rgba(0,0,0,.32)}
+ .card.wide{max-width:760px}
+ .logo{font-weight:900;font-size:clamp(42px,12vw,72px);letter-spacing:-.04em;line-height:.95;text-align:center;text-shadow:0 6px 40px rgba(119,0,244,.45)}
+ .logo i{font-style:normal;color:var(--cyan)}
+@@ -31,8 +32,8 @@ h1,h2,h3,p,ul,figure{margin:0}
+ .btn{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:2px;width:100%;min-height:52px;border-radius:14px;font:600 16px Poppins,system-ui,sans-serif;color:var(--ink);background:rgba(255,255,255,.05);border:1px solid var(--line);cursor:pointer;transition:transform .12s var(--ease),background .15s,border-color .15s,box-shadow .15s;margin:0 0 10px;padding:6px 16px;text-decoration:none;text-align:center}
+ .btn:hover{background:rgba(255,255,255,.09);border-color:rgba(255,255,255,.22)}
+ .btn:active{transform:scale(.97)}
+-.btn.pri{background:linear-gradient(135deg,#7700f4,#00f2cf);border-color:transparent;color:#fff;box-shadow:0 12px 30px rgba(119,0,244,.38),inset 0 1px 0 rgba(255,255,255,.25);text-shadow:0 1px 8px rgba(30,0,60,.35)}
+-.btn.pri:hover{box-shadow:0 14px 36px rgba(0,242,207,.35),inset 0 1px 0 rgba(255,255,255,.3)}
++.btn.pri{background:#5424a8;border-color:#9871dc;color:#fff;box-shadow:none;text-shadow:none}
++.btn.pri:hover{background:#6032b5;border-color:#b394ec}
+ .btn.big{min-height:64px;font-size:18px;font-weight:700}
+ .btn small{font:500 12px 'JetBrains Mono',monospace;color:rgba(255,255,255,.82);letter-spacing:.04em}
+ .btn.danger{color:#ffb3c1;border-color:rgba(255,68,102,.35)}
+@@ -124,13 +125,16 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
+ #hud>#undoBar{pointer-events:none}#hud>#undoBar button{pointer-events:auto}
+ #hudBar{position:fixed;top:calc(8px + var(--sat));left:calc(8px + var(--sal));right:calc(60px + var(--sar));display:flex;justify-content:space-between;gap:8px;pointer-events:none}
+ .hg{display:flex;gap:6px}
+-.hv{display:flex;flex-direction:column;justify-content:center;padding:5px 10px;min-height:44px;border-radius:12px;background:rgba(10,5,18,.66);border:1px solid rgba(119,0,244,.3);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+-.hv small{font:700 11px 'JetBrains Mono',monospace;letter-spacing:.08em;color:var(--dim);text-transform:uppercase}
++.hv{display:flex;flex-direction:column;justify-content:center;padding:5px 10px;min-height:44px;border-radius:12px;background:rgba(10,5,18,.9);border:1px solid rgba(245,240,255,.18);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
++.hv small{font:700 12px/1.3 'JetBrains Mono',monospace;letter-spacing:.06em;color:var(--dim);text-transform:uppercase}
+ .hv b{font:700 15px 'JetBrains Mono',monospace;letter-spacing:.02em;font-variant-numeric:tabular-nums;white-space:nowrap}
+ .hull{display:none}
+ #hHull.low{color:var(--red)}
+-#hTre.pop,#hBeac.pop{animation:pop .5s var(--ease)}
+-@keyframes pop{0%{transform:scale(1)}40%{transform:scale(1.35);color:var(--yellow)}100%{transform:scale(1)}}
++/* énfasis por color/borde de 180 ms, sin cambiar tamaño ni posición (VIS-BALIZAS-05) */
++#hTre.pop,#hBeac.pop{animation:pop .18s ease}
++@keyframes pop{0%{color:var(--ink)}50%{color:var(--yellow);text-shadow:0 0 8px rgba(253,216,53,.6)}100%{color:var(--ink)}}
++.modetag{position:fixed;top:calc(60px + var(--sat));left:50%;transform:translateX(-50%);pointer-events:none;background:rgba(10,5,18,.85);border-color:rgba(253,216,53,.45);color:var(--yellow);white-space:nowrap;max-width:calc(100% - 32px);overflow:hidden;text-overflow:ellipsis}
++@media (orientation:portrait) and (max-width:420px){.modetag{top:calc(118px + var(--sat))}}
+ @media (min-width:1024px) and (min-height:700px){.hv{padding:7px 14px;min-height:52px}.hv small{font-size:12px;letter-spacing:.12em}.hv b{font-size:19px}}
+ .ico:focus-visible,#back:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+ #pauseBtn{position:fixed;top:calc(8px + var(--sat));right:calc(8px + var(--sar))}
+@@ -147,8 +151,11 @@ body.selecting #tutLine{visibility:hidden}
+ .undo{position:fixed;left:50%;bottom:calc(22% + var(--sab));transform:translateX(-50%);display:flex;align-items:center;gap:10px;padding:6px 6px 6px 16px;border-radius:99px;background:rgba(16,9,32,.94);border:1px solid rgba(0,242,207,.45);font:600 13px Poppins,sans-serif;overflow:hidden;animation:fadeIn .2s var(--ease)}
+ .undo{white-space:nowrap}
+ @media (orientation:portrait){.undo{bottom:calc(max(22%, 224px) + var(--sab))}}
+-@media (max-width:360px){.hg{gap:4px}#hudBar{gap:4px}.hv{padding:4px 7px}.hv small{letter-spacing:.02em}.hv b{font-size:13px}}
++@media (max-width:360px){.hg{gap:4px}#hudBar{gap:4px}.hv{padding:4px 7px}.hv small{letter-spacing:.02em}}
+ .undo button{min-height:44px;padding:0 16px;border-radius:99px;border:0;background:rgba(0,242,207,.16);color:var(--cyan);font:700 13px Poppins,sans-serif;cursor:pointer}
++.undo .undo-tx{display:flex;flex-direction:column;line-height:1.2}
++.undo small{font:500 11px 'JetBrains Mono',monospace;color:var(--dim);white-space:normal;max-width:220px}
++.undo.expired{pointer-events:none}
+ .undo i{position:absolute;left:0;bottom:0;height:2px;background:var(--cyan);width:100%;transform-origin:left}
+ #ctl{position:fixed;right:calc(16px + var(--sar));bottom:calc(18px + var(--sab));width:190px;height:190px;pointer-events:none}
+ #ctl.left{right:auto;left:calc(16px + var(--sal))}
+@@ -173,6 +180,12 @@ body.selecting #tutLine{visibility:hidden}
+ @keyframes ghost{0%{transform:translate(0,0);opacity:0}15%{opacity:1}70%{transform:translate(26px,-46px);opacity:1}100%{transform:translate(26px,-46px);opacity:0}}
+ .sel,.dial{position:fixed;inset:0;z-index:15;touch-action:none}
+ .sel-c{position:absolute;width:0;height:0}
++/* RSP-BALIZAS-02: si el radial no cabe en el rectángulo útil, cuadrícula de 3 columnas con botones de 64 px */
++.sel-c.grid{display:grid;grid-template-columns:repeat(3,64px);gap:10px;width:auto;height:auto;transform:translate(-50%,-50%)}
++.sel-c.grid .sym{position:static;width:64px;height:64px;margin:0;left:auto!important;top:auto!important;animation:none;transform:none;opacity:1;font-size:9.5px}
++.sel-c.grid .sym svg{width:24px;height:24px}
++.sel-cancel{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(max(18px, 22%) + var(--sab));width:auto;min-width:140px;min-height:44px;margin:0;padding:0 18px;border-radius:99px;background:rgba(16,9,32,.94);border:1px solid rgba(255,68,102,.45);color:#ffb3c1;z-index:2}
++.sel-cancel:hover,.sel-cancel:focus-visible{background:rgba(255,68,102,.16)}
+ .sym{position:absolute;width:76px;height:76px;margin:-38px 0 0 -38px;border-radius:50%;background:rgba(16,9,32,.92);border:2px solid var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:var(--ink);font:600 10.5px Poppins,sans-serif;cursor:pointer;transition:transform .12s var(--ease),border-color .12s,background .12s;padding:0;transform:scale(.5);opacity:0;animation:symIn .22s var(--ease) forwards}
+ .sym svg{width:30px;height:30px}
+ .sym kbd{position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:6px;background:var(--violet);color:#fff;font:700 11px 'JetBrains Mono',monospace;display:grid;place-items:center}
+@@ -189,15 +202,31 @@ body.res #cv{filter:blur(2px) brightness(.72)}
+ .count{position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:900 96px Poppins,sans-serif;color:var(--ink);text-shadow:0 0 40px rgba(0,242,207,.6);pointer-events:none}
+ .count.go{font-size:48px;color:var(--cyan)}
+ #mapBig{position:fixed;inset:0;z-index:16;background:rgba(5,1,8,.82);display:grid;place-items:center;pointer-events:none}
++#mini:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+ #mapBig canvas{max-width:92vw;max-height:84vh}
+ #fade{position:fixed;inset:0;background:#050108;opacity:0;pointer-events:none;z-index:60;transition:opacity .22s}
+ #fade.on{opacity:1}
+ 
+ /* resultado */
+ .res-body{display:flex;gap:16px;align-items:stretch}
+-.res-map{flex:none;width:120px;display:flex;justify-content:center}
++.res-map{flex:none;width:120px;display:flex;flex-direction:column;align-items:center;gap:6px}
+ .res-map canvas{width:120px;height:auto;max-height:420px;border-radius:12px;border:1px solid var(--line);background:#0a0418;align-self:flex-start}
++.res-route{font:600 11px 'JetBrains Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--cyan);text-align:center}
++.res-route::before{content:'';display:inline-block;width:14px;height:2px;background:var(--cyan);vertical-align:middle;margin-right:6px}
++.res-route[hidden]{display:none}
++.ratesub{display:inline-block;margin:0 0 10px}
++.sf-ta{width:100%;min-height:120px;border-radius:12px;border:1px solid var(--line);background:rgba(0,0,0,.35);color:var(--ink);padding:10px 12px;font:500 13px 'JetBrains Mono',monospace;line-height:1.5;resize:vertical;margin:0 0 12px;-webkit-user-select:text;user-select:text}
++.sect{font:700 11px 'JetBrains Mono',monospace;letter-spacing:.16em;color:var(--cyan);text-transform:uppercase;margin:14px 0 2px}
++#carga{position:fixed;inset:0;z-index:90;display:grid;place-items:center;background:radial-gradient(120% 80% at 50% 0%,#140733 0%,var(--bg2) 45%,var(--bg) 100%);padding:24px calc(16px + var(--sar)) 24px calc(16px + var(--sal))}
++#carga[hidden]{display:none}
++.carga-in{width:100%;max-width:360px;text-align:center}
++.carga-in p{margin:16px 0 0;color:var(--dim);font-size:15px;line-height:1.5}
++.carga-in .spin{width:28px;height:28px;border-radius:50%;border:3px solid rgba(255,255,255,.12);border-top-color:var(--cyan);animation:gira .9s linear infinite;margin:18px auto 0}
++@keyframes gira{to{transform:rotate(360deg)}}
++#cargaAcc{display:flex;flex-direction:column;align-items:center;margin-top:16px}
++#cargaAcc .btn{max-width:260px;min-height:48px}
+ .res-side{flex:1;min-width:0}
++.res-side .row{flex-wrap:wrap}.res-side .row .btn{flex:1 1 130px;min-width:0}
+ .lines{font:500 14px 'JetBrains Mono',monospace;margin:4px 0 12px;border-top:1px solid var(--line)}
+ .lines div{display:flex;justify-content:space-between;padding:8px 2px;border-bottom:1px solid var(--line);opacity:0;transform:translateY(6px);transition:opacity .25s,transform .25s var(--ease)}
+ .lines div.on{opacity:1;transform:none}
+@@ -272,7 +301,7 @@ body.res #cv{filter:blur(2px) brightness(.72)}
+ .legend svg{width:24px;height:24px;flex:none}
+ 
+ @media (max-width:620px){.vignettes{grid-template-columns:1fr}.vg{aspect-ratio:30/15}}
+-@media (max-width:420px){.tr{grid-template-columns:30px 1fr 64px 46px 56px;font-size:13px;padding:8px 6px}.res-map{width:84px}.res-map canvas{width:84px}.card{padding:18px 14px}}
++@media (max-width:420px){.tr{grid-template-columns:30px 1fr 64px 46px 56px;font-size:13px;padding:8px 6px}.res-map{width:84px}.res-map canvas{width:84px}.card{padding:18px 14px}.res-route{font-size:10px;letter-spacing:.04em}}
+ /* horizontal: dos columnas en inicio, menos aire arriba */
+ @media (orientation:landscape) and (min-width:600px){
+   .home-grid{max-width:900px;flex-direction:row;align-items:center;gap:28px}

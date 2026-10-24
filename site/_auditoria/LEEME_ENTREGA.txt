@@ -1,0 +1,24 @@
+JETGAMES — ENTREGA DE INTERFACES Y VISUALES (auditoría del 22-10-2026)
+Generado el 24-10-2026 desde la rama ccr-c78f7772-bi8u3p de github.com/jetagencia/jet-games (carpeta site/).
+
+QUÉ HAY
+- site/<juego>/ : los 22 juegos con los 328 cambios del catálogo aplicados por ID.
+- site/index.html + site/img/cards/ : la home con las portadas nuevas de Ball, Rocket, Slalom, Words y Box y el encuadre de transición de las 17 JPG.
+- MATRIZ_IMPLEMENTACION.md : estado por ID y por juego (implementado / regresión verificada / no aplicable / pendiente por decisión), límites y decisiones pendientes.
+- matriz/<juego>.md y .json : detalle y verificación de cada juego.
+- diffs/<juego>.patch : los cambios de cada juego como parche sobre la versión publicada del 22-10-2026, para reaplicarlos si tu copia local cambió después.
+- herramientas/smoke.mjs : prueba de humo (node + playwright) que carga la home y los 22 juegos.
+
+CÓMO SUBIRLO A HOSTINGER
+1. Hacé una copia de seguridad de public_html.
+2. Subí el contenido de cada carpeta site/<juego>/ a su ruta pública (jetball → subdominio jetball; rocket, slalom, flow, match, words, box → /rocket/, /slalom/…; jetjump → /jetjump/; raid → subdominio raid; el resto por su nombre).
+3. Subí site/index.html y la carpeta site/img/cards/ a la raíz.
+4. NO subas site/_auditoria/ ni site/jetjump/vendor/ (ese vendor es una copia de prueba).
+5. Si un juego tiene sw.js (service worker) con caché por versión, incrementá la versión para que los jugadores reciban los archivos nuevos.
+6. Probá en el celular y en escritorio: menú, pausa (Reanudar partida), Escape en los diálogos, Tab por los controles y el selector ES/EN.
+
+QUÉ NO SE HIZO (y por qué)
+- Arte raster nuevo de las 17 portadas JPG: necesita capturas limpias de los juegos en una máquina con placa gráfica. Los briefs están en JETGAMES_INSTRUCCIONES_CARDS_PARA_CLAUDE.txt y el estado en img/cards/manifest.json.
+- Práctica local de siete rondas en Cráter y simulación de sustituciones en Portada: el propio catálogo las marca como ampliaciones opcionales pendientes de decisión.
+- Unificación de tono (voseo del catálogo vs. tuteo de 18 juegos): requiere decisión editorial.
+- Pruebas con lector de pantalla, GPU real (Raid, Jump, Bestiario) y envíos reales a api.php.

@@ -1,0 +1,4638 @@
+[
+{
+"juego": "antes",
+"id": "RSP-ANTES-01",
+"estado": "implementado",
+"detalle": "Tab ya no se captura para la vista temporal: el caso Tab del keydown se eliminó; la vista de otro turno se mueve con [ y ] (sólo con el foco en body o en #sala,",
+"archivos": [
+"site/antes/src/main.js",
+"site/antes/index.html",
+"site/antes/src/textos.js"
+]
+},
+{
+"juego": "antes",
+"id": "RSP-MODALS-01",
+"estado": "implementado",
+"detalle": "Todos los .ov llevan role=dialog/alertdialog, aria-modal y aria-labelledby a su título; abrir(id, activador) guarda el activador, aplica inert a #juego/#inicio/",
+"archivos": [
+"site/antes/index.html",
+"site/antes/src/main.js",
+"site/antes/src/estilo.css"
+]
+},
+{
+"juego": "antes",
+"id": "RSP-NATIVE-KEYS-01",
+"estado": "implementado",
+"detalle": "El keydown global ignora Enter/Espacio cuando el objetivo es button, a[href], input, textarea, select, summary o contenteditable (guard e.target.closest(...)); ",
+"archivos": [
+"site/antes/src/main.js"
+]
+},
+{
+"juego": "antes",
+"id": "SRC-AN01",
+"estado": "implementado",
+"detalle": "#bReiniciar (HUD, act.restartAll «Reiniciar todo») y #pReiniciar (pausa) comparten reiniciarNivel(confirmado): si hay copias/intentos abre #confReinicio (alertd",
+"archivos": [
+"site/antes/src/main.js",
+"site/antes/index.html",
+"site/antes/src/textos.js"
+]
+},
+{
+"juego": "antes",
+"id": "PLAY-ANTES-01",
+"estado": "implementado",
+"detalle": "Jerarquía sin cambiar reglas: juntas del suelo en una sola línea de 1 px con alfa .10 cuando cs<24, sombra de muros reducida, cables apagados finos (.25) y ence",
+"archivos": [
+"site/antes/src/render.js",
+"site/antes/src/estilo.css",
+"site/antes/src/main.js"
+]
+},
+{
+"juego": "antes",
+"id": "PLAY-ANTES-02",
+"estado": "implementado",
+"detalle": "Metas visibles antes del resultado: pintarMetas()/textoMeta(lv) en la pantalla de nivel, en la pausa (#pausaMeta) y en el resultado (#resMeta) con goal.stars/go",
+"archivos": [
+"site/antes/src/main.js",
+"site/antes/index.html",
+"site/antes/src/textos.js"
+]
+},
+{
+"juego": "antes",
+"id": "PLAY-ANTES-03",
+"estado": "implementado",
+"detalle": "Deshacer (#bDeshacer, act.undo, anuncia a11y.undo con el segundo restaurado), Rebobinar (#bRebobinar, act.rewind, aria-describedby con la instrucción de mantene",
+"archivos": [
+"site/antes/index.html",
+"site/antes/src/main.js",
+"site/antes/src/textos.js",
+"site/antes/src/estilo.css"
+]
+},
+{
+"juego": "antes",
+"id": "PLAY-ANTES-04",
+"estado": "implementado",
+"detalle": "Durante la repetición la línea de tiempo usa el instante de la repetición (t = J.modoRep.k), el HUD muestra hudRep y los controles #modoRep (role=toolbar: anter",
+"archivos": [
+"site/antes/src/main.js",
+"site/antes/index.html",
+"site/antes/src/estilo.css"
+]
+},
+{
+"juego": "antes",
+"id": "PLAY-ANTES-05",
+"estado": "implementado",
+"detalle": "Las tarjetas de capítulo muestran estado textual (lvl.status + lvl.available/lvl.locked), estrellas obtenidas y meta; las bloqueadas siguen legibles (borde disc",
+"archivos": [
+"site/antes/src/main.js",
+"site/antes/src/estilo.css",
+"site/antes/src/textos.js"
+]
+},
+{
+"juego": "antes",
+"id": "PLAY-ANTES-06",
+"estado": "implementado",
+"detalle": "Ajustes: cada interruptor y deslizador tiene etiqueta visible con id y aria-labelledby; los deslizadores se llaman «Volumen de música»/«Volumen de efectos» (set",
+"archivos": [
+"site/antes/index.html",
+"site/antes/src/main.js",
+"site/antes/src/textos.js"
+]
+},
+{
+"juego": "antes",
+"id": "RSP-ANTES-02",
+"estado": "implementado",
+"detalle": "Etiquetas de Ajustes asociadas por for/id y aria-labelledby; descripciones lk* con aria-describedby; grupos con encabezados; sliders con nombre por canal.",
+"archivos": [
+"site/antes/index.html",
+"site/antes/src/main.js",
+"site/antes/src/estilo.css"
+]
+},
+{
+"juego": "antes",
+"id": "RSP-GLOBAL-01",
+"estado": "implementado",
+"detalle": "Viewport sin maximum-scale ni user-scalable; .scr/.ov con touch-action:pan-y pinch-zoom; el bloqueo de dblclick quedó limitado a #sala,#cv,#ctrl,#barra y se ret",
+"archivos": [
+"site/antes/index.html",
+"site/antes/src/estilo.css",
+"site/antes/src/main.js"
+]
+},
+{
+"juego": "antes",
+"id": "SRC-AN02",
+"estado": "implementado",
+"detalle": "Resultado y repetición con etiquetas concretas: «Siguiente nivel», «Repetir nivel», «Ver repetición», «Compartir resultado», «Salir de la repetición», «Reanudar",
+"archivos": [
+"site/antes/src/textos.js",
+"site/antes/index.html",
+"site/antes/src/main.js"
+]
+},
+{
+"juego": "antes",
+"id": "VIS-ANTES-01",
+"estado": "implementado",
+"detalle": "Suelo: una sola junta de 1 px alfa .10 cuando cs<24 (continue), sombra de muro 0.3→0.2·cs; sin cambios de colores de estado.",
+"archivos": [
+"site/antes/src/render.js"
+]
+},
+{
+"juego": "antes",
+"id": "VIS-ANTES-02",
+"estado": "implementado",
+"detalle": "Ecos: 1 silueta de estela si cs<28 (2 si no), ninguna con movimiento reducido, alfas .10/.06; scanlines sólo con cs≥28; insignias numeradas dibujadas tras todas",
+"archivos": [
+"site/antes/src/render.js"
+]
+},
+{
+"juego": "antes",
+"id": "VIS-ANTES-03",
+"estado": "implementado",
+"detalle": "dibujarCable(c,cb,a,on,tm,pulso): apagado alfa .25 y 1.5 px; encendido 2 px con halo ≤ min(6,.15·cs); el pulso sólo dura 250 ms tras un cambio de estado (V.pkPr",
+"archivos": [
+"site/antes/src/render.js"
+]
+},
+{
+"juego": "antes",
+"id": "VIS-ANTES-04",
+"estado": "implementado",
+"detalle": "La inspección de otro turno muestra un marco discontinuo estático y el rótulo «Vista»/«Ahora · Vista» (tl.view/tl.nowView) en la línea de tiempo y en el lienzo ",
+"archivos": [
+"site/antes/src/render.js",
+"site/antes/src/main.js",
+"site/antes/index.html"
+]
+},
+{
+"juego": "antes",
+"id": "SRC-G01",
+"estado": "no_aplicable",
+"detalle": "Antes · las tarjetas .card[href] viven en la home (fuera del alcance de este agente). El enlace de regreso del juego usa «Volver a los juegos» y conserva idioma",
+"archivos": []
+},
+{
+"juego": "antes",
+"id": "SRC-G02",
+"estado": "ya_corregido_verificado",
+"detalle": "Antes · el selector ES/EN existente (aria-pressed, JETIdioma) se conserva; no se creó un segundo selector; el cambio en vivo repinta confReinicio/confBorrar/rep",
+"archivos": [
+"site/antes/index.html",
+"site/antes/src/main.js"
+]
+},
+{
+"juego": "antes",
+"id": "SRC-G03",
+"estado": "implementado",
+"detalle": "Antes · pausa «Reanudar partida», «Volver al menú», «Volver a los juegos», «Repetir nivel», «Siguiente nivel»; verbos de dominio conservados.",
+"archivos": [
+"site/antes/src/textos.js",
+"site/antes/index.html"
+]
+},
+{
+"juego": "antes",
+"id": "SRC-G04",
+"estado": "implementado",
+"detalle": "Antes · #confBorrar (alertdialog) con «¿Borrar todo el progreso de JET//Antes?», enumeración de datos (progreso, partida guardada, diario, metas; se conservan i",
+"archivos": [
+"site/antes/index.html",
+"site/antes/src/main.js",
+"site/antes/src/textos.js",
+"site/antes/src/estilo.css"
+]
+},
+{
+"juego": "antes",
+"id": "SRC-G05",
+"estado": "implementado",
+"detalle": "Antes · script inline __antesCarga con #carga (título, «Cargando JET//Antes…», spinner), captura de error de script/promesas y timeout 20 s → «La carga se inter",
+"archivos": [
+"site/antes/index.html",
+"site/antes/src/estilo.css",
+"site/antes/src/main.js"
+]
+},
+{
+"juego": "antes",
+"id": "SRC-G06",
+"estado": "implementado",
+"detalle": "Antes · compartir(): navigator.share con cancelación silenciosa; copiarTexto() sólo anuncia «Texto copiado» si clipboard o execCommand confirman; si no, #compar",
+"archivos": [
+"site/antes/src/main.js",
+"site/antes/index.html",
+"site/antes/src/textos.js"
+]
+},
+{
+"juego": "astro",
+"id": "RSP-ASTRO-01",
+"estado": "implementado",
+"detalle": "setOverlayVisible(on) centraliza hidden + inert + aria-hidden del #overlay; CSS #overlay[hidden]{display:none!important}; showOverlay() enfoca #play y marca rol",
+"archivos": [
+"site/astro/index.html"
+]
+},
+{
+"juego": "astro",
+"id": "RSP-ASTRO-02",
+"estado": "implementado",
+"detalle": "El keydown global devuelve si e.defaultPrevented o Ctrl/Meta/Alt; P/Escape sólo fuera de campos editables; Tab atrapado en pausa; si el objetivo es button/a/inp",
+"archivos": [
+"site/astro/index.html"
+]
+},
+{
+"juego": "astro",
+"id": "PLAY-ASTRO-01",
+"estado": "implementado",
+"detalle": "Pantalla de inicio: #ov-hint muestra el bloque de controles completo antes de jugar, adaptado al dispositivo: escritorio «Saltar: Espacio, ↑ o clic. Mantené par",
+"archivos": [
+"site/astro/index.html"
+]
+},
+{
+"juego": "astro",
+"id": "PLAY-ASTRO-02",
+"estado": "implementado",
+"detalle": "Pausa con «▶ Reanudar partida» como acción principal y fila secundaria «Reiniciar partida» / «Volver al menú» (menú del juego = pantalla de inicio, nunca el cat",
+"archivos": [
+"site/astro/index.html"
+]
+},
+{
+"juego": "astro",
+"id": "PLAY-ASTRO-03",
+"estado": "implementado",
+"detalle": "Fin de vuelo: título «Fin del vuelo», motivo según el choque real (s.cause: «Chocaste con un asteroide.» o «Chocaste con un meteorito.»), puntaje (32 px, tabula",
+"archivos": [
+"site/astro/index.html"
+]
+},
+{
+"juego": "astro",
+"id": "PLAY-ASTRO-04",
+"estado": "implementado",
+"detalle": "JetAudioUI: el botón expone su estado real con aria-label «Sonido activado»/«Sonido desactivado»; el panel muestra porcentajes legibles (output) junto a cada vo",
+"archivos": [
+"site/astro/index.html"
+]
+},
+{
+"juego": "astro",
+"id": "RSP-AUDIO-01",
+"estado": "implementado",
+"detalle": "setAudioOpen(open,{focusFirst,restoreFocus}) cambia clase y aria-expanded juntos; al abrir por teclado (click sin pointerdown) enfoca el primer control; Escape ",
+"archivos": [
+"site/astro/index.html"
+]
+},
+{
+"juego": "astro",
+"id": "RSP-GLOBAL-01",
+"estado": "implementado",
+"detalle": "meta viewport sin maximum-scale ni user-scalable (se conserva width, initial-scale y viewport-fit=cover); touch-action:none pasó de html,body a #stage (superfic",
+"archivos": [
+"site/astro/index.html"
+]
+},
+{
+"juego": "astro",
+"id": "RSP-LANGUAGE-TARGETS-01",
+"estado": "implementado",
+"detalle": ".lang-seg button: min-width/min-height 44 px, height:auto, flex:none; gap 8 px; se eliminó el pseudoelemento ::after de ampliación y la redefinición compacta (#",
+"archivos": [
+"site/astro/index.html"
+]
+},
+{
+"juego": "astro",
+"id": "SRC-A01",
+"estado": "implementado",
+"detalle": "CTA explícitos: «▶ Despegar» (inicio), «↻ Reintentar vuelo» (fin), «▶ Reanudar partida» (pausa) y ayuda «Activá «Reintentar vuelo» para empezar de nuevo.». Toca",
+"archivos": [
+"site/astro/index.html"
+]
+},
+{
+"juego": "astro",
+"id": "VIS-ASTRO-01",
+"estado": "implementado",
+"detalle": "Estrellas decorativas (fondo y primer plano) limitadas a 0,45 de opacidad en el corredor del astronauta (y > GROUND−125); conservadas arriba. Nebulosas intactas",
+"archivos": [
+"site/astro/index.html"
+]
+},
+{
+"juego": "astro",
+"id": "VIS-ASTRO-02",
+"estado": "implementado",
+"detalle": "Rocas comunes con borde mineral rgba(148,163,184,.75) de 1,25 px CSS (1.25/SCALE); meteoritos conservan su borde cálido con el mismo grosor. a.shape, a.w/h/r, h",
+"archivos": [
+"site/astro/index.html"
+]
+},
+{
+"juego": "astro",
+"id": "VIS-ASTRO-03",
+"estado": "implementado",
+"detalle": "Inicio, pausa y fin comparten la tarjeta .ov-card (radio 16 px, plano rgba(2,2,8,.88), gap 12 px, 20 px antes del CTA) sobre el escenario oscurecido (overlay 0,",
+"archivos": [
+"site/astro/index.html"
+]
+},
+{
+"juego": "astro",
+"id": "VIS-ASTRO-04",
+"estado": "implementado",
+"detalle": "Hito: 24 px, ≈500 ms (se dibuja mientras mileT>60 de los 90 cuadros existentes; la lógica del hito no cambia) en el cielo alto (y=30 apaisado, GROUND·0,34 en ve",
+"archivos": [
+"site/astro/index.html"
+]
+},
+{
+"juego": "astro",
+"id": "SRC-A02",
+"estado": "implementado",
+"detalle": "Resultado separado en título («Fin del vuelo»), motivo y datos antes del CTA; controles en bloques cortos: «Saltar: Espacio, ↑ o clic. Mantené para subir más. B",
+"archivos": [
+"site/astro/index.html"
+]
+},
+{
+"juego": "astro",
+"id": "SRC-G01",
+"estado": "no_aplicable",
+"detalle": "Astro: el ID afecta a las tarjetas de la home (site/index.html), fuera de esta asignación. El enlace de regreso del juego ya abre en la misma pestaña (target=_t",
+"archivos": []
+},
+{
+"juego": "astro",
+"id": "SRC-G02",
+"estado": "ya_corregido_verificado",
+"detalle": "Astro: el juego ya consume JETIdioma (?lang > cookie jet_lang > localStorage > navegador) y el selector ES/EN existente sincroniza aria-pressed. No se creó un s",
+"archivos": []
+},
+{
+"juego": "astro",
+"id": "SRC-G03",
+"estado": "implementado",
+"detalle": "Astro: «Reanudar partida» en pausa, «Volver al menú» (pantalla de inicio del juego), «Volver a los juegos» (catálogo), «Reiniciar partida», «Reintentar vuelo»; ",
+"archivos": [
+"site/astro/index.html"
+]
+},
+{
+"juego": "astro",
+"id": "SRC-G04",
+"estado": "no_aplicable",
+"detalle": "Astro: no tiene borrado de progreso (sólo récord local sin acción de borrado).",
+"archivos": []
+},
+{
+"juego": "astro",
+"id": "SRC-G05",
+"estado": "no_aplicable",
+"detalle": "Astro: juego de un solo HTML con scripts inline, sin módulos externos ni estados de carga; el título y los textos se pintan antes del JS del juego. No se añadió",
+"archivos": []
+},
+{
+"juego": "astro",
+"id": "SRC-G06",
+"estado": "no_aplicable",
+"detalle": "Astro: el juego no tiene acción de compartir resultado; no se añadió red ni publicación.",
+"archivos": []
+},
+{
+"juego": "balizas",
+"id": "SRC-BA02",
+"estado": "implementado",
+"detalle": "copyText() devuelve éxito sólo con clipboard o execCommand === true (restaurando el foco tras el textarea oculto); si falla, #shareFb (diálogo con textarea read",
+"archivos": [
+"site/balizas/src/main.js",
+"site/balizas/index.html",
+"site/balizas/src/i18n.js",
+"site/balizas/src/style.css"
+]
+},
+{
+"juego": "balizas",
+"id": "PLAY-BALIZAS-01",
+"estado": "implementado",
+"detalle": "HUD con #modeTag «Tutorial · práctica local»; la valoración del tutorial se rotula «Valorá esta baliza de práctica» con subtítulo rate_sim, respuesta «Valoració",
+"archivos": [
+"site/balizas/src/main.js",
+"site/balizas/index.html",
+"site/balizas/src/i18n.js",
+"site/balizas/src/style.css"
+]
+},
+{
+"juego": "balizas",
+"id": "PLAY-BALIZAS-02",
+"estado": "implementado",
+"detalle": "show() libera entradas y activa ST.keyGuard: listeners en captura bloquean keydown repetidos y el primer keyup de Espacio/Enter tras cambiar de pantalla; el foc",
+"archivos": [
+"site/balizas/src/main.js",
+"site/balizas/index.html"
+]
+},
+{
+"juego": "balizas",
+"id": "PLAY-BALIZAS-03",
+"estado": "implementado",
+"detalle": "Mapa miniatura con tokens R.MAP, ruta sin shadowBlur (ancho ≥ 1.8), nave con contorno oscuro de 1 px, bordes .65; #mini es role=img con nombre «Mapa miniatura»,",
+"archivos": [
+"site/balizas/src/render.js",
+"site/balizas/src/style.css"
+]
+},
+{
+"juego": "balizas",
+"id": "PLAY-BALIZAS-04",
+"estado": "implementado",
+"detalle": "keysLine(mode) adapta la guía a teclado/táctil (keys_steer/keys_act/touch_steer; la ayuda de escritorio no dice «Arrastra»); #pauseKeys y #dayKeys muestran la l",
+"archivos": [
+"site/balizas/src/main.js",
+"site/balizas/index.html",
+"site/balizas/src/i18n.js",
+"site/balizas/src/style.css"
+]
+},
+{
+"juego": "balizas",
+"id": "PLAY-BALIZAS-05",
+"estado": "implementado",
+"detalle": "Selector radial con aria-modal, botón «Cancelar» visible (#selCancel), título con balizas disponibles, Escape cierra y devuelve el foco al botón de baliza (o al",
+"archivos": [
+"site/balizas/src/main.js",
+"site/balizas/index.html",
+"site/balizas/src/i18n.js",
+"site/balizas/src/style.css"
+]
+},
+{
+"juego": "balizas",
+"id": "PLAY-BALIZAS-06",
+"estado": "implementado",
+"detalle": "Ajustes con etiquetas por id + aria-labelledby, deslizadores «Volumen de música»/«Volumen de efectos», secciones (.sect) y botón de retorno contextual: «Volver ",
+"archivos": [
+"site/balizas/index.html",
+"site/balizas/src/main.js",
+"site/balizas/src/i18n.js"
+]
+},
+{
+"juego": "balizas",
+"id": "PLAY-BALIZAS-07",
+"estado": "implementado",
+"detalle": "Pantalla #tutEnd tras la práctica: «Llegaste a la Puerta Norte», resumen con datos reales (objetivo cumplido, casco %, tesoros opcionales), botones «Revisar la ",
+"archivos": [
+"site/balizas/src/main.js",
+"site/balizas/index.html",
+"site/balizas/src/i18n.js",
+"site/balizas/src/style.css"
+]
+},
+{
+"juego": "balizas",
+"id": "RSP-BALIZAS-01",
+"estado": "implementado",
+"detalle": "Interruptores de Ajustes con aria-labelledby a su etiqueta visible (lbMini «Mostrar mapa miniatura», etc.).",
+"archivos": [
+"site/balizas/index.html",
+"site/balizas/src/main.js",
+"site/balizas/src/i18n.js"
+]
+},
+{
+"juego": "balizas",
+"id": "RSP-BALIZAS-02",
+"estado": "implementado",
+"detalle": "positionSelector() usa usableRect() con safe areas: radio = min(112,(uw−84)/2,(uh−84)/2), modo cuadrícula si < 52, centro acotado; #selCancel y #dialCancel expl",
+"archivos": [
+"site/balizas/src/main.js",
+"site/balizas/src/style.css",
+"site/balizas/index.html"
+]
+},
+{
+"juego": "balizas",
+"id": "RSP-GLOBAL-01",
+"estado": "implementado",
+"detalle": "Viewport sin maximum-scale/user-scalable; .scr con touch-action:pan-y pinch-zoom; el lienzo conserva su control de puntero.",
+"archivos": [
+"site/balizas/index.html",
+"site/balizas/src/style.css"
+]
+},
+{
+"juego": "balizas",
+"id": "SRC-BA01",
+"estado": "implementado",
+"detalle": "Modo libre con nota (free_note), «Repetir vuelo», «Reiniciar vuelo», «Abandonar vuelo» con confirmación que explica consecuencias (cons_oficial/cons_libre), «Co",
+"archivos": [
+"site/balizas/src/i18n.js",
+"site/balizas/index.html",
+"site/balizas/src/main.js"
+]
+},
+{
+"juego": "balizas",
+"id": "VIS-BALIZAS-01",
+"estado": "implementado",
+"detalle": "Rocas: trazo de cráter .10, puntos .02–.05, borde .60/.16; la silueta navegable no cambia.",
+"archivos": [
+"site/balizas/src/render.js"
+]
+},
+{
+"juego": "balizas",
+"id": "VIS-BALIZAS-02",
+"estado": "implementado",
+"detalle": "Estrellas .18/.28 en vuelo y .25/.40 en menú, niebla .18; pulse() devuelve 1 y el ruido de niebla se congela con movimiento reducido (sin alterar visibilidad ju",
+"archivos": [
+"site/balizas/src/render.js"
+]
+},
+{
+"juego": "balizas",
+"id": "VIS-BALIZAS-03",
+"estado": "implementado",
+"detalle": "Balizas: halo 2.2·sz alfa .26·p, glifo con alfa ≥ .8; rango y valoración después del glifo.",
+"archivos": [
+"site/balizas/src/render.js"
+]
+},
+{
+"juego": "balizas",
+"id": "VIS-BALIZAS-04",
+"estado": "implementado",
+"detalle": "Tokens R.MAP compartidos por miniatura y resultado; figura .res-map con leyenda #resRoute «Tu ruta»; leyenda con boya y peligro en SVG.",
+"archivos": [
+"site/balizas/src/render.js",
+"site/balizas/src/style.css",
+"site/balizas/src/main.js"
+]
+},
+{
+"juego": "balizas",
+"id": "VIS-BALIZAS-05",
+"estado": "implementado",
+"detalle": "Paneles .card ciruela #100920 con borde y radio 18, .btn.pri sólido #5424a8 (hover #6032b5), .hv neutro, etiquetas 12 px, animación pop reducida a énfasis de co",
+"archivos": [
+"site/balizas/src/style.css"
+]
+},
+{
+"juego": "balizas",
+"id": "SRC-G01",
+"estado": "no_aplicable",
+"detalle": "Balizas · las tarjetas .card[href] están en la home; el regreso del juego usa «Volver a los juegos» conservando idioma.",
+"archivos": []
+},
+{
+"juego": "balizas",
+"id": "SRC-G02",
+"estado": "ya_corregido_verificado",
+"detalle": "Balizas · selector ES/EN existente conservado; relang repinta las pantallas abiertas.",
+"archivos": [
+"site/balizas/index.html",
+"site/balizas/src/main.js"
+]
+},
+{
+"juego": "balizas",
+"id": "SRC-G03",
+"estado": "implementado",
+"detalle": "Balizas · «Reanudar partida», «Volver al menú», «Volver a los juegos», «Repetir vuelo», «Reiniciar vuelo»; «Despegar» y «Volar el campo de hoy» conservados.",
+"archivos": [
+"site/balizas/src/i18n.js",
+"site/balizas/index.html"
+]
+},
+{
+"juego": "balizas",
+"id": "SRC-G04",
+"estado": "implementado",
+"detalle": "Balizas · #confirm (alertdialog) «¿Borrar todo el progreso de JET//Balizas?» con enumeración real ({datos concretos}), lo que se conserva, Cancelar enfocado y «",
+"archivos": [
+"site/balizas/src/main.js",
+"site/balizas/index.html",
+"site/balizas/src/i18n.js",
+"site/balizas/src/style.css"
+]
+},
+{
+"juego": "balizas",
+"id": "SRC-G05",
+"estado": "implementado",
+"detalle": "Balizas · __balizasCarga + #carga con título, mensajes de error de red/interrupción, «Volver a cargar» y «Volver a los juegos»; boot llama listo().",
+"archivos": [
+"site/balizas/index.html",
+"site/balizas/src/style.css",
+"site/balizas/src/main.js"
+]
+},
+{
+"juego": "balizas",
+"id": "SRC-G06",
+"estado": "implementado",
+"detalle": "Balizas · ver SRC-BA02: compartir íntegro, éxito veraz, cancelación silenciosa y fallback persistente con «Copiar texto»/«Cerrar».",
+"archivos": [
+"site/balizas/src/main.js",
+"site/balizas/index.html",
+"site/balizas/src/i18n.js"
+]
+},
+{
+"juego": "ball",
+"id": "RSP-BALL-01",
+"estado": "implementado",
+"detalle": "ball: reglas finales editadas (no parches nuevos): .hud-top,.hud-top.dim → top/left/right calc(6px + inset) con altura automática (min 40); .active-fx → top:cal",
+"archivos": [
+"site/jetball/index.html"
+]
+},
+{
+"juego": "ball",
+"id": "RSP-BALL-04",
+"estado": "implementado",
+"detalle": "ball: cursor de celda propio kbCursor (inicializado en el centro del tablero en startLevel; si hubo puntero arranca en su celda); #game con tabindex=0, aria-lab",
+"archivos": [
+"site/jetball/index.html"
+]
+},
+{
+"juego": "ball",
+"id": "RSP-BALL-06",
+"estado": "implementado",
+"detalle": "ball: el keydown devuelve sin interceptar Enter/Espacio cuando el objetivo está en button,a,input,select,textarea,summary,[contenteditable],[role=button|switch|",
+"archivos": [
+"site/jetball/index.html"
+]
+},
+{
+"juego": "ball",
+"id": "PLAY-BALL-01",
+"estado": "implementado",
+"detalle": "ball: en escritorio (≥900×600) la home se reparte en dos columnas dentro de 960 px: izquierda marca, idioma, resumen del modo (hero), récords y bloque «Cómo se ",
+"archivos": [
+"site/jetball/index.html"
+]
+},
+{
+"juego": "ball",
+"id": "PLAY-BALL-02",
+"estado": "implementado",
+"detalle": "ball: startTutorial() (antes inexistente) muestra la guía #coach (role=dialog) al empezar el nivel 1 de una partida nueva: «Arrastrá horizontal o verticalmente ",
+"archivos": [
+"site/jetball/index.html"
+]
+},
+{
+"juego": "ball",
+"id": "PLAY-BALL-03",
+"estado": "implementado",
+"detalle": "ball: HUD en grupos con etiqueta: modo completo, «Nivel {n}», «Vidas: {n}» (número siempre; ∞ en infinitas), «Capturado: {pct}% · Meta: {target}%» (Parecido en ",
+"archivos": [
+"site/jetball/index.html"
+]
+},
+{
+"juego": "ball",
+"id": "PLAY-BALL-04",
+"estado": "implementado",
+"detalle": "ball: DIFFICULTIES.expert.name «DIFÍCIL»→«EXPERTO» (short EXP); el mapeo botón data-diff=expert → DIFFICULTIES.expert era correcto, sólo difería el nombre; el t",
+"archivos": [
+"site/jetball/index.html"
+]
+},
+{
+"juego": "ball",
+"id": "PLAY-BALL-05",
+"estado": "implementado",
+"detalle": "ball: «1 modo jugado» / «{n} modos jugados» (singular real), «Récord · {Modo}» (modeTitle: Clásico, Supervivencia…) en lugar de «Mejor · CLA/SUP», HUD «Mejor ni",
+"archivos": [
+"site/jetball/index.html"
+]
+},
+{
+"juego": "ball",
+"id": "PLAY-BALL-06",
+"estado": "implementado",
+"detalle": "ball: victoria con CTA «Siguiente nivel», destino «Nivel {n}» como texto secundario (#ovBtnNote), «Volver al menú» visible; casilla «Avance automático» (setting",
+"archivos": [
+"site/jetball/index.html"
+]
+},
+{
+"juego": "ball",
+"id": "PLAY-BALL-07",
+"estado": "implementado",
+"detalle": "ball: gameOver distingue firstResult (sin récord previo): mensaje «Primer resultado guardado» y sin resaltado new-record; «¡Nuevo récord!» sólo al superar el ni",
+"archivos": [
+"site/jetball/index.html"
+]
+},
+{
+"juego": "ball",
+"id": "PLAY-BALL-08",
+"estado": "implementado",
+"detalle": "ball: CONTINUE_LIVES=3 (vidas totales que fija continueAfterDeath, no un extra) alimenta la etiqueta «Continuar con 3 vidas» (con anuncio: «Ver anuncio · Contin",
+"archivos": [
+"site/jetball/index.html"
+]
+},
+{
+"juego": "ball",
+"id": "PLAY-BALL-09",
+"estado": "implementado",
+"detalle": "ball: paintPowerHelp() en pausa: inventario vacío → «Todavía no tenés poderes. Juntalos durante la partida.»; Zen (cleanModes: no genera poderes) → «En modo Zen",
+"archivos": [
+"site/jetball/index.html"
+]
+},
+{
+"juego": "ball",
+"id": "RSP-BALL-02",
+"estado": "implementado",
+"detalle": "ball: .pw-btn min 44×44; en ≤700 px #inventoryReadout es grid de 3 columnas de ancho min(360px, 100% − 16px − insets) con gap 6, botones ≥56 px en columna: icon",
+"archivos": [
+"site/jetball/index.html"
+]
+},
+{
+"juego": "ball",
+"id": "RSP-BALL-03",
+"estado": "implementado",
+"detalle": "ball: #inventoryReadout en top:calc(58px + --st); ResizeObserver+MutationObserver publican --powerbar-height (0 sin botones) en :root; .active-fx en top:calc(58",
+"archivos": [
+"site/jetball/index.html"
+]
+},
+{
+"juego": "ball",
+"id": "RSP-BALL-05",
+"estado": "implementado",
+"detalle": "ball: fitModePills() ya no reduce (sólo limpia estilos inline); .mode-pill span 12 px, line-height 1.25, white-space normal, overflow-wrap anywhere; .mode-pill ",
+"archivos": [
+"site/jetball/index.html"
+]
+},
+{
+"juego": "ball",
+"id": "RSP-GLOBAL-01",
+"estado": "implementado",
+"detalle": "ball: meta viewport sin maximum-scale/user-scalable; touch-action:none retirado de html/body (queda en #game); .overlay pan-y pinch-zoom; botones/pills/ranuras ",
+"archivos": [
+"site/jetball/index.html"
+]
+},
+{
+"juego": "ball",
+"id": "SRC-B01",
+"estado": "implementado",
+"detalle": "ball: ver PLAY-BALL-06: «Siguiente nivel» estable, «Nivel {n}» separado, «Avance automático» OFF por defecto y persistente, «Avance automático en {s} s» y «Dete",
+"archivos": [
+"site/jetball/index.html"
+]
+},
+{
+"juego": "ball",
+"id": "SRC-B02",
+"estado": "implementado",
+"detalle": "ball: coachSkip «Omitir tutorial»; #btnResume «Continuar partida» con nota secundaria «Modo guardado: {modo} · Nivel guardado: {n}» (#resumeNote); #btnReset «Re",
+"archivos": [
+"site/jetball/index.html"
+]
+},
+{
+"juego": "ball",
+"id": "VIS-BALL-01",
+"estado": "pendiente_decision",
+"detalle": "ball: clásico aplicado: trama hexagonal sin cambios (rgba(34,232,255,0.07), hexR 28) y los wireframes a la deriva con ganancia decorativa 0,75 (globalAlpha). Pa",
+"archivos": [
+"site/jetball/index.html"
+]
+},
+{
+"juego": "ball",
+"id": "VIS-BALL-02",
+"estado": "implementado",
+"detalle": "ball: drawStandardBall(): halo shadowBlur = min(12, 1,2·r) para bolas normales y min(16, 1,5·r) para especiales (boss, magnetic, phantom, bullet, explosive, tim",
+"archivos": [
+"site/jetball/index.html"
+]
+},
+{
+"juego": "ball",
+"id": "VIS-BALL-03",
+"estado": "implementado",
+"detalle": "ball: HUD: valores 14 px/800 con tabular-nums, etiquetas 12 px/600 sin resplandor, text-shadow eliminado, récord 12 px (no microscópico), panel rgba(11,7,21,.94",
+"archivos": [
+"site/jetball/index.html"
+]
+},
+{
+"juego": "ball",
+"id": "VIS-BALL-04",
+"estado": "implementado",
+"detalle": "ball: sacudida visual ≤3 px y decaimiento ~180 ms (lógica de shake intacta), nula con reducedMotion; destello de pantalla completa (flash) sólo sin movimiento r",
+"archivos": [
+"site/jetball/index.html"
+]
+},
+{
+"juego": "ball",
+"id": "SRC-G01",
+"estado": "no_aplicable",
+"detalle": "ball: el enlace de regreso #jgBack ya usa target=_top; las tarjetas pertenecen a la home.",
+"archivos": [
+"site/jetball/index.html"
+]
+},
+{
+"juego": "ball",
+"id": "SRC-G02",
+"estado": "implementado",
+"detalle": "ball: no consumía la preferencia común jet_lang (usaba sólo jetball.lang/navegador). Ahora: ?lang=es|en de la URL > elección propia (jetball.lang) > cookie/loca",
+"archivos": [
+"site/jetball/index.html"
+]
+},
+{
+"juego": "ball",
+"id": "SRC-G03",
+"estado": "implementado",
+"detalle": "ball: pausa «Reanudar partida»; «Volver al menú»; «Reiniciar partida»; «Siguiente nivel»; «Continuar partida»; «Jugar»; «Empezar nivel {n}».",
+"archivos": [
+"site/jetball/index.html"
+]
+},
+{
+"juego": "ball",
+"id": "SRC-G04",
+"estado": "no_aplicable",
+"detalle": "ball: no existe acción de borrar progreso ni confirmación por doble toque.",
+"archivos": [
+"site/jetball/index.html"
+]
+},
+{
+"juego": "ball",
+"id": "SRC-G05",
+"estado": "no_aplicable",
+"detalle": "ball: HTML único con scripts inline y splash propio; sólo Google Translate se carga de forma externa como respaldo opcional.",
+"archivos": [
+"site/jetball/index.html"
+]
+},
+{
+"juego": "ball",
+"id": "SRC-G06",
+"estado": "no_aplicable",
+"detalle": "ball: no tiene función de compartir.",
+"archivos": [
+"site/jetball/index.html"
+]
+},
+{
+"juego": "bestiario",
+"id": "RSP-BESTIARIO-01",
+"estado": "implementado",
+"detalle": "bestiario: syncWorldInert() centraliza worldDisabled = titleOn || panels.isOpen() || battle.active y aplica/quita inert a los controles del mundo (labels, zone,",
+"archivos": [
+"site/bestiario/src/main.js",
+"site/bestiario/src/panels.js",
+"site/bestiario/index.html"
+]
+},
+{
+"juego": "bestiario",
+"id": "RSP-BESTIARIO-02",
+"estado": "implementado",
+"detalle": "bestiario: el keydown que llama talk() exige además !titleOn && !battle.active y que el evento no venga de button, a, input, select, textarea, [contenteditable=",
+"archivos": [
+"site/bestiario/src/main.js"
+]
+},
+{
+"juego": "bestiario",
+"id": "SRC-BE01",
+"estado": "implementado",
+"detalle": "bestiario: elegir un inicio (startmode) con partida existente ya no borra: muestra una confirmación única «Reemplazar partida actual» con «Nuevo inicio: {modo}.",
+"archivos": [
+"site/bestiario/src/panels.js"
+]
+},
+{
+"juego": "bestiario",
+"id": "PLAY-BESTIARIO-01",
+"estado": "implementado",
+"detalle": "bestiario: el bootstrap es el único dueño del texto de #boot (estados loading/error/ready con data-state); #boot-msg perdió su data-en y paint() de las traducci",
+"archivos": [
+"site/bestiario/index.html",
+"site/bestiario/src/main.js"
+]
+},
+{
+"juego": "bestiario",
+"id": "PLAY-BESTIARIO-02",
+"estado": "implementado",
+"detalle": "bestiario: bajo la explicación, grupo centrado con «Volver a cargar» (se deshabilita y recarga; no crea partida ni borra almacenamiento) y «Volver a JET//Games»",
+"archivos": [
+"site/bestiario/index.html"
+]
+},
+{
+"juego": "bestiario",
+"id": "PLAY-BESTIARIO-03",
+"estado": "implementado",
+"detalle": "bestiario: durante el arranque lockHud(true) vuelve inert todos los [data-ui] (cámara, mochila, escenarios, vista, menú, portada…) y #gl; en fallo #boot pasa a ",
+"archivos": [
+"site/bestiario/index.html",
+"site/bestiario/src/main.js"
+]
+},
+{
+"juego": "bestiario",
+"id": "RSP-GLOBAL-01",
+"estado": "implementado",
+"detalle": "bestiario: meta viewport sin maximum-scale ni user-scalable; touch-action:none sale de html,body y queda en #gl y #stick; botones/enlaces con touch-action:manip",
+"archivos": [
+"site/bestiario/index.html"
+]
+},
+{
+"juego": "bestiario",
+"id": "SRC-BE02",
+"estado": "implementado",
+"detalle": "bestiario: el botón de cada par pasa a «Fusionar criaturas» sin data-confirm (sin segundo toque temporal); al pulsarlo la fila se convierte en confirmación «Fus",
+"archivos": [
+"site/bestiario/src/panels.js"
+]
+},
+{
+"juego": "bestiario",
+"id": "VIS-BESTIARIO-01",
+"estado": "implementado",
+"detalle": "bestiario: se usa la extensión theme.path ya prevista en world.js con los pares propuestos: ceniza [0x93805e,0x6c5b42], fortaleza [0x7c8894,0x525d69], pantano [",
+"archivos": [
+"site/bestiario/src/themes.js"
+]
+},
+{
+"juego": "bestiario",
+"id": "VIS-BESTIARIO-02",
+"estado": "implementado",
+"detalle": "bestiario: piel del dragón metalness .05→0 y roughnessFactor .42+.26·sR → .52+.24·sR; hueso roughness .36→.48 y metalness .04→0; membrana .6/0, ojos, brasas, _s",
+"archivos": [
+"site/bestiario/src/model3d.js"
+]
+},
+{
+"juego": "bestiario",
+"id": "VIS-BESTIARIO-03",
+"estado": "implementado",
+"detalle": "bestiario: opacidad del anillo de zona .45 inactivo / .85 activo y relleno .06 / .18, interpolados desde fx.active; se retiró sólo la oscilación .18·sin; la esc",
+"archivos": [
+"site/bestiario/src/world.js"
+]
+},
+{
+"juego": "bestiario",
+"id": "VIS-BESTIARIO-04",
+"estado": "implementado",
+"detalle": "bestiario: #mcard #0e1117 y borde rgba(233,230,223,.14); título de panel 20 px/700, tracking .02em, caja normal (17 px en pantallas angostas, 15 en bajas); fich",
+"archivos": [
+"site/bestiario/src/ui.css"
+]
+},
+{
+"juego": "bestiario",
+"id": "VIS-BESTIARIO-05",
+"estado": "implementado",
+"detalle": "bestiario: .bar a 8 px con pista #323b46 y radio 4 px; relleno con transición de 180 ms lineal (ninguna en prefers-reduced-motion); cifras .hp span a 13 px tabu",
+"archivos": [
+"site/bestiario/src/ui.css"
+]
+},
+{
+"juego": "bestiario",
+"id": "SRC-G01",
+"estado": "no_aplicable",
+"detalle": "bestiario: tarjetas en la home; el juego enlaza al catálogo canónico desde #back, el menú y ahora el estado fatal.",
+"archivos": []
+},
+{
+"juego": "bestiario",
+"id": "SRC-G02",
+"estado": "ya_corregido_verificado",
+"detalle": "bestiario: jet-idioma.js compartido, selector ES|EN con aria-pressed en portada y Ajustes, repintado en vivo por 'jet-idioma'; el bootstrap también traduce su e",
+"archivos": []
+},
+{
+"juego": "bestiario",
+"id": "SRC-G03",
+"estado": "implementado",
+"detalle": "bestiario: el botón de portada con partida guardada pasa de «Continuar» a «Continuar partida» / «Continue game»; «Nueva partida», «Volver a mi partida», «Salir ",
+"archivos": [
+"site/bestiario/src/main.js"
+]
+},
+{
+"juego": "bestiario",
+"id": "SRC-G04",
+"estado": "implementado",
+"detalle": "bestiario: el borrado de progreso es el reemplazo de partida: confirmación explícita con enumeración real de lo que se pierde, Cancelar enfocado y botón peligro",
+"archivos": [
+"site/bestiario/src/panels.js"
+]
+},
+{
+"juego": "bestiario",
+"id": "SRC-G05",
+"estado": "implementado",
+"detalle": "bestiario: título visible antes del JS, estados excluyentes, error recuperable con «Volver a cargar» y «Volver a JET//Games», sin spinner infinito ni botones va",
+"archivos": [
+"site/bestiario/index.html",
+"site/bestiario/src/main.js"
+]
+},
+{
+"juego": "bestiario",
+"id": "SRC-G06",
+"estado": "no_aplicable",
+"detalle": "bestiario: no tiene acción Compartir (navigator.share/clipboard: 0 ocurrencias).",
+"archivos": []
+},
+{
+"juego": "box",
+"id": "RSP-BOX-01",
+"estado": "implementado",
+"detalle": "#mHelp, #mWin y #mLevels arrancan con hidden + inert; CSS [hidden]{display:none!important}; openM() cierra los demás, quita hidden/inert, pone #app.inert=true (",
+"archivos": [
+"site/box/index.html"
+]
+},
+{
+"juego": "box",
+"id": "RSP-BOX-02",
+"estado": "implementado",
+"detalle": "El controlador de movimiento ignora eventos cuyo objetivo sea button/a/input/select/textarea/contenteditable (flechas en los sliders del popover de audio cambia",
+"archivos": [
+"site/box/index.html"
+]
+},
+{
+"juego": "box",
+"id": "PLAY-BOX-01",
+"estado": "implementado",
+"detalle": "HUD: «Movimientos», «Empujes» y «Objetivo» (el número es el par real del nivel; «Par» queda en tooltip y aria-label «Objetivo: {par} movimientos», con singular ",
+"archivos": [
+"site/box/index.html"
+]
+},
+{
+"juego": "box",
+"id": "PLAY-BOX-02",
+"estado": "implementado",
+"detalle": "Apaisado: la columna izquierda concentra nivel, objetivo y contadores; Deshacer movimiento y Reiniciar nivel pasan a una barra centrada debajo del tablero (área",
+"archivos": [
+"site/box/index.html"
+]
+},
+{
+"juego": "box",
+"id": "PLAY-BOX-03",
+"estado": "implementado",
+"detalle": "Las superposiciones inactivas están hidden + inert y el foco entra a la activa (RSP-BOX-01). Live region #a11y anuncia posición tras cada movimiento («Fila {f},",
+"archivos": [
+"site/box/index.html"
+]
+},
+{
+"juego": "box",
+"id": "PLAY-BOX-04",
+"estado": "implementado",
+"detalle": "Tarjetas: disponible (.avail, borde cian), completado (.done, estrellas) y bloqueado (.lock con borde discontinuo, número y candado legibles, miniatura al 30 %)",
+"archivos": [
+"site/box/index.html"
+]
+},
+{
+"juego": "box",
+"id": "RSP-AUDIO-01",
+"estado": "implementado",
+"detalle": "JetAudioUI compartido actualizado (misma versión que Astro): setAudioOpen() con clase + aria-expanded juntos, foco al primer control al abrir por teclado, Escap",
+"archivos": [
+"site/box/index.html"
+]
+},
+{
+"juego": "box",
+"id": "RSP-BOX-03",
+"estado": "implementado",
+"detalle": ".lname pasó a <button type=button id=lName> con aria-label «Elegir nivel; nivel {n} de 60» (total real LEVELS.length); flechas .arr de 44×44 mínimo sin reducció",
+"archivos": [
+"site/box/index.html"
+]
+},
+{
+"juego": "box",
+"id": "RSP-BOX-04",
+"estado": "implementado",
+"detalle": "moveOnce(d) extraído; cada .dp mantiene pointerdown/up/cancel para el auto-repeat y añade click para activaciones sin pointerdown (teclado o asistencia). Una ma",
+"archivos": [
+"site/box/index.html"
+]
+},
+{
+"juego": "box",
+"id": "RSP-GLOBAL-01",
+"estado": "implementado",
+"detalle": "meta viewport sin maximum-scale/user-scalable; se eliminaron los bloqueos globales de gesturestart y dblclick; touch-action:none salió de html,body y queda en #",
+"archivos": [
+"site/box/index.html"
+]
+},
+{
+"juego": "box",
+"id": "RSP-LANGUAGE-TARGETS-01",
+"estado": "implementado",
+"detalle": ".seg{min-height:52px;height:auto;gap:8px;padding:3px}, botones 44×44 mínimo, sin separador <i> ni ::after; el popover de audio hereda el mismo tamaño (min-width",
+"archivos": [
+"site/box/index.html"
+]
+},
+{
+"juego": "box",
+"id": "SRC-BX01",
+"estado": "implementado",
+"detalle": "Textos: «Movimientos», «Objetivo» (Par en tooltip), «Siguiente nivel», «Repetir nivel», «Comenzar nivel» (cierre de la ayuda), «Ver niveles», «Deshacer movimien",
+"archivos": [
+"site/box/index.html"
+]
+},
+{
+"juego": "box",
+"id": "SRC-BX02",
+"estado": "implementado",
+"detalle": "Botón Reiniciar nivel y tecla R comparten la misma acción restart(): ambos son reversibles con Deshacer (entrada «r» en hist) y avisan «Reiniciado. Podés deshac",
+"archivos": [
+"site/box/index.html"
+]
+},
+{
+"juego": "box",
+"id": "VIS-BOX-01",
+"estado": "implementado",
+"detalle": "buildStatic con dos niveles de detalle: TS<28 conserva el suelo alternado y una junta de 1 px al .08 y omite remaches, trama diagonal, costuras y paneles; TS≥28",
+"archivos": [
+"site/box/index.html"
+]
+},
+{
+"juego": "box",
+"id": "VIS-BOX-02",
+"estado": "implementado",
+"detalle": "Meta libre: cuatro flechas conservadas, anillo interior sólido de ≥1,5 px (sin guiones animados), halo min(8, .16·S). Caja acoplada: marca de verificación oscur",
+"archivos": [
+"site/box/index.html"
+]
+},
+{
+"juego": "box",
+"id": "VIS-BOX-03",
+"estado": "implementado",
+"detalle": "drawCrate: caja .8·S y radio .2·S intactos; contorno max(1.25, .03·S); sombra de contacto sólo debajo; un solo reflejo superior; abrazaderas sólo con TS≥28; var",
+"archivos": [
+"site/box/index.html"
+]
+},
+{
+"juego": "box",
+"id": "VIS-BOX-04",
+"estado": "implementado",
+"detalle": "Paleta compartida PAL (muro #54459a, suelo #1a1230, módulo marfil con núcleo ámbar o cian, meta como marco cian, jugador disco blanco con borde oscuro) usada po",
+"archivos": [
+"site/box/index.html"
+]
+},
+{
+"juego": "box",
+"id": "SRC-G01",
+"estado": "no_aplicable",
+"detalle": "Box: el ID afecta a las tarjetas de la home (site/index.html), fuera de esta asignación. El enlace de regreso del juego ya abre en la misma pestaña (target=_top",
+"archivos": []
+},
+{
+"juego": "box",
+"id": "SRC-G02",
+"estado": "ya_corregido_verificado",
+"detalle": "Box: el juego ya consume JETIdioma (?lang > cookie jet_lang > localStorage > navegador) y el selector ES/EN existente sincroniza aria-pressed. No se creó un seg",
+"archivos": []
+},
+{
+"juego": "box",
+"id": "SRC-G03",
+"estado": "implementado",
+"detalle": "Box: «Siguiente nivel», «Repetir nivel», «Ver niveles», «Comenzar nivel», «Reiniciar nivel», «Deshacer movimiento»; «Volver a JET//Games» en el enlace de regres",
+"archivos": [
+"site/box/index.html"
+]
+},
+{
+"juego": "box",
+"id": "SRC-G04",
+"estado": "no_aplicable",
+"detalle": "Box: no tiene acción de borrado de progreso.",
+"archivos": []
+},
+{
+"juego": "box",
+"id": "SRC-G05",
+"estado": "no_aplicable",
+"detalle": "Box: juego de un solo HTML con scripts inline, sin módulos externos ni estados de carga; el título y los textos se pintan antes del JS del juego. No se añadió p",
+"archivos": []
+},
+{
+"juego": "box",
+"id": "SRC-G06",
+"estado": "no_aplicable",
+"detalle": "Box: el juego no tiene acción de compartir resultado; no se añadió red ni publicación.",
+"archivos": []
+},
+{
+"juego": "cajanegra",
+"id": "RSP-CAJA-01",
+"estado": "implementado",
+"detalle": "cajanegra: se eliminó la intercepción global de Tab/Shift+Tab en el keydown de documento (recorría idsHuecos en círculo). Los campos del informe ya eran <button",
+"archivos": [
+"site/cajanegra/src/app.js",
+"site/cajanegra/src/i18n.js"
+]
+},
+{
+"juego": "cajanegra",
+"id": "RSP-MODALS-01",
+"estado": "implementado",
+"detalle": "cajanegra: nuevas abrirCapa()/cerrarCapa() con pila (PILA) para las cinco .capa (sAjustes, pausa, dialogo, historial, lupa): guardan document.activeElement como",
+"archivos": [
+"site/cajanegra/src/app.js",
+"site/cajanegra/src/estilo.css"
+]
+},
+{
+"juego": "cajanegra",
+"id": "RSP-NATIVE-KEYS-01",
+"estado": "implementado",
+"detalle": "cajanegra (aplicación del ID común): en el keydown de documento, tras Escape/pausa y antes de las órdenes de juego, se sale si el destino está en input/textarea",
+"archivos": [
+"site/cajanegra/src/app.js"
+]
+},
+{
+"juego": "cajanegra",
+"id": "VIS-CAJA-02",
+"estado": "implementado",
+"detalle": "cajanegra: D.escenaFoto(datos, lang, opts) separa la evidencia del acabado: con opts.post=false devuelve sólo la evidencia. El acabado usa un RNG visual propio ",
+"archivos": [
+"site/cajanegra/src/dibujo.js",
+"site/cajanegra/src/app.js",
+"site/cajanegra/src/estilo.css"
+]
+},
+{
+"juego": "cajanegra",
+"id": "VIS-CAJA-03",
+"estado": "implementado",
+"detalle": "cajanegra: D.telemetria conserva escalas, rangos, muestras, x/xinv, D.valorSerie y D.fmtValor. Curva sólida #83E1D1 de 2 px sin degradado ni relleno; rejilla ma",
+"archivos": [
+"site/cajanegra/src/dibujo.js",
+"site/cajanegra/src/estilo.css"
+]
+},
+{
+"juego": "cajanegra",
+"id": "PLAY-CAJA-01",
+"estado": "implementado",
+"detalle": "cajanegra: al activar un campo el banco muestra sólo las fichas de su categoría en todos los layouts (antes sólo en vertical), con título «Fichas para: {c}» y b",
+"archivos": [
+"site/cajanegra/src/app.js",
+"site/cajanegra/src/i18n.js",
+"site/cajanegra/src/estilo.css"
+]
+},
+{
+"juego": "cajanegra",
+"id": "PLAY-CAJA-02",
+"estado": "implementado",
+"detalle": "cajanegra: tocar una respuesta ya colocada la selecciona para cambiarla (abre el banco de su categoría) y ya no la vacía. Vaciar es una acción explícita: botón ",
+"archivos": [
+"site/cajanegra/src/app.js",
+"site/cajanegra/src/i18n.js",
+"site/cajanegra/src/estilo.css"
+]
+},
+{
+"juego": "cajanegra",
+"id": "PLAY-CAJA-03",
+"estado": "implementado",
+"detalle": "cajanegra: verificar() guarda en cada intento hip (copia de P.huecos en ese momento) junto a k y tiempo. hipotesisDe() usa esa copia o, en intentos antiguos, la",
+"archivos": [
+"site/cajanegra/src/app.js",
+"site/cajanegra/src/i18n.js",
+"site/cajanegra/src/estilo.css"
+]
+},
+{
+"juego": "cajanegra",
+"id": "PLAY-CAJA-04",
+"estado": "implementado",
+"detalle": "cajanegra: etiquetas «Intentos de verificación» (res.envios), «Intentos anteriores» (juego.historial), «Verificar informe» (ES ya; EN pasa de Check report a Ver",
+"archivos": [
+"site/cajanegra/src/i18n.js",
+"site/cajanegra/src/registros.js",
+"site/cajanegra/src/app.js"
+]
+},
+{
+"juego": "cajanegra",
+"id": "PLAY-CAJA-05",
+"estado": "implementado",
+"detalle": "cajanegra: la apertura del expediente muestra un botón real y enfocado (#apAbrir): «Omitir animación» con movimiento normal y «Abrir expediente» con movimiento ",
+"archivos": [
+"site/cajanegra/src/app.js",
+"site/cajanegra/src/i18n.js",
+"site/cajanegra/src/estilo.css"
+]
+},
+{
+"juego": "cajanegra",
+"id": "PLAY-CAJA-06",
+"estado": "implementado",
+"detalle": "cajanegra: el globo del tutorial lleva botón «Cerrar explicación» (aria-label) y, al cerrarlo, aparece en la barra «Volver a mostrar consejo» (#jConsejo) que re",
+"archivos": [
+"site/cajanegra/src/app.js",
+"site/cajanegra/src/i18n.js",
+"site/cajanegra/src/estilo.css"
+]
+},
+{
+"juego": "cajanegra",
+"id": "RSP-GLOBAL-01",
+"estado": "implementado",
+"detalle": "cajanegra: meta viewport sin maximum-scale ni user-scalable (queda width=device-width, initial-scale=1, viewport-fit=cover). No había bloqueos de gesturestart/d",
+"archivos": [
+"site/cajanegra/index.html",
+"site/cajanegra/src/estilo.css"
+]
+},
+{
+"juego": "cajanegra",
+"id": "SRC-CN01",
+"estado": "implementado",
+"detalle": "cajanegra: «Palabras disponibles · {n}», «Faltan {n} campos por completar» / «Falta 1 campo por completar», «Intentos anteriores», «Verificar informe» (ES/EN). ",
+"archivos": [
+"site/cajanegra/src/i18n.js",
+"site/cajanegra/src/app.js"
+]
+},
+{
+"juego": "cajanegra",
+"id": "SRC-CN02",
+"estado": "implementado",
+"detalle": "cajanegra: confirmación de solución con «Ver solución y cerrar el caso» y cancelación «Seguir investigando» (enfocada al abrir); en el caso del día con racha vi",
+"archivos": [
+"site/cajanegra/src/i18n.js",
+"site/cajanegra/src/app.js"
+]
+},
+{
+"juego": "cajanegra",
+"id": "VIS-CAJA-01",
+"estado": "implementado",
+"detalle": "cajanegra: tokens CN_ART (--cn-art-*) sólo de superficie, sin tocar --c-* ni --m*: fondo de #sJuego #0C1018, visor #151B25, informe #1B222D, controles #101620, ",
+"archivos": [
+"site/cajanegra/src/estilo.css"
+]
+},
+{
+"juego": "cajanegra",
+"id": "VIS-CAJA-04",
+"estado": "implementado",
+"detalle": "cajanegra: se preservan los 6 patrones y tonos m0…m5; el relleno baja a .18–.25 manteniendo el subrayado de 3 px y texto #F6FAFC. .linea.resalta fondo ámbar .08",
+"archivos": [
+"site/cajanegra/src/estilo.css"
+]
+},
+{
+"juego": "cajanegra",
+"id": "SRC-G03",
+"estado": "implementado",
+"detalle": "cajanegra (común): pausa «Reanudar partida», salida de pausa y del resultado «Volver al menú», cierre de Campaña/Práctica/Estadísticas/Cómo jugar «Volver al men",
+"archivos": [
+"site/cajanegra/src/i18n.js"
+]
+},
+{
+"juego": "cajanegra",
+"id": "SRC-G04",
+"estado": "implementado",
+"detalle": "cajanegra (común): el doble clic temporal de «Borrar progreso» (clase armado + 4 s) se sustituye por confirmarBorrado(): alertdialog «¿Borrar todo el progreso d",
+"archivos": [
+"site/cajanegra/src/app.js",
+"site/cajanegra/src/i18n.js",
+"site/cajanegra/src/estilo.css"
+]
+},
+{
+"juego": "cajanegra",
+"id": "SRC-G05",
+"estado": "implementado",
+"detalle": "cajanegra (común): #carga con título JET//Caja Negra y «Cargando JET//Caja Negra…» visible antes de los módulos (CSS inline, ES/EN según documentElement.lang de",
+"archivos": [
+"site/cajanegra/index.html",
+"site/cajanegra/src/app.js"
+]
+},
+{
+"juego": "cajanegra",
+"id": "SRC-G06",
+"estado": "implementado",
+"detalle": "cajanegra (común): botón «Compartir resultado»; éxito «Texto copiado» sólo tras resolverse clipboard.writeText o execCommand('copy'); cancelar navigator.share (",
+"archivos": [
+"site/cajanegra/src/app.js",
+"site/cajanegra/src/i18n.js"
+]
+},
+{
+"juego": "cajanegra",
+"id": "SRC-G01",
+"estado": "no_aplicable",
+"detalle": "cajanegra (común): el ID afecta a las tarjetas de la home (site/index.html), fuera de esta asignación. El juego ya ofrece «Volver a JET//Games» (#back) con targ",
+"archivos": []
+},
+{
+"juego": "cajanegra",
+"id": "SRC-G02",
+"estado": "ya_corregido_verificado",
+"detalle": "cajanegra (común): selector ES/EN con aria-pressed en inicio y Ajustes, JETIdioma (?lang > cookie/localStorage > navegador) y migración del idioma propio ya pre",
+"archivos": []
+},
+{
+"juego": "crater",
+"id": "RSP-MODALS-01",
+"estado": "implementado",
+"detalle": "crater: abrir(m, opts)/cerrar(opts) con pila (modales) y ACTIVADOR por capa: al abrir se guarda document.activeElement, se pone inert en las seis pantallas base",
+"archivos": [
+"site/crater/src/ui.js",
+"site/crater/index.html",
+"site/crater/src/estilo.css"
+]
+},
+{
+"juego": "crater",
+"id": "RSP-NATIVE-KEYS-01",
+"estado": "implementado",
+"detalle": "crater: en el keydown global, tras Escape/pausa, se sale si el destino es input/textarea/select/contenteditable y si Enter/Espacio caen sobre button, a[href], s",
+"archivos": [
+"site/crater/src/ui.js"
+]
+},
+{
+"juego": "crater",
+"id": "VIS-CRATER-01",
+"estado": "implementado",
+"detalle": "crater: constantes MAP_ART locales a mapa.js (version:2) y plano() repintado en el orden pedido: fondo #0B1220, viñeta negra .20 sin textura, rejilla con las mi",
+"archivos": [
+"site/crater/src/mapa.js"
+]
+},
+{
+"juego": "crater",
+"id": "VIS-CRATER-02",
+"estado": "implementado",
+"detalle": "crater: cada pasillo conserva su segmento exacto A→B y sus anchos .05s/.03s; banda exterior #172638, interior #273C50, eje central continuo rgba(128,151,168,.32",
+"archivos": [
+"site/crater/src/mapa.js"
+]
+},
+{
+"juego": "crater",
+"id": "VIS-CRATER-03",
+"estado": "implementado",
+"detalle": "crater: siluetas y dimensiones intactas (mismo arc/rr y radio s*.016). Relleno degradado vertical #26384A→#162433; borde #7693A8 de 1.5 CSS px; reflejo interior",
+"archivos": [
+"site/crater/src/mapa.js"
+]
+},
+{
+"juego": "crater",
+"id": "VIS-CRATER-04",
+"estado": "implementado",
+"detalle": "crater: nombres de BAN.MOD sin abreviar; Poppins 600 a clamp(CSSW*.038,12,15) CSS px (×dpr), color #E7EFF5, interlínea 1.25, 8 CSS px bajo el edificio y centrad",
+"archivos": [
+"site/crater/src/mapa.js"
+]
+},
+{
+"juego": "crater",
+"id": "VIS-CRATER-05",
+"estado": "implementado",
+"detalle": "crater: tabla de estados en dibujar(): reposo sin halo; hover #9FB5C6 1.5 px offset 4 (sólo si no hay selección ni foco en esa opción); foco de teclado anillo b",
+"archivos": [
+"site/crater/src/mapa.js",
+"site/crater/src/ui.js",
+"site/crater/index.html",
+"site/crater/src/estilo.css"
+]
+},
+{
+"juego": "crater",
+"id": "PLAY-CRATER-01",
+"estado": "implementado",
+"detalle": "crater: corrección del onboarding actual. Al terminar el ensayo (fase posado) se guarda tut=1 y aparecen, junto a «Jugar el día #{n}», los botones «Repetir ensa",
+"archivos": [
+"site/crater/src/ui.js",
+"site/crater/index.html",
+"site/crater/src/textos.js"
+]
+},
+{
+"juego": "crater",
+"id": "PLAY-CRATER-02",
+"estado": "implementado",
+"detalle": "crater: el mapa y la lista sólo seleccionan o cambian la selección: se eliminaron el «tocar otra vez para aterrizar», el doble clic (cv y lista) y la confirmaci",
+"archivos": [
+"site/crater/src/ui.js",
+"site/crater/index.html",
+"site/crater/src/textos.js",
+"site/crater/src/estilo.css"
+]
+},
+{
+"juego": "crater",
+"id": "PLAY-CRATER-03",
+"estado": "implementado",
+"detalle": "crater: el resultado del ensayo se rotula «Resultado del ensayo · datos simulados» y añade «Rivales de práctica: {n}» (n = suma real de R.practica). En lectura ",
+"archivos": [
+"site/crater/src/ui.js",
+"site/crater/src/textos.js"
+]
+},
+{
+"juego": "crater",
+"id": "PLAY-CRATER-04",
+"estado": "implementado",
+"detalle": "crater: la tarjeta de ronda revelada (rvLinea) muestra en texto «Tu elección: {opción} · coincidencia {porcentaje} %», «La opción más elegida: {mayoría} · {porc",
+"archivos": [
+"site/crater/src/ui.js",
+"site/crater/src/textos.js"
+]
+},
+{
+"juego": "crater",
+"id": "PLAY-CRATER-05",
+"estado": "implementado",
+"detalle": "crater: fondo inert con cualquier diálogo y retorno de foco (ver RSP-MODALS-01). Los avisos transitorios se limpian al cambiar de pantalla (mostrar() → limpiarT",
+"archivos": [
+"site/crater/src/ui.js",
+"site/crater/src/estilo.css"
+]
+},
+{
+"juego": "crater",
+"id": "RSP-GLOBAL-01",
+"estado": "implementado",
+"detalle": "crater: meta viewport sin maximum-scale ni user-scalable. #sRonda pasa de touch-action:none a pan-y pinch-zoom; el control de puntero queda en #cv (touch-action",
+"archivos": [
+"site/crater/index.html",
+"site/crater/src/estilo.css"
+]
+},
+{
+"juego": "crater",
+"id": "SRC-CR01",
+"estado": "implementado",
+"detalle": "crater: chip de estado «Resultado provisional» / «Resultado final» (según GEN.cierreUTC vigente) y línea #rvTiempo «Cierra el {fecha} a las {hora} ({zona})»; re",
+"archivos": [
+"site/crater/src/ui.js",
+"site/crater/src/textos.js",
+"site/crater/index.html"
+]
+},
+{
+"juego": "crater",
+"id": "SRC-CR02",
+"estado": "implementado",
+"detalle": "crater: compartir() ya no vuelca el texto en un toast de 5 s: si navigator.share se cancela (AbortError) no muestra nada; si el portapapeles falla abre el diálo",
+"archivos": [
+"site/crater/src/ui.js",
+"site/crater/index.html",
+"site/crater/src/textos.js",
+"site/crater/src/estilo.css"
+]
+},
+{
+"juego": "crater",
+"id": "VIS-CRATER-06",
+"estado": "implementado",
+"detalle": "crater: microcráteres decorativos con globalAlpha .10–.20 (antes .18–.43) manteniendo la misma secuencia de RNG, posiciones y la exclusión a 1.25×radio (no se a",
+"archivos": [
+"site/crater/src/mapa.js",
+"site/crater/src/ui.js"
+]
+},
+{
+"juego": "crater",
+"id": "VIS-CRATER-07",
+"estado": "implementado",
+"detalle": "crater: panel de consigna #132130, borde 1 px #304454, radio 14, padding 14/16, título 18/1.3 peso 600, explicación 14/1.5 #B4C3CE. Plataformas con material #17",
+"archivos": [
+"site/crater/src/estilo.css",
+"site/crater/src/ui.js"
+]
+},
+{
+"juego": "crater",
+"id": "SRC-G03",
+"estado": "implementado",
+"detalle": "crater (común): pausa «Reanudar partida» (continue), destino «Volver al menú» (home: pausa, lectura, revelación de archivo, cierres de Archivo/Perfil); verbos d",
+"archivos": [
+"site/crater/src/textos.js"
+]
+},
+{
+"juego": "crater",
+"id": "SRC-G04",
+"estado": "implementado",
+"detalle": "crater (común): «Borrar progreso» ya no es doble toque con 4 s: abre #sBorrar (alertdialog) «¿Borrar todo el progreso de JET//Cráter?» / «Se borrarán tus aterri",
+"archivos": [
+"site/crater/src/ui.js",
+"site/crater/index.html",
+"site/crater/src/textos.js"
+]
+},
+{
+"juego": "crater",
+"id": "SRC-G05",
+"estado": "implementado",
+"detalle": "crater (común): #sCarga deja de ser aria-hidden con pulso infinito: role=status con «Cargando JET//Cráter…» (ES/EN según JETIdioma) y, ante fallo de descarga de",
+"archivos": [
+"site/crater/index.html",
+"site/crater/src/ui.js"
+]
+},
+{
+"juego": "crater",
+"id": "SRC-G06",
+"estado": "implementado",
+"detalle": "crater (común): ver SRC-CR02: compartir sólo por acción del usuario, éxito veraz, cancelación silenciosa, fallback persistente con texto íntegro, «Copiar texto»",
+"archivos": [
+"site/crater/src/ui.js",
+"site/crater/index.html"
+]
+},
+{
+"juego": "crater",
+"id": "SRC-G01",
+"estado": "no_aplicable",
+"detalle": "crater (común): corresponde a las tarjetas de la home. El juego conserva «Volver a JET//Games» (#back) con target=_top.",
+"archivos": []
+},
+{
+"juego": "crater",
+"id": "SRC-G02",
+"estado": "ya_corregido_verificado",
+"detalle": "crater (común): selector ES/EN (inicio y Ajustes) con aria-pressed y JETIdioma con prioridad ?lang > cookie/localStorage > navegador ya presentes; migración úni",
+"archivos": []
+},
+{
+"juego": "escudos",
+"id": "RSP-ESCUDOS-01",
+"estado": "implementado",
+"detalle": ".team.pick y .ko-side son <button type=button> con aria-pressed y nombre «Gana {equipo}» (title con nombre completo); .vs role=group «A – B». En la llave cada e",
+"archivos": [
+"site/escudos/index.html"
+]
+},
+{
+"juego": "escudos",
+"id": "RSP-ESCUDOS-02",
+"estado": "implementado",
+"detalle": ".modal role=dialog aria-modal aria-labelledby=koTitle aria-describedby=koHint; .modal-bg padding 16 px + safe-area por lado; .modal{max-height:100%;overflow:aut",
+"archivos": [
+"site/escudos/index.html"
+]
+},
+{
+"juego": "escudos",
+"id": "SRC-E01",
+"estado": "implementado",
+"detalle": "simulatePending: fútbol rellena sólo partidos sin resultado (pruneKo previo) y cruces vacíos; F1 completa sólo los puestos vacíos de cada podio sin tocar los el",
+"archivos": [
+"site/escudos/index.html",
+"site/escudos/i18n.js"
+]
+},
+{
+"juego": "escudos",
+"id": "SRC-E02",
+"estado": "implementado",
+"detalle": "bindPicks ya no vacía DB.ko: requestChange simula el cambio sobre una copia, cuenta las elecciones de llave que dejarían de valer (DB.ko guarda ahora los equipo",
+"archivos": [
+"site/escudos/index.html"
+]
+},
+{
+"juego": "escudos",
+"id": "PLAY-ESCUDOS-01",
+"estado": "implementado",
+"detalle": "Nombres con dos líneas (line-clamp 2) y title completo; grupos minmax(min(100%,420px),1fr); encabezados <abbr title> Jugados/Ganados/Empatados/Perdidos/Puntos y",
+"archivos": [
+"site/escudos/index.html",
+"site/escudos/i18n.js"
+]
+},
+{
+"juego": "escudos",
+"id": "PLAY-ESCUDOS-02",
+"estado": "implementado",
+"detalle": "Grupo semántico por partido (local, Empate, visitante) con aria-pressed, teclado y foco visible; en eliminatorias sin empate; región #live anuncia «{equipo} sel",
+"archivos": [
+"site/escudos/index.html",
+"site/escudos/i18n.js"
+]
+},
+{
+"juego": "escudos",
+"id": "PLAY-ESCUDOS-03",
+"estado": "implementado",
+"detalle": "Ver SRC-E01. Resumen al terminar una simulación: «Campeón de tu simulación: {equipo}» (del resultado real) + «Ver la final» (abre la llave en la final sin inter",
+"archivos": [
+"site/escudos/index.html",
+"site/escudos/i18n.js"
+]
+},
+{
+"juego": "escudos",
+"id": "PLAY-ESCUDOS-04",
+"estado": "implementado",
+"detalle": "Nav con «Vista por ronda» / «Llave completa» (por defecto ronda a ≤600 px, completa en pantallas anchas), botones de ronda, «Ver campeón» en lugar de 🏆; encabez",
+"archivos": [
+"site/escudos/index.html",
+"site/escudos/i18n.js"
+]
+},
+{
+"juego": "escudos",
+"id": "PLAY-ESCUDOS-05",
+"estado": "implementado",
+"detalle": "Cada carrera muestra Primero/Segundo/Tercero con nombre o «Sin elegir»; ayuda «Elegí las escuderías en orden…» y «Tocá una escudería seleccionada para quitarla;",
+"archivos": [
+"site/escudos/index.html",
+"site/escudos/i18n.js"
+]
+},
+{
+"juego": "escudos",
+"id": "PLAY-ESCUDOS-06",
+"estado": "implementado",
+"detalle": "armClear sustituido por diálogo explícito (#cfBg alertdialog): «¿Borrar tus resultados de {competición}?» con el nombre real, «Esta acción reinicia esta competi",
+"archivos": [
+"site/escudos/index.html",
+"site/escudos/i18n.js",
+"site/escudos/pelotas.js"
+]
+},
+{
+"juego": "escudos",
+"id": "RSP-AUDIO-01",
+"estado": "implementado",
+"detalle": "Escudos (JetAudioUI): setAudioOpen(open,{focus,restoreFocus}) cambia clase y aria-expanded juntos; apertura por teclado (detail 0) enfoca el primer control; Esc",
+"archivos": [
+"site/escudos/index.html"
+]
+},
+{
+"juego": "escudos",
+"id": "RSP-ESCUDOS-03",
+"estado": "implementado",
+"detalle": ".race .podio button 44×44 gap 8; .drawbtn, .tab, .round-nav button, .back, .btn min-height 44; .ja-b 44×44 sin pseudoelemento de ampliación; sin reducción a ≤60",
+"archivos": [
+"site/escudos/index.html"
+]
+},
+{
+"juego": "escudos",
+"id": "RSP-ESCUDOS-04",
+"estado": "implementado",
+"detalle": "groups-grid minmax(min(100%,420px),1fr); a ≤419 px fila compacta con grid-template-areas: posición 20 px, escudo 38 px, nombre completo (wrap), puntos 36 px; se",
+"archivos": [
+"site/escudos/index.html"
+]
+},
+{
+"juego": "escudos",
+"id": "RSP-LANGUAGE-TARGETS-01",
+"estado": "implementado",
+"detalle": "Escudos: cada opción ES/EN min 44×44, height auto, flex none, gap 8 px, sin pseudoelementos; a ≤419 px .top{flex-wrap:wrap}, .topnav{flex-basis:100%;justify-con",
+"archivos": [
+"site/escudos/index.html"
+]
+},
+{
+"juego": "escudos",
+"id": "SRC-E03",
+"estado": "implementado",
+"detalle": "openComp: estado «Cargando {competición}…» (role=status); 404 → «No encontramos esta competición.» + «Ver competiciones»; red/HTTP/JSON → «No pudimos abrir esta",
+"archivos": [
+"site/escudos/index.html",
+"site/escudos/i18n.js"
+]
+},
+{
+"juego": "escudos",
+"id": "VIS-ESCUDOS-01",
+"estado": "implementado",
+"detalle": ".cb con --cbs, radio 22 %, borde 1 px rgba(10,15,20,.12), padding max(3px, 8 %) en todos los tamaños (46/58/84/38/50, miniaturas 28); .cb.none placa neutra con ",
+"archivos": [
+"site/escudos/index.html"
+]
+},
+{
+"juego": "escudos",
+"id": "VIS-ESCUDOS-02",
+"estado": "implementado",
+"detalle": "Sin opacidad global en .team.un ni .slot.lose; ganador con borde verde 2 px y etiqueta «✓ Ganador» junto al nombre; perdedor con rótulo «Perdedor» (sr-only en l",
+"archivos": [
+"site/escudos/index.html",
+"site/escudos/i18n.js"
+]
+},
+{
+"juego": "escudos",
+"id": "VIS-ESCUDOS-03",
+"estado": "implementado",
+"detalle": "tabular-nums; .st.dim var(--muted) opacity .7; puntos peso 800 con fondo neutro; filas alternas al 2 %; bandas de 3 px conservadas y símbolo de clasificación (▲",
+"archivos": [
+"site/escudos/index.html"
+]
+},
+{
+"juego": "escudos",
+"id": "VIS-ESCUDOS-04",
+"estado": "implementado",
+"detalle": "Ver PLAY-ESCUDOS-04: separadores, encabezado con contador, conectores que reflejan nextRound/findTie, halo del campeón 20 px alpha .12 con rótulo estable; scrol",
+"archivos": [
+"site/escudos/index.html",
+"site/escudos/i18n.js"
+]
+},
+{
+"juego": "escudos",
+"id": "RSP-GLOBAL-01",
+"estado": "no_aplicable",
+"detalle": "Escudos ya permite zoom en el meta viewport; el catálogo lo excluye explícitamente.",
+"archivos": []
+},
+{
+"juego": "escudos",
+"id": "SRC-G01",
+"estado": "no_aplicable",
+"detalle": "Escudos ya abre en la misma pestaña; la unificación de las 21 tarjetas es de la home.",
+"archivos": []
+},
+{
+"juego": "escudos",
+"id": "SRC-G02",
+"estado": "ya_corregido_verificado",
+"detalle": "Escudos: selector ES/EN (header y panel de sonido) vía JETIdioma con aria-pressed; repintado en vivo conservando estado.",
+"archivos": []
+},
+{
+"juego": "escudos",
+"id": "SRC-G03",
+"estado": "implementado",
+"detalle": "Escudos: «Ver competiciones», «Volver a intentar», «Volver a JET//Games», «Cancelar», «Borrar resultados», «Cambiar resultado», «Deshacer»; sin pausa.",
+"archivos": [
+"site/escudos/index.html",
+"site/escudos/i18n.js"
+]
+},
+{
+"juego": "escudos",
+"id": "SRC-G04",
+"estado": "implementado",
+"detalle": "Escudos: ver PLAY-ESCUDOS-06 (sin doble toque; alcance enumerado: esta competición en este navegador).",
+"archivos": [
+"site/escudos/index.html",
+"site/escudos/i18n.js"
+]
+},
+{
+"juego": "escudos",
+"id": "SRC-G05",
+"estado": "implementado",
+"detalle": "Escudos: «Cargando JET//Escudos…» en #app antes del JS; si i18n.js/jet-idioma.js no cargan, error recuperable («La carga se interrumpió. Podés volver a intentar",
+"archivos": [
+"site/escudos/index.html"
+]
+},
+{
+"juego": "escudos",
+"id": "SRC-G06",
+"estado": "implementado",
+"detalle": "Pelotas (trivia): «Compartir resultado»; share nativo sólo con puntero grueso, AbortError silencioso, «Texto copiado» sólo tras copiar; si falla, caja con texto",
+"archivos": [
+"site/escudos/pelotas.js",
+"site/escudos/i18n.js"
+]
+},
+{
+"juego": "estacion",
+"id": "RSP-ESTACION-01",
+"estado": "implementado",
+"detalle": "Capturas del Cuaderno como tarjeta no interactiva con dos botones hermanos: button.clip-open (imagen + nombre «Abrir captura de {contexto}») y button.clip-delet",
+"archivos": [
+"site/estacion/src/ui.js",
+"site/estacion/src/style.css",
+"site/estacion/src/i18n.js"
+]
+},
+{
+"juego": "estacion",
+"id": "RSP-MODALS-01",
+"estado": "implementado",
+"detalle": "screen(html, cls, opener) guarda el activador, marca la .card como role=dialog (alertdialog en confirmaciones) con aria-modal y aria-labelledby a su h2 (id esta",
+"archivos": [
+"site/estacion/src/ui.js",
+"site/estacion/src/style.css",
+"site/estacion/index.html"
+]
+},
+{
+"juego": "estacion",
+"id": "VIS-ESTACION-03",
+"estado": "implementado",
+"detalle": "DR.ART (bg #090F18, plate #253240→#15202C, borde #52677A 1 px con reflejo .10, grid alfa .025) aplicado por función: bg() y plate() con nuevos valores por defec",
+"archivos": [
+"site/estacion/src/draw.js",
+"site/estacion/src/style.css"
+]
+},
+{
+"juego": "estacion",
+"id": "VIS-ESTACION-04",
+"estado": "implementado",
+"detalle": "fog: sólo borde de cápsula acero #B8C8D5→#708698 con sombra 8 px (espejo, vaho y 6 s intactos). switch/parts: carcasa carbón #18232E, borde 1.5 px #6D8194 y som",
+"archivos": [
+"site/estacion/src/puzzles-a.js",
+"site/estacion/src/draw.js"
+]
+},
+{
+"juego": "estacion",
+"id": "VIS-ESTACION-05",
+"estado": "implementado",
+"detalle": "spectro: sólo bezel #172B2B/#608B86 (la matriz señal/ruido se dibuja igual, sin suavizado). keypad: marcos #122B29/#527B73, pulsado #16473E, halo ≤ 6 px, misma ",
+"archivos": [
+"site/estacion/src/puzzles-b.js"
+]
+},
+{
+"juego": "estacion",
+"id": "VIS-ESTACION-06",
+"estado": "implementado",
+"detalle": "Lista .pc: fondo #172332, radio 10, borde #394B5E; .lock con fondo #121922 y texto #9EACBA (sin opacity), icono de candado; disponible con punto rojo fijo (sin ",
+"archivos": [
+"site/estacion/src/style.css",
+"site/estacion/src/ui.js",
+"site/estacion/src/puzzles-c.js"
+]
+},
+{
+"juego": "estacion",
+"id": "PLAY-ESTACION-01",
+"estado": "implementado",
+"detalle": "Columna de lectura continua: enunciado (#iQ) → alternativas → pistas → etiqueta visible «Tu respuesta» (label for=ans) → «Formato de respuesta: {cantidad} letra",
+"archivos": [
+"site/estacion/index.html",
+"site/estacion/src/style.css",
+"site/estacion/src/ui.js",
+"site/estacion/src/i18n.js"
+]
+},
+{
+"juego": "estacion",
+"id": "PLAY-ESTACION-02",
+"estado": "implementado",
+"detalle": "#ansStatus (role=status, aria-live) junto al campo: «Esa respuesta no es correcta. Probá otra.» en la rama genérica, el mensaje específico en mid/trap/near/enie",
+"archivos": [
+"site/estacion/src/ui.js",
+"site/estacion/index.html",
+"site/estacion/src/style.css",
+"site/estacion/src/i18n.js"
+]
+},
+{
+"juego": "estacion",
+"id": "PLAY-ESTACION-03",
+"estado": "implementado",
+"detalle": "PZ.switch.a11y: tres botones DOM «Interruptor círculo/triángulo/cuadrado · Encendido/Apagado» con aria-pressed, sincronizados en ambos sentidos con el lienzo y ",
+"archivos": [
+"site/estacion/src/puzzles-a.js",
+"site/estacion/src/ui.js",
+"site/estacion/index.html",
+"site/estacion/src/style.css",
+"site/estacion/src/i18n.js"
+]
+},
+{
+"juego": "estacion",
+"id": "PLAY-ESTACION-04",
+"estado": "implementado",
+"detalle": "Resultado con «Leer transcripción» (abre la Bitácora en modo lectura: texto completo visible, sin audio ni animación) separado de «Reproducir grabación» (icono ",
+"archivos": [
+"site/estacion/src/ui.js",
+"site/estacion/src/i18n.js",
+"site/estacion/src/style.css"
+]
+},
+{
+"juego": "estacion",
+"id": "PLAY-ESTACION-05",
+"estado": "implementado",
+"detalle": "Ayudas: botón «Revelar pista · −1 estrella en este enigma» sólo en la rama de campaña con decremento real, «Revelar pista gratis» en p3 elegible (!freeHintUsed)",
+"archivos": [
+"site/estacion/src/ui.js",
+"site/estacion/src/i18n.js",
+"site/estacion/src/style.css"
+]
+},
+{
+"juego": "estacion",
+"id": "PLAY-ESTACION-06",
+"estado": "implementado",
+"detalle": "Ajustes/Ayudas/Bitácora/Cuaderno como diálogos (ver RSP-MODALS-01); cada interruptor con aria-labelledby a su etiqueta visible (Música, Efectos, Ambiente, Vibra",
+"archivos": [
+"site/estacion/src/ui.js",
+"site/estacion/src/i18n.js",
+"site/estacion/index.html"
+]
+},
+{
+"juego": "estacion",
+"id": "PLAY-ESTACION-07",
+"estado": "implementado",
+"detalle": "Tarjetas de sala con icono + texto de estado derivados del estado real (check «Resuelto · N estrellas», candado «Bloqueado», punto fijo «Disponible»), aria-labe",
+"archivos": [
+"site/estacion/src/ui.js",
+"site/estacion/src/style.css",
+"site/estacion/index.html",
+"site/estacion/src/i18n.js",
+"site/estacion/src/scenes.js"
+]
+},
+{
+"juego": "estacion",
+"id": "RSP-ESTACION-02",
+"estado": "implementado",
+"detalle": "#insp aria-labelledby=\"iTitle\" (h2 con tabindex=-1 enfocado al abrir en táctil); label visible «Tu respuesta» for=ans; #ans aria-describedby=\"iQ answerFormat an",
+"archivos": [
+"site/estacion/index.html",
+"site/estacion/src/ui.js",
+"site/estacion/src/style.css",
+"site/estacion/src/i18n.js"
+]
+},
+{
+"juego": "estacion",
+"id": "RSP-GLOBAL-01",
+"estado": "implementado",
+"detalle": "Viewport sin maximum-scale/user-scalable, conservando viewport-fit=cover e interactive-widget=resizes-content; .scr y #iDom con touch-action:pan-y pinch-zoom; #",
+"archivos": [
+"site/estacion/index.html",
+"site/estacion/src/style.css"
+]
+},
+{
+"juego": "estacion",
+"id": "SRC-ES01",
+"estado": "implementado",
+"detalle": "«Comprobar respuesta» en el botón de envío, el tour y la ayuda (verificación local, sin sugerir transmisión); «Pista leve», «Cómo resolverlo», «Ver solución» co",
+"archivos": [
+"site/estacion/src/i18n.js",
+"site/estacion/src/ui.js",
+"site/estacion/index.html"
+]
+},
+{
+"juego": "estacion",
+"id": "SRC-ES02",
+"estado": "implementado",
+"detalle": "Semilla y backup distinguidos: «Código de partida (semilla)», sección «Copia de seguridad de la partida» con «Copiar copia de seguridad», «Restaurar desde una c",
+"archivos": [
+"site/estacion/src/ui.js",
+"site/estacion/src/i18n.js",
+"site/estacion/src/style.css"
+]
+},
+{
+"juego": "estacion",
+"id": "VIS-ESTACION-01",
+"estado": "implementado",
+"detalle": "Salas: pared #101623→#151E2B, uniones #263343 α.45, techo #070B12, suelo #0B1019; cono ambiental máximo .16 (antes .28) con MOD_COL y progreso intactos; carcasa",
+"archivos": [
+"site/estacion/src/scenes.js"
+]
+},
+{
+"juego": "estacion",
+"id": "VIS-ESTACION-02",
+"estado": "implementado",
+"detalle": "Anillo: base #152333 con bordes #52677E de 1 px en R·.47 y R·.97; sector bloqueado #101925/#344454, disponible #253249/#9DAFCA (hover sólo +.06 y borde 2 px, si",
+"archivos": [
+"site/estacion/src/scenes.js",
+"site/estacion/src/style.css"
+]
+},
+{
+"juego": "estacion",
+"id": "SRC-G01",
+"estado": "no_aplicable",
+"detalle": "Estación · las tarjetas .card[href] viven en la home; el regreso «Volver a los juegos» del estado de carga apunta al catálogo.",
+"archivos": []
+},
+{
+"juego": "estacion",
+"id": "SRC-G02",
+"estado": "ya_corregido_verificado",
+"detalle": "Estación · selector ES/EN existente (LANG_SEG con aria-pressed, JETIdioma) conservado; onLang repinta las capas abiertas.",
+"archivos": [
+"site/estacion/src/ui.js",
+"site/estacion/index.html"
+]
+},
+{
+"juego": "estacion",
+"id": "SRC-G03",
+"estado": "implementado",
+"detalle": "Estación · «Reanudar partida» en pausa, «Continuar partida» en el inicio con partida guardada, «Volver al menú», «Volver a los juegos», «Volver a la sala», «Abr",
+"archivos": [
+"site/estacion/src/i18n.js",
+"site/estacion/src/ui.js"
+]
+},
+{
+"juego": "estacion",
+"id": "SRC-G04",
+"estado": "implementado",
+"detalle": "Estación · «Borrar todo el progreso» abre un alertdialog «¿Borrar todo el progreso de JET//Estación Silencio?» con «Se borrarán la partida, la transmisión del d",
+"archivos": [
+"site/estacion/src/ui.js",
+"site/estacion/src/i18n.js",
+"site/estacion/src/style.css"
+]
+},
+{
+"juego": "estacion",
+"id": "SRC-G05",
+"estado": "implementado",
+"detalle": "Estación · __estacionCarga + #carga («Cargando JET//Estación Silencio…», error de script → «No pudimos descargar todos los recursos.», timeout 20 s → «La carga ",
+"archivos": [
+"site/estacion/index.html",
+"site/estacion/src/style.css",
+"site/estacion/src/ui.js"
+]
+},
+{
+"juego": "estacion",
+"id": "SRC-G06",
+"estado": "implementado",
+"detalle": "Estación · share(text, opener): navigator.share con AbortError silencioso; copyText() confirma la copia (clipboard o execCommand===true) y sólo entonces «Texto ",
+"archivos": [
+"site/estacion/src/ui.js",
+"site/estacion/src/i18n.js",
+"site/estacion/src/style.css"
+]
+},
+{
+"juego": "flow",
+"id": "RSP-FLOW-02",
+"estado": "implementado",
+"detalle": "Capa #hudDom (pointer-events:none) con botones reales #flow-pause y #flow-release (pointer-events:auto, mínimo 44×44, transparentes sobre el dibujo del canvas q",
+"archivos": [
+"site/flow/index.html"
+]
+},
+{
+"juego": "flow",
+"id": "PLAY-FLOW-01",
+"estado": "implementado",
+"detalle": "show() enfoca el primer control marcado [data-focus] (en Ajustes, el slider de música) en vez del primer .btn (que era Borrar progreso). Borrar progreso se movi",
+"archivos": [
+"site/flow/index.html"
+]
+},
+{
+"juego": "flow",
+"id": "PLAY-FLOW-02",
+"estado": "implementado",
+"detalle": "Botón y tutorial sincronizados: rótulo del canvas y del botón DOM «LIBERAR PLASMA» durante la cuenta y «ACELERAR PLASMA» durante el flujo (dos líneas si no entr",
+"archivos": [
+"site/flow/index.html"
+]
+},
+{
+"juego": "flow",
+"id": "PLAY-FLOW-03",
+"estado": "implementado",
+"detalle": "La pieza fantasma se dibuja sólo en la celda objetivo (alpha 0,42); flechas de orientación en los puertos del reactor y el motor (VIS-FLOW-02); el astronauta se",
+"archivos": [
+"site/flow/index.html"
+]
+},
+{
+"juego": "flow",
+"id": "PLAY-FLOW-04",
+"estado": "implementado",
+"detalle": "Resultado de derrota con botón «Revisar la fuga» (sólo si hubo fuga): oculta la pantalla, deja el tablero congelado con la fuga marcada (anillo discontinuo) sin",
+"archivos": [
+"site/flow/index.html"
+]
+},
+{
+"juego": "flow",
+"id": "PLAY-FLOW-05",
+"estado": "implementado",
+"detalle": "Controles DOM con nombre, foco visible y disabled real (ver RSP-FLOW-02). Live region #a11y (aria-live=polite) anuncia la celda del cursor al moverlo con teclad",
+"archivos": [
+"site/flow/index.html"
+]
+},
+{
+"juego": "flow",
+"id": "RSP-FLOW-01",
+"estado": "implementado",
+"detalle": "Breakpoint @media(max-width:419px){.grid{3 columnas minmax(0,1fr)}.lvl{aspect-ratio:1.2;min-height:48px}}; 6 columnas desde 420 px. ArrowUp/Down derivan las col",
+"archivos": [
+"site/flow/index.html"
+]
+},
+{
+"juego": "flow",
+"id": "RSP-GLOBAL-01",
+"estado": "implementado",
+"detalle": "meta viewport sin maximum-scale/user-scalable; .scr y paneles desplazables con touch-action:pan-y pinch-zoom; el canvas conserva touch-action:none; botones con ",
+"archivos": [
+"site/flow/index.html"
+]
+},
+{
+"juego": "flow",
+"id": "SRC-F01",
+"estado": "implementado",
+"detalle": "«Comenzar circuito» (#bGo), «Repetir circuito» si ok / «Reintentar circuito» si no (#bRetry), «Reanudar partida» (#bResume), «Reiniciar circuito» (#bRestart). T",
+"archivos": [
+"site/flow/index.html"
+]
+},
+{
+"juego": "flow",
+"id": "SRC-F02",
+"estado": "implementado",
+"detalle": "Desde la pausa, «Reiniciar circuito», «Ver niveles» y «Volver al menú» piden confirmación sólo si hay cambios (piezas instaladas por el jugador o el flujo ya sa",
+"archivos": [
+"site/flow/index.html"
+]
+},
+{
+"juego": "flow",
+"id": "VIS-FLOW-01",
+"estado": "implementado",
+"detalle": "Tubos: borde exterior #090610 de 1,5 px CSS (ancho .40·s+3), cuerpo frío conservado, brillo fino de 1 px #B7BFDC al 80 % en la arista (tubePathOff); cruce con s",
+"archivos": [
+"site/flow/index.html"
+]
+},
+{
+"juego": "flow",
+"id": "VIS-FLOW-02",
+"estado": "implementado",
+"detalle": "Flecha #D9E2F2 (0,12·s × 0,18·s) junto al puerto del reactor (saliente) y del motor (entrante), fuera del canal; arco de cuenta de 0,05·s con borde oscuro de 1 ",
+"archivos": [
+"site/flow/index.html"
+]
+},
+{
+"juego": "flow",
+"id": "VIS-FLOW-03",
+"estado": "implementado",
+"detalle": "Paneles rgba(22,13,42,.94) con borde rgba(81,68,102,.6) 1 px; rótulos del HUD mínimo 12 px; ranura actual con borde cian 2 px y rótulo; iconos futuros a 0,95; b",
+"archivos": [
+"site/flow/index.html"
+]
+},
+{
+"juego": "flow",
+"id": "VIS-FLOW-04",
+"estado": "implementado",
+"detalle": "Con movimiento reducido: LEDs estáticos ((x+y)%2), pulso del origen constante, sin giro del motor, confirmación de pieza mediante borde cian de 2 px durante 160",
+"archivos": [
+"site/flow/index.html"
+]
+},
+{
+"juego": "flow",
+"id": "VIS-FLOW-05",
+"estado": "implementado",
+"detalle": "Se eliminó la cuenta gigante centrada; la cuenta vive en el HUD a 20 px/800 con realce de borde de 150 ms al cambiar de segundo (G.tickAt) y la barra deja sitio",
+"archivos": [
+"site/flow/index.html"
+]
+},
+{
+"juego": "flow",
+"id": "SRC-G01",
+"estado": "no_aplicable",
+"detalle": "Flow: el ID afecta a las tarjetas de la home (site/index.html), fuera de esta asignación. El enlace de regreso del juego ya abre en la misma pestaña (target=_to",
+"archivos": []
+},
+{
+"juego": "flow",
+"id": "SRC-G02",
+"estado": "ya_corregido_verificado",
+"detalle": "Flow: el juego ya consume JETIdioma (?lang > cookie jet_lang > localStorage > navegador) y el selector ES/EN existente sincroniza aria-pressed. No se creó un se",
+"archivos": []
+},
+{
+"juego": "flow",
+"id": "SRC-G03",
+"estado": "implementado",
+"detalle": "Flow: «Reanudar partida», «Reiniciar circuito», «Ver niveles», «Volver al menú» (pausa y final), «Comenzar circuito», «Repetir circuito»/«Reintentar circuito», ",
+"archivos": [
+"site/flow/index.html"
+]
+},
+{
+"juego": "flow",
+"id": "SRC-G04",
+"estado": "implementado",
+"detalle": "Flow: diálogo de confirmación explícita para Borrar progreso (ver PLAY-FLOW-01); se reemplazó el doble toque temporal de 3 s.",
+"archivos": [
+"site/flow/index.html"
+]
+},
+{
+"juego": "flow",
+"id": "SRC-G05",
+"estado": "no_aplicable",
+"detalle": "Flow: juego de un solo HTML con scripts inline, sin módulos externos ni estados de carga; el título y los textos se pintan antes del JS del juego. No se añadió ",
+"archivos": []
+},
+{
+"juego": "flow",
+"id": "SRC-G06",
+"estado": "no_aplicable",
+"detalle": "Flow: el juego no tiene acción de compartir resultado; no se añadió red ni publicación.",
+"archivos": []
+},
+{
+"juego": "frentes",
+"id": "RSP-FRENTES-01",
+"estado": "implementado",
+"detalle": "frentes: #shConfirm, #shKeypad y #shMsg nacen con hidden e inert (y role dialog/alertdialog + aria-modal + aria-labelledby). openSheet quita hidden, fuerza un f",
+"archivos": [
+"site/frentes/index.html",
+"site/frentes/src/game.js",
+"site/frentes/src/ui.css"
+]
+},
+{
+"juego": "frentes",
+"id": "RSP-MODALS-01",
+"estado": "implementado",
+"detalle": "frentes: openOv/closeOv guardan el activador (ACT) y sincInert() pone inert en #sHome, #sBoard, #back, #topR, #banner, #toast y en las superposiciones inferiore",
+"archivos": [
+"site/frentes/src/game.js",
+"site/frentes/index.html",
+"site/frentes/src/ui.css"
+]
+},
+{
+"juego": "frentes",
+"id": "RSP-NATIVE-KEYS-01",
+"estado": "implementado",
+"detalle": "frentes (aplicación del ID común): en el keydown global, Enter/Espacio sobre button, a[href], summary, [role=button|switch], input, textarea o select ya no se c",
+"archivos": [
+"site/frentes/src/game.js"
+]
+},
+{
+"juego": "frentes",
+"id": "VIS-FRENTES-03",
+"estado": "implementado",
+"detalle": "frentes: .lcol base #101A27, borde 1 px #3C5067, radio 8; .lfill degradado corto #1AA899→#58D8C5 sin shadowBlur y línea superior 1 px #BCFFF3 (::before); segmen",
+"archivos": [
+"site/frentes/src/ui.css"
+]
+},
+{
+"juego": "frentes",
+"id": "PLAY-FRENTES-01",
+"estado": "implementado",
+"detalle": "frentes: goHome() y boardSetup() ponen G.paused=false (ninguna sesión nueva hereda la pausa); closeAllOv() la limpia si la pausa estaba abierta (cerrar superpos",
+"archivos": [
+"site/frentes/src/game.js",
+"site/frentes/index.html",
+"site/frentes/src/i18n.js",
+"site/frentes/src/ui.css"
+]
+},
+{
+"juego": "frentes",
+"id": "PLAY-FRENTES-02",
+"estado": "implementado",
+"detalle": "frentes: al terminar el paso 3 el tablero pasa a estado «Tutorial completado»: se retira el botón Lanzar flota (B.cfg.launch=null), se vacía la barra de herrami",
+"archivos": [
+"site/frentes/src/game.js",
+"site/frentes/src/i18n.js",
+"site/frentes/src/ui.css"
+]
+},
+{
+"juego": "frentes",
+"id": "PLAY-FRENTES-03",
+"estado": "implementado",
+"detalle": "frentes: aviso inicial «Arrastra hacia arriba para sumar naves.» (una vez, en el primer tablero vacío de frente o ronda rápida; tono de tú del juego). Cada carr",
+"archivos": [
+"site/frentes/src/game.js",
+"site/frentes/src/i18n.js"
+]
+},
+{
+"juego": "frentes",
+"id": "PLAY-FRENTES-04",
+"estado": "implementado",
+"detalle": "frentes: leyenda con muestras en el informe («Promedio de naves rivales · Rivales con 0 naves (%)»), en el resumen lateral (línea discontinua = promedio; vacío ",
+"archivos": [
+"site/frentes/src/game.js",
+"site/frentes/src/i18n.js",
+"site/frentes/index.html",
+"site/frentes/src/ui.css",
+"site/frentes/src/render.js"
+]
+},
+{
+"juego": "frentes",
+"id": "PLAY-FRENTES-05",
+"estado": "implementado",
+"detalle": "frentes: los títulos derivan del modo real: en Ronda rápida el tablero y el resultado dicen «Ronda rápida · rivales de práctica», el análisis «Análisis de práct",
+"archivos": [
+"site/frentes/src/game.js",
+"site/frentes/src/i18n.js"
+]
+},
+{
+"juego": "frentes",
+"id": "PLAY-FRENTES-06",
+"estado": "implementado",
+"detalle": "frentes: una sola función fmtRend (una cifra decimal cuando no es entero, separador por idioma, sin % en el valor) en titular del resultado, análisis en vivo, m",
+"archivos": [
+"site/frentes/src/game.js",
+"site/frentes/src/i18n.js"
+]
+},
+{
+"juego": "frentes",
+"id": "PLAY-FRENTES-07",
+"estado": "implementado",
+"detalle": "frentes: recuento como «{victorias} victorias · {empates} empates · {derrotas} derrotas» con singular por componente, y «Tu reparto se comparó con {rivales} riv",
+"archivos": [
+"site/frentes/src/game.js",
+"site/frentes/src/i18n.js",
+"site/frentes/src/ui.css",
+"site/frentes/index.html"
+]
+},
+{
+"juego": "frentes",
+"id": "RSP-GLOBAL-01",
+"estado": "implementado",
+"detalle": "frentes: meta viewport sin maximum-scale ni user-scalable. .scr (paneles desplazables) con touch-action: pan-y pinch-zoom; el control de puntero (touch-action:n",
+"archivos": [
+"site/frentes/index.html",
+"site/frentes/src/ui.css"
+]
+},
+{
+"juego": "frentes",
+"id": "SRC-FR01",
+"estado": "implementado",
+"detalle": "frentes: «Distribuir naves» (antes Al despliegue), «Quitar todas las naves» (Vaciar, con Deshacer), «Asignar reserva aquí» (Resto aquí: sólo usa la reserva disp",
+"archivos": [
+"site/frentes/src/i18n.js",
+"site/frentes/src/game.js",
+"site/frentes/index.html"
+]
+},
+{
+"juego": "frentes",
+"id": "SRC-FR02",
+"estado": "implementado",
+"detalle": "frentes: si fallan navigator.share y el portapapeles, en lugar del toast con dos líneas se abre la hoja con «Compartir resultado», «No pudimos copiarlo automáti",
+"archivos": [
+"site/frentes/src/game.js",
+"site/frentes/src/i18n.js",
+"site/frentes/src/ui.css"
+]
+},
+{
+"juego": "frentes",
+"id": "VIS-FRENTES-01",
+"estado": "implementado",
+"detalle": "frentes: buildBg() distingue portada y partida (R.boardMode desde setBase): en el tablero base #080E18 con radial #17243A al .45, nebulosas a .025 y máximo 180 ",
+"archivos": [
+"site/frentes/src/render.js",
+"site/frentes/src/game.js",
+"site/frentes/src/ui.css"
+]
+},
+{
+"juego": "frentes",
+"id": "VIS-FRENTES-02",
+"estado": "implementado",
+"detalle": "frentes: PCOL, texturas, radios y anillos de Eco intactos. Atmósfera de shade() a .22 con alcance 1.18 r; terminador con extremo rgba(5,1,12,.72) (antes .88) ma",
+"archivos": [
+"site/frentes/src/render.js"
+]
+},
+{
+"juego": "frentes",
+"id": "VIS-FRENTES-04",
+"estado": "implementado",
+"detalle": "frentes: histograma y transformación Math.pow(h/maxH,.55) intactos; zona de resultados con fondo #0E1722 (columnas en batalla/locked) y línea base 1 px #5A7086;",
+"archivos": [
+"site/frentes/src/render.js",
+"site/frentes/src/ui.css"
+]
+},
+{
+"juego": "frentes",
+"id": "SRC-G03",
+"estado": "implementado",
+"detalle": "frentes (común): pausa «Reanudar partida» (Continuar), «Volver al menú» (Salir al inicio / Inicio), Academia «Repetir misión» tras ganar y «Reintentar misión» t",
+"archivos": [
+"site/frentes/src/i18n.js",
+"site/frentes/src/game.js"
+]
+},
+{
+"juego": "frentes",
+"id": "SRC-G04",
+"estado": "implementado",
+"detalle": "frentes (común): «Borrar progreso» deja el doble toque de 4 s y abre una hoja alertdialog «¿Borrar todo el progreso de JET//Frentes?» / «Se borrarán tus frentes",
+"archivos": [
+"site/frentes/src/game.js",
+"site/frentes/src/i18n.js",
+"site/frentes/src/ui.css"
+]
+},
+{
+"juego": "frentes",
+"id": "SRC-G05",
+"estado": "implementado",
+"detalle": "frentes (común): #carga con título JET//Frentes y «Cargando JET//Frentes…» (ES/EN por JETIdioma) visible antes de los módulos; error recuperable: descarga falli",
+"archivos": [
+"site/frentes/index.html",
+"site/frentes/src/game.js"
+]
+},
+{
+"juego": "frentes",
+"id": "SRC-G06",
+"estado": "implementado",
+"detalle": "frentes (común): ver SRC-FR02: compartir sólo por acción del usuario, éxito veraz («Texto copiado»), cancelación de navigator.share silenciosa, fallback persist",
+"archivos": [
+"site/frentes/src/game.js",
+"site/frentes/src/i18n.js"
+]
+},
+{
+"juego": "frentes",
+"id": "SRC-G01",
+"estado": "no_aplicable",
+"detalle": "frentes (común): corresponde a las tarjetas de la home. El juego conserva «Volver a JET//Games» (#back) con target=_top.",
+"archivos": []
+},
+{
+"juego": "frentes",
+"id": "SRC-G02",
+"estado": "ya_corregido_verificado",
+"detalle": "frentes (común): selector ES/EN con aria-pressed en inicio y Ajustes, JETIdioma (?lang > cookie/localStorage > navegador) y migración de prefs.lang ya presentes",
+"archivos": []
+},
+{
+"juego": "home",
+"id": "SRC-G01",
+"estado": "implementado",
+"detalle": "home: se quitó target=\"_blank\" de las 21 tarjetas que lo tenían; las 22 .card[href] navegan en la misma pestaña (Escudos ya lo hacía). Ctrl/Cmd+clic, clic centr",
+"archivos": [
+"site/index.html"
+]
+},
+{
+"juego": "home",
+"id": "SRC-G02",
+"estado": "ya_corregido_verificado",
+"detalle": "home: existe un único selector ES/EN (.lang-sw, role=group, aria-pressed) y JETIdioma inline con prioridad ?lang > cookie .jetgames.fun/localStorage > navegador",
+"archivos": []
+},
+{
+"juego": "jump",
+"id": "RSP-JUMP-01",
+"estado": "implementado",
+"detalle": "jump: regla global [hidden]{display:none!important} al inicio del CSS (conservando las clases .hidden); .load-in es una columna flex centrada con max-width:100%",
+"archivos": [
+"site/jetjump/index.html",
+"site/jetjump/src/main.js"
+]
+},
+{
+"juego": "jump",
+"id": "SRC-JU01",
+"estado": "implementado",
+"detalle": "jump: ocultamiento real con [hidden]{display:none!important} (gana a .btn{display:flex}); botón «Volver a cargar» tras el mensaje en la columna centrada de .loa",
+"archivos": [
+"site/jetjump/index.html"
+]
+},
+{
+"juego": "jump",
+"id": "SRC-JU02",
+"estado": "implementado",
+"detalle": "jump: bootstrap inline window.JJBoot antes del módulo con estados loading/error/ready dueños del texto del cargador (ES/EN). Captura error de script/dependencia",
+"archivos": [
+"site/jetjump/index.html",
+"site/jetjump/src/main.js",
+"site/jetjump/src/text.js"
+]
+},
+{
+"juego": "jump",
+"id": "PLAY-JUMP-01",
+"estado": "implementado",
+"detalle": "jump: logo, progreso, estado y bloque de acciones en una sola columna flex centrada (align-items:center); botón centrado por el contenedor, 16 px al mensaje, 48",
+"archivos": [
+"site/jetjump/index.html"
+]
+},
+{
+"juego": "jump",
+"id": "PLAY-JUMP-02",
+"estado": "implementado",
+"detalle": "jump: estados excluyentes (data-state en #load): en loading sólo progreso y texto; en error se oculta la barra, se muestra título + causa («No pudimos descargar",
+"archivos": [
+"site/jetjump/index.html",
+"site/jetjump/src/main.js"
+]
+},
+{
+"juego": "jump",
+"id": "PLAY-JUMP-03",
+"estado": "implementado",
+"detalle": "jump: el renderer se crea dentro de try/catch antes de iniciar la carga de recursos; si falla, JJBoot.fail('webgl') muestra «Este navegador no pudo iniciar los ",
+"archivos": [
+"site/jetjump/src/main.js",
+"site/jetjump/index.html"
+]
+},
+{
+"juego": "jump",
+"id": "RSP-JUMP-02",
+"estado": "implementado",
+"detalle": "jump: .modal{padding:calc(16px + var(--t)) calc(16px + var(--r)) calc(16px + var(--b)) calc(16px + var(--l))}; .card conserva max-height:100%/overflow:auto y el",
+"archivos": [
+"site/jetjump/index.html"
+]
+},
+{
+"juego": "jump",
+"id": "SRC-JU04",
+"estado": "implementado",
+"detalle": "jump: un único estado de progreso: manager.onProgress → JJBoot.progress(done,total) actualiza barra (round(done/total*100)), aria-valuenow/max y texto «Cargando",
+"archivos": [
+"site/jetjump/src/main.js",
+"site/jetjump/index.html"
+]
+},
+{
+"juego": "jump",
+"id": "VIS-JUMP-01",
+"estado": "implementado",
+"detalle": "jump: GradeShader uGrain .035→0, uCA .0022→0, uVig .32→.16; saturación mix 1.1→1.0 conservando el split tonal y el contraste pow 1.04; bloom strength .22→.16 si",
+"archivos": [
+"site/jetjump/src/post.js"
+]
+},
+{
+"juego": "jump",
+"id": "VIS-JUMP-02",
+"estado": "implementado",
+"detalle": "jump: arena normalScale (.7,.7)→(.5,.5) y variación macro de albedo .93+.07·n → .96+.04·n, misma función n, color, mapas, escala, geometría y césped intactos.",
+"archivos": [
+"site/jetjump/src/world.js"
+]
+},
+{
+"juego": "jump",
+"id": "VIS-JUMP-03",
+"estado": "implementado",
+"detalle": "jump: labelTexture a 256×256 con borde 12 en (10,10,236,236) y texto en (128,140); fuente Inter 800 si document.fonts la tiene disponible, si no Arial 900; medi",
+"archivos": [
+"site/jetjump/src/fences.js"
+]
+},
+{
+"juego": "jump",
+"id": "VIS-JUMP-04",
+"estado": "implementado",
+"detalle": "jump: tokens --hud-surface rgba(13,36,26,.90) y --hud-line rgba(244,236,219,.18) en .data, .gait y .keyhelp (radio 8 px, sin forma de botón); .lbl 12 px/1.3, ci",
+"archivos": [
+"site/jetjump/index.html"
+]
+},
+{
+"juego": "jump",
+"id": "VIS-JUMP-05",
+"estado": "implementado",
+"detalle": "jump: .card con fondo #11301f, borde crema al 16 %, radios 18/12/8; Playfair sólo en h2 (28/700), secciones 16/800, cuerpo 15/1.55, metadatos 12/1.4 (.spot smal",
+"archivos": [
+"site/jetjump/index.html"
+]
+},
+{
+"juego": "jump",
+"id": "SRC-JU03",
+"estado": "implementado",
+"detalle": "jump: ayuda unificada como «Cómo jugar» / «How to play» (menú, pausa y título del panel, mismo contenido de controles y reglas); «Reintentar recorrido» / «Retry",
+"archivos": [
+"site/jetjump/src/text.js",
+"site/jetjump/src/main.js"
+]
+},
+{
+"juego": "jump",
+"id": "SRC-G01",
+"estado": "no_aplicable",
+"detalle": "jump: tarjetas en la home (ver home.json). El menú y el cargador enlazan al catálogo canónico.",
+"archivos": []
+},
+{
+"juego": "jump",
+"id": "SRC-G02",
+"estado": "ya_corregido_verificado",
+"detalle": "jump: usa jet-idioma.js y selector ES|EN con aria-pressed en menú y Ajustes; el cargador nuevo también traduce su estado en vivo.",
+"archivos": []
+},
+{
+"juego": "jump",
+"id": "SRC-G03",
+"estado": "implementado",
+"detalle": "jump: pausa «Reanudar partida» / «Resume game» (antes Continuar partida / Resume); «Volver al menú»; «Reintentar recorrido»; verbos de dominio conservados.",
+"archivos": [
+"site/jetjump/src/text.js"
+]
+},
+{
+"juego": "jump",
+"id": "SRC-G04",
+"estado": "no_aplicable",
+"detalle": "jump: no hay acción de borrar progreso; las confirmaciones destructivas existentes (reiniciar, retirarse) ya son diálogos explícitos.",
+"archivos": []
+},
+{
+"juego": "jump",
+"id": "SRC-G05",
+"estado": "implementado",
+"detalle": "jump: ver SRC-JU02; además #m-how y #m-credits llevan texto estático de respaldo para no mostrar botones vacíos si el módulo no pinta.",
+"archivos": [
+"site/jetjump/index.html",
+"site/jetjump/src/main.js"
+]
+},
+{
+"juego": "jump",
+"id": "SRC-G06",
+"estado": "ya_corregido_verificado",
+"detalle": "jump: la única compartición es la foto del rancho con navigator.share por acción del usuario, con descarga como alternativa y sin éxito anticipado (AbortError s",
+"archivos": []
+},
+{
+"juego": "match",
+"id": "RSP-MATCH-01",
+"estado": "implementado",
+"detalle": "show(id) pone #app.inert=true mientras haya una pantalla y hideAll() lo revierte; resume() y beginPlay() enfocan el tablero (#stage con tabindex=0, role=applica",
+"archivos": [
+"site/match/index.html"
+]
+},
+{
+"juego": "match",
+"id": "SRC-M01",
+"estado": "implementado",
+"detalle": "#b-quit por modo: campaña «Volver al mapa» (openMap), Contrarreloj «Salir al menú» (menú), Zen «Finalizar partida» (muestra el resumen o-tend, sin derrota). Cam",
+"archivos": [
+"site/match/index.html"
+]
+},
+{
+"juego": "match",
+"id": "PLAY-MATCH-01",
+"estado": "implementado",
+"detalle": "Texto de ayuda reescrito: «¿Te trabaste? Tocá «Pista» para ver un intercambio posible. Al completar el objetivo, las jugadas restantes se convierten en rayos (h",
+"archivos": [
+"site/match/index.html"
+]
+},
+{
+"juego": "match",
+"id": "PLAY-MATCH-02",
+"estado": "implementado",
+"detalle": "«Contrarreloj» en menú, HUD (Modo: Contrarreloj), pausa y resultado («contrarreloj»/«Time Trial»). HUD: etiqueta «Tiempo restante» con valor «{s} s» real que ba",
+"archivos": [
+"site/match/index.html"
+]
+},
+{
+"juego": "match",
+"id": "PLAY-MATCH-03",
+"estado": "implementado",
+"detalle": "Salir desde la pausa en campaña y Contrarreloj abre #o-confirm («¿Salir de esta partida?» / «Vas a perder el avance de esta partida.» / «Seguir jugando» enfocad",
+"archivos": [
+"site/match/index.html"
+]
+},
+{
+"juego": "match",
+"id": "PLAY-MATCH-04",
+"estado": "implementado",
+"detalle": "Victoria: rótulo «Puntos» sobre el total, «Bonificación por jugadas restantes: +{n}» (diferencia real desde G.scoreAtGoal), «{n} de 3 estrellas» con las estrell",
+"archivos": [
+"site/match/index.html"
+]
+},
+{
+"juego": "match",
+"id": "PLAY-MATCH-05",
+"estado": "implementado",
+"detalle": "Live region #a11y anuncia la celda del cursor («Fila {f}, columna {c}: {gema}» con nombre de gema, especial, núcleo, asteroide y cristal), «Gema seleccionada», ",
+"archivos": [
+"site/match/index.html"
+]
+},
+{
+"juego": "match",
+"id": "RSP-GLOBAL-01",
+"estado": "implementado",
+"detalle": "meta viewport sin maximum-scale/user-scalable; .ov con touch-action:pan-y pinch-zoom; html,body ya usaban manipulation y #stage none.",
+"archivos": [
+"site/match/index.html"
+]
+},
+{
+"juego": "match",
+"id": "RSP-LANGUAGE-TARGETS-01",
+"estado": "implementado",
+"detalle": ".seg con gap 8 px; .seg button min-width/min-height 44 px, height:auto, flex:none; sin pseudoelementos. El grupo mantiene su lugar (menú arriba a la derecha y f",
+"archivos": [
+"site/match/index.html"
+]
+},
+{
+"juego": "match",
+"id": "RSP-MATCH-02",
+"estado": "implementado",
+"detalle": ".sw de 52×44 con fondo transparente, pista 52×30 en ::before (inset 7px 0) e indicador de 24 px en ::after (top 10 px); aria-pressed conservado. Sliders de 44 p",
+"archivos": [
+"site/match/index.html"
+]
+},
+{
+"juego": "match",
+"id": "SRC-M02",
+"estado": "implementado",
+"detalle": "Pausa: «Reanudar partida», «Reiniciar nivel» (campaña) / «Reiniciar partida» (Contrarreloj y Zen). Resultados: «Repetir nivel» tras ganar, «Reintentar nivel» tr",
+"archivos": [
+"site/match/index.html"
+]
+},
+{
+"juego": "match",
+"id": "VIS-MATCH-01",
+"estado": "implementado",
+"detalle": "paintGem: halo R·0,11 (antes 0,2), brillo especular 0,28 (antes 0,42), borde rgba(255,255,255,.5) max(1, R·.028) conservado, radio R·0,37 conservado, luz arriba",
+"archivos": [
+"site/match/index.html"
+]
+},
+{
+"juego": "match",
+"id": "VIS-MATCH-02",
+"estado": "implementado",
+"detalle": "Símbolos de rayo y bomba con contorno oscuro #130D21 al 90 % (1,5 px) bajo el blanco y glow máximo R·0,08; cristal doble con una segunda línea interior #E6FCFF ",
+"archivos": [
+"site/match/index.html"
+]
+},
+{
+"juego": "match",
+"id": "VIS-MATCH-03",
+"estado": "implementado",
+"detalle": "buildBoardLayer: se retiró la sombra por casilla y se dibuja un único halo del perímetro (ruta compuesta de todas las celdas no hueco) con blur 0,14·CS y alpha ",
+"archivos": [
+"site/match/index.html"
+]
+},
+{
+"juego": "match",
+"id": "VIS-MATCH-04",
+"estado": "implementado",
+"detalle": "Con movimiento reducido: nova sin giro, bomba y núcleo sin pulsación, selección/pista/flecha con alpha constante 0,9, sin rebote de caída ni de nacimiento; esta",
+"archivos": [
+"site/match/index.html"
+]
+},
+{
+"juego": "match",
+"id": "VIS-MATCH-05",
+"estado": "implementado",
+"detalle": "Apaisado: #app.land pasa a grid con columna instrumental clamp(196px,24vw,270px) (270 px a 1180×757), 24 px de separación con el tablero y Pista 16 px debajo de",
+"archivos": [
+"site/match/index.html"
+]
+},
+{
+"juego": "match",
+"id": "SRC-G01",
+"estado": "no_aplicable",
+"detalle": "Match: el ID afecta a las tarjetas de la home (site/index.html), fuera de esta asignación. El enlace de regreso del juego ya abre en la misma pestaña (target=_t",
+"archivos": []
+},
+{
+"juego": "match",
+"id": "SRC-G02",
+"estado": "ya_corregido_verificado",
+"detalle": "Match: el juego ya consume JETIdioma (?lang > cookie jet_lang > localStorage > navegador) y el selector ES/EN existente sincroniza aria-pressed. No se creó un s",
+"archivos": []
+},
+{
+"juego": "match",
+"id": "SRC-G03",
+"estado": "implementado",
+"detalle": "Match: «Reanudar partida», «Reiniciar nivel»/«Reiniciar partida», «Repetir nivel», «Reintentar nivel», «Volver al mapa», «Salir al menú», «Finalizar partida», «",
+"archivos": [
+"site/match/index.html"
+]
+},
+{
+"juego": "match",
+"id": "SRC-G04",
+"estado": "implementado",
+"detalle": "Match: Borrar progreso abre #o-confirm («¿Borrar todo el progreso de JET//Match?» / «Se borrarán tus niveles superados, estrellas, récords de campaña, Contrarre",
+"archivos": [
+"site/match/index.html"
+]
+},
+{
+"juego": "match",
+"id": "SRC-G05",
+"estado": "no_aplicable",
+"detalle": "Match: juego de un solo HTML con scripts inline, sin módulos externos ni estados de carga; el título y los textos se pintan antes del JS del juego. No se añadió",
+"archivos": []
+},
+{
+"juego": "match",
+"id": "SRC-G06",
+"estado": "no_aplicable",
+"detalle": "Match: el juego no tiene acción de compartir resultado; no se añadió red ni publicación.",
+"archivos": []
+},
+{
+"juego": "portada",
+"id": "RSP-MODALS-01",
+"estado": "implementado",
+"detalle": "show()/push()/back()/hideAll() guardan el activador en S.focusStack y lo restauran al cerrar (restaurarFoco; si desapareció, primer control lógico); fondoInerte",
+"archivos": [
+"site/portada/src/ui.js",
+"site/portada/index.html",
+"site/portada/src/style.css"
+]
+},
+{
+"juego": "portada",
+"id": "PLAY-PORTADA-01",
+"estado": "implementado",
+"detalle": "Titulares con hyphenate-limit-chars 10 5 4 (no se parten palabras cortas) además de overflow-wrap normal; tamaños por tipo de pieza (fitEl con mínimos de 10 px ",
+"archivos": [
+"site/portada/src/style.css",
+"site/portada/src/ui.js",
+"site/portada/src/art.js",
+"site/portada/src/i18n.js"
+]
+},
+{
+"juego": "portada",
+"id": "PLAY-PORTADA-02",
+"estado": "implementado",
+"detalle": "Guías de filas/columnas sólo con #board.editing (retícula tenue tras cerrar la edición); nombre accesible de cada pieza «{tipo}, {sección}. {ancho} por {alto} c",
+"archivos": [
+"site/portada/src/ui.js",
+"site/portada/src/style.css",
+"site/portada/src/i18n.js"
+]
+},
+{
+"juego": "portada",
+"id": "PLAY-PORTADA-03",
+"estado": "implementado",
+"detalle": "HUD con «Tirada estimada: {cantidad} mil ejemplares» (unidad visible .sc-u y en aria-label de #score), «Meta: {n} mil ejemplares» y «Referencia del jefe: {refer",
+"archivos": [
+"site/portada/index.html",
+"site/portada/src/ui.js",
+"site/portada/src/i18n.js",
+"site/portada/src/style.css"
+]
+},
+{
+"juego": "portada",
+"id": "PLAY-PORTADA-04",
+"estado": "implementado",
+"detalle": "tutCheck() se ejecuta al colocar, retirar, deshacer y rehacer y deriva los textos del estado actual: «La portada está completa. Imprimí para ver el resultado.»,",
+"archivos": [
+"site/portada/src/ui.js",
+"site/portada/src/i18n.js"
+]
+},
+{
+"juego": "portada",
+"id": "PLAY-PORTADA-05",
+"estado": "implementado",
+"detalle": "Resultado con «Edición publicada · {estrellas} de 3 estrellas» y «Te faltaron {diferencia} mil ejemplares para igualar la referencia.» sólo si total < referenci",
+"archivos": [
+"site/portada/src/ui.js",
+"site/portada/src/i18n.js",
+"site/portada/src/style.css"
+]
+},
+{
+"juego": "portada",
+"id": "PLAY-PORTADA-06",
+"estado": "implementado",
+"detalle": "Resultado: resumen, «Ver desglose» (piezas, efectos con vecinos, reglas, multiplicadores, huecos) siempre visible antes de las acciones; comparación bajo demand",
+"archivos": [
+"site/portada/src/ui.js",
+"site/portada/src/i18n.js",
+"site/portada/src/style.css"
+]
+},
+{
+"juego": "portada",
+"id": "PLAY-PORTADA-07",
+"estado": "implementado",
+"detalle": "Introducción con botón real «Continuar» (#bIntroGo, foco inicial, Enter/Espacio) distinto de «Reanudar partida» de la pausa; superposiciones con role=dialog, fo",
+"archivos": [
+"site/portada/src/ui.js",
+"site/portada/index.html",
+"site/portada/src/i18n.js",
+"site/portada/src/style.css"
+]
+},
+{
+"juego": "portada",
+"id": "RSP-GLOBAL-01",
+"estado": "implementado",
+"detalle": "viewport sin maximum-scale/user-scalable; sin bloqueos globales de gesturestart/dblclick; .scr, #tray y .hcar con touch-action que admite pinch-zoom; las piezas",
+"archivos": [
+"site/portada/index.html",
+"site/portada/src/style.css"
+]
+},
+{
+"juego": "portada",
+"id": "RSP-PORTADA-01",
+"estado": "implementado",
+"detalle": ".chip{min-height:44px;height:auto} sin pseudo-elemento invasor; layout reserva 44+8 px: vertical corto con fila dedicada bajo score (top=y1+48, py=y1+44+56), ho",
+"archivos": [
+"site/portada/src/style.css",
+"site/portada/src/ui.js",
+"site/portada/src/i18n.js"
+]
+},
+{
+"juego": "portada",
+"id": "RSP-PORTADA-02",
+"estado": "implementado",
+"detalle": "Tab durante la colocación por teclado llama kbCancel(true): limpia la previsualización (S.kb=null, clearPreview, renderAll) sin tocar posición ni historial, anu",
+"archivos": [
+"site/portada/src/ui.js",
+"site/portada/src/i18n.js"
+]
+},
+{
+"juego": "portada",
+"id": "SRC-PO01",
+"estado": "implementado",
+"detalle": "Con meta insuficiente, Imprimir abre un alertdialog «La portada no alcanza la meta» / «Si imprimís ahora, termina esta partida.» (+ aclaración de modo libre) co",
+"archivos": [
+"site/portada/src/ui.js",
+"site/portada/src/i18n.js"
+]
+},
+{
+"juego": "portada",
+"id": "SRC-PO02",
+"estado": "implementado",
+"detalle": "Mesa: «{n} piezas en la mesa»; huecos: «{n} celdas vacías · −{penalización}» con la penalización real (sc.holePen) en el mensaje y el desglose; «mil ejemplares»",
+"archivos": [
+"site/portada/src/ui.js",
+"site/portada/src/i18n.js"
+]
+},
+{
+"juego": "portada",
+"id": "VIS-PORTADA-01",
+"estado": "implementado",
+"detalle": "#paper::before con ruido alpha .035 y viñeta .06 en z-index 0, bajo #mast/#board (z-index 1) y las piezas; retícula dibujada por CSS desde --cell: puntos .2 + g",
+"archivos": [
+"site/portada/src/style.css",
+"site/portada/src/ui.js"
+]
+},
+{
+"juego": "portada",
+"id": "VIS-PORTADA-02",
+"estado": "implementado",
+"detalle": "fitEl marca .compact cuando el recorte mide <90×64 px CSS: sección con icono y código, titular en máximo 2 líneas desde 11 px, bajada oculta sólo en la miniatur",
+"archivos": [
+"site/portada/src/ui.js",
+"site/portada/src/style.css"
+]
+},
+{
+"juego": "portada",
+"id": "VIS-PORTADA-03",
+"estado": "implementado",
+"detalle": "halftone(cv,id,ink,paper,dpr): pasoCSS = clamp(min(w,h)/30, 1.5, 3) × DPR; versión de tres tonos planos cuando el lado corto < 48 px CSS; clave de caché con DPR",
+"archivos": [
+"site/portada/src/art.js",
+"site/portada/src/ui.js",
+"site/portada/src/style.css"
+]
+},
+{
+"juego": "portada",
+"id": "VIS-PORTADA-04",
+"estado": "implementado",
+"detalle": "Franja superior para sellos (.pc.has-st .in padding-top max(16px,1.5em)), sellos sin rotación y con elipsis; en compactos un sello resumido «Sellos: {n}» con de",
+"archivos": [
+"site/portada/src/style.css",
+"site/portada/src/ui.js"
+]
+},
+{
+"juego": "portada",
+"id": "SRC-G01",
+"estado": "no_aplicable",
+"detalle": "Las tarjetas de la home no pertenecen al juego; #back «Volver a los juegos» conserva idioma.",
+"archivos": []
+},
+{
+"juego": "portada",
+"id": "SRC-G02",
+"estado": "ya_corregido_verificado",
+"detalle": "Portada ya usa JETIdioma y su selector ES/EN (langSeg/langSegT) con aria-pressed; no se duplicó.",
+"archivos": []
+},
+{
+"juego": "portada",
+"id": "SRC-G03",
+"estado": "implementado",
+"detalle": "Pausa «Reanudar partida» / «Volver al menú»; intro «Continuar»; resultado «Siguiente edición» / «Repetir esta práctica» / «Rehacer esta edición» / «Volver al me",
+"archivos": [
+"site/portada/src/i18n.js",
+"site/portada/index.html",
+"site/portada/src/ui.js"
+]
+},
+{
+"juego": "portada",
+"id": "SRC-G04",
+"estado": "implementado",
+"detalle": "Borrar progreso vía confirmar(): alertdialog «¿Borrar todo el progreso de JET//Portada?» / «Se borrarán el progreso de la campaña (rango, rachas, récords y regl",
+"archivos": [
+"site/portada/src/ui.js",
+"site/portada/src/i18n.js"
+]
+},
+{
+"juego": "portada",
+"id": "SRC-G05",
+"estado": "implementado",
+"detalle": "Bootstrap JETCarga: título JET//Portada y «Cargando Portada…» antes del JS; error de script → «No pudimos descargar todos los recursos.», otro error/timeout 15 ",
+"archivos": [
+"site/portada/index.html",
+"site/portada/src/style.css",
+"site/portada/src/ui.js"
+]
+},
+{
+"juego": "portada",
+"id": "SRC-G06",
+"estado": "implementado",
+"detalle": "share(): navigator.share (AbortError silencioso) → clipboard → modal con textarea readonly, «Copiar texto» y «Cerrar»; «Texto copiado» sólo tras éxito; «No pudi",
+"archivos": [
+"site/portada/src/ui.js",
+"site/portada/src/i18n.js"
+]
+},
+{
+"juego": "raid",
+"id": "RSP-RAID-01",
+"estado": "implementado",
+"detalle": "raid: Ji() (lanzar misión) comprueba (orientation: portrait) y (pointer: coarse) antes de arrancar: no inicia física ni temporizador y abre el diálogo #rotate (",
+"archivos": [
+"site/raid/raid.js",
+"site/raid/index.html",
+"site/raid/style.css"
+]
+},
+{
+"juego": "raid",
+"id": "RSP-RAID-02",
+"estado": "implementado",
+"detalle": "raid: en el keydown de la clase de entrada se quitó «Tab» del conjunto con preventDefault; si el evento viene de button/a/input/select/textarea/[role=button], E",
+"archivos": [
+"site/raid/raid.js"
+]
+},
+{
+"juego": "raid",
+"id": "PLAY-RAID-01",
+"estado": "implementado",
+"detalle": "raid: el estado fatal (#fatal) ahora lleva la identidad JET//Raid (logo), título dinámico, mensaje principal y explicación por causa (gl: «No pudimos iniciar lo",
+"archivos": [
+"site/raid/index.html",
+"site/raid/raid.js",
+"site/raid/style.css"
+]
+},
+{
+"juego": "raid",
+"id": "PLAY-RAID-02",
+"estado": "implementado",
+"detalle": "raid: al entrar en fatal, ip() oculta y vuelve inert la pantalla de carga (#s-loading hidden+inert) y el canvas #gl (inert + aria-hidden), fija data-screen=fata",
+"archivos": [
+"site/raid/raid.js",
+"site/raid/index.html",
+"site/raid/style.css"
+]
+},
+{
+"juego": "raid",
+"id": "RSP-GLOBAL-01",
+"estado": "implementado",
+"detalle": "raid: meta viewport sin maximum-scale ni user-scalable (se conservan width=device-width, initial-scale=1, viewport-fit=cover). touch-action:none ya estaba limit",
+"archivos": [
+"site/raid/index.html"
+]
+},
+{
+"juego": "raid",
+"id": "RSP-RAID-03",
+"estado": "implementado",
+"detalle": "raid: regla final consolidada .h-btns .btn.icon.sm{width:44px;min-width:44px;min-height:44px;padding:0;flex:none} con gap 8 px; eliminadas las redefiniciones de",
+"archivos": [
+"site/raid/style.css"
+]
+},
+{
+"juego": "raid",
+"id": "SRC-RA01",
+"estado": "implementado",
+"detalle": "raid: en el briefing se añade #b-redeploy-note «Nuevo despliegue: cambia la distribución de esta misión.» (ES/EN) bajo la fila Despliegue/Nuevo despliegue, enla",
+"archivos": [
+"site/raid/index.html",
+"site/raid/raid.js",
+"site/raid/style.css"
+]
+},
+{
+"juego": "raid",
+"id": "SRC-RA02",
+"estado": "implementado",
+"detalle": "raid: «Jugar sin ellas» pasa a «Continuar sin texturas» (recurso opcional concreto; sólo visible en el fallo de texturas); el fallo WebGL tiene mensaje específi",
+"archivos": [
+"site/raid/raid.js",
+"site/raid/index.html"
+]
+},
+{
+"juego": "raid",
+"id": "VIS-RAID-01",
+"estado": "implementado",
+"detalle": "raid: preset «táctico limpio» en el post del bundle: grain .025→0, vignette .35→.18, aberration se mantiene 0; setGrade() limita la viñeta de cada preset de esc",
+"archivos": [
+"site/raid/raid.js"
+]
+},
+{
+"juego": "raid",
+"id": "VIS-RAID-02",
+"estado": "implementado",
+"detalle": "raid: material glass del hovercraft: roughness .04→.10, clearcoatRoughness .03→.08, envMapIntensity 1.8→1.3; color, transparencia, armour/accent, steel, rubber,",
+"archivos": [
+"site/raid/raid.js"
+]
+},
+{
+"juego": "raid",
+"id": "VIS-RAID-03",
+"estado": "implementado",
+"detalle": "raid: tokens --hud-surface rgba(7,19,29,.88) y --hud-line rgba(190,220,240,.24) aplicados a .h-objective, .h-top y .h-item (radio 12 px, sombra 0 4px 16px rgba(",
+"archivos": [
+"site/raid/style.css"
+]
+},
+{
+"juego": "raid",
+"id": "VIS-RAID-04",
+"estado": "implementado",
+"detalle": "raid: .marker i conserva rombo 18 px/borde 2 px y anclaje; sombra 0 0 6px color-mix(var(--c) 40%); rótulo .marker b en Inter 600 13 px, tracking .02em, sombra 0",
+"archivos": [
+"site/raid/style.css"
+]
+},
+{
+"juego": "raid",
+"id": "VIS-RAID-05",
+"estado": "implementado",
+"detalle": "raid: .timer.danger en rojo sólido, opacity 1, sin parpadeo, con borde inferior de estado; .h-alert con fondo fijo rgba(120,10,14,.88) y sin loop alarm; cuenta ",
+"archivos": [
+"site/raid/style.css"
+]
+},
+{
+"juego": "raid",
+"id": "SRC-G01",
+"estado": "no_aplicable",
+"detalle": "raid: las tarjetas viven en la home (ver matriz home.json). Raid ya enlaza al catálogo canónico https://jetgames.fun/ desde el título y ahora también desde el e",
+"archivos": []
+},
+{
+"juego": "raid",
+"id": "SRC-G02",
+"estado": "ya_corregido_verificado",
+"detalle": "raid: usa jet-idioma.js compartido (?lang > cookie .jetgames.fun/localStorage > navegador), selector ES/EN con role=radiogroup en título y ajustes; no se creó o",
+"archivos": []
+},
+{
+"juego": "raid",
+"id": "SRC-G03",
+"estado": "implementado",
+"detalle": "raid: la pausa ya usaba «Reanudar partida»; el diálogo de confirmación (¿Salir de la misión? / ¿Reiniciar el intento?) usaba «Reanudar» y pasa a «Reanudar parti",
+"archivos": [
+"site/raid/index.html",
+"site/raid/raid.js"
+]
+},
+{
+"juego": "raid",
+"id": "SRC-G04",
+"estado": "no_aplicable",
+"detalle": "raid: no existe acción de borrado de progreso ni confirmación por doble toque (grep «Borrar» en el bundle: 0).",
+"archivos": []
+},
+{
+"juego": "raid",
+"id": "SRC-G05",
+"estado": "implementado",
+"detalle": "raid: título visible antes del JS (pantalla de carga estática), estados carga/error excluyentes (al fallar se oculta y vuelve inert la carga), error recuperable",
+"archivos": [
+"site/raid/index.html",
+"site/raid/raid.js",
+"site/raid/style.css"
+]
+},
+{
+"juego": "raid",
+"id": "SRC-G06",
+"estado": "no_aplicable",
+"detalle": "raid: no tiene acción Compartir (navigator.share: 0 ocurrencias).",
+"archivos": []
+},
+{
+"juego": "rocket",
+"id": "RSP-ROCKET-01",
+"estado": "implementado",
+"detalle": "rocket: en la media query horizontal (≤600 px de alto) #btn-pause pasa a position:relative; top:auto; right:auto; width:100%; height:44px; min-height:44px, y #b",
+"archivos": [
+"site/rocket/index.html"
+]
+},
+{
+"juego": "rocket",
+"id": "PLAY-ROCKET-01",
+"estado": "implementado",
+"detalle": "rocket: nuevo párrafo #mode-desc (aria-live) encima de «Jugar arcade» que renderMenu() rellena con la regla real del modo: desc.classic / desc.timer / desc.surv",
+"archivos": [
+"site/rocket/index.html"
+]
+},
+{
+"juego": "rocket",
+"id": "PLAY-ROCKET-02",
+"estado": "pendiente_decision",
+"detalle": "rocket: el manual se separó en «Controles» (pilotaje, pausa, muros/bordes) y un desplegable «Reglas avanzadas» (cristales, combo, mejoras, portales, asteroides)",
+"archivos": [
+"site/rocket/index.html"
+]
+},
+{
+"juego": "rocket",
+"id": "PLAY-ROCKET-03",
+"estado": "implementado",
+"detalle": "rocket: rótulo «Puntos» (.ov-score-lbl, data-i18n pointsCaps) sobre la cifra grande en derrota y victoria, y aria-label «Puntos: {n}» en #lose-score/#win-score ",
+"archivos": [
+"site/rocket/index.html"
+]
+},
+{
+"juego": "rocket",
+"id": "PLAY-ROCKET-04",
+"estado": "implementado",
+"detalle": "rocket: nuevo STATE.played (segundos jugados; sólo avanza en simulate(), no en pausa/espera/cuenta atrás). HUD con reloj: valor m:ss (fmtClock) bajo la etiqueta",
+"archivos": [
+"site/rocket/index.html"
+]
+},
+{
+"juego": "rocket",
+"id": "PLAY-ROCKET-05",
+"estado": "implementado",
+"detalle": "rocket: tarjetas bloqueadas con aria-disabled=\"true\" (focalizables, sin iniciar), opacidad .8, borde discontinuo y texto legible; muestran «Completá el sector {",
+"archivos": [
+"site/rocket/index.html"
+]
+},
+{
+"juego": "rocket",
+"id": "PLAY-ROCKET-06",
+"estado": "implementado",
+"detalle": "rocket: etiquetas por destino: «Volver al menú» (sectores→menú, pausa, derrota, fin de campaña), «Volver a sectores» (briefing), «Elegir otro sector» (derrota/v",
+"archivos": [
+"site/rocket/index.html"
+]
+},
+{
+"juego": "rocket",
+"id": "RSP-GLOBAL-01",
+"estado": "implementado",
+"detalle": "rocket: meta viewport sin maximum-scale ni user-scalable. touch-action:none pasa de body a body.playing (sólo durante la partida; el deslizamiento en cualquier ",
+"archivos": [
+"site/rocket/index.html"
+]
+},
+{
+"juego": "rocket",
+"id": "RSP-ROCKET-02",
+"estado": "implementado",
+"detalle": "rocket: pausa, ajustes, ayuda y confirmación llevan role=dialog, aria-modal, aria-labelledby (títulos con tabindex=-1). showOv() guarda el disparador, pone #top",
+"archivos": [
+"site/rocket/index.html"
+]
+},
+{
+"juego": "rocket",
+"id": "RSP-ROCKET-03",
+"estado": "implementado",
+"detalle": "rocket: .mode-choose con role=group y aria-label «Modo arcade» (data-i18n-aria); cada .mode-btn type=button con aria-pressed sincronizado desde arcadeMode en re",
+"archivos": [
+"site/rocket/index.html"
+]
+},
+{
+"juego": "rocket",
+"id": "SRC-R01",
+"estado": "implementado",
+"detalle": "rocket: campStart→«Jugar campaña» (se conserva «Continuar campaña» cuando ya hay progreso guardado), Contrarreloj, Supervivencia, resume→«Reanudar partida», res",
+"archivos": [
+"site/rocket/index.html"
+]
+},
+{
+"juego": "rocket",
+"id": "SRC-R02",
+"estado": "implementado",
+"detalle": "rocket: eliminado resetState (armado indefinido). #btn-reset abre #ov-confirm con «¿Borrar todo el progreso de JET//Rocket?», «Se borrarán la campaña (sectores ",
+"archivos": [
+"site/rocket/index.html"
+]
+},
+{
+"juego": "rocket",
+"id": "VIS-ROCKET-01",
+"estado": "implementado",
+"detalle": "rocket: buildBg(): cuadrícula rgba(95,130,147,0.12) 1 px; estrellas con alfa 0,06–0,20 y nunca dentro de una celda de muro (isWall); muros con borde ≥1,5 px y h",
+"archivos": [
+"site/rocket/index.html"
+]
+},
+{
+"juego": "rocket",
+"id": "VIS-ROCKET-02",
+"estado": "implementado",
+"detalle": "rocket: drawSnake(): halo exterior bodyW+0,35·celda con alfa 0,07 (0,10 con escudo); halo secundario y bodyW=0,78·celda sin cambios; el escudo se marca con un a",
+"archivos": [
+"site/rocket/index.html"
+]
+},
+{
+"juego": "rocket",
+"id": "VIS-ROCKET-03",
+"estado": "implementado",
+"detalle": "rocket: placas unificadas (PLATE_FILL rgba(5,1,8,.9), PLATE_BORDER #5F8293 a .5, radio 10, tipografía 12 px/700) para la placa de espera y drawBanner(); banners",
+"archivos": [
+"site/rocket/index.html"
+]
+},
+{
+"juego": "rocket",
+"id": "VIS-ROCKET-04",
+"estado": "implementado",
+"detalle": "rocket: reloj de animación animNow() que sólo avanza con scene≠pause y motionOK(); lo leen pulsos de cristales, portales, placa de espera y escudo; la llama de ",
+"archivos": [
+"site/rocket/index.html"
+]
+},
+{
+"juego": "rocket",
+"id": "SRC-G01",
+"estado": "no_aplicable",
+"detalle": "rocket: la unificación de tarjetas corresponde a la home (fuera del alcance). El enlace de regreso #back-portfolio ya abre en la misma pestaña (target=_top) y e",
+"archivos": [
+"site/rocket/index.html"
+]
+},
+{
+"juego": "rocket",
+"id": "SRC-G02",
+"estado": "ya_corregido_verificado",
+"detalle": "rocket: selector ES/EN (.lang-seg, aria-pressed) en menú y ajustes consumiendo JETIdioma (?lang > cookie .jetgames.fun/localStorage > navegador). Sin cambios.",
+"archivos": [
+"site/rocket/index.html",
+"site/rocket/jet-idioma.js"
+]
+},
+{
+"juego": "rocket",
+"id": "SRC-G03",
+"estado": "implementado",
+"detalle": "rocket: pausa = «Reanudar partida»; «Volver al menú»; «Reiniciar recorrido»; «Repetir sector»; «Reintentar sector/recorrido»; destinos específicos («Volver a se",
+"archivos": [
+"site/rocket/index.html"
+]
+},
+{
+"juego": "rocket",
+"id": "SRC-G04",
+"estado": "implementado",
+"detalle": "rocket: ver SRC-R02 (diálogo explícito, Cancelar enfocado, botón peligro separado, datos enumerados, idioma/audio intactos).",
+"archivos": [
+"site/rocket/index.html"
+]
+},
+{
+"juego": "rocket",
+"id": "SRC-G05",
+"estado": "no_aplicable",
+"detalle": "rocket: un solo HTML con script inline; el título y el menú existen en el HTML antes del JS; el único externo (jet-idioma.js) es síncrono y mínimo. No hay carga",
+"archivos": [
+"site/rocket/index.html"
+]
+},
+{
+"juego": "rocket",
+"id": "SRC-G06",
+"estado": "no_aplicable",
+"detalle": "rocket: no tiene función de compartir.",
+"archivos": [
+"site/rocket/index.html"
+]
+},
+{
+"juego": "salchidrez",
+"id": "RSP-SALCHIDREZ-01",
+"estado": "implementado",
+"detalle": "Pila ovStack: sólo el overlay superior no es inerte; los visibles debajo, #bar, #lesson-panel, #a11y-board, #final-view y el canvas quedan inertes mientras haya",
+"archivos": [
+"site/salchidrez/index.html"
+]
+},
+{
+"juego": "salchidrez",
+"id": "RSP-SALCHIDREZ-02",
+"estado": "implementado",
+"detalle": "#a11y-board role=grid «Tablero de ajedrez» (8 filas × 8 gridcell, orden visual incluso girado, nombres de casilla fijos), una sola celda tabulable (kb.sq), etiq",
+"archivos": [
+"site/salchidrez/index.html"
+]
+},
+{
+"juego": "salchidrez",
+"id": "PLAY-SALCHI-01",
+"estado": "implementado",
+"detalle": "playerStatus: tarjeta de la máquina muestra «La máquina está pensando…» mientras es su turno (también durante la animación del humano) y «La máquina está movien",
+"archivos": [
+"site/salchidrez/index.html"
+]
+},
+{
+"juego": "salchidrez",
+"id": "PLAY-SALCHI-02",
+"estado": "implementado",
+"detalle": "updateHUD: aria-label y title de Deshacer = «Deshacer tu jugada y la respuesta de la máquina» cuando contra la IA se revierten 2 medias jugadas; «Deshacer últim",
+"archivos": [
+"site/salchidrez/index.html"
+]
+},
+{
+"juego": "salchidrez",
+"id": "PLAY-SALCHI-03",
+"estado": "implementado",
+"detalle": "Botón «Ver tablero final» en el cartel (si la partida está en curso): cierra el cartel sin borrar `over`, muestra #final-view con «El rey de {equipo} está en ja",
+"archivos": [
+"site/salchidrez/index.html"
+]
+},
+{
+"juego": "salchidrez",
+"id": "PLAY-SALCHI-04",
+"estado": "implementado",
+"detalle": "Estadísticas finales: «Piezas capturadas por Crema/Chocolate» (SIDE_NAME real). El conteo de movidas se conserva (Math.ceil(turnos/2), número de jugada en notac",
+"archivos": [
+"site/salchidrez/index.html"
+]
+},
+{
+"juego": "salchidrez",
+"id": "PLAY-SALCHI-05",
+"estado": "implementado",
+"detalle": "Tablero accesible (ver RSP-02), región de turno «Turno de {equipo}», botones Música/Sonidos con aria-pressed y nombre «Música desactivada»/«Sonidos desactivados",
+"archivos": [
+"site/salchidrez/index.html"
+]
+},
+{
+"juego": "salchidrez",
+"id": "RSP-GLOBAL-01",
+"estado": "implementado",
+"detalle": "Salchidrez: meta viewport sin maximum-scale/user-scalable; touch-action:none sólo en el canvas (quitado de html,body); overlays con pan-y pinch-zoom; botones ma",
+"archivos": [
+"site/salchidrez/index.html"
+]
+},
+{
+"juego": "salchidrez",
+"id": "RSP-SALCHIDREZ-03",
+"estado": "implementado",
+"detalle": "Grupos rival/dificultad/color con role=group y aria-labelledby; setPressed sincroniza .on y aria-pressed en syncCards (inicio, restauración, leaveLesson) y en l",
+"archivos": [
+"site/salchidrez/index.html"
+]
+},
+{
+"juego": "salchidrez",
+"id": "RSP-SALCHIDREZ-04",
+"estado": "implementado",
+"detalle": ".overlay con padding lateral calc(16px + env(safe-area-inset-left/right)); .garrow 44×44 flex:0 0 44px también en horizontal (eliminada la regla de 40 px).",
+"archivos": [
+"site/salchidrez/index.html"
+]
+},
+{
+"juego": "salchidrez",
+"id": "SRC-CH02",
+"estado": "implementado",
+"detalle": "Con partida guardada, #btn-start pasa a «Nueva partida» y abre confirmación «¿Reemplazar la partida guardada?» / «La partida guardada se reemplazará por una nue",
+"archivos": [
+"site/salchidrez/index.html"
+]
+},
+{
+"juego": "salchidrez",
+"id": "VIS-SALCHIDREZ-01",
+"estado": "implementado",
+"detalle": "drawBoard: con fr ≥ 12 las coordenadas van al margen interior del marco a 2 px del área de juego (crema con contorno fino para leerse en los seis marcos); con m",
+"archivos": [
+"site/salchidrez/index.html"
+]
+},
+{
+"juego": "salchidrez",
+"id": "VIS-SALCHIDREZ-02",
+"estado": "implementado",
+"detalle": "Última jugada: relleno .16 + esquinas interiores de 2 px fijas; selección: relleno .22 + borde sólido 3 px; foco de teclado cian con halo fijo de 6 px; captura:",
+"archivos": [
+"site/salchidrez/index.html"
+]
+},
+{
+"juego": "salchidrez",
+"id": "VIS-SALCHIDREZ-03",
+"estado": "implementado",
+"detalle": "opts.simple cuando la casilla mide <40 px: omite pestañas, perlas, reflejo del ojo y ceja decorativa; se conservan cabeza, hocico, cuerpo, orejas y el accesorio",
+"archivos": [
+"site/salchidrez/index.html"
+]
+},
+{
+"juego": "salchidrez",
+"id": "VIS-SALCHIDREZ-04",
+"estado": "implementado",
+"detalle": "drawBackground: estrellas, nubes y nieve se dibujan con clip evenodd fuera del rectángulo acolchado + 8 px durante la partida; noche 24 estrellas y nieve 24 cop",
+"archivos": [
+"site/salchidrez/index.html"
+]
+},
+{
+"juego": "salchidrez",
+"id": "SRC-CH01",
+"estado": "implementado",
+"detalle": "Fin de lección: «Siguiente lección» (se conservan «Siguiente etapa»/«Ver etapas»), «Repetir lección» al ganar y «Reintentar lección» al no superar; fin de parti",
+"archivos": [
+"site/salchidrez/index.html"
+]
+},
+{
+"juego": "salchidrez",
+"id": "SRC-G01",
+"estado": "no_aplicable",
+"detalle": "Salchidrez: .jg-back ya navega en la misma pestaña; las tarjetas son de la home.",
+"archivos": []
+},
+{
+"juego": "salchidrez",
+"id": "SRC-G02",
+"estado": "ya_corregido_verificado",
+"detalle": "Salchidrez: selector ES/EN (menú y Ajustes) con aria-pressed vía JETIdioma; repintado en vivo.",
+"archivos": []
+},
+{
+"juego": "salchidrez",
+"id": "SRC-G03",
+"estado": "implementado",
+"detalle": "Salchidrez: «Continuar partida» (guardado), «Nueva partida» con confirmación, «Volver al menú», «Revancha», «Repetir/Reintentar lección»; «Menú» de la barra pau",
+"archivos": [
+"site/salchidrez/index.html"
+]
+},
+{
+"juego": "salchidrez",
+"id": "SRC-G04",
+"estado": "no_aplicable",
+"detalle": "Salchidrez no ofrece borrado de progreso; el único reemplazo destructivo (partida guardada) tiene confirmación explícita (SRC-CH02).",
+"archivos": []
+},
+{
+"juego": "salchidrez",
+"id": "SRC-G05",
+"estado": "no_aplicable",
+"detalle": "HTML único sin módulos externos (fuentes aparte); título y menú visibles sin esperar red; el worker de IA se crea desde un blob interno.",
+"archivos": []
+},
+{
+"juego": "salchidrez",
+"id": "SRC-G06",
+"estado": "no_aplicable",
+"detalle": "Salchidrez no tiene acción de compartir.",
+"archivos": []
+},
+{
+"juego": "senal",
+"id": "RSP-MODALS-01",
+"estado": "implementado",
+"detalle": "abrirModal() guarda el activador (modalActivador), vuelve inert las capas de fondo (capasFondo(): pantallas .scr y HUD), conecta aria-labelledby al título del m",
+"archivos": [
+"site/senal/src/app.js",
+"site/senal/src/style.css",
+"site/senal/index.html"
+]
+},
+{
+"juego": "senal",
+"id": "PLAY-SENAL-01",
+"estado": "implementado",
+"detalle": "Reorganización en tres zonas (evidencia / bandeja+acciones / paleta): altura de la sonda decorativa reducida (clamp(H*0.14,64,140) vertical, clamp(H*0.13,56,100",
+"archivos": [
+"site/senal/src/app.js",
+"site/senal/src/style.css",
+"site/senal/index.html",
+"site/senal/src/i18n.js"
+]
+},
+{
+"juego": "senal",
+"id": "PLAY-SENAL-02",
+"estado": "implementado",
+"detalle": "Fila de categorías con aria-label «Categorías de reglas», pestañas en varias filas (flex-wrap) y scrollIntoView({block:'nearest',inline:'nearest'}) al activar; ",
+"archivos": [
+"site/senal/src/app.js",
+"site/senal/src/style.css",
+"site/senal/src/i18n.js"
+]
+},
+{
+"juego": "senal",
+"id": "PLAY-SENAL-03",
+"estado": "implementado",
+"detalle": "HUD con rótulo «Pruebas enviadas: {n}» (sólo pruebas del jugador) y subtotal «Muestras analizadas: {n}» (incluye ejemplos iniciales); las muestras de regalo lle",
+"archivos": [
+"site/senal/src/app.js",
+"site/senal/index.html",
+"site/senal/src/i18n.js",
+"site/senal/src/style.css"
+]
+},
+{
+"juego": "senal",
+"id": "PLAY-SENAL-04",
+"estado": "implementado",
+"detalle": "Tres estados separados: selección = borde sólido + ✓ (.chip.on::after, .tab.on::before, aria-pressed); foco = anillo blanco (outline) independiente del color de",
+"archivos": [
+"site/senal/src/app.js",
+"site/senal/src/style.css",
+"site/senal/src/i18n.js"
+]
+},
+{
+"juego": "senal",
+"id": "PLAY-SENAL-05",
+"estado": "implementado",
+"detalle": "Ayuda compacta desplegable junto a la bandeja (#ayudaBand, botón #btnAtajos con aria-expanded/aria-controls) que explica armar, reemplazar («Tocá una casilla oc",
+"archivos": [
+"site/senal/index.html",
+"site/senal/src/app.js",
+"site/senal/src/i18n.js",
+"site/senal/src/style.css"
+]
+},
+{
+"juego": "senal",
+"id": "RSP-GLOBAL-01",
+"estado": "implementado",
+"detalle": "meta viewport sin maximum-scale ni user-scalable (conserva width=device-width, initial-scale=1, viewport-fit=cover). Sin bloqueo global de gesturestart/dblclick",
+"archivos": [
+"site/senal/index.html",
+"site/senal/src/style.css"
+]
+},
+{
+"juego": "senal",
+"id": "SRC-SE01",
+"estado": "implementado",
+"detalle": "Botones «Enviar muestra», «Formular regla» y «Comprobar regla» (EN Send sample / Formulate rule / Check rule). El pie del formulario muestra el costo real antes",
+"archivos": [
+"site/senal/src/i18n.js",
+"site/senal/src/app.js",
+"site/senal/index.html"
+]
+},
+{
+"juego": "senal",
+"id": "SRC-SE02",
+"estado": "implementado",
+"detalle": "Rendirse abre un alertdialog previo a revelar: «¿Ver la solución y terminar el intento?» / «Se revelará la regla y este intento quedará sin resolver.» + «En el ",
+"archivos": [
+"site/senal/src/i18n.js",
+"site/senal/src/app.js"
+]
+},
+{
+"juego": "senal",
+"id": "VIS-SENAL-01",
+"estado": "implementado",
+"detalle": "piezas.js añade la variante mini pzs{id} (svgMini): misma silueta y escala .58, sin brillo ovalado, un solo contorno y patrones proporcionales (pzRayasM/pzPunto",
+"archivos": [
+"site/senal/src/piezas.js",
+"site/senal/src/app.js",
+"site/senal/src/style.css"
+]
+},
+{
+"juego": "senal",
+"id": "VIS-SENAL-02",
+"estado": "implementado",
+"detalle": "Tarjetas del registro en rejilla de tres columnas estables (índice 11 px tabular, secuencia sobre línea base común, veredicto en caja de 20 px al extremo). Prue",
+"archivos": [
+"site/senal/src/app.js",
+"site/senal/src/style.css"
+]
+},
+{
+"juego": "senal",
+"id": "VIS-SENAL-03",
+"estado": "implementado",
+"detalle": "Ranura vacía dashed; seleccionada: doble contorno cian 2 px con pestaña inferior, sin halo; destino válido al arrastrar: esquinas cian 3 px y fondo .12 (.destin",
+"archivos": [
+"site/senal/src/style.css",
+"site/senal/src/app.js"
+]
+},
+{
+"juego": "senal",
+"id": "VIS-SENAL-04",
+"estado": "implementado",
+"detalle": "Tiempos unificados: colocación .encaja 160 ms escala 1.03; inserción .entra 220 ms (≤6 px); confirmación/error 450 ms por cambio de borde (.parpadea una sola ve",
+"archivos": [
+"site/senal/src/style.css"
+]
+},
+{
+"juego": "senal",
+"id": "SRC-G01",
+"estado": "no_aplicable",
+"detalle": "Las tarjetas .card[href] viven en la home; el juego ya ofrece #back «Volver a los juegos» hacia la ruta canónica conservando idioma.",
+"archivos": []
+},
+{
+"juego": "senal",
+"id": "SRC-G02",
+"estado": "ya_corregido_verificado",
+"detalle": "Señal ya consume JETIdioma (?lang= > cookie > localStorage > navigator) y tiene selector ES/EN con aria-pressed; no se duplicó.",
+"archivos": []
+},
+{
+"juego": "senal",
+"id": "SRC-G03",
+"estado": "implementado",
+"detalle": "Pausa: «Reanudar partida» / «Volver al menú»; inicio con guardado: «Continuar partida»; carga: «Volver a los juegos»; resultado: «Nueva práctica» / «Compartir r",
+"archivos": [
+"site/senal/src/i18n.js",
+"site/senal/src/app.js"
+]
+},
+{
+"juego": "senal",
+"id": "SRC-G04",
+"estado": "implementado",
+"detalle": "Borrar progreso abre alertdialog «¿Borrar todo el progreso de JET//Señal?» / «Se borrarán {datos concretos}. Esta acción no se puede deshacer.» con «Cancelar» (",
+"archivos": [
+"site/senal/src/app.js",
+"site/senal/src/i18n.js"
+]
+},
+{
+"juego": "senal",
+"id": "SRC-G05",
+"estado": "implementado",
+"detalle": "Bootstrap inline en <head> (window.JETCarga) con título visible antes del JS, estado «Cargando Señal…», error de script → «No pudimos descargar todos los recurs",
+"archivos": [
+"site/senal/index.html",
+"site/senal/src/style.css",
+"site/senal/src/app.js"
+]
+},
+{
+"juego": "senal",
+"id": "SRC-G06",
+"estado": "implementado",
+"detalle": "compartir(): navigator.share (AbortError silencioso) → clipboard → modal con textarea readonly seleccionable, «Copiar texto» y «Cerrar»; toast «Texto copiado» s",
+"archivos": [
+"site/senal/src/app.js",
+"site/senal/src/i18n.js"
+]
+},
+{
+"juego": "slalom",
+"id": "RSP-SLALOM-04",
+"estado": "implementado",
+"detalle": "slalom: en el keydown global, Escape/P pausan como acción explícita antes que nada; si el objetivo está en un control nativo/semántico (button,a,input,select,te",
+"archivos": [
+"site/slalom/index.html"
+]
+},
+{
+"juego": "slalom",
+"id": "PLAY-SLALOM-01",
+"estado": "implementado",
+"detalle": "slalom: con perfil nuevo, «Jugar» abre el briefing de «Slalom · Pista 1» (crumb {disciplina} · Pista {n}) en lugar de lanzar la pista: muestra objetivo (goal-li",
+"archivos": [
+"site/slalom/index.html"
+]
+},
+{
+"juego": "slalom",
+"id": "PLAY-SLALOM-02",
+"estado": "implementado",
+"detalle": "slalom: «Cómo jugar» reordenado: título «Controles» con secciones «Táctil» y «Teclado» (antes «Teclado y mouse»), sección «Reglas de esta modalidad» (regla de l",
+"archivos": [
+"site/slalom/index.html"
+]
+},
+{
+"juego": "slalom",
+"id": "PLAY-SLALOM-03",
+"estado": "implementado",
+"detalle": "slalom: HUD con nombres completos «Distancia», «Puntos», «Penalización» (hud_pen), «Monedas»; en ≤430 px las etiquetas quedan sólo visualmente ocultas (sr-only)",
+"archivos": [
+"site/slalom/index.html"
+]
+},
+{
+"juego": "slalom",
+"id": "PLAY-SLALOM-04",
+"estado": "implementado",
+"detalle": "slalom: resultado con encabezado compacto (causa, estrellas, puntos), acciones y objetivos visibles, y estadísticas secundarias en <details> «Ver estadísticas» ",
+"archivos": [
+"site/slalom/index.html"
+]
+},
+{
+"juego": "slalom",
+"id": "PLAY-SLALOM-05",
+"estado": "implementado",
+"detalle": "slalom: tarjetas bloqueadas focalizables (tabIndex 0) con aria-disabled=true, rótulo «Pista bloqueada», condición «Completá la pista anterior para desbloquearla",
+"archivos": [
+"site/slalom/index.html"
+]
+},
+{
+"juego": "slalom",
+"id": "RSP-GLOBAL-01",
+"estado": "implementado",
+"detalle": "slalom: meta viewport sin maximum-scale/user-scalable; touch-action:none retirado de html/body (queda en #game); .overlay con pan-y pinch-zoom; botones/tarjetas",
+"archivos": [
+"site/slalom/index.html"
+]
+},
+{
+"juego": "slalom",
+"id": "RSP-SLALOM-01",
+"estado": "implementado",
+"detalle": "slalom: en ≤430 px .hud-top es grid 44px minmax(0,1fr) auto (gap 6); la pastilla de métricas (no la de vidas) es grid de 2 columnas con gap 2px 8px, padding 4px",
+"archivos": [
+"site/slalom/index.html"
+]
+},
+{
+"juego": "slalom",
+"id": "RSP-SLALOM-02",
+"estado": "implementado",
+"detalle": "slalom: la tienda usa <button type=button class=card data-skin-id>; aria-pressed en las poseídas según equipado; buildShop() recuerda el data-skin-id enfocado y",
+"archivos": [
+"site/slalom/index.html"
+]
+},
+{
+"juego": "slalom",
+"id": "RSP-SLALOM-03",
+"estado": "implementado",
+"detalle": "slalom: resizeCanvas() mide #app.getBoundingClientRect() (única fuente), multiplica sólo el backing store por DPR, guarda canvasRect y los punteros restan ese r",
+"archivos": [
+"site/slalom/index.html"
+]
+},
+{
+"juego": "slalom",
+"id": "SRC-S02",
+"estado": "implementado",
+"detalle": "slalom: #btn-quit con etiqueta dinámica por destino real (exitLabel): «Volver a las pistas» (pistas), «Volver a modos» (infinito/diario), «Volver al menú» (comb",
+"archivos": [
+"site/slalom/index.html"
+]
+},
+{
+"juego": "slalom",
+"id": "VIS-SLALOM-01",
+"estado": "implementado",
+"detalle": "slalom: bandas de relieve 0,18→0,10; elipses ambientales 0,08→0,06; sombra de pinos rgba(82,97,123,0.20) en la misma dirección; huellas del esquiador (2 px, 0,4",
+"archivos": [
+"site/slalom/index.html"
+]
+},
+{
+"juego": "slalom",
+"id": "VIS-SLALOM-02",
+"estado": "implementado",
+"detalle": "slalom: halo aditivo de banderas 14·s→5·s (asta #1a1530 y orientación roja/azul intactas); halo del jugador 36·s/0,40→26·s/0,20 en estado normal; el halo rojo d",
+"archivos": [
+"site/slalom/index.html"
+]
+},
+{
+"juego": "slalom",
+"id": "VIS-SLALOM-03",
+"estado": "implementado",
+"detalle": "slalom: Yeti sin resplandor blanco (shadowBlur 0), contorno rgba(102,117,142,0.8) de 1,25·s en cuerpo y brazos, luz de borde #DCE8F8 (1·s) recortada dentro de l",
+"archivos": [
+"site/slalom/index.html"
+]
+},
+{
+"juego": "slalom",
+"id": "VIS-SLALOM-04",
+"estado": "implementado",
+"detalle": "slalom: --hud-bg rgba(17,18,33,.94) y --hud-border #66758E a .5; sombra 0 3px 10px rgba(0,0,0,.2) en pastillas, botón e incluso toasts (sin halos de 22 px); val",
+"archivos": [
+"site/slalom/index.html"
+]
+},
+{
+"juego": "slalom",
+"id": "SRC-S01",
+"estado": "ya_corregido_verificado",
+"detalle": "slalom: #btn-brief-go dice «Empezar» (data-i18n start) y su handler fija structure=levels y llama startGame(); ninguna acción «Salir» inicia el juego. Sin cambi",
+"archivos": [
+"site/slalom/index.html"
+]
+},
+{
+"juego": "slalom",
+"id": "SRC-G01",
+"estado": "implementado",
+"detalle": "slalom: el enlace del pie «jetgames.fun» abría en pestaña nueva (target=_blank); pasa a target=_top como el enlace de regreso. Las tarjetas de la home están fue",
+"archivos": [
+"site/slalom/index.html"
+]
+},
+{
+"juego": "slalom",
+"id": "SRC-G02",
+"estado": "ya_corregido_verificado",
+"detalle": "slalom: selector ES/EN (.lang-sw, aria-pressed) en portada y ajustes sobre JETIdioma embebido (?lang > cookie/localStorage > navegador). Sin cambios.",
+"archivos": [
+"site/slalom/index.html"
+]
+},
+{
+"juego": "slalom",
+"id": "SRC-G03",
+"estado": "implementado",
+"detalle": "slalom: «Reanudar partida», «Reiniciar bajada», salidas con destino explícito (pistas/modos/menú), «Reintentar pista», «Repetir pista», «Elegir pista». «Jugar d",
+"archivos": [
+"site/slalom/index.html"
+]
+},
+{
+"juego": "slalom",
+"id": "SRC-G04",
+"estado": "implementado",
+"detalle": "slalom: eliminado el doble toque de 3,5 s. «Borrar progreso» abre #ov-confirm (role=dialog) con «¿Borrar todo el progreso de JET//Slalom?» y «Se borrarán las mo",
+"archivos": [
+"site/slalom/index.html"
+]
+},
+{
+"juego": "slalom",
+"id": "SRC-G05",
+"estado": "no_aplicable",
+"detalle": "slalom: HTML único con scripts inline; portada presente antes del JS. Sin módulos externos ni WebGL.",
+"archivos": [
+"site/slalom/index.html"
+]
+},
+{
+"juego": "slalom",
+"id": "SRC-G06",
+"estado": "no_aplicable",
+"detalle": "slalom: no tiene función de compartir.",
+"archivos": [
+"site/slalom/index.html"
+]
+},
+{
+"juego": "telemetria",
+"id": "RSP-MODALS-01",
+"estado": "implementado",
+"detalle": "Sistema de overlays con pila (ovPila): abrirOv(id, activador) guarda el activador, vuelve inert #hdr, las pantallas .scr y #sheet (fondoInerte), nombra el diálo",
+"archivos": [
+"site/telemetria/src/ui.js",
+"site/telemetria/index.html",
+"site/telemetria/src/estilos.css",
+"site/telemetria/src/textos.js"
+]
+},
+{
+"juego": "telemetria",
+"id": "PLAY-TELEMETRIA-01",
+"estado": "implementado",
+"detalle": "Cabecera «Probabilidad de avería» (#listaCabT) sobre la lista; PDEF.pct=true muestra porcentajes por defecto (las preferencias guardadas prevalecen; body.vet si",
+"archivos": [
+"site/telemetria/index.html",
+"site/telemetria/src/ui.js",
+"site/telemetria/src/textos.js",
+"site/telemetria/src/estilos.css"
+]
+},
+{
+"juego": "telemetria",
+"id": "PLAY-TELEMETRIA-02",
+"estado": "implementado",
+"detalle": "Cabina en tres zonas alineadas (áreas de grid lay-l: aire / nave+lista+banda / nave+lista+ORA); banda de información (#selInfo «Sistema seleccionado: {sistema}»",
+"archivos": [
+"site/telemetria/src/estilos.css",
+"site/telemetria/index.html",
+"site/telemetria/src/ui.js",
+"site/telemetria/src/textos.js"
+]
+},
+{
+"juego": "telemetria",
+"id": "PLAY-TELEMETRIA-03",
+"estado": "implementado",
+"detalle": "Botón «Reparar {sistema}» con sub «Mantené pulsado para confirmar.» y #repInfo: «Si está averiado: −{R} min. Si está sano: −{R+Rx} min en total.» con los costes",
+"archivos": [
+"site/telemetria/src/ui.js",
+"site/telemetria/src/textos.js",
+"site/telemetria/src/estilos.css"
+]
+},
+{
+"juego": "telemetria",
+"id": "PLAY-TELEMETRIA-04",
+"estado": "implementado",
+"detalle": "Escenarios hipotéticos «Si está averiado, quedarían {aire−R} min. Si está sano, quedarían {aire−R−Rx} min.» (mínimo 0 visible) + «Agotar el aire termina el caso",
+"archivos": [
+"site/telemetria/src/ui.js",
+"site/telemetria/src/textos.js",
+"site/telemetria/src/estilos.css"
+]
+},
+{
+"juego": "telemetria",
+"id": "PLAY-TELEMETRIA-05",
+"estado": "implementado",
+"detalle": "Derrota: «Reintentar caso» primario con el foco (data-foco) y «Elegir otro caso» secundario en campaña; victoria: «Siguiente caso» / «Repetir caso» / «Ver campa",
+"archivos": [
+"site/telemetria/src/ui.js",
+"site/telemetria/src/textos.js"
+]
+},
+{
+"juego": "telemetria",
+"id": "PLAY-TELEMETRIA-06",
+"estado": "implementado",
+"detalle": "Estrellas con role=img «{estrellas} de 3 estrellas» y texto visible (#rStarsTxt); bloque .est-ayuda: «Puntaje de decisiones: {prec}/100» + explicación comparati",
+"archivos": [
+"site/telemetria/src/ui.js",
+"site/telemetria/src/textos.js",
+"site/telemetria/src/estilos.css"
+]
+},
+{
+"juego": "telemetria",
+"id": "PLAY-TELEMETRIA-07",
+"estado": "implementado",
+"detalle": "#filas es role=radiogroup (aria-labelledby «Probabilidad de avería») con filas role=radio aria-checked; nodos con aria-pressed coherente; hoja de Registro y ove",
+"archivos": [
+"site/telemetria/index.html",
+"site/telemetria/src/ui.js",
+"site/telemetria/src/textos.js"
+]
+},
+{
+"juego": "telemetria",
+"id": "RSP-GLOBAL-01",
+"estado": "implementado",
+"detalle": "viewport sin maximum-scale/user-scalable; retirados los listeners globales de gesturestart y dblclick de ui.js; paneles con touch-action que admite pinch-zoom (",
+"archivos": [
+"site/telemetria/index.html",
+"site/telemetria/src/ui.js",
+"site/telemetria/src/estilos.css"
+]
+},
+{
+"juego": "telemetria",
+"id": "SRC-TE01",
+"estado": "implementado",
+"detalle": "Sensores: «Medir · {c} min de aire» con el coste del sensor vigente y motivo real de deshabilitación en el aria-label (aire insuficiente / tipo incorrecto / sin",
+"archivos": [
+"site/telemetria/src/ui.js",
+"site/telemetria/src/textos.js"
+]
+},
+{
+"juego": "telemetria",
+"id": "SRC-TE02",
+"estado": "implementado",
+"detalle": "«Ver pista · máximo 2 estrellas en este caso» antes de pedir pista y «Si usás pista, podés obtener como máximo 2 estrellas.» en el resultado (regla Math.min(est",
+"archivos": [
+"site/telemetria/src/ui.js",
+"site/telemetria/src/textos.js"
+]
+},
+{
+"juego": "telemetria",
+"id": "VIS-TELEMETRIA-01",
+"estado": "implementado",
+"detalle": "Nodo seleccionado: anillo exterior cian 2 px sin escala; reparado: sello ✓ interior inferior con relleno cian suave; mayor probabilidad: borde ámbar + rótulo «M",
+"archivos": [
+"site/telemetria/src/estilos.css",
+"site/telemetria/src/ui.js"
+]
+},
+{
+"juego": "telemetria",
+"id": "VIS-TELEMETRIA-02",
+"estado": "implementado",
+"detalle": "Barras con la misma escala 0–100 %, violeta sólido #a46bff en filas normales (ámbar de .fila.top preservado), transición 220 ms y fantasma 350 ms; marcas 0/50/1",
+"archivos": [
+"site/telemetria/src/estilos.css",
+"site/telemetria/index.html"
+]
+},
+{
+"juego": "telemetria",
+"id": "VIS-TELEMETRIA-03",
+"estado": "implementado",
+"detalle": "En modo juego: estrellas y luces al 35 % de su alpha, anillos/rejilla alpha .06, casco con contorno neutro 1.5 px y conductos decorativos alpha .18; geometria()",
+"archivos": [
+"site/telemetria/src/cabina.js"
+]
+},
+{
+"juego": "telemetria",
+"id": "VIS-TELEMETRIA-04",
+"estado": "implementado",
+"detalle": "Lámpara de lectura: aparición 120 ms, permanencia 700 ms, salida 180 ms sin apagones; aire bajo: borde rojo estable + símbolo ⚠ junto al número y un único pulso",
+"archivos": [
+"site/telemetria/src/estilos.css"
+]
+},
+{
+"juego": "telemetria",
+"id": "SRC-G01",
+"estado": "no_aplicable",
+"detalle": "Las tarjetas de la home no pertenecen al juego; #back «Volver a los juegos» conserva idioma.",
+"archivos": []
+},
+{
+"juego": "telemetria",
+"id": "SRC-G02",
+"estado": "ya_corregido_verificado",
+"detalle": "Telemetría ya usa JETIdioma y su selector ES/EN; no se duplicó.",
+"archivos": []
+},
+{
+"juego": "telemetria",
+"id": "SRC-G03",
+"estado": "implementado",
+"detalle": "Pausa «Reanudar partida» / «Volver al menú» (reiniciar explica que se pierde el intento y se conserva la campaña); resultado con «Reintentar caso» / «Repetir ca",
+"archivos": [
+"site/telemetria/src/textos.js",
+"site/telemetria/src/ui.js"
+]
+},
+{
+"juego": "telemetria",
+"id": "SRC-G04",
+"estado": "implementado",
+"detalle": "Borrar progreso vía confirmar(): alertdialog «¿Borrar todo el progreso de JET//Telemetría?» / «Se borrarán {datos}. Esta acción no se puede deshacer.», Cancelar",
+"archivos": [
+"site/telemetria/src/ui.js",
+"site/telemetria/src/textos.js"
+]
+},
+{
+"juego": "telemetria",
+"id": "SRC-G05",
+"estado": "implementado",
+"detalle": "Bootstrap JETCarga con título visible antes del JS, «Cargando Telemetría…», error de script → «No pudimos descargar todos los recursos.», otro/timeout → «La car",
+"archivos": [
+"site/telemetria/index.html",
+"site/telemetria/src/estilos.css",
+"site/telemetria/src/ui.js"
+]
+},
+{
+"juego": "telemetria",
+"id": "SRC-G06",
+"estado": "implementado",
+"detalle": "compartir(): navigator.share (AbortError silencioso) → clipboard → modal con textarea readonly, «Copiar texto» y «Cerrar»; «Texto copiado» sólo tras éxito; «No ",
+"archivos": [
+"site/telemetria/src/ui.js",
+"site/telemetria/src/textos.js"
+]
+},
+{
+"juego": "words",
+"id": "RSP-WORDS-01",
+"estado": "implementado",
+"detalle": "Teclas .key: activación sólo por click (press(k)); pointerdown/mousedown sólo feedback visual, desbloqueo de audio y preventDefault para que el botón no retenga",
+"archivos": [
+"site/words/index.html"
+]
+},
+{
+"juego": "words",
+"id": "RSP-WORDS-02",
+"estado": "implementado",
+"detalle": "Cada celda role=img con nombre «Intento {n}, posición {posición}, {letra}: {estado}» (estado desde evalGuess de filas ya enviadas; «sin evaluar» para la fila ac",
+"archivos": [
+"site/words/index.html"
+]
+},
+{
+"juego": "words",
+"id": "RSP-WORDS-03",
+"estado": "implementado",
+"detalle": "openModal guarda el disparador, pone #app.inert=true, enfoca .btn.primary (o el primer control) sin condicionar al puntero; Tab/Shift+Tab encerrados en el modal",
+"archivos": [
+"site/words/index.html"
+]
+},
+{
+"juego": "words",
+"id": "PLAY-WORDS-01",
+"estado": "implementado",
+"detalle": "Estado por casilla («sin coincidencia para esta copia») separado del agregado del teclado («descartada según los intentos revelados»), ambos construidos sólo co",
+"archivos": [
+"site/words/index.html"
+]
+},
+{
+"juego": "words",
+"id": "PLAY-WORDS-02",
+"estado": "implementado",
+"detalle": ".key.absent color #b2a7c8 sobre #17102a con raya inferior de 1 px al 50 % (#6c607f); las teclas descartadas siguen habilitadas. Leyenda «Letra descartada» en la",
+"archivos": [
+"site/words/index.html"
+]
+},
+{
+"juego": "words",
+"id": "PLAY-WORDS-03",
+"estado": "implementado",
+"detalle": "Ayuda ES/EN: ejemplo de letra repetida (CARTA con una A gris y otra verde / SENSE) y texto «Si repetís una letra, sólo se marcan las veces que aparece en la pal",
+"archivos": [
+"site/words/index.html"
+]
+},
+{
+"juego": "words",
+"id": "PLAY-WORDS-04",
+"estado": "implementado",
+"detalle": "«Jugadas»→«Partidas», «Racha»→«Victorias consecutivas»; título de bloque «Estadísticas de {modalidad} · {idioma}» generado desde mode y lang (statsKey ya separa",
+"archivos": [
+"site/words/index.html"
+]
+},
+{
+"juego": "words",
+"id": "PLAY-WORDS-05",
+"estado": "implementado",
+"detalle": "Región #srMsg (role=status, polite) para la validación vigente: «Escribí una palabra de 5 letras.» (0 letras), «Falta 1 letra.», «Faltan {n} letras.» con n real",
+"archivos": [
+"site/words/index.html"
+]
+},
+{
+"juego": "words",
+"id": "RSP-GLOBAL-01",
+"estado": "implementado",
+"detalle": "Words: meta viewport sin maximum-scale ni user-scalable (conserva width, initial-scale y viewport-fit=cover); .modal con touch-action:pan-y pinch-zoom; botones ",
+"archivos": [
+"site/words/index.html"
+]
+},
+{
+"juego": "words",
+"id": "RSP-WORDS-04",
+"estado": "implementado",
+"detalle": "A ≤419 px header grid minmax(0,1fr) auto con áreas 'back tools' 'brand brand' 'modes modes', gap 6px 8px; sólo Ajustes y Ayuda (44×44, gap 8) en .tools; Idioma ",
+"archivos": [
+"site/words/index.html"
+]
+},
+{
+"juego": "words",
+"id": "SRC-W02",
+"estado": "implementado",
+"detalle": "Botón «Compartir resultado». navigator.share sólo con puntero grueso; AbortError silencioso; clipboard OK → «Texto copiado»; si falla, diálogo #mShare con texto",
+"archivos": [
+"site/words/index.html"
+]
+},
+{
+"juego": "words",
+"id": "VIS-WORDS-01",
+"estado": "implementado",
+"detalle": "Fila activa con borde neutro (#a79abe, 2 px; vacías al 55 %), filas futuras con --line (.12), relleno rgba(255,255,255,.02) conservado, peso 700, line-height 1 ",
+"archivos": [
+"site/words/index.html"
+]
+},
+{
+"juego": "words",
+"id": "VIS-WORDS-02",
+"estado": "implementado",
+"detalle": "Texto de tecla descartada #b2a7c8, fondo #17102a, línea inferior 1 px 50 %; teclas normales #f5f2ff; Enviar/Borrar sin colores de evaluación (keyState sólo letr",
+"archivos": [
+"site/words/index.html"
+]
+},
+{
+"juego": "words",
+"id": "VIS-WORDS-03",
+"estado": "implementado",
+"detalle": "Ficha de resultado: rótulos 12px/1.3 600 #b7abce, cifras 24px/1.1 700 tabular-nums, grid de 4 que pasa a 2 columnas a ≤380; barras 20 px radio 4 con único acent",
+"archivos": [
+"site/words/index.html"
+]
+},
+{
+"juego": "words",
+"id": "VIS-WORDS-04",
+"estado": "implementado",
+"detalle": "Se conserva flip/hop/shake en modo normal y la regla reduced-motion existente; se añaden transiciones a none con movimiento reducido; mensaje de error con 1500 ",
+"archivos": [
+"site/words/index.html"
+]
+},
+{
+"juego": "words",
+"id": "SRC-W01",
+"estado": "ya_corregido_verificado",
+"detalle": "newGame/saveState/stateKey ya guardan la práctica por idioma y modo con letras activas; no se agregó advertencia. Sólo «Otra palabra» inicia práctica nueva.",
+"archivos": []
+},
+{
+"juego": "words",
+"id": "SRC-G01",
+"estado": "no_aplicable",
+"detalle": "Words: el enlace de regreso ya navega en la misma pestaña (target=_top a jetgames.fun); las tarjetas son de la home.",
+"archivos": []
+},
+{
+"juego": "words",
+"id": "SRC-G02",
+"estado": "ya_corregido_verificado",
+"detalle": "Words: selector ES/EN con aria-pressed vía JETIdioma (URL > cookie/localStorage > navegador); un solo selector (header y Ajustes son el mismo estado).",
+"archivos": []
+},
+{
+"juego": "words",
+"id": "SRC-G03",
+"estado": "implementado",
+"detalle": "Words: «Compartir resultado», «Otra palabra», «Práctica», «Cerrar», «Listo», «A jugar» (verbo propio); sin pausa en este juego.",
+"archivos": [
+"site/words/index.html"
+]
+},
+{
+"juego": "words",
+"id": "SRC-G04",
+"estado": "no_aplicable",
+"detalle": "Words no ofrece borrado de progreso.",
+"archivos": []
+},
+{
+"juego": "words",
+"id": "SRC-G05",
+"estado": "implementado",
+"detalle": "Words: título visible y «Cargando JET//Words…» en #sub antes del JS; si palabras.js no define WORDS o newGame lanza, #boot (alertdialog) con «La carga se interr",
+"archivos": [
+"site/words/index.html"
+]
+},
+{
+"juego": "words",
+"id": "SRC-G06",
+"estado": "implementado",
+"detalle": "Words: ver SRC-W02 (fallback persistente, éxito veraz, cancelación silenciosa).",
+"archivos": [
+"site/words/index.html"
+]
+}
+]

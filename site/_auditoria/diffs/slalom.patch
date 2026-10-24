@@ -1,0 +1,911 @@
+diff --git a/site/slalom/index.html b/site/slalom/index.html
+index b600eef..026aeee 100644
+--- a/site/slalom/index.html
++++ b/site/slalom/index.html
+@@ -2,7 +2,7 @@
+ <html lang="es">
+ <head>
+ <meta charset="UTF-8">
+-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
++<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+ <meta name="mobile-web-app-capable" content="yes">
+ <meta name="apple-mobile-web-app-capable" content="yes">
+ <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+@@ -127,8 +127,8 @@
+     --gold:#d4a847;
+     --flag-red:#ff3355;
+     --flag-blue:#3388ff;
+-    --hud-bg:rgba(8,4,18,0.88);
+-    --hud-border:rgba(0,242,207,0.45);
++    --hud-bg:rgba(17,18,33,0.94);   /* VIS-SLALOM-04: panel oscuro mate */
++    --hud-border:rgba(102,117,142,0.5);
+     --overlay-bg:rgba(5,1,8,0.96);
+     --card-bg:rgba(15,5,40,0.72);
+     --card-border:rgba(119,0,244,0.35);
+@@ -150,7 +150,6 @@
+     font-family:'Poppins', system-ui, sans-serif;
+     overflow:hidden;
+     overscroll-behavior:none;
+-    touch-action:none;
+     -webkit-font-smoothing:antialiased;
+     position:fixed;
+     top:0; left:0; right:0; bottom:0;
+@@ -199,7 +198,7 @@
+     color:var(--ink);
+     font-weight:600;
+     border-radius:99px;
+-    box-shadow:0 6px 18px -6px rgba(0,0,0,0.55), 0 0 20px -8px rgba(0,242,207,0.35);
++    box-shadow:0 3px 10px rgba(0,0,0,0.2);
+     overflow:hidden;
+     white-space:nowrap;
+     min-width:0;
+@@ -220,27 +219,38 @@
+   .crash-flash.on { animation: crashFlash 0.6s ease-out; }
+   @keyframes crashFlash { 0%{opacity:1} 100%{opacity:0} }
+   .hud-pill .ico { display:none; color:var(--ink-2); font-size:0.7rem; }
++  .hud-pill .stat { min-width:0; white-space:nowrap; }
++  /* RSP-SLALOM-01: en pantallas estrechas las cuatro cifras se reparten en dos filas en vez de recortarse */
+   @media (max-width: 430px) {
+-    .hud-pill { gap:7px; padding:7px 10px; font-size:0.68rem; }
+-    .hud-pill .lbl { display:none; }
++    .hud-top { display:grid; grid-template-columns:44px minmax(0,1fr) auto; gap:6px; align-items:center; }
++    .hud-spacer { display:none; }
++    .hud-pill:not(.hud-lives) { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:2px 8px; padding:4px 8px;
++      font-size:11px; line-height:14px; min-height:44px; white-space:normal; overflow:visible; border-radius:12px; align-content:center; }
++    .hud-lives { padding:7px 9px; min-height:44px; }
++    /* PLAY-SLALOM-03: el nombre de cada cifra sigue disponible para el lector aunque se muestre el icono */
++    .hud-pill .lbl { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); clip-path:inset(50%); white-space:nowrap; }
+     .hud-pill .ico { display:inline; }
+     .hud-pill .sep { display:none; }
++    .hud-level, .boss-bar { top:calc(60px + var(--st)); }
++    .coach { top:calc(92px + var(--st)); }
+   }
++  .hud-pill .ico { speak:never; }
+ 
+   .hud-pill .sep { color:var(--dim); opacity:0.5; }
+   .hud-pill .lbl {
+-    color:var(--dim);
++    color:var(--ink-2);
+     font-family:'Poppins', sans-serif;
+-    font-size:0.7rem;
+-    letter-spacing:0.08em;
++    font-size:12px; line-height:1.2;
++    letter-spacing:0.06em;
+     text-transform:uppercase;
+-    font-weight:500;
++    font-weight:600;
+   }
+   .hud-pill .val { color:var(--ink); font-weight:700; font-variant-numeric:tabular-nums; }
+-  .hud-pill .val.accent { color:var(--neon-c); text-shadow:0 0 6px rgba(0,242,207,0.5); }
+-  .hud-pill .val.warn { color:var(--neon-y); text-shadow:0 0 6px rgba(255,225,74,0.5); }
+-  .hud-pill .val.gold { color:var(--gold); text-shadow:0 0 6px rgba(212,168,71,0.5); }
+-  .hud-pill .val.danger { color:var(--danger); text-shadow:0 0 6px rgba(255,68,102,0.5); animation: dangerPulse 0.5s ease-in-out infinite; }
++  /* VIS-SLALOM-04: sin resplandor en valores normales; rojo = vidas/daño, amarillo = recompensa/aviso */
++  .hud-pill .val.accent { color:var(--neon-c); }
++  .hud-pill .val.warn { color:var(--neon-y); }
++  .hud-pill .val.gold { color:var(--gold); }
++  .hud-pill .val.danger { color:var(--danger); animation: dangerPulse 0.35s ease-in-out 1; }
+   @keyframes dangerPulse { 0%,100% { opacity:1; } 50% { opacity:0.6; } }
+   .hud-spacer { flex:1; }
+ 
+@@ -258,7 +268,7 @@
+     pointer-events:auto;
+     font-family:inherit;
+     border-radius:10px;
+-    box-shadow:0 6px 18px -6px rgba(0,0,0,0.55), 0 0 14px -6px rgba(0,242,207,0.5);
++    box-shadow:0 3px 10px rgba(0,0,0,0.2);
+     transition:transform 0.12s, box-shadow 0.18s;
+     font-weight:800; letter-spacing:-0.05em;
+   }
+@@ -285,7 +295,7 @@
+     color:#fff;
+     box-shadow:0 0 22px rgba(255,68,102,0.5), 0 0 60px rgba(255,68,102,0.25);
+     display:none;
+-    animation: bossEnter 0.5s ease-out, bossPulse 0.7s ease-in-out infinite alternate;
++    animation: bossEnter 0.5s ease-out, bossPulse 0.7s ease-in-out 1 alternate; /* un aviso animado; después estado estático visible */
+   }
+   .boss-bar.on { display:block; }
+   @keyframes bossEnter {
+@@ -317,15 +327,15 @@
+     font-family:'JetBrains Mono', monospace;
+     font-weight:700;
+     border-radius:99px;
+-    box-shadow:0 6px 18px -6px rgba(0,0,0,0.5), 0 0 22px rgba(119,0,244,0.25);
++    box-shadow:0 3px 10px rgba(0,0,0,0.2);
+     opacity:0;
+     pointer-events:none;
+     transition:opacity 0.3s, transform 0.3s;
+   }
+   .toast.on { opacity:1; transform:translateX(-50%) translateY(0); }
+-  .toast.warn { color:var(--neon-y); border-color:var(--neon-y); box-shadow:0 0 22px rgba(255,225,74,0.4); }
+-  .toast.danger { color:var(--danger); border-color:var(--danger); box-shadow:0 0 22px rgba(255,68,102,0.5); }
+-  .toast.gold { color:var(--gold); border-color:var(--gold); box-shadow:0 0 22px rgba(212,168,71,0.5); }
++  .toast.warn { color:var(--neon-y); border-color:var(--neon-y); }
++  .toast.danger { color:var(--danger); border-color:var(--danger); }
++  .toast.gold { color:var(--gold); border-color:var(--gold); }
+ 
+   .trick-pop {
+     position:absolute;
+@@ -364,8 +374,10 @@
+     overflow-y:auto;
+     overflow-x:hidden;
+     -webkit-overflow-scrolling:touch;
++    touch-action:pan-y pinch-zoom; /* RSP-GLOBAL-01: los paneles se desplazan y amplían; el control de puntero vive en #game */
+   }
+   .overlay.hidden { display:none; }
++  button, .card, .icon-btn, .back-btn { touch-action:manipulation; }
+ 
+   .ov-logo {
+     font-family:'Poppins', sans-serif;
+@@ -463,7 +475,12 @@
+     border-color:var(--card-border-active);
+     box-shadow:0 6px 22px -4px rgba(40,20,90,0.25), 0 0 22px rgba(0,242,207,0.30), inset 0 0 22px rgba(0,242,207,0.08);
+   }
+-  .card.locked { opacity:0.45; cursor:not-allowed; }
++  .card.locked { opacity:0.78; cursor:not-allowed; border-style:dashed; }
++  .card.locked .card-name { color:var(--ink-2); }
++  .lock-cond { color:var(--ink-2); font-size:0.72rem; line-height:1.3; }
++  .lock-tag { font-family:'JetBrains Mono', monospace; font-size:0.62rem; letter-spacing:0.12em; text-transform:uppercase; color:var(--ink-2); }
++  button.card { appearance:none; -webkit-appearance:none; font:inherit; color:inherit; width:100%; }
++  .shop-grid .card.locked { cursor:pointer; } /* consultar lo que falta sigue siendo una acción válida */
+   .card-name {
+     font-family:'Poppins';
+     font-weight:700;
+@@ -583,7 +600,7 @@
+     letter-spacing:0.04em;
+   }
+   .new-record { text-align:center; font-family:'JetBrains Mono', monospace; font-weight:700; font-size:0.7rem; letter-spacing:0.25em;
+-    text-transform:uppercase; color:var(--gold); text-shadow:0 0 14px rgba(212,168,71,0.7); margin:-6px 0 12px; font-size:0.75rem; animation: dangerPulse 0.9s ease-in-out infinite; }
++    text-transform:uppercase; color:var(--gold); text-shadow:0 0 14px rgba(212,168,71,0.7); margin:-6px 0 12px; font-size:0.75rem; animation: dangerPulse 0.9s ease-in-out 2; }
+   .new-record.hidden { display:none; }
+   .gameover-lbl {
+     text-align:center;
+@@ -715,6 +732,9 @@
+   .goal-list li .gs { color:#3a2f58; font-size:1rem; }
+   .goal-list li.ok .gs { color:var(--gold); text-shadow:0 0 8px rgba(212,168,71,0.7); }
+   .goal-list li.ok { border-color:rgba(212,168,71,0.45); }
++  .goal-list li .gt { flex:1; min-width:0; }
++  .goal-list li .gst { font-family:'JetBrains Mono', monospace; font-size:0.62rem; letter-spacing:0.1em; text-transform:uppercase; color:var(--ink-2); white-space:nowrap; }
++  .goal-list li.ok .gst { color:var(--gold); }
+   .rec-row .v small { font-size:0.7rem; color:var(--ink-2); font-weight:500; margin-left:4px; }
+   .trophy { text-align:center; font-size:0.72rem; color:var(--gold); font-family:'JetBrains Mono', monospace; letter-spacing:0.12em; text-transform:uppercase; margin:6px 0 0; }
+   .btn-row { display:flex; gap:10px; }
+@@ -735,6 +755,16 @@
+   #ov-over .stat-row { margin-bottom:0; }
+   @media (min-width:520px) { #ov-over .ov-section { grid-template-columns:1fr 1fr; } }
+   #ov-over .goal-list li { padding:7px 12px; }
++  details.adv { margin-bottom:16px; }
++  details.adv > summary { list-style:none; cursor:pointer; display:flex; justify-content:space-between; align-items:center; gap:8px; min-height:46px; padding:12px 14px;
++    background:var(--card-bg); border:1px solid var(--card-border); border-radius:12px; font-family:'JetBrains Mono', monospace; font-size:0.72rem; letter-spacing:0.16em; text-transform:uppercase; color:var(--ink); }
++  details.adv > summary::-webkit-details-marker { display:none; }
++  details.adv > summary::after { content:'+'; color:var(--jet-cyan); font-size:1rem; }
++  details.adv[open] > summary::after { content:'–'; }
++  details.adv[open] > summary { margin-bottom:12px; }
++  details.adv > summary:focus-visible { outline:2px solid var(--jet-cyan); outline-offset:2px; }
++  .flag-diagram { display:block; width:100%; max-width:300px; margin:10px auto 0; border-radius:12px; }
++  .ov-sub.left { text-align:left; margin-bottom:0; }
+   .kbd-hint { text-align:center; color:var(--dim); font-family:'JetBrains Mono', monospace; font-size:0.7rem; letter-spacing:0.14em; text-transform:uppercase; margin-top:10px; }
+   @media (hover:none) { .kbd-hint { display:none; } }
+   .card:focus-visible, .btn-primary:focus-visible, .btn-secondary:focus-visible, .back-btn:focus-visible, .opt-toggle:focus-visible { outline:2px solid var(--jet-cyan); outline-offset:2px; }
+@@ -809,18 +839,18 @@
+     <span>JET//Games</span>
+   </a>
+   <div id="app">
+-    <canvas id="game"></canvas>
++    <canvas id="game" tabindex="-1" aria-label="Pista de JET//Slalom" data-i18n-aria="board"></canvas>
+ 
+     <div class="hud-top" id="hud" style="display:none">
+       <button class="icon-btn" id="btn-pause" title="Pausa (Esc o P)" aria-label="Pausa" data-i18n-title="pause_title" data-i18n-aria="pause">II</button>
+       <div class="hud-pill">
+-        <div class="stat"><span class="lbl">Dist</span><span class="ico">↓</span><span class="val accent" id="hud-dist">0m</span></div>
+-        <span class="sep">·</span>
+-        <div class="stat"><span class="lbl" data-i18n="hud_pts">Puntos</span><span class="ico">★</span><span class="val" id="hud-score">0</span></div>
+-        <span class="sep" id="hud-extra-sep">·</span>
+-        <div class="stat" id="hud-extra-stat"><span class="lbl" id="hud-extra-lbl">Penal.</span><span class="ico" id="hud-extra-ico">⏱</span><span class="val warn" id="hud-extra">0.0</span></div>
+-        <span class="sep">·</span>
+-        <div class="stat"><span class="lbl">◆</span><span class="ico">◆</span><span class="val gold" id="hud-coins">0</span></div>
++        <div class="stat"><span class="lbl" data-i18n="distance">Distancia</span><span class="ico" aria-hidden="true">↓</span><span class="val accent" id="hud-dist">0m</span></div>
++        <span class="sep" aria-hidden="true">·</span>
++        <div class="stat"><span class="lbl" data-i18n="hud_pts">Puntos</span><span class="ico" aria-hidden="true">★</span><span class="val" id="hud-score">0</span></div>
++        <span class="sep" id="hud-extra-sep" aria-hidden="true">·</span>
++        <div class="stat" id="hud-extra-stat"><span class="lbl" id="hud-extra-lbl">Penalización</span><span class="ico" id="hud-extra-ico" aria-hidden="true">⏱</span><span class="val warn" id="hud-extra">0.0</span></div>
++        <span class="sep" aria-hidden="true">·</span>
++        <div class="stat"><span class="lbl" data-i18n="coins">Monedas</span><span class="ico" aria-hidden="true">◆</span><span class="val gold" id="hud-coins">0</span></div>
+       </div>
+       <div class="hud-spacer"></div>
+       <div class="hud-pill hud-lives" id="hud-lives"></div>
+@@ -851,7 +881,7 @@
+       <div class="lang-row"><span class="lang-sw" role="group" aria-label="Idioma / Language"><button type="button" data-lang="es">ES</button><button type="button" data-lang="en">EN</button></span></div>
+       <div class="kbd-hint" data-i18n="kbd_hint">Enter para jugar · Esc para volver</div>
+       <div class="footer-note">
+-        <span data-i18n="part_of">Parte de</span> <a href="https://jetgames.fun" target="_blank" rel="noopener">jetgames.fun</a>
++        <span data-i18n="part_of">Parte de</span> <a href="https://jetgames.fun" target="_top" rel="noopener">jetgames.fun</a>
+       </div>
+     </div>
+ 
+@@ -956,7 +986,12 @@
+       <div class="stars big" id="brief-stars"></div>
+       <div class="ov-section-title" data-i18n="goals">Objetivos</div>
+       <ul class="goal-list" id="brief-goals"></ul>
++      <div class="ov-section-title" data-i18n="rules_mode">Reglas de esta modalidad</div>
++      <div class="ov-sub left" id="brief-rule" style="margin-bottom:12px"></div>
++      <div class="ov-section-title" data-i18n="controls">Controles</div>
++      <div class="ov-sub left" id="brief-controls" style="margin-bottom:12px"></div>
+       <button class="btn-primary" id="btn-brief-go" data-i18n="start">Empezar</button>
++      <button class="btn-secondary" id="btn-brief-modes" data-i18n="choose_modality">Elegir modalidad</button>
+     </div>
+ 
+     <div class="overlay hidden" id="ov-records">
+@@ -1052,7 +1087,7 @@
+       </div>
+       <div class="ov-section">
+         <div class="ov-section-title" data-i18n="data">Datos</div>
+-        <button class="btn-secondary" id="btn-reset" style="margin-top:0">Borrar progreso</button>
++        <button class="btn-secondary danger-btn" id="btn-reset" style="margin-top:0" data-i18n="reset">Borrar progreso</button>
+       </div>
+       <div class="footer-note" data-i18n="version_note">JET//Slalom v2.2 · el progreso se guarda en este dispositivo</div>
+     </div>
+@@ -1063,6 +1098,7 @@
+         <div class="crumb" data-i18n="howto">Cómo jugar</div>
+         <div style="width:44px"></div>
+       </div>
++      <div class="ov-title" style="margin-top:0" data-i18n="controls">Controles</div>
+       <div class="ov-section">
+         <div class="ov-section-title" data-i18n="touch">Táctil</div>
+         <div class="stat-row"><span class="k" data-i18n="k_halves">Mitad izquierda / derecha</span><span class="v accent" data-i18n="turn">Girar</span></div>
+@@ -1071,7 +1107,7 @@
+         <div class="stat-row"><span class="k" data-i18n="k_swipe_side">Deslizar de lado en el aire</span><span class="v accent" data-i18n="spin_air">Girar en el aire</span></div>
+       </div>
+       <div class="ov-section">
+-        <div class="ov-section-title" data-i18n="keyboard">Teclado y mouse</div>
++        <div class="ov-section-title" data-i18n="keyboard">Teclado</div>
+         <div class="stat-row"><span class="k" data-i18n="k_arrows">← → o A D</span><span class="v accent" data-i18n="turn">Girar</span></div>
+         <div class="stat-row"><span class="k" data-i18n="k_space">Espacio, ↑ o W</span><span class="v accent" data-i18n="jump">Saltar</span></div>
+         <div class="stat-row"><span class="k" data-i18n="k_down">↓ o S</span><span class="v accent" data-i18n="tuck">Agacharse</span></div>
+@@ -1079,6 +1115,28 @@
+         <div class="stat-row"><span class="k" data-i18n="k_click">Clic mantenido</span><span class="v accent" data-i18n="same_touch">Como el toque</span></div>
+         <div class="stat-row"><span class="k" data-i18n="k_esc">Esc o P</span><span class="v accent" data-i18n="pause">Pausa</span></div>
+       </div>
++      <div class="ov-section">
++        <div class="ov-section-title" data-i18n="rules_mode">Reglas de esta modalidad</div>
++        <div class="ov-sub left" id="howto-rule"></div>
++        <svg class="flag-diagram" id="flag-diagram" viewBox="0 0 300 110" role="img" aria-label="Pasá a la izquierda de las banderas rojas y a la derecha de las azules." data-i18n-aria="flags_rule">
++          <rect width="300" height="110" rx="12" fill="#f4f8fc"/>
++          <path d="M150 0v110" stroke="#c9d6e6" stroke-width="1" stroke-dasharray="3 4"/>
++          <!-- bandera roja: se pasa por su izquierda -->
++          <path d="M92 4 C 92 30, 60 40, 60 62 C 60 84, 70 96, 74 104" fill="none" stroke="#7a8ba6" stroke-width="2.5" stroke-dasharray="5 4"/>
++          <path d="M68 96l6 10 6-10" fill="none" stroke="#7a8ba6" stroke-width="2.5" stroke-linejoin="round"/>
++          <ellipse cx="96" cy="66" rx="8" ry="2.5" fill="rgba(30,40,70,.3)"/>
++          <path d="M94 64V22" stroke="#1a1530" stroke-width="3" stroke-linecap="round"/>
++          <path d="M93 24 L70 31 L93 38 Z" fill="#e22042" stroke="#a8101f" stroke-width="1.5"/>
++          <!-- bandera azul: se pasa por su derecha -->
++          <path d="M208 4 C 208 30, 240 40, 240 62 C 240 84, 230 96, 226 104" fill="none" stroke="#7a8ba6" stroke-width="2.5" stroke-dasharray="5 4"/>
++          <path d="M220 96l6 10 6-10" fill="none" stroke="#7a8ba6" stroke-width="2.5" stroke-linejoin="round"/>
++          <ellipse cx="204" cy="66" rx="8" ry="2.5" fill="rgba(30,40,70,.3)"/>
++          <path d="M206 64V22" stroke="#1a1530" stroke-width="3" stroke-linecap="round"/>
++          <path d="M207 24 L230 31 L207 38 Z" fill="#1c63d4" stroke="#0f3b85" stroke-width="1.5"/>
++        </svg>
++      </div>
++      <details class="adv" id="howto-adv">
++        <summary data-i18n="see_advanced">Ver reglas avanzadas</summary>
+       <div class="ov-section">
+         <div class="ov-section-title" data-i18n="lives_crashes">Vidas y choques</div>
+         <div class="ov-sub" style="text-align:left;margin-bottom:0" data-i18n-html="p_lives">Tienes <strong style="color:var(--danger)">3 vidas</strong>. Chocar contra un pino, una roca u otro esquiador te tira al suelo y te cuesta una vida; al levantarte quedas invulnerable un momento. Los pinos no se pueden saltar; las rocas y los esquiadores, sí. Pasar rozando un pino suma puntos.</div>
+@@ -1099,17 +1157,25 @@
+         <div class="ov-section-title" data-i18n="runs_stars">Pistas, estrellas y jefes</div>
+         <div class="ov-sub" style="text-align:left;margin-bottom:0" data-i18n-html="p_levels">Cada disciplina tiene 10 pistas: verdes, azules, rojas y negras. Llegar a la meta da una estrella; sin caídas, dos; y la tercera pide un objetivo propio de la disciplina. Desde la tercera pista aparece un jefe: Yeti, avión, avalancha o dron. Las monedas compran aspectos en la tienda.</div>
+       </div>
++      </details>
+       <button class="btn-primary" id="btn-howto-close" data-i18n="got_it">Entendido</button>
+     </div>
+ 
+-    <div class="overlay hidden" id="ov-pause">
++    <div class="overlay hidden" id="ov-pause" role="dialog" aria-modal="true" aria-labelledby="pause-title">
+       <div class="ov-logo"><span class="jet">JET</span><span class="slash">//</span><span class="slalom">Slalom</span></div>
+-      <div class="ov-title" data-i18n="paused">Pausa</div>
++      <div class="ov-title" id="pause-title" data-i18n="paused">Pausa</div>
+       <div class="ov-sub" id="pause-info"></div>
+-      <button class="btn-primary" id="btn-resume" data-i18n="resume">Continuar</button>
+-      <button class="btn-secondary" id="btn-restart" data-i18n="restart">Reiniciar</button>
++      <button class="btn-primary" id="btn-resume" data-i18n="resume">Reanudar partida</button>
++      <button class="btn-secondary" id="btn-restart" data-i18n="restart">Reiniciar bajada</button>
+       <button class="btn-secondary" id="btn-pause-settings" data-i18n="settings">Ajustes</button>
+-      <button class="btn-secondary" id="btn-quit" data-i18n="quit">Salir al menú</button>
++      <button class="btn-secondary" id="btn-quit">Volver al menú</button>
++    </div>
++
++    <div class="overlay hidden" id="ov-confirm" role="dialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-msg" style="z-index:40">
++      <div class="ov-title" id="confirm-title" style="margin-top:auto"></div>
++      <div class="ov-sub" id="confirm-msg"></div>
++      <button class="btn-primary" id="btn-confirm-cancel" data-i18n="cancel">Cancelar</button>
++      <button class="btn-secondary danger-btn" id="btn-confirm-ok" data-i18n="reset" style="margin-bottom:auto">Borrar progreso</button>
+     </div>
+ 
+     <div class="overlay hidden" id="ov-over">
+@@ -1126,9 +1192,10 @@
+           <button class="btn-secondary" id="btn-over-menu">Volver al menú</button>
+         </div>
+       </div>
+-     </div>
+-     <div class="over-detail">
+       <ul class="goal-list" id="over-goals" style="display:none"></ul>
++     </div>
++     <details class="over-detail adv" id="over-detail">
++      <summary data-i18n="view_stats">Ver estadísticas</summary>
+       <div class="ov-section">
+         <div class="stat-row"><span class="k" data-i18n="distance">Distancia</span><span class="v accent" id="over-dist">0m</span></div>
+         <div class="stat-row" id="over-level-row"><span class="k" data-i18n="level_reached">Nivel alcanzado</span><span class="v accent" id="over-level">1</span></div>
+@@ -1138,7 +1205,7 @@
+         <div class="stat-row"><span class="k" data-i18n="coins_earned">Monedas ganadas</span><span class="v gold" id="over-coins">0</span></div>
+         <div class="stat-row" id="over-extra-row"><span class="k" id="over-extra-k">Extra</span><span class="v warn" id="over-extra-v">—</span></div>
+       </div>
+-     </div>
++     </details>
+     </div>
+ 
+   </div>
+@@ -1152,7 +1219,17 @@ const I18N = {
+   es: {
+     back_games: 'Volver a JET//Games', back: 'Volver',
+     pause_title: 'Pausa (Esc o P)', pause: 'Pausa', paused: 'Pausa',
+-    hud_pts: 'Puntos', hud_pen: 'Penal.', hud_run: 'Pista {n} ·', hud_daily: 'Reto ·', level: 'Nivel',
++    hud_pts: 'Puntos', hud_pen: 'Penalización', hud_run: 'Pista {n} ·', hud_daily: 'Reto ·', level: 'Nivel',
++    coins: 'Monedas', board: 'Pista de JET//Slalom', rules_mode: 'Reglas de esta modalidad', controls: 'Controles',
++    choose_modality: 'Elegir modalidad', see_advanced: 'Ver reglas avanzadas', view_stats: 'Ver estadísticas',
++    flags_rule: 'Pasá a la izquierda de las banderas rojas y a la derecha de las azules.',
++    brief_ctrl_touch: 'Mantén apoyada la mitad izquierda o derecha para girar. Desliza hacia arriba para saltar y hacia abajo para agacharte.',
++    brief_ctrl_keys: '← → o A D para girar · Espacio para saltar · ↓ para agacharte · Esc o P para pausar',
++    back_courses: 'Volver a las pistas', back_modes: 'Volver a modos', retry_run: 'Reintentar pista', choose_run: 'Elegir pista',
++    star_earned: 'Estrella conseguida', star_pending: 'Estrella pendiente',
++    locked_run: 'Pista bloqueada', unlock_prev: 'Completá la pista anterior para desbloquearla.',
++    cancel: 'Cancelar', delete_title: '¿Borrar todo el progreso de {juego}?', delete_body: 'Se borrarán {datos}. Esta acción no se puede deshacer.',
++    delete_data: 'las monedas y los aspectos desbloqueados, las pistas superadas con sus estrellas y mejores marcas, los récords, los retos diarios, las estadísticas de la temporada y las guías de las primeras bajadas',
+     tagline: 'Esquí · Arcade · Neón',
+     splash_sub: 'Bajada en vista cenital. Pasa las puertas, esquiva pinos, salta rampas y escapa de los jefes. 30 pistas, reto diario y modo infinito.',
+     play: 'Jugar', howto: 'Cómo jugar', settings: 'Ajustes',
+@@ -1180,13 +1257,13 @@ const I18N = {
+     tap_zones: 'Toque por zonas', d_tap: 'Mantén apoyada la mitad izquierda o derecha para girar.',
+     swipe: 'Deslizar', d_swipe: 'Arriba: salto. Abajo: agacharse. De lado en el aire: giro.',
+     tilt: 'Inclinación', d_tilt: 'Inclina el teléfono para girar. iOS pide permiso.',
+-    data: 'Datos', reset: 'Borrar progreso', reset_confirm: 'Toca otra vez para borrar todo', reset_done: 'Progreso borrado',
++    data: 'Datos', reset: 'Borrar progreso', reset_done: 'Progreso borrado',
+     version_note: 'JET//Slalom v2.2 · el progreso se guarda en este dispositivo',
+     touch: 'Táctil', k_halves: 'Mitad izquierda / derecha', turn: 'Girar',
+     k_swipe_up: 'Deslizar hacia arriba', jump: 'Saltar',
+     k_swipe_down: 'Deslizar hacia abajo', tuck_fast: 'Agacharse (acelera)',
+     k_swipe_side: 'Deslizar de lado en el aire', spin_air: 'Girar en el aire',
+-    keyboard: 'Teclado y mouse', k_arrows: '← → o A D', k_space: 'Espacio, ↑ o W', k_down: '↓ o S', tuck: 'Agacharse',
++    keyboard: 'Teclado', k_arrows: '← → o A D', k_space: 'Espacio, ↑ o W', k_down: '↓ o S', tuck: 'Agacharse',
+     k_arrows_air: '← → en el aire', k_click: 'Clic mantenido', same_touch: 'Como el toque', k_esc: 'Esc o P',
+     lives_crashes: 'Vidas y choques',
+     p_lives: 'Tienes <strong style="color:var(--danger)">3 vidas</strong>. Chocar contra un pino, una roca u otro esquiador te tira al suelo y te cuesta una vida; al levantarte quedas invulnerable un momento. Los pinos no se pueden saltar; las rocas y los esquiadores, sí. Pasar rozando un pino suma puntos.',
+@@ -1196,7 +1273,7 @@ const I18N = {
+     p_forest: 'En el bosque el pasillo se estrecha y las monedas valen el doble. La Combinada alterna Slalom, Bosque y Estilo libre cada 1000 m.',
+     runs_stars: 'Pistas, estrellas y jefes',
+     p_levels: 'Cada disciplina tiene 10 pistas: verdes, azules, rojas y negras. Llegar a la meta da una estrella; sin caídas, dos; y la tercera pide un objetivo propio de la disciplina. Desde la tercera pista aparece un jefe: Yeti, avión, avalancha o dron. Las monedas compran aspectos en la tienda.',
+-    got_it: 'Entendido', resume: 'Continuar', restart: 'Reiniciar', quit: 'Salir al menú',
++    got_it: 'Entendido', resume: 'Reanudar partida', restart: 'Reiniciar bajada', quit: 'Volver al menú',
+     points: 'Puntos', replay_run: 'Repetir pista',
+     distance: 'Distancia', level_reached: 'Nivel alcanzado', flags_cleared: 'Banderines pasados', crashes: 'Choques',
+     best_score: 'Mejor puntuación', coins_earned: 'Monedas ganadas',
+@@ -1236,7 +1313,17 @@ const I18N = {
+   en: {
+     back_games: 'Back to JET//Games', back: 'Back',
+     pause_title: 'Pause (Esc or P)', pause: 'Pause', paused: 'Paused',
+-    hud_pts: 'Score', hud_pen: 'Pen.', hud_run: 'Run {n} ·', hud_daily: 'Daily ·', level: 'Level',
++    hud_pts: 'Score', hud_pen: 'Penalty', hud_run: 'Run {n} ·', hud_daily: 'Daily ·', level: 'Level',
++    coins: 'Coins', board: 'JET//Slalom course', rules_mode: 'Rules for this discipline', controls: 'Controls',
++    choose_modality: 'Choose a discipline', see_advanced: 'View advanced rules', view_stats: 'View statistics',
++    flags_rule: 'Pass to the left of red flags and to the right of blue flags.',
++    brief_ctrl_touch: 'Hold the left or right half of the screen to turn. Swipe up to jump and down to tuck.',
++    brief_ctrl_keys: '← → or A D to turn · Space to jump · ↓ to tuck · Esc or P to pause',
++    back_courses: 'Back to ski courses', back_modes: 'Back to modes', retry_run: 'Retry ski course', choose_run: 'Choose a ski course',
++    star_earned: 'Star earned', star_pending: 'Star not yet earned',
++    locked_run: 'Ski course locked', unlock_prev: 'Complete the previous ski course to unlock this one.',
++    cancel: 'Cancel', delete_title: 'Delete all progress in {juego}?', delete_body: '{datos} will be deleted. This cannot be undone.',
++    delete_data: 'Coins and unlocked skins, cleared runs with their stars and best scores, records, daily challenges, season statistics and the first-run tips',
+     tagline: 'Ski · Arcade · Neon',
+     splash_sub: 'A top-down downhill run. Clear the gates, dodge the pines, hit the ramps and escape the bosses. 30 runs, a daily challenge and endless mode.',
+     play: 'Play', howto: 'How to play', settings: 'Settings',
+@@ -1264,13 +1351,13 @@ const I18N = {
+     tap_zones: 'Tap zones', d_tap: 'Hold the left or right half of the screen to turn.',
+     swipe: 'Swipe', d_swipe: 'Up: jump. Down: tuck. Sideways in the air: spin.',
+     tilt: 'Tilt', d_tilt: 'Tilt your phone to turn. iOS asks for permission.',
+-    data: 'Data', reset: 'Delete progress', reset_confirm: 'Tap again to delete everything', reset_done: 'Progress deleted',
++    data: 'Data', reset: 'Delete progress', reset_done: 'Progress deleted',
+     version_note: 'JET//Slalom v2.2 · progress is saved on this device',
+     touch: 'Touch', k_halves: 'Left / right half', turn: 'Turn',
+     k_swipe_up: 'Swipe up', jump: 'Jump',
+     k_swipe_down: 'Swipe down', tuck_fast: 'Tuck (speeds you up)',
+     k_swipe_side: 'Swipe sideways in the air', spin_air: 'Spin in the air',
+-    keyboard: 'Keyboard and mouse', k_arrows: '← → or A D', k_space: 'Space, ↑ or W', k_down: '↓ or S', tuck: 'Tuck',
++    keyboard: 'Keyboard', k_arrows: '← → or A D', k_space: 'Space, ↑ or W', k_down: '↓ or S', tuck: 'Tuck',
+     k_arrows_air: '← → in the air', k_click: 'Click and hold', same_touch: 'Same as touch', k_esc: 'Esc or P',
+     lives_crashes: 'Lives and crashes',
+     p_lives: 'You have <strong style="color:var(--danger)">3 lives</strong>. Hitting a pine, a rock or another skier knocks you down and costs a life; when you get back up you are invulnerable for a moment. Pines can’t be jumped; rocks and skiers can. Skimming past a pine scores points.',
+@@ -1280,7 +1367,7 @@ const I18N = {
+     p_forest: 'In the forest the lane narrows and coins are worth double. Combined alternates Slalom, Forest and Freestyle every 1000 m.',
+     runs_stars: 'Runs, stars and bosses',
+     p_levels: 'Each discipline has 10 runs: green, blue, red and black. Reaching the finish earns one star; with no falls, two; the third needs a goal specific to the discipline. From the third run on there is a boss: the Yeti, a jet plane, an avalanche or a drone. Coins buy skins in the shop.',
+-    got_it: 'Got it', resume: 'Resume', restart: 'Restart', quit: 'Quit to menu',
++    got_it: 'Got it', resume: 'Resume game', restart: 'Restart run', quit: 'Back to menu',
+     points: 'Points', replay_run: 'Replay run',
+     distance: 'Distance', level_reached: 'Level reached', flags_cleared: 'Flags cleared', crashes: 'Crashes',
+     best_score: 'Best score', coins_earned: 'Coins earned',
+@@ -1455,22 +1542,32 @@ let ctx = canvas.getContext('2d', { alpha:false });
+ let W = 0, H = 0, DPR = 1;
+ // Escala de los sprites según el tamaño de pantalla (teléfono ~0.9, tablet ~1.2, escritorio 1.45).
+ let UNIT = 1;
++const appEl = document.getElementById('app');
++let canvasRect = { left: 0, top: 0 };
+ function resizeCanvas() {
+   DPR = Math.min(window.devicePixelRatio || 1, 2);
+-  W = window.innerWidth;
+-  H = window.innerHeight;
+-  canvas.width = W * DPR;
+-  canvas.height = H * DPR;
++  // RSP-SLALOM-03: el contenedor #app es la única fuente de medida (sigue a --app-height / visualViewport);
++  // sólo el backing store se multiplica por DPR.
++  const r = appEl.getBoundingClientRect();
++  W = Math.max(1, Math.round(r.width)) || window.innerWidth;
++  H = Math.max(1, Math.round(r.height)) || window.innerHeight;
++  canvas.width = Math.round(W * DPR);
++  canvas.height = Math.round(H * DPR);
+   canvas.style.width = W + 'px';
+   canvas.style.height = H + 'px';
+   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
++  canvasRect = canvas.getBoundingClientRect();
+   UNIT = clamp(Math.min(W, H * 1.15) / 430, 0.72, 1.45);
+   pineSprites.length = 0;
+ }
+ const pineSprites = [];
++let resizeRaf = 0;
++function scheduleResize() { if (resizeRaf) return; resizeRaf = requestAnimationFrame(() => { resizeRaf = 0; resizeCanvas(); }); }
+ resizeCanvas();
+-window.addEventListener('resize', resizeCanvas);
+-window.addEventListener('orientationchange', () => setTimeout(resizeCanvas, 200));
++window.addEventListener('resize', scheduleResize);
++window.addEventListener('orientationchange', () => { scheduleResize(); setTimeout(scheduleResize, 200); });
++if (window.visualViewport) window.visualViewport.addEventListener('resize', scheduleResize);
++if (window.ResizeObserver) new ResizeObserver(scheduleResize).observe(appEl);
+ 
+ // ============================ AUDIO =================================
+ // Todo el sonido se sintetiza aquí con Web Audio: sin archivos ni samples ajenos.
+@@ -2526,7 +2623,7 @@ function drawBackground(now) {
+   bgScroll += Game.speed * 25;
+   ctx.save();
+   ctx.globalCompositeOperation = 'multiply';
+-  ctx.strokeStyle = 'rgba(160,180,210,0.18)';
++  ctx.strokeStyle = 'rgba(160,180,210,0.10)'; // VIS-SLALOM-01: relieve sutil, no carriles
+   ctx.lineWidth = 1;
+   for (let i = 0; i < 14; i++) {
+     const y = (((i * 80) - (bgScroll % 80)) + H) % (H + 80);
+@@ -2539,7 +2636,7 @@ function drawBackground(now) {
+ 
+   // Sombras de copas / huellas tenues (pequeñas elipses azuladas, scrollean)
+   ctx.save();
+-  ctx.fillStyle = 'rgba(150,170,200,0.08)';
++  ctx.fillStyle = 'rgba(150,170,200,0.06)';
+   for (let i = 0; i < 28; i++) {
+     const seed = i * 73.13;
+     const x = ((seed * 17.7) % W);
+@@ -2683,8 +2780,8 @@ function drawBigPineVec(x, y, h, v, wob) {
+   const w = h * 0.56;
+   const pal = PINE_PALETTES[(v || 0) % PINE_PALETTES.length];
+   ctx.save();
+-  // Sombra proyectada en la nieve
+-  ctx.fillStyle = 'rgba(45,60,100,0.20)';
++  // Sombra proyectada en la nieve (VIS-SLALOM-01: #52617B a 0,20, misma dirección)
++  ctx.fillStyle = 'rgba(82,97,123,0.20)';
+   ctx.beginPath();
+   ctx.ellipse(x + w * 0.30, y - h * 0.01, w * 0.62, h * 0.075, -0.10, 0, TAU);
+   ctx.fill();
+@@ -2931,7 +3028,7 @@ function drawFlag(x, y, s, color, hitState) {
+   ctx.save();
+   ctx.globalCompositeOperation = 'lighter';
+   ctx.shadowColor = flagColor;
+-  ctx.shadowBlur = 14 * s;
++  ctx.shadowBlur = 5 * s; // VIS-SLALOM-02: halo contenido; el lado lo indica la forma
+   ctx.fillStyle = `rgba(${isRed ? '255,80,110' : '120,180,255'},0.55)`;
+   ctx.beginPath();
+   if (isRed) {
+@@ -3166,12 +3263,14 @@ function drawPlayer() {
+   // Halo en el suelo (rojo si está caído)
+   ctx.save();
+   ctx.globalCompositeOperation = c ? 'source-over' : 'lighter';
+-  const halo = ctx.createRadialGradient(x, proj.y + 8 * UNIT, 1, x, proj.y + 8 * UNIT, 36 * s);
+-  halo.addColorStop(0, c ? 'rgba(255,68,102,0.30)' : 'rgba(0,242,207,0.40)');
++  // VIS-SLALOM-02: halo normal más chico y tenue (26*s, 0,20); el rojo de caída conserva su estado
++  const hr = c ? 36 * s : 26 * s;
++  const halo = ctx.createRadialGradient(x, proj.y + 8 * UNIT, 1, x, proj.y + 8 * UNIT, hr);
++  halo.addColorStop(0, c ? 'rgba(255,68,102,0.30)' : 'rgba(0,242,207,0.20)');
+   halo.addColorStop(1, c ? 'rgba(255,68,102,0)' : 'rgba(0,242,207,0)');
+   ctx.fillStyle = halo;
+   ctx.beginPath();
+-  ctx.arc(x, proj.y + 8 * UNIT, 36 * s, 0, TAU);
++  ctx.arc(x, proj.y + 8 * UNIT, hr, 0, TAU);
+   ctx.fill();
+   ctx.restore();
+ 
+@@ -3270,31 +3369,32 @@ function drawBoss() {
+     // yeti grande peludo, top-down
+     ctx.save();
+     ctx.translate(proj.x, proj.y);
+-    // sombra
+-    ctx.fillStyle = 'rgba(0,0,0,0.5)';
++    // sombra (VIS-SLALOM-03: misma elipse, tono frío coherente con las demás entidades)
++    ctx.fillStyle = 'rgba(82,97,123,0.26)';
+     ctx.beginPath();
+     ctx.ellipse(0, 22 * s, 30 * s, 5 * s, 0, 0, TAU);
+     ctx.fill();
+-    // body
+-    ctx.shadowColor = '#fff';
+-    ctx.shadowBlur = 14 * s;
++    // body: sin resplandor blanco; contorno azul grisáceo fino + luz de borde fría (mismo tamaño y alcance)
++    ctx.shadowBlur = 0;
+     const grad = ctx.createRadialGradient(0, -8 * s, 2, 0, 0, 30 * s);
+     grad.addColorStop(0, '#fff');
+     grad.addColorStop(0.6, '#e8eef8');
+     grad.addColorStop(1, '#aab8d0');
+     ctx.fillStyle = grad;
+-    ctx.beginPath();
+-    ctx.ellipse(0, 0, 26 * s, 30 * s, 0, 0, TAU);
+-    ctx.fill();
+-    // arms raised
++    ctx.strokeStyle = 'rgba(102,117,142,0.8)';
++    ctx.lineWidth = 1.25 * s;
+     const sw = Math.sin(b.timer * 8) * 3 * s;
+-    ctx.beginPath();
+-    ctx.ellipse(-24 * s, -4 * s + sw, 9 * s, 16 * s, 0.4, 0, TAU);
+-    ctx.fill();
+-    ctx.beginPath();
+-    ctx.ellipse(24 * s, -4 * s - sw, 9 * s, 16 * s, -0.4, 0, TAU);
+-    ctx.fill();
+-    ctx.shadowBlur = 0;
++    const armL = () => { ctx.beginPath(); ctx.ellipse(-24 * s, -4 * s + sw, 9 * s, 16 * s, 0.4, 0, TAU); };
++    const armR = () => { ctx.beginPath(); ctx.ellipse(24 * s, -4 * s - sw, 9 * s, 16 * s, -0.4, 0, TAU); };
++    const body = () => { ctx.beginPath(); ctx.ellipse(0, 0, 26 * s, 30 * s, 0, 0, TAU); };
++    armL(); ctx.fill(); ctx.stroke();
++    armR(); ctx.fill(); ctx.stroke();
++    body(); ctx.fill(); ctx.stroke();
++    // luz de borde (1*s) por dentro del contorno
++    ctx.save(); body(); ctx.clip();
++    ctx.strokeStyle = '#DCE8F8'; ctx.lineWidth = 2 * s;
++    ctx.beginPath(); ctx.ellipse(0, 0, 26 * s - 0.6 * s, 30 * s - 0.6 * s, 0, 0, TAU); ctx.stroke();
++    ctx.restore();
+     // eyes red
+     ctx.fillStyle = '#ff3355';
+     ctx.shadowColor = '#ff3355';
+@@ -3676,6 +3776,7 @@ function applyTapInput() {
+ function pointerDown(id, x, y) {
+   ensureAudio();
+   if (Game.scene !== 'playing') return;
++  x -= canvasRect.left; y -= canvasRect.top;
+   activeTouches.delete(id);
+   activeTouches.set(id, { x, y, sx:x, sy:y, px:x, t:performance.now() });
+   applyTapInput();
+@@ -3683,6 +3784,7 @@ function pointerDown(id, x, y) {
+ function pointerMove(id, x, y) {
+   const tch = activeTouches.get(id);
+   if (!tch) return;
++  x -= canvasRect.left; y -= canvasRect.top;
+   // El deslizamiento actúa en cuanto se dibuja, sin esperar a levantar el dedo.
+   if (!tch.swiped && Game.scene === 'playing' && store.settings.swipe && performance.now() - tch.t < 420) {
+     const dx = x - tch.sx, dy = y - tch.sy;
+@@ -3698,6 +3800,7 @@ function pointerMove(id, x, y) {
+ function pointerUp(id, x, y) {
+   const tch = activeTouches.get(id);
+   if (!tch) return;
++  x -= canvasRect.left; y -= canvasRect.top;
+   activeTouches.delete(id);
+   if (!tch.swiped && Game.scene === 'playing' && store.settings.swipe) {
+     const dx = x - tch.sx, dy = y - tch.sy;
+@@ -3724,10 +3827,33 @@ window.addEventListener('blur', () => { clearPointers(); pauseGame(); });
+ document.addEventListener('visibilitychange', () => { if (document.hidden) { clearPointers(); pauseGame(); } });
+ window.addEventListener('orientationchange', () => clearPointers());
+ 
++// RSP-SLALOM-04: un control nativo o semántico enfocado gestiona Enter/Espacio por sí mismo; el juego no los intercepta
++const CONTROL_SEL = 'button,a,input,select,textarea,summary,[contenteditable="true"],[role="button"],[role="switch"]';
++function onControl(e) { const t = e.target; return !!(t && t.closest && t.closest(CONTROL_SEL)); }
++function isVisible(el) { return !!(el && el.isConnected && el.getClientRects().length); }
++function safeFocus(el) { if (!el) return false; try { el.focus({ preventScroll: true }); } catch (err) { try { el.focus(); } catch (e2) {} } return document.activeElement === el; }
++function trapTab(e) {
++  const dlgs = document.querySelectorAll('.overlay[role="dialog"]:not(.hidden)');
++  const dlg = dlgs[dlgs.length - 1]; if (!dlg) return false;
++  const back = document.getElementById('back-portfolio');
++  const list = [...(dlg.id !== 'ov-confirm' && isVisible(back) ? [back] : []), ...dlg.querySelectorAll('button:not([disabled]), input:not([disabled]), a[href], summary, [tabindex="0"]')].filter(isVisible);
++  if (!list.length) return false;
++  const i = list.indexOf(document.activeElement);
++  let next = null;
++  if (i === -1) next = e.shiftKey ? list[list.length - 1] : list[0];
++  else if (e.shiftKey && i === 0) next = list[list.length - 1];
++  else if (!e.shiftKey && i === list.length - 1) next = list[0];
++  if (next) { e.preventDefault(); safeFocus(next); }
++  return true;
++}
+ window.addEventListener('keydown', e => {
+   ensureAudio();
++  if (e.code === 'Tab') { trapTab(e); return; }
+   if (Game.scene === 'paused' && (e.code === 'Escape' || e.code === 'KeyP')) { resumeGame(); return; }
+   if (Game.scene !== 'playing') { menuKey(e); return; }
++  // Escape/P son la acción explícita de pausa; Enter/Espacio sobre Pausa (u otro control) quedan para el control
++  if (e.code === 'Escape' || e.code === 'KeyP') { e.preventDefault(); if (!e.repeat) pauseGame(true); return; }
++  if (onControl(e) && (e.code === 'Enter' || e.code === 'NumpadEnter' || e.code === 'Space')) return;
+   if (e.code === 'ArrowLeft' || e.code === 'KeyA') { Game.inputLeft = true; e.preventDefault(); }
+   if (e.code === 'ArrowRight' || e.code === 'KeyD') { Game.inputRight = true; e.preventDefault(); }
+   if (e.code === 'ArrowDown' || e.code === 'KeyS') { Game.inputDown = true; e.preventDefault(); }
+@@ -3743,7 +3869,6 @@ window.addEventListener('keydown', e => {
+     Game.trickAccum += 0.5;
+     Game.rotation = Game.trickAccum;
+   }
+-  if (e.code === 'Escape' || e.code === 'KeyP') pauseGame();
+ });
+ window.addEventListener('keyup', e => {
+   if (e.code === 'ArrowLeft' || e.code === 'KeyA') Game.inputLeft = false;
+@@ -3892,28 +4017,37 @@ function runInfo() {
+   if (Game.structure === 'daily') return tx('daily') + ' · ' + fmt(Game.dist) + ' / ' + fmt(Game.goalDist) + ' m';
+   return MODE_NAMES[Game.baseMode] + ' · ' + fmt(Game.dist) + ' m · ' + tx('n_points', { n: fmt(Game.score) });
+ }
+-function pauseGame() {
++// SRC-S02: el botón de salida nombra su destino real (pistas / modos / menú), igual que en el fin de bajada
++function exitLabel() { return Game.structure === 'levels' ? tx('back_courses') : Game.structure === 'mix' ? tx('back_menu') : tx('back_modes'); }
++let pauseTrigger = null;
++function pauseGame(fromKeyboard) {
+   if (Game.scene !== 'playing') return;
+   Game.scene = 'paused';
++  pauseTrigger = fromKeyboard === true ? null : document.activeElement;
+   backBlockUntil = performance.now() + 600;
+   hideCoach(); syncBack();
+   document.getElementById('pause-info').textContent = runInfo();
++  document.getElementById('btn-quit').textContent = exitLabel();
+   overlays.pause.classList.remove('hidden');
+   hudEl.style.display = 'none';
+   document.getElementById('hud-level').style.display = 'none';
+   clearPointers();
+   muffleMusic(true);
++  safeFocus(document.getElementById('btn-resume')); // RSP-SLALOM-04: el foco entra al diálogo
+ }
+ function resumeGame() {
+   if (Game.scene !== 'paused') return;
+   overlays.pause.classList.add('hidden');
+   Game.scene = 'playing';
+   syncBack();
+-  hudEl.style.display = 'flex';
++  hudEl.style.display = '';
+   document.getElementById('hud-level').style.display = '';
+   clearPointers();
+   muffleMusic(false);
+   lastTs = 0;
++  // de vuelta al botón que pausó si sigue visible; si no, a la superficie de juego (nunca a un botón oculto)
++  const t = pauseTrigger; pauseTrigger = null;
++  if (!(t && t.id === 'btn-pause' && isVisible(t) && safeFocus(t))) safeFocus(canvas);
+ }
+ 
+ function crossFinish() {
+@@ -4025,7 +4159,7 @@ function paintOver() {
+   document.getElementById('over-cause').textContent = title;
+   document.getElementById('over-record').textContent = o.trophy ? tx('trophy', { mode: MODE_NAMES[o.trophy] }) : tx('new_record');
+   if (levels && o.ok && Game.levelDef) {
+-    document.getElementById('over-goals').innerHTML = goalTexts(Game.levelDef).map((t, k) => '<li class="' + (o.ok[k] ? 'ok' : '') + '"><span class="gs">★</span><span>' + t + '</span></li>').join('');
++    document.getElementById('over-goals').innerHTML = goalTexts(Game.levelDef).map((t, k) => goalLi(t, !!o.ok[k])).join('');
+   }
+   document.getElementById('over-score').textContent = fmt(Game.score);
+   document.getElementById('over-dist').textContent = fmt(Game.dist) + ' m';
+@@ -4043,14 +4177,20 @@ function paintOver() {
+   else { ek.textContent = tx('x_last'); ev.textContent = MODE_NAMES[Game.mode]; }
+   const bMain = document.getElementById('btn-play-again');
+   const bMenu = document.getElementById('btn-over-menu');
++  // PLAY-SLALOM-04 / SRC-S02: cada botón nombra su destino o efecto real
+   if (levels) {
+-    bMenu.textContent = tx('view_runs');
+-    bMain.textContent = overAction === 'next' ? tx('next_run') : cleared ? tx('replay_run') : tx('retry');
++    bMenu.textContent = tx('choose_run');
++    bMain.textContent = overAction === 'next' ? tx('next_run') : cleared ? tx('replay_run') : tx('retry_run');
+   } else {
+-    bMenu.textContent = tx('back_menu');
++    bMenu.textContent = Game.structure === 'mix' ? tx('back_menu') : tx('back_modes');
+     bMain.textContent = daily ? tx('retry_daily') : tx('play_again');
+   }
+ }
++// PLAY-SLALOM-03: cada objetivo (estrella) lleva su condición y su estado en texto, no sólo en color
++function goalLi(text, ok) {
++  const st = ok ? tx('star_earned') : tx('star_pending');
++  return '<li class="' + (ok ? 'ok' : '') + '"><span class="gs" aria-hidden="true">★</span><span class="gt">' + text + '</span><span class="gst">' + st + '</span></li>';
++}
+ 
+ // ============================ UI =====================================
+ const overlays = {
+@@ -4065,6 +4205,7 @@ const overlays = {
+   howto: document.getElementById('ov-howto'),
+   pause: document.getElementById('ov-pause'),
+   over: document.getElementById('ov-over'),
++  confirm: document.getElementById('ov-confirm'),
+ };
+ const hudEl = document.getElementById('hud');
+ function showScene(name) {
+@@ -4073,7 +4214,9 @@ function showScene(name) {
+   if (name !== 'playing') hideCoach();
+   Object.values(overlays).forEach(o => o.classList.add('hidden'));
+   if (overlays[name]) { overlays[name].classList.remove('hidden'); overlays[name].scrollTop = 0; }
+-  hudEl.style.display = (name === 'playing') ? 'flex' : 'none';
++  hudEl.style.display = (name === 'playing') ? '' : 'none';
++  if (name === 'playing') safeFocus(canvas); // el foco no se queda en el botón que acaba de ocultarse
++  if (name === 'howto') paintHowto();
+   if (name !== 'playing') document.getElementById('hud-level').style.display = 'none';
+   if (name !== 'playing' && name !== 'paused' && !(name === 'settings' && settingsReturn === 'paused')) { clearBoss(); Music.setIntensity(0); muffleMusic(false); }
+   syncCoinDisplays();
+@@ -4127,12 +4270,15 @@ function buildLevels(m) {
+     const locked = n > cleared + 1;
+     const card = document.createElement('div');
+     card.className = 'card lvl-card' + (locked ? ' locked' : '') + (n === cleared + 1 ? ' active' : '');
+-    card.tabIndex = locked ? -1 : 0;
++    card.tabIndex = 0; // PLAY-SLALOM-05: la pista bloqueada también se puede consultar con teclado
+     card.setAttribute('role', 'button');
++    if (locked) card.setAttribute('aria-disabled', 'true');
+     card.innerHTML = '<div class="lvl-n"><span class="lvl-dot ' + def.color + '"></span>' + tx('run_n', { n }) + '</div>' +
+-      '<div class="card-name">' + (locked ? '🔒 ' : '') + def.name + '</div>' +
+-      '<div class="stars">' + starsHTML(store.stars[m][n - 1] || 0) + '</div>' +
++      '<div class="card-name">' + def.name + '</div>' +
++      (locked ? '<div class="lock-tag">🔒 ' + tx('locked_run') + '</div><div class="lock-cond">' + tx('unlock_prev') + '</div>'
++              : '<div class="stars">' + starsHTML(store.stars[m][n - 1] || 0) + '</div>') +
+       '<div class="card-desc">' + km(def.len) + (def.boss ? ' · ' + BOSS_NAMES[def.boss] : '') + '</div>';
++    if (locked) card.setAttribute('aria-label', tx('locked_run') + '. ' + tx('run_n', { n }) + ': ' + def.name + '. ' + tx('unlock_prev'));
+     card.addEventListener('click', () => {
+       if (locked) { showToast(tx('unlock_hint', { n: n - 1 }), 'warn'); return; }
+       sfxUi(); openBrief(n);
+@@ -4154,7 +4300,21 @@ function paintBrief(n) {
+   document.getElementById('brief-sub').textContent = COLOR_NAME[def.color] + ' · ' + km(def.len) + (def.boss ? ' · ' + tx('boss_n', { name: BOSS_NAMES[def.boss] }) : '');
+   const mask = store.goalMask[menuMode][n - 1] || 0;
+   document.getElementById('brief-stars').innerHTML = starsHTML(store.stars[menuMode][n - 1] || 0);
+-  document.getElementById('brief-goals').innerHTML = goalTexts(def).map((t, k) => '<li class="' + ((mask >> k) & 1 ? 'ok' : '') + '"><span class="gs">★</span><span>' + t + '</span></li>').join('');
++  document.getElementById('brief-goals').innerHTML = goalTexts(def).map((t, k) => goalLi(t, !!((mask >> k) & 1))).join('');
++  // PLAY-SLALOM-01: regla de la modalidad y controles esenciales antes de que corra el tiempo
++  document.getElementById('brief-rule').innerHTML = ruleHTML(menuMode);
++  document.getElementById('brief-controls').textContent = tx(COARSE ? 'brief_ctrl_touch' : 'brief_ctrl_keys');
++}
++function ruleHTML(m) {
++  if (m === 'slalom') return tx('flags_rule') + ' ' + tx('p_slalom');
++  if (m === 'freestyle') return tx('p_freestyle');
++  return tx('p_forest');
++}
++// PLAY-SLALOM-02: «Cómo jugar» muestra las reglas de la modalidad elegida (Slalom por defecto) y el diagrama de banderas
++function paintHowto() {
++  const m = DISCIPLINES.includes(menuMode) ? menuMode : 'slalom';
++  document.getElementById('howto-rule').innerHTML = ruleHTML(m);
++  document.getElementById('flag-diagram').style.display = m === 'slalom' ? '' : 'none';
+ }
+ 
+ function buildRecords() {
+@@ -4191,6 +4351,7 @@ function closeSettings() {
+     Game.scene = 'paused';
+     settingsReturn = 'menu';
+     syncBack();
++    safeFocus(document.getElementById('btn-pause-settings')); // pausa → ajustes → volver: regresa al disparador
+     return;
+   }
+   const back = settingsReturn;
+@@ -4200,13 +4361,18 @@ function closeSettings() {
+ 
+ function buildShop() {
+   const grid = document.getElementById('shop-grid');
++  // RSP-SLALOM-02: recordar la tarjeta enfocada antes de reconstruir y devolverle el foco después
++  const ae = document.activeElement;
++  const focusId = ae && grid.contains(ae) && ae.dataset ? ae.dataset.skinId : null;
+   grid.innerHTML = '';
+   SKINS.forEach(s => {
+     const owned = store.unlocked.includes(s.id);
+     const equipped = store.skin === s.id;
+-    const card = document.createElement('div');
++    const card = document.createElement('button');
++    card.type = 'button';
++    card.dataset.skinId = s.id;
+     card.className = 'card' + (equipped ? ' active' : '') + (owned ? '' : ' locked');
+-    card.tabIndex = 0; card.setAttribute('role', 'button');
++    if (owned) card.setAttribute('aria-pressed', equipped ? 'true' : 'false');
+     card.innerHTML = `
+       <canvas class="card-canvas" width="120" height="120"></canvas>
+       <div class="card-name">${s.name}</div>
+@@ -4246,6 +4412,7 @@ function buildShop() {
+       drawSkierAtOn(cc, 60, 70, 2.0, s.body, s.helmet, s.goggle, 0, false, s.accent);
+     }, 0);
+   });
++  if (focusId) { const el = grid.querySelector('[data-skin-id="' + focusId + '"]'); if (el) safeFocus(el); }
+ }
+ 
+ // Variante que permite render en cualquier contexto (para shop previews)
+@@ -4310,9 +4477,11 @@ function drawSkierAtOn(cc, x, y, sc, body, helmet, goggle, bank, tuck, accent) {
+ // ---- navegación ----
+ const on = (id, fn) => document.getElementById(id).addEventListener('click', () => { sfxUi(); fn(); });
+ on('btn-start-main', () => {
+-  if (!store.stats.runs && !totalStars()) { menuMode = 'slalom'; Game.structure = 'levels'; Game.level = 1; startGame(); return; }
++  // PLAY-SLALOM-01: perfil nuevo → briefing de «Slalom · Pista 1» (objetivo, regla y controles) antes de que corra el tiempo
++  if (!store.stats.runs && !totalStars()) { menuMode = 'slalom'; Game.structure = 'levels'; openBrief(1); return; }
+   showScene('menu');
+ });
++on('btn-brief-modes', () => showScene('menu'));
+ on('btn-how-to', () => showScene('howto'));
+ on('btn-splash-settings', () => openSettings('splash'));
+ on('btn-howto-close', () => showScene('splash'));
+@@ -4410,39 +4579,54 @@ for (const [id, k] of [['vol-music', 'musicVol'], ['vol-sfx', 'sfxVol']]) {
+ function labelToggles() { document.querySelectorAll('[data-opt]').forEach(el => { const k = el.closest('.opt-row').querySelector('.opt-k'); if (k) el.setAttribute('aria-label', k.textContent); }); }
+ syncSettingsUI();
+ 
+-let resetArmed = 0;
+-document.getElementById('btn-reset').addEventListener('click', () => {
+-  const b = document.getElementById('btn-reset');
+-  if (performance.now() - resetArmed > 3500) {
+-    resetArmed = performance.now();
+-    b.textContent = tx('reset_confirm');
+-    b.classList.add('danger-btn');
+-    setTimeout(() => { if (performance.now() - resetArmed >= 3400) { resetArmed = 0; b.textContent = tx('reset'); b.classList.remove('danger-btn'); } }, 3600);
+-    return;
+-  }
+-  resetArmed = 0;
++// SRC-G04: confirmación explícita (Cancelar enfocado, botón peligro aparte); conserva ajustes de audio/controles e idioma
++let confirmTrigger = null;
++function openConfirm() {
++  confirmTrigger = document.activeElement;
++  document.getElementById('confirm-title').textContent = tx('delete_title', { juego: 'JET//Slalom' });
++  document.getElementById('confirm-msg').textContent = tx('delete_body', { datos: tx('delete_data') });
++  overlays.confirm.classList.remove('hidden'); overlays.confirm.scrollTop = 0;
++  safeFocus(document.getElementById('btn-confirm-cancel'));
++}
++function closeConfirm(accepted) {
++  overlays.confirm.classList.add('hidden');
++  if (accepted) eraseProgress();
++  const t = confirmTrigger; confirmTrigger = null;
++  if (!(t && isVisible(t) && safeFocus(t))) safeFocus(document.getElementById('btn-reset'));
++}
++function eraseProgress() {
+   const keepSettings = store.settings;
+   try { localStorage.removeItem(STORE_KEY); } catch(e) {}
+   store = loadStore();
+   store.settings = keepSettings;
+   store.v12 = store.v20 = true;
+   saveStore();
+-  b.textContent = tx('reset'); b.classList.remove('danger-btn');
+   syncCoinDisplays();
++  if (DISCIPLINES.includes(menuMode)) { paintStructure(menuMode); buildLevels(menuMode); }
+   showToast(tx('reset_done'), 'warn');
+-});
++}
++document.getElementById('btn-reset').addEventListener('click', openConfirm);
++on('btn-confirm-cancel', () => closeConfirm(false));
++on('btn-confirm-ok', () => closeConfirm(true));
+ 
+ // ---- teclado en los menús ----
+ function menuKey(e) {
++  if (!overlays.confirm.classList.contains('hidden')) {
++    if (e.code === 'Escape') { e.preventDefault(); closeConfirm(false); }
++    return; // Enter/Espacio los gestionan los botones nativos del diálogo
++  }
+   const ov = document.querySelector('.overlay:not(.hidden)');
+   if (!ov) return;
+   const ae = document.activeElement;
+   const role = ae && ae.getAttribute && ae.getAttribute('role');
+-  if ((e.code === 'Enter' || e.code === 'NumpadEnter' || e.code === 'Space') && (role === 'button' || role === 'switch') && ov.contains(ae)) {
++  const native = !!(ae && ae.closest && ae.closest('button,a,input,select,textarea,summary,[contenteditable="true"]'));
++  // RSP-SLALOM-04: soporte manual sólo para los div role=button/switch; los controles nativos se activan solos
++  if ((e.code === 'Enter' || e.code === 'NumpadEnter' || e.code === 'Space') && !native && (role === 'button' || role === 'switch') && ov.contains(ae)) {
+     e.preventDefault(); ae.click(); return;
+   }
+   if (e.code === 'Enter' || e.code === 'NumpadEnter') {
+-    if (ae && ae.tagName === 'BUTTON' && ov.contains(ae)) return;   // el botón enfocado se activa solo
++    if (native) return;                                              // botón, enlace (incluido JET//Games), input, summary…
++    if (ae && ae !== document.body && ov.contains(ae)) return;       // otro control enfocado: sin atajo de CTA
+     const p = ov.querySelector('.btn-primary');
+     if (p) { e.preventDefault(); p.click(); }
+     else if (ov === overlays.menu) { e.preventDefault(); ov.querySelector('[data-mode="slalom"]').click(); }
+@@ -4473,9 +4657,10 @@ function applyLang() {
+   document.querySelectorAll('[data-i18n-title]').forEach(el => { el.setAttribute('title', tx(el.getAttribute('data-i18n-title'))); });
+   document.querySelectorAll('.lang-sw button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.lang === L)));
+   labelToggles();
+-  const rb = document.getElementById('btn-reset');
+-  rb.textContent = resetArmed && performance.now() - resetArmed < 3500 ? tx('reset_confirm') : tx('reset');
+   syncCoinDisplays();
++  if (!overlays.confirm.classList.contains('hidden')) { const t = confirmTrigger; openConfirm(); confirmTrigger = t; }
++  if (Game.scene === 'howto') paintHowto();
++  if (Game.scene === 'paused' || settingsReturn === 'paused') document.getElementById('btn-quit').textContent = exitLabel();
+   if (DISCIPLINES.includes(menuMode)) {
+     paintStructure(menuMode);
+     buildLevels(menuMode);

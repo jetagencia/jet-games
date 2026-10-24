@@ -1,0 +1,845 @@
+diff --git a/site/match/index.html b/site/match/index.html
+index 05d6fd4..e3a5c01 100644
+--- a/site/match/index.html
++++ b/site/match/index.html
+@@ -84,7 +84,7 @@
+   try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
+ })();
+ </script>
+-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
++<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+ <meta name="mobile-web-app-capable" content="yes">
+ <meta name="apple-mobile-web-app-capable" content="yes">
+ <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+@@ -126,7 +126,9 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(-
+ .hc{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:6px 9px;min-width:0;
+   display:flex;flex-direction:column;justify-content:center;gap:3px}
+ .hc .l{font:600 10.5px/1 'JetBrains Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ink2);opacity:.8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+-.hc b{font:700 20px/1.05 'JetBrains Mono',monospace;color:var(--c);white-space:nowrap}
++.hc b{font:700 20px/1.05 'JetBrains Mono',monospace;color:var(--c);white-space:nowrap;font-variant-numeric:tabular-nums}
++.hc b.txt{font-size:13px;line-height:1.1;white-space:normal}
++.hc .l.wrap{white-space:normal;line-height:1.15}
+ .hc.lvl{grid-area:l}.hc.lvl b{color:var(--sec)}
+ .hc.mov{grid-area:m}.hc.mov b{color:var(--y)}
+ .hc.mov.urgent b{color:var(--red);animation:pulse .6s ease-in-out infinite alternate}
+@@ -157,16 +159,19 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(-
+ .hint-btn:active{transform:scale(.95)}
+ .hint-btn[disabled]{opacity:.4;cursor:default}
+ .hint-btn.nudge{border-color:rgba(255,216,74,.75);box-shadow:0 0 18px -2px rgba(255,216,74,.55)}
+-#app.land #dock{position:absolute;left:calc(var(--sl) + 10px);bottom:calc(var(--sb) + 10px);width:clamp(196px,26vw,270px);justify-content:flex-start;padding:0}
++/* Apaisado (VIS-MATCH-05): una sola columna instrumental a la izquierda (pausa, nivel/modo, jugadas/tiempo, puntos, objetivos y Pista
++   16 px debajo del último dato), 270 px como máximo y 24 px de separación del tablero. El tablero se recalcula desde #stage. */
+ @media (max-width:360px){.ov .eyebrow{letter-spacing:.12em;font-size:.68rem}#hud{grid-template-columns:44px 1fr 1fr 1.3fr}.hbtn{width:44px;height:44px}.hc .l{letter-spacing:.04em}}
+-#app.land{flex-direction:row;align-items:stretch}
+-#app.land #hud{width:clamp(196px,26vw,270px);max-width:none;margin:0;align-content:center;
++#app.land{display:grid;grid-template-columns:clamp(196px,24vw,270px) minmax(0,1fr);grid-template-rows:1fr auto auto 1fr;column-gap:24px;
++  grid-template-areas:". stage" "hud stage" "dock stage" ". stage"}
++#app.land #hud{grid-area:hud;width:auto;max-width:none;margin:0;align-content:center;
+   grid-template-columns:46px 1fr;grid-template-areas:"p l" "m m" "s s" "g g"}
++#app.land #dock{grid-area:dock;position:static;width:auto;justify-content:flex-start;padding:16px 0 0}
+ #app.land #goals{justify-content:flex-start}
+-#app.land #stage{margin:0 0 0 12px}
++#app.land #stage{grid-area:stage;margin:0;min-height:0}
+ #app.land .hc b{font-size:22px}
+ @media (min-width:1000px) and (min-height:700px){
+-  #app.land #hud,#app.land #dock{width:clamp(240px,24vw,320px)}
++  #app.land{grid-template-columns:clamp(240px,24vw,270px) minmax(0,1fr)}
+   #app.land #hud{gap:10px}
+   #app.land .hc{padding:10px 14px;border-radius:16px}
+   #app.land .hc .l{font-size:11px}
+@@ -177,7 +182,7 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(-
+ }
+ 
+ /* ---------- PANTALLAS ---------- */
+-.ov{position:fixed;inset:0;z-index:10;display:none;flex-direction:column;overflow-y:auto;-webkit-overflow-scrolling:touch;
++.ov{position:fixed;inset:0;z-index:10;display:none;flex-direction:column;overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y pinch-zoom;
+   padding:calc(var(--st) + 18px) calc(var(--sr) + 16px) calc(var(--sb) + 18px) calc(var(--sl) + 16px);
+   background:radial-gradient(ellipse at 50% 0%,rgba(119,0,244,.22),transparent 60%),rgba(5,1,8,.86);
+   -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+@@ -217,8 +222,9 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(-
+ .chip-snd .off{display:none}.chip-snd[aria-pressed="false"] .on{display:none}.chip-snd[aria-pressed="false"] .off{display:inline}
+ .topr{position:absolute;top:calc(var(--st) + 8px);right:calc(var(--sr) + 10px);display:flex;align-items:center;gap:8px;z-index:2}
+ .topr .chip-snd{position:static}
+-.seg{display:inline-flex;flex-shrink:0;padding:3px;border-radius:99px;background:rgba(5,1,8,.7);border:1px solid var(--line)}
+-.seg button{min-width:44px;min-height:38px;padding:0 10px;border-radius:99px;font:700 .74rem/1 'JetBrains Mono',monospace;letter-spacing:.12em;color:var(--ink2);transition:background .15s,color .15s}
++/* ES / EN: dos botones nativos de 44×44 px como mínimo, separados 8 px (RSP-LANGUAGE-TARGETS-01) */
++.seg{display:inline-flex;flex-shrink:0;gap:8px;padding:3px;border-radius:99px;background:rgba(5,1,8,.7);border:1px solid var(--line)}
++.seg button{flex:none;min-width:44px;min-height:44px;height:auto;padding:0 10px;border-radius:99px;font:700 .74rem/1 'JetBrains Mono',monospace;letter-spacing:.12em;color:var(--ink2);transition:background .15s,color .15s}
+ .seg button[aria-pressed="true"]{background:linear-gradient(90deg,#7700f4,#00f2cf);color:#07020f}
+ .seg button:not([aria-pressed="true"]):hover{color:var(--c)}
+ .set .seg{background:rgba(255,255,255,.04)}
+@@ -228,7 +234,15 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(-
+ .stat{flex:1;min-width:90px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:8px 10px}
+ .stat .l{font:600 .7rem/1 'JetBrains Mono',monospace;letter-spacing:.16em;text-transform:uppercase;color:var(--ink2);opacity:.8}
+ .stat b{display:block;margin-top:5px;font:700 1.15rem/1 'JetBrains Mono',monospace;color:var(--c)}
+-.big{font-weight:800;font-size:clamp(2.6rem,12vw,3.6rem);line-height:1;background:linear-gradient(90deg,#00f2cf,#ffd84a);-webkit-background-clip:text;background-clip:text;color:transparent}
++.big{font-weight:800;font-size:clamp(2.6rem,12vw,3.6rem);line-height:1;font-variant-numeric:tabular-nums;background:linear-gradient(90deg,#00f2cf,#ffd84a);-webkit-background-clip:text;background-clip:text;color:transparent}
++.score-block{display:flex;flex-direction:column;align-items:center;gap:12px;width:100%}
++.slab{font:600 12px/1 'JetBrains Mono',monospace;letter-spacing:.16em;text-transform:uppercase;color:#B8AECF}
++.score-block .msg{font-size:.88rem}
++.thr{font:500 .78rem/1.5 'JetBrains Mono',monospace;color:var(--ink2)}
++.thr .ok{color:var(--g)}
++.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
++.status{min-height:1.2em;font:500 .74rem/1 'JetBrains Mono',monospace;color:var(--ink2);text-align:center}
++.zone{width:100%;margin-top:6px;padding-top:14px;border-top:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;gap:10px;align-items:center}
+ .tag{display:inline-block;padding:5px 10px;border-radius:99px;font:700 .62rem/1 'JetBrains Mono',monospace;letter-spacing:.14em;text-transform:uppercase;
+   color:#07020f;background:var(--y);box-shadow:0 0 16px rgba(255,216,74,.5)}
+ .stars{display:flex;gap:12px;justify-content:center;font-size:2.6rem;line-height:1}
+@@ -261,13 +275,16 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(-
+ .set:last-child{border-bottom:0}
+ .set .n{font-weight:600;font-size:.95rem}
+ .set .d{font-size:.75rem;color:var(--ink2)}
+-.sw{position:relative;width:52px;height:30px;border-radius:99px;background:#2a2242;flex-shrink:0;transition:background .2s}
+-.sw::after{content:'';position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#cfc6ea;transition:transform .2s,background .2s}
+-.sw[aria-pressed="true"]{background:linear-gradient(90deg,#7700f4,#00f2cf)}
++/* Interruptores de 52×44 px: la pista visible mide 52×30 (::before) y el indicador 24 px (::after) (RSP-MATCH-02) */
++.sw{position:relative;width:52px;height:44px;border-radius:99px;background:transparent;flex-shrink:0}
++.sw::before{content:'';position:absolute;inset:7px 0;border-radius:99px;background:#2a2242;transition:background .2s}
++.sw::after{content:'';position:absolute;top:10px;left:3px;width:24px;height:24px;border-radius:50%;background:#cfc6ea;transition:transform .2s,background .2s}
++.sw[aria-pressed="true"]::before{background:linear-gradient(90deg,#7700f4,#00f2cf)}
+ .sw[aria-pressed="true"]::after{transform:translateX(22px);background:#fff}
+-input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:30px;background:transparent;touch-action:pan-x}
++input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:44px;background:transparent;touch-action:pan-x}
+ input[type=range]::-webkit-slider-runnable-track{height:6px;border-radius:4px;background:linear-gradient(90deg,var(--v),var(--c))}
+ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;margin-top:-8px;border-radius:50%;background:#fff;box-shadow:0 0 10px rgba(0,242,207,.7)}
++input[type=range]:focus-visible::-webkit-slider-thumb{outline:2px solid var(--c);outline-offset:3px}
+ input[type=range]::-moz-range-track{height:6px;border-radius:4px;background:linear-gradient(90deg,var(--v),var(--c))}
+ input[type=range]::-moz-range-thumb{width:22px;height:22px;border:0;border-radius:50%;background:#fff}
+ .vol{padding:0 2px 6px}
+@@ -318,7 +335,8 @@ kbd{font:600 .72rem 'JetBrains Mono',monospace;padding:2px 6px;border-radius:6px
+     </div>
+     <div id="goals"></div>
+   </header>
+-  <div id="stage" role="application" aria-label="Tablero de JET//Match" data-i18n-aria="board"></div>
++  <div id="stage" role="application" tabindex="0" aria-label="Tablero de JET//Match" data-i18n-aria="board" aria-describedby="a11y"></div>
++  <div id="a11y" class="sr" aria-live="polite" aria-atomic="true"></div>
+   <div id="dock"><button class="hint-btn" id="b-hint" aria-label="Pedir una pista (tecla H)" data-i18n-aria="hintAria">
+     <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5a6.5 6.5 0 0 0-4 11.6c.8.7 1.3 1.6 1.3 2.6V17h5.4v-.3c0-1 .5-1.9 1.3-2.6A6.5 6.5 0 0 0 12 2.5z" fill="currentColor"/><rect x="9.3" y="18.4" width="5.4" height="1.8" rx=".9" fill="currentColor"/><rect x="10.2" y="21" width="3.6" height="1.6" rx=".8" fill="currentColor"/></svg><span data-i18n="hint">Pista</span></button></div>
+ </div>
+@@ -355,21 +373,21 @@ kbd{font:600 .72rem 'JetBrains Mono',monospace;padding:2px 6px;border-radius:6px
+ </section>
+ 
+ <!-- MAPA -->
+-<section class="ov" id="o-map">
++<section class="ov" id="o-map" role="dialog" aria-modal="true" aria-labelledby="h-map">
+   <div class="wrap wide">
+     <div class="brand sm">JET<span class="sl">//</span>MATCH</div>
+-    <div class="h2" data-i18n="pickLevel">Elige un nivel</div>
++    <h2 class="h2" id="h-map" data-i18n="pickLevel">Elige un nivel</h2>
+     <div class="msg" id="map-sum"></div>
+     <div id="map" style="display:flex;flex-direction:column;gap:12px;width:100%"></div>
+-    <button class="btn" id="b-map-back" style="max-width:320px" data-i18n="back">Volver</button>
++    <button class="btn" id="b-map-back" style="max-width:320px" data-i18n="toMenu">Volver al menú</button>
+   </div>
+ </section>
+ 
+ <!-- PRESENTACIÓN DE NIVEL -->
+-<section class="ov clear" id="o-intro">
++<section class="ov clear" id="o-intro" role="dialog" aria-modal="true" aria-labelledby="in-title">
+   <div class="wrap">
+     <div class="eyebrow" id="in-sec">Sector Órbita</div>
+-    <div class="h2" id="in-title">Nivel 1</div>
++    <h2 class="h2" id="in-title">Nivel 1</h2>
+     <div class="goalrow col" id="in-goals"></div>
+     <div class="msg" id="in-moves"></div>
+     <div class="card tip" id="in-tip"><span class="new" data-i18n="new">Nuevo</span><span id="in-tip-t"></span></div>
+@@ -379,74 +397,92 @@ kbd{font:600 .72rem 'JetBrains Mono',monospace;padding:2px 6px;border-radius:6px
+ </section>
+ 
+ <!-- PAUSA -->
+-<section class="ov" id="o-pause">
++<section class="ov" id="o-pause" role="dialog" aria-modal="true" aria-labelledby="pa-title">
+   <div class="wrap">
+     <div class="eyebrow" data-i18n="pauseEb">pausa</div>
+-    <div class="h2" id="pa-title">Nivel 1</div>
++    <h2 class="h2" id="pa-title">Nivel 1</h2>
+     <div class="goalrow" id="pa-goals"></div>
+-    <button class="btn pri" id="b-resume" data-i18n="resume">Continuar</button>
+-    <div class="row"><button class="btn" id="b-restart" data-i18n="restart">Reiniciar</button><button class="btn" id="b-pa-set" data-i18n="settings">Ajustes</button></div>
+-    <div class="row"><button class="btn" id="b-pa-how" data-i18n="howTo">Cómo jugar</button><button class="btn" id="b-quit">Salir</button></div>
++    <button class="btn pri" id="b-resume" data-i18n="resume">Reanudar partida</button>
++    <div class="row"><button class="btn" id="b-restart">Reiniciar nivel</button><button class="btn" id="b-pa-set" data-i18n="settings">Ajustes</button></div>
++    <div class="row"><button class="btn" id="b-pa-how" data-i18n="howTo">Cómo jugar</button><button class="btn" id="b-quit">Volver al mapa</button></div>
++  </div>
++</section>
++
++<!-- CONFIRMACIÓN (salir de la partida, borrar progreso) -->
++<section class="ov" id="o-confirm" role="alertdialog" aria-modal="true" aria-labelledby="cf-title" aria-describedby="cf-body">
++  <div class="wrap">
++    <h2 class="h2" id="cf-title"></h2>
++    <p class="msg" id="cf-body"></p>
++    <div class="row"><button class="btn" id="b-cf-cancel">Seguir jugando</button><button class="btn danger" id="b-cf-ok">Salir</button></div>
+   </div>
+ </section>
+ 
+ <!-- VICTORIA -->
+-<section class="ov" id="o-win">
++<section class="ov" id="o-win" role="dialog" aria-modal="true" aria-labelledby="wi-title">
+   <div class="wrap">
+     <div class="eyebrow" id="wi-eb">nivel superado</div>
+-    <div class="h2" id="wi-title">¡Nivel 1 completado!</div>
+-    <div class="stars" id="wi-stars"><span>★</span><span>★</span><span>★</span></div>
+-    <div class="big" id="wi-score">0</div>
+-    <div id="wi-rec"></div>
+-    <div class="stats"><div class="stat"><span class="l" data-i18n="maxCombo">Combo máx.</span><b id="wi-combo">×1</b></div><div class="stat"><span class="l" data-i18n="best">Récord</span><b id="wi-best">0</b></div></div>
++    <h2 class="h2" id="wi-title">¡Nivel 1 completado!</h2>
++    <div class="stars" id="wi-stars" aria-hidden="true"><span>★</span><span>★</span><span>★</span></div>
++    <div class="score-block">
++      <div class="slab" data-i18n="points">Puntos</div>
++      <div class="big" id="wi-score">0</div>
++      <div id="wi-rec"></div>
++      <div class="msg" id="wi-bonus"></div>
++      <div class="msg" id="wi-stars-t"></div>
++      <div class="thr" id="wi-thr"></div>
++      <div class="stats"><div class="stat"><span class="l" data-i18n="maxCombo">Combo máx.</span><b id="wi-combo">×1</b></div><div class="stat"><span class="l" data-i18n="best">Récord</span><b id="wi-best">0</b></div></div>
++    </div>
+     <button class="btn pri" id="b-next">Siguiente nivel</button>
+-    <div class="row"><button class="btn" id="b-wi-again" data-i18n="replay">Repetir</button><button class="btn" id="b-wi-map" data-i18n="map">Mapa</button></div>
++    <div class="row"><button class="btn" id="b-wi-again" data-i18n="replay">Repetir nivel</button><button class="btn" id="b-wi-map" data-i18n="backMap">Volver al mapa</button></div>
+   </div>
+ </section>
+ 
+ <!-- DERROTA -->
+-<section class="ov" id="o-lose">
++<section class="ov" id="o-lose" role="dialog" aria-modal="true" aria-labelledby="lo-title">
+   <div class="wrap">
+     <div class="eyebrow" data-i18n="noMovesEb">sin jugadas</div>
+-    <div class="h2" data-i18n="soClose">Te faltó poco</div>
++    <h2 class="h2" id="lo-title" data-i18n="soClose">Te faltó poco</h2>
+     <div class="msg" data-i18n="leftToDo">Esto es lo que quedaba por cumplir:</div>
+     <div class="goalrow" id="lo-goals"></div>
+-    <div class="big" id="lo-score">0</div>
+-    <button class="btn pri" id="b-retry" data-i18n="retry">Reintentar</button>
+-    <button class="btn" id="b-lo-map" style="max-width:260px" data-i18n="map">Mapa</button>
++    <div class="score-block"><div class="slab" data-i18n="points">Puntos</div><div class="big" id="lo-score">0</div></div>
++    <button class="btn pri" id="b-retry" data-i18n="retry">Reintentar nivel</button>
++    <button class="btn" id="b-lo-map" style="max-width:260px" data-i18n="backMap">Volver al mapa</button>
+   </div>
+ </section>
+ 
+ <!-- FINAL DE CAMPAÑA -->
+-<section class="ov" id="o-end">
++<section class="ov" id="o-end" role="dialog" aria-modal="true" aria-labelledby="en-title">
+   <div class="wrap">
+     <div class="eyebrow" data-i18n="campDoneEb">campaña completa</div>
+     <div class="brand">JET<span class="sl">//</span>MATCH</div>
+-    <div class="h2" data-i18n="campDoneT">¡Constelación encendida!</div>
++    <h2 class="h2" id="en-title" data-i18n="campDoneT">¡Constelación encendida!</h2>
+     <div class="msg" data-i18n="campDoneMsg">Cruzaste los cinco sectores: Órbita, Nebulosa, Anillos, Cometa y Núcleo. Ahora el reto es conseguir las 90 estrellas.</div>
+     <div class="big" id="en-stars">0/90 ★</div>
+     <button class="btn pri" id="b-en-map" data-i18n="toMap">Ir al mapa</button>
+-    <button class="btn" id="b-en-menu" style="max-width:260px" data-i18n="menu">Menú</button>
++    <button class="btn" id="b-en-menu" style="max-width:260px" data-i18n="toMenu">Volver al menú</button>
+   </div>
+ </section>
+ 
+ <!-- FIN DE CONTRARRELOJ / ZEN -->
+-<section class="ov" id="o-tend">
++<section class="ov" id="o-tend" role="dialog" aria-modal="true" aria-labelledby="te-title">
+   <div class="wrap">
+     <div class="eyebrow" id="te-eb">tiempo</div>
+-    <div class="h2" id="te-title">¡Se acabó el tiempo!</div>
+-    <div class="big" id="te-score">0</div>
+-    <div id="te-rec"></div>
+-    <div class="stats"><div class="stat"><span class="l" data-i18n="maxCombo">Combo máx.</span><b id="te-combo">×1</b></div><div class="stat"><span class="l" data-i18n="best">Récord</span><b id="te-best">0</b></div></div>
+-    <button class="btn pri" id="b-te-again" data-i18n="again">Otra vez</button>
+-    <button class="btn" id="b-te-menu" style="max-width:260px" data-i18n="menu">Menú</button>
++    <h2 class="h2" id="te-title">¡Se acabó el tiempo!</h2>
++    <div class="score-block">
++      <div class="slab" data-i18n="points">Puntos</div>
++      <div class="big" id="te-score">0</div>
++      <div id="te-rec"></div>
++      <div class="stats"><div class="stat"><span class="l" data-i18n="maxCombo">Combo máx.</span><b id="te-combo">×1</b></div><div class="stat"><span class="l" data-i18n="best">Récord</span><b id="te-best">0</b></div></div>
++    </div>
++    <button class="btn pri" id="b-te-again" data-i18n="newGame">Nueva partida</button>
++    <button class="btn" id="b-te-menu" style="max-width:260px" data-i18n="toMenu">Volver al menú</button>
+   </div>
+ </section>
+ 
+ <!-- CÓMO JUGAR -->
+-<section class="ov" id="o-how">
++<section class="ov" id="o-how" role="dialog" aria-modal="true" aria-labelledby="how-title">
+   <div class="wrap">
+-    <div class="eyebrow" data-i18n="howEb">cómo jugar</div>
++    <h2 class="eyebrow" id="how-title" data-i18n="howEb">cómo jugar</h2>
+     <div class="card how">
+       <div class="it"><canvas data-px="44" data-icon="gem:0"></canvas><span data-i18n-html="howSwap">Intercambia dos gemas vecinas para alinear <b>tres o más</b> del mismo color. Desliza, o toca una y luego la otra.</span></div>
+       <h4 data-i18n="specials">Especiales</h4>
+@@ -467,9 +503,9 @@ kbd{font:600 .72rem 'JetBrains Mono',monospace;padding:2px 6px;border-radius:6px
+ </section>
+ 
+ <!-- AJUSTES -->
+-<section class="ov" id="o-set">
++<section class="ov" id="o-set" role="dialog" aria-modal="true" aria-labelledby="set-title">
+   <div class="wrap">
+-    <div class="eyebrow" data-i18n="settingsEb">ajustes</div>
++    <h2 class="eyebrow" id="set-title" data-i18n="settingsEb">ajustes</h2>
+     <div class="card">
+       <div class="set"><div><div class="n" data-i18n="language">Idioma</div><div class="d">Español · English</div></div><div class="seg langseg" role="group" aria-label="Idioma" data-i18n-aria="language"><button type="button" data-lang="es" aria-pressed="true">ES</button><button type="button" data-lang="en" aria-pressed="false">EN</button></div></div>
+       <div class="set"><div><div class="n" data-i18n="music">Música</div><div class="d" data-i18n="musicD">Banda sonora original de JET//Match</div></div><button class="sw" id="s-music" aria-label="Música" data-i18n-aria="music"></button></div>
+@@ -479,8 +515,11 @@ kbd{font:600 .72rem 'JetBrains Mono',monospace;padding:2px 6px;border-radius:6px
+       <div class="set" id="row-vib"><div><div class="n" data-i18n="vibration">Vibración</div><div class="d" data-i18n="vibD">En teléfonos compatibles</div></div><button class="sw" id="s-vib" aria-label="Vibración" data-i18n-aria="vibration"></button></div>
+       <div class="set"><div><div class="n" data-i18n="hints">Pistas</div><div class="d" data-i18n="hintsD">Sugiere una jugada si te quedas quieto</div></div><button class="sw" id="s-hints" aria-label="Pistas" data-i18n-aria="hints"></button></div>
+     </div>
+-    <button class="btn danger" id="b-reset">Borrar progreso</button>
+     <button class="btn pri" id="b-set-ok" data-i18n="done">Listo</button>
++    <div class="zone">
++      <button class="btn danger" id="b-reset" data-i18n="reset">Borrar progreso</button>
++      <p class="status" id="reset-status" role="status"></p>
++    </div>
+   </div>
+ </section>
+ 
+@@ -503,11 +542,20 @@ const T = {
+     backHome:'Volver a JET//Games', language:'Idioma', tagline:'intercambia · alinea · encadena',
+     campaign:'Campaña', timeAttack:'Contrarreloj', zen:'Zen', howTo:'Cómo jugar', settings:'Ajustes', foot:'JetCompany OÜ · Tallin · 2026',
+     pickLevel:'Elige un nivel', back:'Volver', new:'Nuevo', go:'¡A jugar!', backMap:'Volver al mapa',
+-    pauseEb:'pausa', resume:'Continuar', restart:'Reiniciar', maxCombo:'Combo máx.', best:'Récord', replay:'Repetir', map:'Mapa',
+-    noMovesEb:'sin jugadas', soClose:'Te faltó poco', leftToDo:'Esto es lo que quedaba por cumplir:', retry:'Reintentar',
++    pauseEb:'pausa', resume:'Reanudar partida', restartLevel:'Reiniciar nivel', restartGame:'Reiniciar partida', maxCombo:'Combo máx.', best:'Récord', replay:'Repetir nivel', map:'Mapa',
++    noMovesEb:'sin jugadas', soClose:'Te faltó poco', leftToDo:'Esto es lo que quedaba por cumplir:', retry:'Reintentar nivel',
+     campDoneEb:'campaña completa', campDoneT:'¡Constelación encendida!',
+     campDoneMsg:'Cruzaste los cinco sectores: Órbita, Nebulosa, Anillos, Cometa y Núcleo. Ahora el reto es conseguir las 90 estrellas.',
+-    toMap:'Ir al mapa', menu:'Menú', again:'Otra vez', howEb:'cómo jugar',
++    toMap:'Ir al mapa', menu:'Menú', toMenu:'Volver al menú', newGame:'Nueva partida', howEb:'cómo jugar',
++    exitMenu:'Salir al menú', exitTitle:'¿Salir de esta partida?', exitBody:'Vas a perder el avance de esta partida.', stay:'Seguir jugando',
++    deleteTitle:'¿Borrar todo el progreso de JET//Match?',
++    deleteBody:'Se borrarán tus niveles superados, estrellas, récords de campaña, Contrarreloj y Zen, y las pistas vistas. Esta acción no se puede deshacer.',
++    cancel:'Cancelar',
++    bonusLine:'Bonificación por jugadas restantes: +{n}', starsOf:'{n} de 3 estrellas',
++    thr2:'2 estrellas: {n} puntos', thr3:'3 estrellas: {n} puntos', reached:'conseguido', pending:'pendiente',
++    timeLeft:'Tiempo restante', timeLeftFull:'Tiempo restante: {s} s', secN:'{n} segundos', zenD:'Sin límite de jugadas ni de tiempo',
++    cellA:'Fila {fila}, columna {columna}: {gema}', selectedA:'Gema seleccionada', invalidA:'Intercambio no válido', deselA:'Selección cancelada',
++    kBeam:'rayo', kBomb:'bomba', kNova:'nova', kCore:'núcleo', kRock:'asteroide', kRockHard:'asteroide blindado', kIce:'con cristal', kHole:'hueco', kEmpty:'vacío',
+     howSwap:'Intercambia dos gemas vecinas para alinear <b>tres o más</b> del mismo color. Desliza, o toca una y luego la otra.',
+     specials:'Especiales',
+     howLine:'<b>Rayo</b> · cuatro en línea. Al estallar borra toda una fila o columna.',
+@@ -518,19 +566,19 @@ const T = {
+     howIce:'<b>Cristal</b> · combina encima para romperlo. El doble pide dos golpes.',
+     howRock:'<b>Asteroide</b> · rómpelo con combinaciones a su lado o con especiales.',
+     howCore:'<b>Núcleo</b> · hazlo bajar hasta el fondo del tablero.',
+-    howGoal:'Cumple los objetivos que ves arriba antes de quedarte sin jugadas. ¿Atascado? Toca <b>Pista</b>. Las que sobren se convierten en rayos. Con más puntos ganas hasta <b>tres estrellas</b>.',
++    howGoal:'Cumple los objetivos que ves arriba antes de quedarte sin jugadas. ¿Te trabaste? Tocá <b>«Pista»</b> para ver un intercambio posible. Al completar el objetivo, las jugadas restantes se convierten en rayos (hasta 15; las demás suman puntos). Con más puntos ganas hasta <b>tres estrellas</b>.',
+     keyboard:'Teclado',
+     keys:'<kbd>←</kbd><kbd>↑</kbd><kbd>→</kbd><kbd>↓</kbd> mueven el cursor · <kbd>Espacio</kbd> elige una gema y una flecha la intercambia · <kbd>H</kbd> pista · <kbd>P</kbd> pausa · <kbd>M</kbd> música',
+     gotIt:'Entendido', settingsEb:'ajustes', music:'Música', musicD:'Banda sonora original de JET//Match', musicVol:'Volumen de la música',
+     sfx:'Efectos', sfxD:'Sonidos de las gemas', sfxVol:'Volumen de los efectos', vibration:'Vibración', vibD:'En teléfonos compatibles',
+     hints:'Pistas', hintsD:'Sugiere una jugada si te quedas quieto', done:'Listo',
+-    level:'Nivel', moves:'Jugadas', mode:'Modo', clock:'Reloj', time:'Tiempo', sec90:'90 segundos', noLimits:'Sin límites',
++    level:'Nivel', moves:'Jugadas', mode:'Modo', time:'Tiempo', noLimits:'Sin límites',
+     record:'Récord {n}', mapSum:'{s} de {S} estrellas · {d} de {N} niveles superados',
+     lvLocked:'Nivel {n}, bloqueado', lvStars1:'Nivel {n}, 1 estrella', lvStars:'Nivel {n}, {s} estrellas',
+     sector:'Sector {s}', youHave:'Tienes <b style="color:var(--y)">{n} jugadas</b>', recSuffix:' · récord {n}',
+-    quit:'Salir', finish:'Terminar', lvCleared:'¡Nivel {n} superado!', newRecord:'Nuevo récord', campEnd:'Final de la campaña', nextLevel:'Siguiente nivel',
++    finish:'Finalizar partida', lvCleared:'¡Nivel {n} superado!', newRecord:'Nuevo récord', campEnd:'Final de la campaña', nextLevel:'Siguiente nivel',
+     teTime:'contrarreloj', teZen:'zen', timeUp:'¡Se acabó el tiempo!', runOver:'Partida terminada',
+-    mute:'Silenciar', unmute:'Activar sonido', reset:'Borrar progreso', resetSure:'¿Seguro? Toca otra vez', resetDone:'Progreso borrado',
++    mute:'Silenciar', unmute:'Activar sonido', reset:'Borrar progreso', resetDone:'Progreso borrado',
+     skip:'Toca para saltar ›',
+     bSupernova:'¡Supernova!', bBombRain:'¡Lluvia de bombas!', bBeamRain:'¡Lluvia de rayos!', bCross:'¡Cruz!', bMegabeam:'¡Megarrayo!', bBigBlast:'¡Gran explosión!',
+     bFiveLeft:'¡Quedan 5 jugadas!', bShuffle:'Barajando', bGoalDone:'¡Objetivo cumplido!',
+@@ -559,13 +607,22 @@ const T = {
+     title:'JET//Match', metaDesc:'JET//Match: match three gems, create specials and chain cascades across 30 levels with goals.',
+     pause:'Pause', board:'JET//Match board', hintAria:'Get a hint (H key)', hint:'Hint', points:'Score',
+     backHome:'Back to JET//Games', language:'Language', tagline:'swap · align · chain',
+-    campaign:'Campaign', timeAttack:'Time Attack', zen:'Zen', howTo:'How to play', settings:'Settings', foot:'JetCompany OÜ · Tallinn · 2026',
++    campaign:'Campaign', timeAttack:'Time Trial', zen:'Zen', howTo:'How to play', settings:'Settings', foot:'JetCompany OÜ · Tallinn · 2026',
+     pickLevel:'Choose a level', back:'Back', new:'New', go:'Play!', backMap:'Back to map',
+-    pauseEb:'paused', resume:'Resume', restart:'Restart', maxCombo:'Max combo', best:'Best', replay:'Replay', map:'Map',
+-    noMovesEb:'out of moves', soClose:'So close', leftToDo:'This is what was left to do:', retry:'Try again',
++    pauseEb:'paused', resume:'Resume game', restartLevel:'Restart level', restartGame:'Restart game', maxCombo:'Max combo', best:'Best', replay:'Replay level', map:'Map',
++    noMovesEb:'out of moves', soClose:'So close', leftToDo:'This is what was left to do:', retry:'Retry level',
+     campDoneEb:'campaign complete', campDoneT:'Constellation lit!',
+     campDoneMsg:'You crossed all five sectors: Orbit, Nebula, Rings, Comet and Core. Now the challenge is to earn all 90 stars.',
+-    toMap:'Go to map', menu:'Menu', again:'Play again', howEb:'how to play',
++    toMap:'Go to map', menu:'Menu', toMenu:'Back to menu', newGame:'New game', howEb:'how to play',
++    exitMenu:'Exit to menu', exitTitle:'Leave this game?', exitBody:'You’ll lose your progress in this game.', stay:'Keep playing',
++    deleteTitle:'Delete all progress in JET//Match?',
++    deleteBody:'Your cleared levels, stars, Campaign, Time Trial and Zen best scores, and seen tips will be deleted. This cannot be undone.',
++    cancel:'Cancel',
++    bonusLine:'Bonus for remaining moves: +{n}', starsOf:'{n} of 3 stars',
++    thr2:'2 stars: {n} points', thr3:'3 stars: {n} points', reached:'reached', pending:'pending',
++    timeLeft:'Time remaining', timeLeftFull:'Time remaining: {s} s', secN:'{n} seconds', zenD:'No move or time limit',
++    cellA:'Row {fila}, column {columna}: {gema}', selectedA:'Gem selected', invalidA:'Invalid swap', deselA:'Selection cleared',
++    kBeam:'beam', kBomb:'bomb', kNova:'nova', kCore:'core', kRock:'asteroid', kRockHard:'armored asteroid', kIce:'with crystal', kHole:'hole', kEmpty:'empty',
+     howSwap:'Swap two neighboring gems to line up <b>three or more</b> of the same color. Swipe, or tap one and then the other.',
+     specials:'Specials',
+     howLine:'<b>Beam</b> · four in a row. When it bursts, it clears an entire row or column.',
+@@ -576,19 +633,19 @@ const T = {
+     howIce:'<b>Crystal</b> · make matches on top of it to break it. Double crystal takes two hits.',
+     howRock:'<b>Asteroid</b> · break it with matches next to it or with specials.',
+     howCore:'<b>Core</b> · bring it down to the bottom of the board.',
+-    howGoal:'Complete the goals shown at the top before you run out of moves. Stuck? Tap <b>Hint</b>. Leftover moves turn into beams. More points earn you up to <b>three stars</b>.',
++    howGoal:'Complete the goals shown at the top before you run out of moves. Stuck? Select <b>“Hint”</b> to see a possible swap. Once you complete the objective, remaining moves turn into lightning bolts (up to 15; the rest add points). More points earn you up to <b>three stars</b>.',
+     keyboard:'Keyboard',
+     keys:'<kbd>←</kbd><kbd>↑</kbd><kbd>→</kbd><kbd>↓</kbd> move the cursor · <kbd>Space</kbd> picks a gem and an arrow swaps it · <kbd>H</kbd> hint · <kbd>P</kbd> pause · <kbd>M</kbd> music',
+     gotIt:'Got it', settingsEb:'settings', music:'Music', musicD:'Original JET//Match soundtrack', musicVol:'Music volume',
+     sfx:'Sound effects', sfxD:'Gem sounds', sfxVol:'Effects volume', vibration:'Vibration', vibD:'On supported phones',
+     hints:'Hints', hintsD:'Suggests a move when you stay idle', done:'Done',
+-    level:'Level', moves:'Moves', mode:'Mode', clock:'Clock', time:'Time', sec90:'90 seconds', noLimits:'No limits',
++    level:'Level', moves:'Moves', mode:'Mode', time:'Time', noLimits:'No limits',
+     record:'Best {n}', mapSum:'{s} of {S} stars · {d} of {N} levels cleared',
+     lvLocked:'Level {n}, locked', lvStars1:'Level {n}, 1 star', lvStars:'Level {n}, {s} stars',
+     sector:'{s} Sector', youHave:'You have <b style="color:var(--y)">{n} moves</b>', recSuffix:' · best {n}',
+-    quit:'Quit', finish:'Finish', lvCleared:'Level {n} cleared!', newRecord:'New record', campEnd:'Campaign finale', nextLevel:'Next level',
+-    teTime:'time attack', teZen:'zen', timeUp:'Time is up!', runOver:'Game over',
+-    mute:'Mute', unmute:'Turn sound on', reset:'Delete progress', resetSure:'Are you sure? Tap again', resetDone:'Progress deleted',
++    finish:'Finish game', lvCleared:'Level {n} cleared!', newRecord:'New record', campEnd:'Campaign finale', nextLevel:'Next level',
++    teTime:'time trial', teZen:'zen', timeUp:'Time is up!', runOver:'Game over',
++    mute:'Mute', unmute:'Turn sound on', reset:'Delete progress', resetDone:'Progress deleted',
+     skip:'Tap to skip ›',
+     bSupernova:'Supernova!', bBombRain:'Bomb shower!', bBeamRain:'Beam shower!', bCross:'Cross blast!', bMegabeam:'Mega beam!', bBigBlast:'Big blast!',
+     bFiveLeft:'5 moves left!', bShuffle:'Shuffling', bGoalDone:'Goal complete!',
+@@ -1015,12 +1072,13 @@ const isSpecial = it => it && (it.k === 'nova' || (it.k === 'g' && it.sp > 0));
+ const swappable = it => it && it.k !== 'rock';
+ // ritmo: intercambio, estallido y caída (afinados en la segunda pasada para que las cascadas no se hagan largas)
+ const SWAP_T = 0.13, POP_T = 0.17, GRAV = 95, VMAX = 30;
++const TIME_S = 90;   // duración del modo Contrarreloj (regla vigente; los textos la toman de aquí)
+ 
+ function setup(mode, li){
+   G.mode = mode; G.li = li;
+   const def = mode === 'campaign' ? LEVELS[li] : { w:8, h:8, c:5, m:0, g:[] };
+   G.def = def; G.W = def.w; G.H = def.h; G.colors = def.c; G.moves = def.m;
+-  G.time = mode === 'time' ? 90 : 0; G.score = 0; G.combo = 1; G.maxCombo = 1;
++  G.time = mode === 'time' ? TIME_S : 0; G.score = 0; G.combo = 1; G.maxCombo = 1; G.scoreAtGoal = -1;
+   G.bonus = false; G.bonusLeft = 0; G.sel = null; G.hint = null; G.hintT = 0; G.queued = null; G.warned = false; G.shake = 0; G.pend = null; G.swapInfo = null;
+   G.cur = { x: Math.floor(G.W / 2), y: Math.floor(G.H / 2) };
+   G.lastStars = 0;
+@@ -1188,7 +1246,7 @@ function afterSwap(){
+   const runs = findMatches();
+   if (runs.length) { useMove(); resolveMatches(runs, [idxOf(a.x, a.y), idxOf(b.x, b.y)]); return; }
+   doSwap(a, b, SWAP_T); G.phase = 'unswap'; G.t = 0;
+-  if (!G.sim) { SFX.bad(); vib(18); }
++  if (!G.sim) { SFX.bad(); vib(18); announce(tr('invalidA')); }
+ }
+ 
+ // ---- resolución ----
+@@ -1415,7 +1473,7 @@ function shuffle(){
+   G.phase = 'shuffle'; G.t = 0;
+ }
+ function startBonus(){
+-  G.bonus = true; G.bonusT = 0; G.bonusLeft = Math.min(G.moves, 15);
++  G.bonus = true; G.bonusT = 0; G.bonusLeft = Math.min(G.moves, 15); G.scoreAtGoal = G.score;   // para desglosar la bonificación en el resultado
+   const extra = G.moves - G.bonusLeft; if (extra > 0) { G.score += extra * 300; G.moves -= extra; }
+   G.phase = 'bonus'; G.t = G.sim ? 0 : -0.7;
+   if (!G.sim) { banner(tr('bGoalDone'), 1.2); SFX.win(); updateHud(); }
+@@ -1538,29 +1596,35 @@ function shapePath(g, shape, r){
+     case 'star': for (let i = 0; i < 10; i++) { const a = Math.PI / 5 * i - Math.PI / 2, rr = i % 2 ? r * 0.56 : r * 1.18; g[i ? 'lineTo' : 'moveTo'](Math.cos(a) * rr, Math.sin(a) * rr); } g.closePath(); break;
+   }
+ }
++/* Gemas (VIS-MATCH-01): mismas seis parejas color/forma y radio R*0.37; luz desde arriba a la izquierda, halo R*0,11,
++   brillo especular 0,28 y silueta nítida de 1–1,5 px. */
+ function paintGem(g, ci, R){
+   const d = GEMS[ci], r = R * 0.37;
+-  g.save(); g.shadowColor = d.hex; g.shadowBlur = R * 0.2; shapePath(g, d.shape, r); g.fillStyle = d.hex; g.fill(); g.restore();
++  g.save(); g.shadowColor = d.hex; g.shadowBlur = R * 0.11; shapePath(g, d.shape, r); g.fillStyle = d.hex; g.fill(); g.restore();
+   const gr = g.createRadialGradient(-r * 0.35, -r * 0.45, r * 0.08, 0, 0, r * 1.3);
+   gr.addColorStop(0, d.hi); gr.addColorStop(0.42, d.hex); gr.addColorStop(1, d.lo);
+   shapePath(g, d.shape, r); g.fillStyle = gr; g.fill();
+   g.lineWidth = Math.max(1, R * 0.028); g.strokeStyle = 'rgba(255,255,255,.5)'; g.stroke();
+   g.save(); shapePath(g, d.shape, r); g.clip();
+-  g.globalAlpha = 0.42; g.fillStyle = '#fff'; g.beginPath(); g.ellipse(-r * 0.28, -r * 0.5, r * 0.55, r * 0.22, -0.45, 0, Math.PI * 2); g.fill();
++  g.globalAlpha = 0.28; g.fillStyle = '#fff'; g.beginPath(); g.ellipse(-r * 0.28, -r * 0.5, r * 0.55, r * 0.22, -0.45, 0, Math.PI * 2); g.fill();
+   g.restore();
+ }
++// Símbolos de especiales (VIS-MATCH-02): contorno oscuro corto (#130D21 al 90 %, 1,5 px) bajo el blanco y glow máximo R*0,08
++const UNDER = 'rgba(19,13,33,.9)';
+ function paintLine(g, R, vertical){
+   g.save(); if (vertical) g.rotate(Math.PI / 2);
+-  g.shadowColor = '#fff'; g.shadowBlur = R * 0.15; g.fillStyle = 'rgba(255,255,255,.95)';
+   const w = R * 0.42, h = R * 0.07;
+-  g.fillRect(-w, -h * 1.9, w * 2, h); g.fillRect(-w, h * 0.9, w * 2, h);
+-  for (const s of [-1, 1]) { g.beginPath(); g.moveTo(s * R * 0.47, 0); g.lineTo(s * R * 0.34, -R * 0.1); g.lineTo(s * R * 0.34, R * 0.1); g.closePath(); g.fill(); }
++  const path = () => { g.beginPath(); g.rect(-w, -h * 1.9, w * 2, h); g.rect(-w, h * 0.9, w * 2, h);
++    for (const s of [-1, 1]) { g.moveTo(s * R * 0.47, 0); g.lineTo(s * R * 0.34, -R * 0.1); g.lineTo(s * R * 0.34, R * 0.1); g.closePath(); } };
++  path(); g.strokeStyle = UNDER; g.lineWidth = 1.5 * 2; g.lineJoin = 'round'; g.stroke();
++  g.shadowColor = '#fff'; g.shadowBlur = R * 0.08; g.fillStyle = 'rgba(255,255,255,.95)'; path(); g.fill();
+   g.restore();
+ }
+ function paintBomb(g, R){
+   g.save();
++  g.strokeStyle = UNDER; g.lineWidth = R * 0.045 + 3; g.beginPath(); g.arc(0, 0, R * 0.17, 0, Math.PI * 2); g.stroke();
+   g.fillStyle = 'rgba(8,2,20,.82)'; g.beginPath(); g.arc(0, 0, R * 0.17, 0, Math.PI * 2); g.fill();
+-  g.shadowColor = '#fff'; g.shadowBlur = R * 0.18; g.strokeStyle = '#fff'; g.lineWidth = R * 0.045;
++  g.shadowColor = '#fff'; g.shadowBlur = R * 0.08; g.strokeStyle = '#fff'; g.lineWidth = R * 0.045;
+   g.beginPath(); g.arc(0, 0, R * 0.17, 0, Math.PI * 2); g.stroke();
+   g.fillStyle = '#fff';
+   for (let i = 0; i < 4; i++) { g.save(); g.rotate(i * Math.PI / 2 + Math.PI / 4); g.beginPath(); g.moveTo(0, -R * 0.06); g.lineTo(R * 0.025, 0); g.lineTo(0, R * 0.06); g.lineTo(-R * 0.025, 0); g.closePath(); g.translate(0, 0); g.fill(); g.restore(); }
+@@ -1604,9 +1668,14 @@ function paintIce(g, R, lvl){
+   g.save();
+   g.beginPath(); g.moveTo(x + rad, x); g.arcTo(x + s, x, x + s, x + s, rad); g.arcTo(x + s, x + s, x, x + s, rad); g.arcTo(x, x + s, x, x, rad); g.arcTo(x, x, x + s, x, rad); g.closePath();
+   const gr = g.createLinearGradient(x, x, x + s, x + s);
+-  gr.addColorStop(0, lvl > 1 ? 'rgba(200,245,255,.5)' : 'rgba(190,240,255,.28)'); gr.addColorStop(1, lvl > 1 ? 'rgba(120,200,255,.32)' : 'rgba(120,200,255,.14)');
++  // el cristal doble se distingue por una segunda línea interior, no por más blanco que tape la gema (VIS-MATCH-02)
++  gr.addColorStop(0, lvl > 1 ? 'rgba(200,245,255,.38)' : 'rgba(190,240,255,.28)'); gr.addColorStop(1, lvl > 1 ? 'rgba(120,200,255,.22)' : 'rgba(120,200,255,.14)');
+   g.fillStyle = gr; g.fill();
+   g.strokeStyle = lvl > 1 ? 'rgba(230,252,255,.85)' : 'rgba(210,248,255,.5)'; g.lineWidth = R * (lvl > 1 ? 0.045 : 0.03); g.stroke();
++  if (lvl > 1) { const i = 3, s2 = s - i * 2, x2 = x + i, r2 = Math.max(2, rad - i);
++    g.beginPath(); g.moveTo(x2 + r2, x2); g.arcTo(x2 + s2, x2, x2 + s2, x2 + s2, r2); g.arcTo(x2 + s2, x2 + s2, x2, x2 + s2, r2); g.arcTo(x2, x2 + s2, x2, x2, r2); g.arcTo(x2, x2, x2 + s2, x2, r2); g.closePath();
++    g.strokeStyle = 'rgba(230,252,255,.55)'; g.lineWidth = 1; g.stroke(); }
++  g.beginPath(); g.moveTo(x + rad, x); g.arcTo(x + s, x, x + s, x + s, rad); g.arcTo(x + s, x + s, x, x + s, rad); g.arcTo(x, x + s, x, x, rad); g.arcTo(x, x, x + s, x, rad); g.closePath();
+   g.clip(); g.strokeStyle = 'rgba(255,255,255,.35)'; g.lineWidth = R * 0.03;
+   g.beginPath(); g.moveTo(x, x + s * 0.35); g.lineTo(x + s * 0.35, x); g.moveTo(x + s * 0.55, x + s); g.lineTo(x + s, x + s * 0.55); g.stroke();
+   g.restore();
+@@ -1658,16 +1727,16 @@ function buildBoardLayer(){
+   const c = document.createElement('canvas'); c.width = Math.round(w * DPR); c.height = Math.round(h * DPR);
+   const g = c.getContext('2d'); g.scale(DPR, DPR); g.translate(pad, pad);
+   const sec = G.mode === 'campaign' ? SECTORS[sectorOf(G.li)].col : '#00f2cf';
+-  // halo del tablero
+-  g.save(); g.shadowColor = sec; g.shadowBlur = CS * 0.5; g.fillStyle = 'rgba(10,4,26,.9)';
+-  for (let y = 0; y < G.H; y++) for (let x = 0; x < G.W; x++) if (!G.cells[y][x].hole) g.fillRect(x * CS, y * CS, CS, CS);
+-  g.restore();
++  // halo único del perímetro exterior (una sola silueta, blur 0,14·CS, alpha 0,22); los huecos siguen siendo huecos (VIS-MATCH-03)
++  g.save(); g.shadowColor = hexA(sec, 0.22); g.shadowBlur = CS * 0.14; g.fillStyle = 'rgba(10,4,26,.9)';
++  g.beginPath(); for (let y = 0; y < G.H; y++) for (let x = 0; x < G.W; x++) if (!G.cells[y][x].hole) g.rect(x * CS, y * CS, CS, CS);
++  g.fill(); g.restore();
+   for (let y = 0; y < G.H; y++) for (let x = 0; x < G.W; x++) {
+     if (G.cells[y][x].hole) continue;
+     const gap = Math.max(1, CS * 0.04), rr = CS * 0.16, s = CS - gap * 2, X = x * CS + gap, Y = y * CS + gap;
+     g.beginPath(); g.moveTo(X + rr, Y); g.arcTo(X + s, Y, X + s, Y + s, rr); g.arcTo(X + s, Y + s, X, Y + s, rr); g.arcTo(X, Y + s, X, Y, rr); g.arcTo(X, Y, X + s, Y, rr); g.closePath();
+     g.fillStyle = (x + y) % 2 ? 'rgba(34,16,74,.85)' : 'rgba(26,11,58,.85)'; g.fill();
+-    g.strokeStyle = 'rgba(160,120,255,.10)'; g.lineWidth = 1; g.stroke();
++    g.strokeStyle = 'rgba(49,37,63,.8)'; g.lineWidth = 1; g.stroke();   // juntas internas neutras de 1 px, sin bloom
+   }
+   // escuadras de marca en las esquinas
+   const k = CS * 0.45, W = CS * G.W, H = CS * G.H, o = 5;
+@@ -1686,7 +1755,11 @@ function drawBg(){
+   gr = g.createRadialGradient(VW * 0.85, VH * 0.95, 0, VW * 0.85, VH * 0.95, Math.max(VW, VH) * 0.65);
+   gr.addColorStop(0, hexA(sec, 0.2)); gr.addColorStop(1, hexA(sec, 0)); g.fillStyle = gr; g.fillRect(0, 0, VW, VH);
+   let s = 7; const r = () => (s = (s * 16807) % 2147483647) / 2147483647;
+-  for (let i = 0; i < Math.round(VW * VH / 5200); i++) { g.fillStyle = 'rgba(255,255,255,' + (0.15 + r() * 0.55).toFixed(2) + ')'; const z = r() < 0.08 ? 1.6 : 0.9; g.fillRect(r() * VW, r() * VH, z, z); }
++  // estrellas tenues detrás del tablero para que no parezcan gemas (VIS-MATCH-03)
++  const onBoard = G.phase !== 'off', bx0 = BX - CS * 0.5, by0 = BY - CS * 0.5, bx1 = BX + CS * G.W + CS * 0.5, by1 = BY + CS * G.H + CS * 0.5;
++  for (let i = 0; i < Math.round(VW * VH / 5200); i++) { const a = 0.15 + r() * 0.55, z = r() < 0.08 ? 1.6 : 0.9, x = r() * VW, y = r() * VH;
++    const behind = onBoard && x > bx0 && x < bx1 && y > by0 && y < by1;
++    g.fillStyle = 'rgba(255,255,255,' + (behind ? Math.min(a, 0.15) : a).toFixed(2) + ')'; g.fillRect(x, y, z, z); }
+ }
+ function hexA(hex, a){ const n = parseInt(hex.slice(1), 16); return 'rgba(' + (n >> 16) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + a + ')'; }
+ 
+@@ -1694,7 +1767,7 @@ function render(now){
+   ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, cv.width, cv.height);
+   if (G.phase === 'off' && !$('o-intro').classList.contains('show')) return;
+   let sx = 0, sy = 0;
+-  if (G.shake > 0 && !RM) { sx = (Math.random() - 0.5) * G.shake * CS * 0.22; sy = (Math.random() - 0.5) * G.shake * CS * 0.22; }
++  if (G.shake > 0 && !RM) { const amp = Math.min(2, G.shake * CS * 0.22); sx = (Math.random() - 0.5) * amp; sy = (Math.random() - 0.5) * amp; }   // sacudida: 2 px como máximo
+   const ox = BX + sx, oy = BY + sy;
+   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+   if (boardLayer) ctx.drawImage(boardLayer.c, ox - boardLayer.pad, oy - boardLayer.pad, boardLayer.w, boardLayer.h);
+@@ -1704,17 +1777,17 @@ function render(now){
+   // pista
+   const t = now / 1000;
+   const hintOn = G.hint && G.phase === 'idle';
++  // tres señales separadas (VIS-MATCH-03): pista amarilla 2 px a 5 px del borde; selección cian 3 px a 3 px; cursor amarillo discontinuo a 1 px
+   if (hintOn) {
+-    const a = 0.55 + 0.35 * Math.sin(t * 6);
+-    ctx.save(); ctx.strokeStyle = 'rgba(255,216,74,' + a.toFixed(3) + ')'; ctx.lineWidth = Math.max(2, CS * 0.06);
+-    ctx.shadowColor = '#ffd84a'; ctx.shadowBlur = CS * 0.25;
++    const a = RM ? 0.9 : 0.55 + 0.35 * Math.sin(t * 6);
++    ctx.save(); ctx.strokeStyle = 'rgba(255,216,74,' + a.toFixed(3) + ')'; ctx.lineWidth = 2;
+     const A = G.hint.a, B = G.hint.b, x0 = Math.min(A.x, B.x), y0 = Math.min(A.y, B.y);
+-    roundRect(ctx, ox + x0 * CS + 3, oy + y0 * CS + 3, (Math.abs(A.x - B.x) + 1) * CS - 6, (Math.abs(A.y - B.y) + 1) * CS - 6, CS * 0.22); ctx.stroke();
++    roundRect(ctx, ox + x0 * CS + 5, oy + y0 * CS + 5, (Math.abs(A.x - B.x) + 1) * CS - 10, (Math.abs(A.y - B.y) + 1) * CS - 10, CS * 0.2); ctx.stroke();
+     ctx.restore();
+   }
+   // selección
+   if (G.sel) {
+-    const p = G.sel, pulse = 0.6 + 0.4 * Math.sin(t * 8);
++    const p = G.sel, pulse = RM ? 0.9 : 0.6 + 0.4 * Math.sin(t * 8);
+     ctx.strokeStyle = 'rgba(0,242,207,' + pulse.toFixed(3) + ')'; ctx.lineWidth = 3;
+     roundRect(ctx, ox + p.x * CS + 3, oy + p.y * CS + 3, CS - 6, CS - 6, CS * 0.2); ctx.stroke();
+   }
+@@ -1724,12 +1797,15 @@ function render(now){
+   for (let y = 0; y < G.H; y++) for (let x = 0; x < G.W; x++) {
+     const it = G.cells[y][x].it; if (!it) continue;
+     let sc = 1, al = 1, rot = 0, ssx = 1, ssy = 1;
+-    if (it.pop >= 0) { const p = it.pop; sc = p < 0.35 ? 1 + p / 0.35 * 0.25 : 1.25 * (1 - (p - 0.35) / 0.65); al = 1 - p * 0.5; if (sc <= 0.01) continue; }
+-    if (it.land > 0) { ssy = 1 - it.land * 0.12; ssx = 1 + it.land * 0.08; }
+-    if (it.born > 0) sc *= 1 + Math.sin(it.born * Math.PI) * 0.3;
+-    if (it.k === 'nova') rot = t * 1.6;
+-    if (it.k === 'g' && it.sp === SP.BOMB) sc *= 1 + Math.sin(t * 7 + it.id) * 0.04;
+-    if (it.k === 'core') sc *= 1 + Math.sin(t * 3 + it.id) * 0.04;
++    // VIS-MATCH-04: estallido hasta 1,15; con movimiento reducido no hay rebotes ni bucles decorativos (nova, bomba, núcleo, pulsos)
++    if (it.pop >= 0) { const p = it.pop; sc = RM ? 1 - p * 0.6 : (p < 0.35 ? 1 + p / 0.35 * 0.15 : 1.15 * (1 - (p - 0.35) / 0.65)); al = 1 - p * 0.5; if (sc <= 0.01) continue; }
++    if (it.land > 0 && !RM) { ssy = 1 - it.land * 0.12; ssx = 1 + it.land * 0.08; }
++    if (it.born > 0 && !RM) sc *= 1 + Math.sin(it.born * Math.PI) * 0.15;
++    if (!RM) {
++      if (it.k === 'nova') rot = t * 1.6;
++      if (it.k === 'g' && it.sp === SP.BOMB) sc *= 1 + Math.sin(t * 7 + it.id) * 0.04;
++      if (it.k === 'core') sc *= 1 + Math.sin(t * 3 + it.id) * 0.04;
++    }
+     if (it.hit > 0) { rot = Math.sin(it.hit * 20) * 0.15 * it.hit; }
+     let hx = 0, hy = 0;
+     if (hintOn && !RM) {   // las dos gemas de la pista se asoman una hacia la otra
+@@ -1747,7 +1823,7 @@ function render(now){
+   ctx.globalAlpha = 1; ctx.restore(); ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+   if (hintOn) {   // flecha doble entre las dos gemas: indica qué intercambiar
+     const A = G.hint.a, B = G.hint.b, mx = ox + ((A.x + B.x) / 2 + 0.5) * CS, my = oy + ((A.y + B.y) / 2 + 0.5) * CS;
+-    const horiz = A.y === B.y, s2 = CS * 0.2, al = 0.75 + 0.25 * Math.sin(t * 6);
++    const horiz = A.y === B.y, s2 = CS * 0.2, al = RM ? 0.9 : 0.75 + 0.25 * Math.sin(t * 6);
+     ctx.save(); ctx.translate(mx, my); if (!horiz) ctx.rotate(Math.PI / 2);
+     ctx.globalAlpha = al; ctx.fillStyle = '#ffd84a'; ctx.strokeStyle = 'rgba(5,1,8,.9)'; ctx.lineWidth = 3; ctx.lineJoin = 'round';
+     ctx.beginPath(); ctx.moveTo(-s2 * 1.5, 0); ctx.lineTo(-s2 * 0.45, -s2 * 0.8); ctx.lineTo(-s2 * 0.45, -s2 * 0.3); ctx.lineTo(s2 * 0.45, -s2 * 0.3); ctx.lineTo(s2 * 0.45, -s2 * 0.8);
+@@ -1757,7 +1833,7 @@ function render(now){
+   // cursor de teclado
+   if (G.kbd && (G.phase === 'idle' || G.phase === 'swap')) {
+     const p = G.cur; ctx.strokeStyle = '#ffd84a'; ctx.lineWidth = 2.5; ctx.setLineDash([6, 4]);
+-    roundRect(ctx, ox + p.x * CS + 2, oy + p.y * CS + 2, CS - 4, CS - 4, CS * 0.2); ctx.stroke(); ctx.setLineDash([]);
++    roundRect(ctx, ox + p.x * CS + 1, oy + p.y * CS + 1, CS - 2, CS - 2, CS * 0.2); ctx.stroke(); ctx.setLineDash([]);
+   }
+   drawFx(ox, oy);
+ }
+@@ -1856,18 +1932,24 @@ function refreshIcons(){ goalEls.forEach(e => drawIcon(e.cv, e.spec)); }
+ const hudCache = {};
+ function setTxt(id, v){ if (hudCache[id] !== v) { hudCache[id] = v; $(id).textContent = v; } }
+ function updateHud(){
++  const isTime = G.mode === 'time';
++  $('h-lvl').classList.toggle('txt', G.mode !== 'campaign'); $('h-mov-l').classList.toggle('wrap', isTime);
+   if (G.mode === 'campaign') {
+     setTxt('h-lvl-l', tr('level')); setTxt('h-lvl', String(G.li + 1));
+     setTxt('h-mov-l', tr('moves')); setTxt('h-mov', String(G.moves));
+     $('h-mov-c').classList.toggle('urgent', G.moves <= 5 && G.phase !== 'end' && !G.bonus);
+-  } else if (G.mode === 'time') {
+-    setTxt('h-lvl-l', tr('mode')); setTxt('h-lvl', tr('clock'));
+-    setTxt('h-mov-l', tr('time')); setTxt('h-mov', String(Math.ceil(G.time)));
++    $('h-mov-c').removeAttribute('aria-label');
++  } else if (isTime) {
++    // el modo se llama igual en todos los estados y el tiempo restante real baja con la partida (PLAY-MATCH-02)
++    setTxt('h-lvl-l', tr('mode')); setTxt('h-lvl', tr('timeAttack'));
++    const s = Math.ceil(G.time);
++    setTxt('h-mov-l', tr('timeLeft')); setTxt('h-mov', s + ' s');
++    const al = tr('timeLeftFull', { s }); if (hudCache.tl !== al) { hudCache.tl = al; $('h-mov-c').setAttribute('aria-label', al); }
+     $('h-mov-c').classList.toggle('urgent', G.time <= 10 && G.phase !== 'end');
+   } else {
+     setTxt('h-lvl-l', tr('mode')); setTxt('h-lvl', tr('zen'));
+     setTxt('h-mov-l', tr('maxCombo')); setTxt('h-mov', '×' + G.maxCombo);
+-    $('h-mov-c').classList.remove('urgent');
++    $('h-mov-c').classList.remove('urgent'); $('h-mov-c').removeAttribute('aria-label');
+   }
+   setTxt('h-sco', fmt(G.score));
+   const sb = $('h-sbar');
+@@ -1900,23 +1982,55 @@ function updateTension(){ MU.tension = (G.mode === 'campaign' && G.moves <= 5 &&
+ /* =========================================================
+    PANTALLAS
+    ========================================================= */
+-const OVS = ['o-menu','o-map','o-intro','o-pause','o-win','o-lose','o-end','o-tend','o-how','o-set'];
++const OVS = ['o-menu','o-map','o-intro','o-pause','o-confirm','o-win','o-lose','o-end','o-tend','o-how','o-set'];
+ let backTo = null;
+-function show(id){
++const OPENER = {};   // control que abrió cada pantalla, para devolverle el foco al cerrarla
++/* show(): una sola pantalla visible; el juego de fondo (#app) queda inert mientras haya una (RSP-MATCH-01, PLAY-MATCH-05).
++   Foco inicial: el elemento pedido, si no el que marca [data-focus], si no la acción principal. */
++function show(id, focusEl){
++  const prev = document.activeElement, was = OVS.find(o => $(o).classList.contains('show'));
+   OVS.forEach(o => $(o).classList.toggle('show', o === id));
++  if (id && was !== id) OPENER[id] = prev && prev !== document.body && !$(id).contains(prev) ? prev : null;
++  $('app').inert = !!id;
+   if (id === 'o-menu') { heroStart(); refreshMenu(); } else heroStop();
+   musMode(id ? (['o-menu','o-map','o-how','o-set'].includes(id) && G.phase === 'off' ? 'menu' : 'game') : 'game');
+-  const btn = id && $(id).querySelector('.btn.pri');
+-  if (btn && kbdUser) setTimeout(() => btn.focus({ preventScroll:true }), 30);
+-  if (id) $(id).scrollTop = 0;
++  if (id) {
++    const el = focusEl || $(id).querySelector('[data-focus]') || $(id).querySelector('.btn.pri') || $(id).querySelector('button:not([disabled])');
++    if (el) setTimeout(() => { try { el.focus({ preventScroll:true }); } catch(e) {} }, 30);
++    $(id).scrollTop = 0;
++  }
+ }
+-function hideAll(){ OVS.forEach(o => $(o).classList.remove('show')); heroStop(); musMode('game'); }
++function hideAll(){ OVS.forEach(o => $(o).classList.remove('show')); $('app').inert = false; heroStop(); musMode('game'); }
+ function totalStars(){ let s = 0; for (let i = 0; i < NL; i++) s += SAVE.stars[i] || 0; return s; }
+ function refreshMenu(){
+   $('camp-sub').textContent = tr('level') + ' ' + (Math.min(NL, SAVE.unlocked + 1)) + ' · ' + totalStars() + '/' + (NL * 3) + ' ★';
+-  $('time-sub').textContent = SAVE.timeBest ? tr('record', { n: fmt(SAVE.timeBest) }) : tr('sec90');
+-  $('zen-sub').textContent = SAVE.zenBest ? tr('record', { n: fmt(SAVE.zenBest) }) : tr('noLimits');
+-}
++  // el selector de Contrarreloj siempre muestra su duración; Zen explica que no tiene límites (SRC-M02)
++  $('time-sub').textContent = tr('secN', { n: TIME_S }) + (SAVE.timeBest ? ' · ' + tr('record', { n: fmt(SAVE.timeBest) }) : '');
++  $('zen-sub').textContent = tr('zenD') + (SAVE.zenBest ? ' · ' + tr('record', { n: fmt(SAVE.zenBest) }) : '');
++}
++/* Confirmación explícita (SRC-G04, PLAY-MATCH-03): Cancelar/Seguir jugando enfocado al abrir, botón de peligro separado */
++let cfOk = null, cfBack = null;
++function openConfirm(o){
++  $('cf-title').textContent = o.title; $('cf-body').textContent = o.body;
++  $('b-cf-cancel').textContent = o.cancel; $('b-cf-ok').textContent = o.ok;
++  cfOk = o.onOk; cfBack = o.back || null;
++  show('o-confirm', $('b-cf-cancel'));
++}
++function confirmCancel(){ const b = cfBack; cfOk = cfBack = null; if (b) b(); else hideAll(); }
++/* Salida accesible del tablero: cursor, selección e intercambios inválidos; nunca por fotograma (PLAY-MATCH-05) */
++let a11yTm = 0;
++function announce(t){ const el = $('a11y'); clearTimeout(a11yTm); a11yTm = setTimeout(() => { el.textContent = ''; el.textContent = t; }, 60); }
++function cellWord(x, y){
++  const c = G.cells[y] && G.cells[y][x]; if (!c) return '';
++  if (c.hole) return tr('kHole');
++  const it = c.it; let w;
++  if (!it) w = tr('kEmpty');
++  else if (it.k === 'g') { w = gemName(it.c); if (it.sp === SP.BOMB) w += ', ' + tr('kBomb'); else if (it.sp) w += ', ' + tr('kBeam'); }
++  else if (it.k === 'nova') w = tr('kNova'); else if (it.k === 'core') w = tr('kCore'); else w = it.hp > 1 ? tr('kRockHard') : tr('kRock');
++  if (c.ice) w += ', ' + tr('kIce');
++  return w;
++}
++const announceCell = (p, extra) => announce(tr('cellA', { fila: p.y + 1, columna: p.x + 1, gema: cellWord(p.x, p.y) }) + (extra ? '. ' + extra : ''));
+ function buildMap(){
+   const box = $('map'); box.innerHTML = '';
+   SECTORS.forEach((s, si) => {
+@@ -1968,6 +2082,7 @@ function fillIntro(){
+ }
+ function beginPlay(){
+   hideAll(); G.paused = false; G.phase = 'fall'; G.hintT = 0; drawBg();
++  try { stage.focus({ preventScroll:true }); } catch(e) {}
+   if (G.mode === 'campaign' && LEVELS[G.li].tip) { SAVE.tips[LEVELS[G.li].tip] = 1; save(); }
+   updateHud(); updateTension();
+ }
+@@ -1981,18 +2096,24 @@ function pause(){
+   fillPause();
+   show('o-pause');
+ }
++// etiquetas de la pausa según el destino real: campaña → mapa; Contrarreloj → menú; Zen → resultados (SRC-M01, SRC-M02)
+ function fillPause(){
+   $('pa-title').textContent = G.mode === 'campaign' ? tr('level') + ' ' + (G.li + 1) : G.mode === 'time' ? tr('timeAttack') : tr('zen');
+   fillGoals(buildGoals($('pa-goals')));
+-  $('b-quit').textContent = G.mode === 'zen' ? tr('finish') : tr('quit');
++  $('b-restart').textContent = G.mode === 'campaign' ? tr('restartLevel') : tr('restartGame');
++  $('b-quit').textContent = G.mode === 'zen' ? tr('finish') : G.mode === 'campaign' ? tr('backMap') : tr('exitMenu');
+ }
+-function resume(){ hideAll(); G.paused = false; lastT = performance.now(); }
++function resume(){ hideAll(); G.paused = false; lastT = performance.now(); try { stage.focus({ preventScroll:true }); } catch(e) {} }
+ let winRec = false, runRec = false;
+ function fillWin(){
+-  const last = G.li === NL - 1;
++  const last = G.li === NL - 1, st = starsFor(G.li, G.score), thr = STARS[G.li] || [0, 0];
+   $('wi-eb').textContent = tr('sector', { s: secName(sectorOf(G.li)) });
+   $('wi-title').textContent = tr('lvCleared', { n: G.li + 1 });
+   $('wi-score').textContent = fmt(G.score);
++  const bonus = G.scoreAtGoal >= 0 ? G.score - G.scoreAtGoal : 0;
++  $('wi-bonus').textContent = bonus > 0 ? tr('bonusLine', { n: fmt(bonus) }) : '';
++  $('wi-stars-t').textContent = tr('starsOf', { n: st });
++  $('wi-thr').innerHTML = [[2, thr[0]], [3, thr[1]]].map(([k, v]) => '<span class="' + (st >= k ? 'ok' : '') + '">' + tr('thr' + k, { n: fmt(v) }) + ' · ' + tr(st >= k ? 'reached' : 'pending') + '</span>').join('<br>');
+   $('wi-combo').textContent = '×' + G.maxCombo; $('wi-best').textContent = fmt(SAVE.best[G.li] || G.score);
+   $('wi-rec').innerHTML = winRec ? '<span class="tag">' + tr('newRecord') + '</span>' : '';
+   $('b-next').textContent = last ? tr('campEnd') : tr('nextLevel');
+@@ -2028,7 +2149,8 @@ function fillLose(){
+   [...$('lo-goals').children].forEach((d, i) => { const g = G.goals[i]; if (g && (g.t === 'score' ? G.score >= g.n : g.left <= 0)) d.style.opacity = '.45'; });
+ }
+ function openSub(id){ backTo = OVS.find(o => $(o).classList.contains('show')) || null; show(id); }
+-function closeSub(){ const b = backTo; backTo = null; if (b) show(b); else hideAll(); }
++function closeSub(){ const cur = OVS.find(o => $(o).classList.contains('show')), b = backTo; backTo = null;
++  const op = cur && OPENER[cur]; if (b) show(b, op && $(b).contains(op) ? op : undefined); else hideAll(); }
+ function syncSettings(){
+   const s = SAVE.set;
+   ['music','sfx','vib','hints'].forEach(k => $('s-' + k).setAttribute('aria-pressed', s[k] ? 'true' : 'false'));
+@@ -2096,33 +2218,37 @@ window.addEventListener('keydown', e => {
+   const k = e.key;
+   if (k === 'Tab') kbdUser = true;
+   const inGame = !OVS.some(o => $(o).classList.contains('show'));
+-  if (k === 'm' || k === 'M') { toggleSetting('music'); return; }
++  const editable = e.target && e.target.closest && e.target.closest('input, select, textarea, [contenteditable="true"]');
++  if ((k === 'm' || k === 'M') && !editable) { toggleSetting('music'); return; }
+   if (!inGame) {
+     if (k === 'Escape') {
+-      if ($('o-how').classList.contains('show') || $('o-set').classList.contains('show')) closeSub();
++      if ($('o-confirm').classList.contains('show')) confirmCancel();
++      else if ($('o-how').classList.contains('show') || $('o-set').classList.contains('show')) closeSub();
+       else if ($('o-pause').classList.contains('show')) resume();
+-      else if ($('o-map').classList.contains('show')) show('o-menu');
++      else if ($('o-map').classList.contains('show')) show('o-menu', $('b-camp'));
+     }
+     return;
+   }
+-  if (k === 'Escape' || k === 'p' || k === 'P') { pause(); e.preventDefault(); return; }
+-  if (k === 'h' || k === 'H') { showHint(); return; }
++  if ((k === 'Escape' || k === 'p' || k === 'P') && !editable) { pause(); e.preventDefault(); return; }
++  if ((k === 'h' || k === 'H') && !editable) { showHint(); return; }
++  // Enter/Espacio sobre Pausa, Pista u otro control nativo activan ese control, nunca el tablero (RSP-MATCH-01)
++  if (e.target && e.target.closest && e.target.closest('button, a, input, select, textarea, [role="button"]')) return;
+   const d = DIRS[k];
+   if (G.bonus && (k === ' ' || k === 'Enter')) { e.preventDefault(); skipBonus(); return; }
+   if (d || k === ' ' || k === 'Enter') { e.preventDefault(); kbdUser = true; }
+-  if (!G.kbd && (d || k === ' ' || k === 'Enter')) { G.kbd = true; if (G.sel) G.cur = { x: G.sel.x, y: G.sel.y }; if (!d) return; if (!G.sel) return; }
++  if (!G.kbd && (d || k === ' ' || k === 'Enter')) { G.kbd = true; if (G.sel) G.cur = { x: G.sel.x, y: G.sel.y }; announceCell(G.cur); if (!d) return; if (!G.sel) return; }
+   if (d) {
+     const n = { x: clamp(G.cur.x + d[0], 0, G.W - 1), y: clamp(G.cur.y + d[1], 0, G.H - 1) };
+     if (G.sel && canPlay()) { if (!G.cells[n.y][n.x].hole && requestSwap(G.sel, n)) G.cur = n; G.sel = null; return; }
+     let m = n; if (G.cells[m.y][m.x].hole) { let xx = m.x + d[0], yy = m.y + d[1]; while (xx >= 0 && yy >= 0 && xx < G.W && yy < G.H && G.cells[yy][xx].hole) { xx += d[0]; yy += d[1]; } if (xx >= 0 && yy >= 0 && xx < G.W && yy < G.H) m = { x: xx, y: yy }; else return; }
+-    G.cur = m; return;
++    G.cur = m; announceCell(m); return;
+   }
+   if (k === ' ' || k === 'Enter') {
+     if (!canPlay()) return;
+     const c = G.cur;
+-    if (G.sel && G.sel.x === c.x && G.sel.y === c.y) G.sel = null;
++    if (G.sel && G.sel.x === c.x && G.sel.y === c.y) { G.sel = null; announce(tr('deselA')); }
+     else if (G.sel && Math.abs(G.sel.x - c.x) + Math.abs(G.sel.y - c.y) === 1) requestSwap(G.sel, c);
+-    else if (swappable(G.cells[c.y][c.x].it)) G.sel = { x: c.x, y: c.y };
++    else if (swappable(G.cells[c.y][c.x].it)) { G.sel = { x: c.x, y: c.y }; announceCell(c, tr('selectedA')); }
+   }
+ });
+ let gestured = false;
+@@ -2144,7 +2270,7 @@ on('b-time', () => startMode('time'));
+ on('b-zen', () => startMode('zen'));
+ on('b-how', () => openSub('o-how'));
+ on('b-set', () => openSub('o-set'));
+-on('b-map-back', () => show('o-menu'));
++on('b-map-back', () => show('o-menu', $('b-camp')));
+ on('b-go', beginPlay);
+ on('b-in-back', openMap);
+ on('b-pause', pause);
+@@ -2154,7 +2280,16 @@ on('b-resume', resume);
+ on('b-restart', () => { if (G.mode === 'campaign') openLevel(G.li); else startMode(G.mode); });
+ on('b-pa-set', () => openSub('o-set'));
+ on('b-pa-how', () => openSub('o-how'));
+-on('b-quit', () => { if (G.mode === 'zen') { G.phase = 'end'; showRunEnd(); } else if (G.mode === 'campaign') openMap(); else { G.phase = 'off'; show('o-menu'); } });
++// Salir desde la pausa: Zen finaliza y muestra el resumen (no se pierde nada); campaña y Contrarreloj piden confirmación (PLAY-MATCH-03)
++on('b-quit', () => {
++  if (G.mode === 'zen') { G.phase = 'end'; showRunEnd(); return; }
++  const camp = G.mode === 'campaign';
++  openConfirm({ title: tr('exitTitle'), body: tr('exitBody'), cancel: tr('stay'), ok: camp ? tr('backMap') : tr('exitMenu'),
++    back: () => show('o-pause', $('b-quit')),
++    onOk: () => { if (camp) openMap(); else { G.phase = 'off'; show('o-menu', $('b-time')); drawBg(); } } });
++});
++on('b-cf-cancel', confirmCancel);
++on('b-cf-ok', () => { const f = cfOk; cfOk = null; cfBack = null; if (f) f(); });
+ on('b-next', () => { if (G.li >= NL - 1) { $('en-stars').textContent = totalStars() + '/' + (NL * 3) + ' ★'; show('o-end'); } else openLevel(G.li + 1); });
+ on('b-wi-again', () => openLevel(G.li));
+ on('b-wi-map', openMap);
+@@ -2169,12 +2304,18 @@ on('b-set-ok', closeSub);
+ ['music','sfx','vib','hints'].forEach(k => $('s-' + k).addEventListener('click', () => toggleSetting(k)));
+ ['musicVol','sfxVol'].forEach(k => $('s-' + k).addEventListener('input', e => { SAVE.set[k] = e.target.value / 100; auInit(); applyVolumes(); save(); }));
+ $('s-sfxVol').addEventListener('change', () => SFX.pop(2, 1));
+-let resetArm = 0, resetState = '', resetTm = 0;
++// Borrar progreso (SRC-G04): confirmación explícita; borra niveles, estrellas, récords y pistas vistas; conserva ajustes e idioma
++let resetDone = false;
++function fillReset(){ $('reset-status').textContent = resetDone ? tr('resetDone') : ''; }
+ $('b-reset').addEventListener('click', () => {
+-  if (Date.now() - resetArm > 3000) { resetArm = Date.now(); resetState = 'sure'; $('b-reset').textContent = tr('resetSure'); clearTimeout(resetTm); resetTm = setTimeout(() => { resetState = ''; $('b-reset').textContent = tr('reset'); }, 3000); return; }
+-  const set = SAVE.set; SAVE = loadSave(); SAVE.stars = []; SAVE.best = []; SAVE.unlocked = 0; SAVE.timeBest = 0; SAVE.zenBest = 0; SAVE.tips = {}; SAVE.set = set; save();
+-  try { localStorage.setItem('jetmatch:migrado', '1'); } catch(e) {}
+-  resetState = 'done'; $('b-reset').textContent = tr('resetDone'); resetArm = 0; refreshMenu();
++  firstGesture(); SFX.click(); resetDone = false; fillReset();
++  const back = () => show('o-set', $('b-reset'));
++  openConfirm({ title: tr('deleteTitle'), body: tr('deleteBody'), cancel: tr('cancel'), ok: tr('reset'), back,
++    onOk: () => {
++      const set = SAVE.set; SAVE = loadSave(); SAVE.stars = []; SAVE.best = []; SAVE.unlocked = 0; SAVE.timeBest = 0; SAVE.zenBest = 0; SAVE.tips = {}; SAVE.set = set; save();
++      try { localStorage.setItem('jetmatch:migrado', '1'); } catch(e) {}
++      resetDone = true; refreshMenu(); back(); fillReset();
++    } });
+ });
+ 
+ /* =========================================================
+@@ -2189,7 +2330,7 @@ function applyLang(){
+   document.querySelectorAll('[data-i18n-html]').forEach(el => { el.innerHTML = tr(el.dataset.i18nHtml); });
+   document.querySelectorAll('[data-i18n-aria]').forEach(el => { el.setAttribute('aria-label', tr(el.dataset.i18nAria)); });
+   document.querySelectorAll('.langseg button').forEach(b => b.setAttribute('aria-pressed', b.dataset.lang === LANG ? 'true' : 'false'));
+-  $('b-reset').textContent = tr(resetState === 'sure' ? 'resetSure' : resetState === 'done' ? 'resetDone' : 'reset');
++  fillReset();
+   for (const k in hudCache) delete hudCache[k];
+   syncSettings(); refreshMenu();
+   buildGoals(); updateHud();
+@@ -2200,6 +2341,7 @@ function applyLang(){
+   else if (shown === 'o-win') fillWin();
+   else if (shown === 'o-tend') fillRunEnd();
+   else if (shown === 'o-lose') fillLose();
++  if (shown !== 'o-confirm') { $('b-cf-cancel').textContent = tr('cancel'); $('b-cf-ok').textContent = tr('reset'); }
+   if (backTo === 'o-pause') fillPause();
+   else if (backTo === 'o-intro') fillIntro();
+ }

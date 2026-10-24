@@ -1,0 +1,980 @@
+diff --git a/site/salchidrez/index.html b/site/salchidrez/index.html
+index a354580..2563043 100644
+--- a/site/salchidrez/index.html
++++ b/site/salchidrez/index.html
+@@ -2,7 +2,7 @@
+ <html lang="es">
+ <head>
+ <meta charset="UTF-8">
+-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
++<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+ <script>
+ /* JET//Games — idioma único para todo el sitio (2026-10-22).
+    Copiar tal cual al principio de cada juego (antes de pintar textos).
+@@ -92,11 +92,27 @@
+     font-family: var(--display);
+     -webkit-tap-highlight-color: transparent;
+     user-select: none; -webkit-user-select: none;
+-    touch-action: none;
+     overscroll-behavior: none;
+   }
+   body { position: relative; }
+-  button { font-family: inherit; color: inherit; }
++  button { font-family: inherit; color: inherit; touch-action: manipulation; }
++  [inert] { pointer-events: none; }
++  .sr-only { position: absolute !important; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; border: 0; }
++  /* RSP-SALCHIDREZ-02: tablero semántico sincronizado con el canvas (invisible, operable con foco) */
++  #a11y-board { position: absolute; left: 0; top: 0; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
++  /* PLAY-SALCHI-03: revisión del tablero final */
++  #final-view {
++    position: absolute; z-index: 6; left: 50%; top: calc(10px + env(safe-area-inset-top, 0px)); transform: translateX(-50%);
++    width: min(440px, calc(100% - 24px)); padding: 12px 16px; border-radius: 18px;
++    background: var(--card); color: var(--ink); border: 2px solid var(--gold); box-shadow: 0 5px 0 #2a170c;
++    display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center;
++  }
++  #final-view[hidden] { display: none; }
++  #final-view p { font-size: 16px; line-height: 1.35; }
++  #final-view .btn { padding: 10px 24px; font-size: 18px; min-width: 0; }
++  .stats small { display: block; font-size: 12px; color: var(--muted); margin-top: 2px; }
++  #btn-final-board[hidden] { display: none; }
++  .overlay h1[tabindex], .overlay h2[tabindex] { outline: none; }
+ 
+   canvas#game {
+     display: block; position: absolute; inset: 0;
+@@ -192,9 +208,9 @@
+     backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+     color: var(--deep);
+     display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+-    padding: calc(18px + env(safe-area-inset-top, 0px)) 16px calc(24px + env(safe-area-inset-bottom, 0px));
++    padding: calc(18px + env(safe-area-inset-top, 0px)) calc(16px + env(safe-area-inset-right, 0px)) calc(24px + env(safe-area-inset-bottom, 0px)) calc(16px + env(safe-area-inset-left, 0px));
+     opacity: 0; pointer-events: none; transition: opacity 0.3s;
+-    overflow-y: auto; touch-action: pan-y;
++    overflow-y: auto; touch-action: pan-y pinch-zoom;
+   }
+   .overlay.show { opacity: 1; pointer-events: auto; }
+   .overlay > :first-child { margin-top: auto; }
+@@ -484,7 +500,7 @@
+   .gdesc { font-size: 14px; color: var(--muted); text-align: center; line-height: 1.35; }
+   .gnav { display: flex; align-items: center; gap: 12px; }
+   .garrow {
+-    width: 44px; height: 44px; border-radius: 50%; font-size: 28px; line-height: 1; font-weight: 700;
++    width: 44px; height: 44px; flex: 0 0 44px; border-radius: 50%; font-size: 28px; line-height: 1; font-weight: 700;
+     background: rgba(255, 255, 255, 0.6); color: var(--deep); border: 2px solid rgba(58, 34, 20, 0.3); cursor: pointer;
+   }
+   .dots { display: flex; gap: 7px; align-items: center; }
+@@ -505,7 +521,6 @@
+     .gcard .gmove { grid-column: 2; grid-row: 4; }
+     .gcard .gdesc { grid-column: 2; grid-row: 5; }
+     #overlay-legend .btn { padding: 10px 30px; font-size: 20px; min-width: 200px; }
+-    .garrow { width: 40px; height: 40px; }
+   }
+ 
+   .promo-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; width: 100%; }
+@@ -523,13 +538,17 @@
+   @media (prefers-reduced-motion: reduce) {
+     .btn.wiggle { animation: none; }
+     #toast { transition: opacity 0.2s; }
++    .overlay, .pick, .tool, .btn, .dots i { transition: none; }
+   }
+ </style>
+ </head>
+ <body>
+ 
+ <canvas id="game"></canvas>
++<div id="a11y-board" role="grid" aria-label="Tablero de ajedrez"></div>
++<div id="a11y-live" class="sr-only" role="status" aria-live="polite"></div>
+ <div id="toast"></div>
++<div id="final-view" hidden role="region" aria-labelledby="fv-text"><p id="fv-text"></p><button class="btn" id="btn-back-result" type="button">Volver al resultado</button></div>
+ 
+ <div id="bar">
+   <button class="tool" id="btn-undo" aria-label="Deshacer" data-en-aria="Undo">
+@@ -540,11 +559,11 @@
+     <svg viewBox="0 0 24 24"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V17h6v-.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/></svg>
+     <span data-en="Hint">Pista</span>
+   </button>
+-  <button class="tool" id="btn-music" aria-label="Música" data-en-aria="Music">
++  <button class="tool" id="btn-music" aria-pressed="true" aria-label="Música" data-en-aria="Music">
+     <svg viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+     <span data-en="Music">Música</span>
+   </button>
+-  <button class="tool" id="btn-sound" aria-label="Sonidos" data-en-aria="Sounds">
++  <button class="tool" id="btn-sound" aria-pressed="true" aria-label="Sonidos" data-en-aria="Sounds">
+     <svg viewBox="0 0 24 24"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/></svg>
+     <span data-en="Sounds">Sonidos</span>
+   </button>
+@@ -559,12 +578,12 @@
+ </div>
+ 
+ <!-- MENÚ -->
+-<div class="overlay show" id="overlay-intro">
++<div class="overlay show" id="overlay-intro" role="dialog" aria-modal="true" aria-labelledby="intro-title">
+   <div class="panel">
+     <a class="jg-back" href="https://jetgames.fun/" aria-label="Volver a JET//Games" data-en-aria="Back to JET//Games"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>JET//Games</a>
+     <div class="lang-seg intro-lang" role="group" aria-label="Idioma / Language"><button type="button" data-lang="es" lang="es">ES</button><button type="button" data-lang="en" lang="en">EN</button></div>
+     <canvas id="logo-dog"></canvas>
+-    <h1 class="logo">SALCHIDREZ</h1>
++    <h1 class="logo" id="intro-title">SALCHIDREZ</h1>
+     <p class="tag" data-en="Dachshund chess">Ajedrez de perros salchicha</p>
+ 
+     <button class="learn-cta" id="btn-learn" type="button">
+@@ -579,21 +598,21 @@
+     </button>
+ 
+     <div class="opts">
+-    <div class="opt-label" data-en="Who are you playing against?">¿Contra quién juegas?</div>
+-    <div class="cards two" data-opt="mode">
++    <div class="opt-label" id="lbl-mode" data-en="Who are you playing against?">¿Contra quién juegas?</div>
++    <div class="cards two" data-opt="mode" role="group" aria-labelledby="lbl-mode">
+       <button class="pick on" data-val="ai"><canvas data-art="ai"></canvas><b data-en="The machine">La máquina</b><small data-en="An AI that sniffs out moves">Una IA que olfatea jugadas</small></button>
+       <button class="pick" data-val="pvp"><canvas data-art="pvp"></canvas><b data-en="A friend">Un amigo</b><small data-en="Taking turns on this screen">Por turnos, en esta pantalla</small></button>
+     </div>
+ 
+     <div id="ai-opts">
+-      <div class="opt-label" data-en="How hard?">¿Qué tan difícil?</div>
+-      <div class="cards three" data-opt="level">
++      <div class="opt-label" id="lbl-level" data-en="How hard?">¿Qué tan difícil?</div>
++      <div class="cards three" data-opt="level" role="group" aria-labelledby="lbl-level">
+         <button class="pick" data-val="0"><canvas data-art="lvl0"></canvas><b data-en="Puppy">Cachorro</b><small data-en="To get started">Para empezar</small></button>
+         <button class="pick on" data-val="1"><canvas data-art="lvl1"></canvas><b data-en="Doxie">Salchicha</b><small data-en="An even match">Pelea pareja</small></button>
+         <button class="pick" data-val="2"><canvas data-art="lvl2"></canvas><b data-en="Champion">Campeón</b><small data-en="Bites hard">Muerde fuerte</small></button>
+       </div>
+-      <div class="opt-label" data-en="Which dogs do you play?">¿Con qué perros juegas?</div>
+-      <div class="cards two" data-opt="color">
++      <div class="opt-label" id="lbl-color" data-en="Which dogs do you play?">¿Con qué perros juegas?</div>
++      <div class="cards two" data-opt="color" role="group" aria-labelledby="lbl-color">
+         <button class="pick on" data-val="w"><canvas data-art="w"></canvas><b data-en="Cream">Crema</b><small data-en="Move first">Mueven primero</small></button>
+         <button class="pick" data-val="b"><canvas data-art="b"></canvas><b data-en="Chocolate">Chocolate</b><small data-en="Move second">Mueven después</small></button>
+       </div>
+@@ -601,10 +620,10 @@
+ 
+     </div>
+     <div class="themes-wrap">
+-      <div class="opt-label" data-en="Board">Tablero</div>
+-      <div class="themes" id="themes"></div>
++      <div class="opt-label" id="lbl-theme" data-en="Board">Tablero</div>
++      <div class="themes" id="themes" role="group" aria-labelledby="lbl-theme"></div>
+     </div>
+-    <button class="btn wiggle" id="btn-start" data-en="Play!">¡A jugar!</button>
++    <button class="btn wiggle" id="btn-start" type="button">¡A jugar!</button>
+     <div class="links">
+       <button class="link" id="btn-legend" data-en="Meet the pack">Galería de personajes</button>
+       <button class="link" id="btn-howto" type="button" data-en="How to play">Cómo jugar</button>
+@@ -615,9 +634,9 @@
+ </div>
+ 
+ <!-- AJUSTES -->
+-<div class="overlay" id="overlay-settings">
++<div class="overlay" id="overlay-settings" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+   <div class="panel">
+-    <h2 data-en="Settings">Ajustes</h2>
++    <h2 id="settings-title" data-en="Settings">Ajustes</h2>
+     <p class="sub" data-en="Saved on this device.">Se guardan en este dispositivo.</p>
+     <div class="set-list">
+       <div class="set-row"><span><b data-en="Language">Idioma</b><small data-en="Applies to every JET//Games game">Se aplica a todos los juegos de JET//Games</small></span><div class="lang-seg" role="group" aria-label="Idioma / Language"><button type="button" data-lang="es" lang="es">ES</button><button type="button" data-lang="en" lang="en">EN</button></div></div>
+@@ -633,9 +652,9 @@
+ </div>
+ 
+ <!-- CÓMO JUGAR -->
+-<div class="overlay" id="overlay-howto">
++<div class="overlay" id="overlay-howto" role="dialog" aria-modal="true" aria-labelledby="howto-title">
+   <div class="panel">
+-    <h2 data-en="How to play">Cómo jugar</h2>
++    <h2 id="howto-title" data-en="How to play">Cómo jugar</h2>
+     <div class="howto">
+       <section><h3 data-en="Moving">Mover</h3><ul>
+         <li data-en="Tap a dog and little bones appear where it can go; tap a bone. Or drag it: it stretches as far as you pull it.">Toca un perro y aparecen huesitos donde puede ir; toca un huesito. O arrástralo: se estira hasta donde lo lleves.</li>
+@@ -674,9 +693,9 @@
+ </div>
+ 
+ <!-- APRENDER: mapa de etapas -->
+-<div class="overlay" id="overlay-learn">
++<div class="overlay" id="overlay-learn" role="dialog" aria-modal="true" aria-labelledby="learn-title">
+   <div class="panel learn-panel">
+-    <h2 data-en="Learn">Aprender</h2>
++    <h2 id="learn-title" data-en="Learn">Aprender</h2>
+     <p class="sub" data-en="The pack’s school: one stage at a time, no rush. Tap a stage to begin.">La escuela de la jauría: una etapa a la vez, sin prisa. Toca una etapa para empezar.</p>
+     <label class="link"><input type="checkbox" id="opt-voice"> <span data-en="Read the instructions aloud">Leer las consignas en voz alta</span></label>
+     <div class="stages" id="stages"></div>
+@@ -685,7 +704,7 @@
+ </div>
+ 
+ <!-- APRENDER: fin de lección -->
+-<div class="overlay" id="overlay-lesson-done">
++<div class="overlay" id="overlay-lesson-done" role="dialog" aria-modal="true" aria-labelledby="ld-title">
+   <div class="panel">
+     <canvas id="ld-art"></canvas>
+     <h2 id="ld-title">¡Muy bien!</h2>
+@@ -700,9 +719,9 @@
+ </div>
+ 
+ <!-- QUIÉN ES QUIÉN -->
+-<div class="overlay" id="overlay-legend">
++<div class="overlay" id="overlay-legend" role="dialog" aria-modal="true" aria-labelledby="legend-title">
+   <div class="panel">
+-    <h2 data-en="The pack">La jauría</h2>
++    <h2 id="legend-title" data-en="The pack">La jauría</h2>
+     <p class="sub" data-en="Swipe to meet them. Tap a bone and the dog goes there.">Desliza para conocerlos. Toca un hueso y el perro va hasta ahí.</p>
+     <div class="gallery" id="gallery"></div>
+     <div class="gnav">
+@@ -715,23 +734,38 @@
+ </div>
+ 
+ <!-- CORONACIÓN -->
+-<div class="overlay" id="overlay-promo">
++<div class="overlay" id="overlay-promo" role="alertdialog" aria-modal="true" aria-labelledby="promo-title">
+   <div class="panel">
+-    <h2 data-en="The puppy grew up!">¡El cachorro creció!</h2>
++    <h2 id="promo-title" data-en="The puppy grew up!">¡El cachorro creció!</h2>
+     <p class="sub" data-en="Choose what it becomes.">Elige en qué se convierte.</p>
+     <div class="promo-row" id="promo-row"></div>
+   </div>
+ </div>
+ 
+ <!-- FIN DE PARTIDA -->
+-<div class="overlay" id="overlay-gameover">
++<div class="overlay" id="overlay-gameover" role="dialog" aria-modal="true" aria-labelledby="gameover-title">
+   <div class="panel">
+     <canvas id="go-art"></canvas>
+     <h2 id="gameover-title">¡Jaque mate!</h2>
+     <p class="sub" id="gameover-sub">&nbsp;</p>
+     <div class="stats" id="gameover-stats"></div>
+     <button class="btn" id="btn-rematch" data-en="Rematch">Revancha</button>
+-    <button class="btn ghost" id="btn-gameover-menu" data-en="Menu">Menú</button>
++    <div class="links">
++      <button class="link" id="btn-final-board" type="button" hidden data-en="View final board">Ver tablero final</button>
++      <button class="link" id="btn-gameover-menu" type="button" data-en="Back to menu">Volver al menú</button>
++    </div>
++  </div>
++</div>
++
++<!-- CONFIRMACIÓN (SRC-CH02: reemplazar la partida guardada) -->
++<div class="overlay" id="overlay-confirm" role="alertdialog" aria-modal="true" aria-labelledby="cf-title" aria-describedby="cf-body">
++  <div class="panel">
++    <h2 id="cf-title"></h2>
++    <p class="sub" id="cf-body"></p>
++    <div class="links">
++      <button class="btn ghost" id="cf-cancel" type="button">Cancelar</button>
++      <button class="btn" id="cf-ok" type="button">Nueva partida</button>
++    </div>
+   </div>
+ </div>
+ 
+@@ -1258,7 +1292,7 @@ function drawDog(g, type, color, ox, oy, fx, fy, r, opts) {
+   if (type === 'k') drawKingCape(g, len, r, lw);
+   if (type === 'n') drawArmor(g, len, r, pal, lw);
+   if (type === 'b') drawClericalCollar(g, len - r * 0.35, -r * 0.3, r, lw);
+-  if (type === 'q') drawPearls(g, len - r * 0.35, -r * 0.25, r, lw);
++  if (type === 'q' && !opts.simple) drawPearls(g, len - r * 0.35, -r * 0.25, r, lw);
+   if (type === 'p') drawNeckerchief(g, len, r, pal, lw);
+ 
+   // Cabeza: más grande que el cuerpo (estilo dibujito) para que el sombrero se lea;
+@@ -1365,7 +1399,7 @@ function drawDogHead(g, type, color, hx, hy, r, rBody, lw, opts) {
+     g.beginPath();
+     g.ellipse(ex, ey, r * 0.17, r * 0.17 * blink, 0, 0, Math.PI * 2);
+     g.fillStyle = '#140805'; g.fill();
+-    if (blink === 1) {
++    if (blink === 1 && !opts.simple) {
+       g.beginPath();
+       g.arc(ex + r * 0.05, ey - r * 0.06, r * 0.06, 0, Math.PI * 2);
+       g.fillStyle = '#fff'; g.fill();
+@@ -1378,7 +1412,7 @@ function drawDogHead(g, type, color, hx, hy, r, rBody, lw, opts) {
+       g.lineCap = 'round';
+       if (color === 'b') { g.strokeStyle = '#140805'; g.lineWidth = lw * 4; g.stroke(); g.strokeStyle = pal.snout; g.lineWidth = lw * 2; g.stroke(); }
+       else { g.strokeStyle = '#140805'; g.lineWidth = lw * 2.4; g.stroke(); }
+-    } else if (color === 'b') {
++    } else if (color === 'b' && !opts.simple) {
+       // Ceja color fuego
+       g.beginPath();
+       g.ellipse(hx + r * 0.25, hy - r * 0.48, r * 0.14, r * 0.08, -0.2, 0, Math.PI * 2);
+@@ -1406,7 +1440,7 @@ function drawDogHead(g, type, color, hx, hy, r, rBody, lw, opts) {
+   if (type === 'b') hat(y => drawMitre(g, hx, y, r, color, pal, lw), topY + r * 0.2, 1.25);
+   if (type === 'r') hat(y => drawTowerHat(g, hx, y, r, pal, lw), topY + r * 0.2, 1.3);
+   if (type === 'n') hat(y => drawHelmet(g, hx, y, r, pal, lw, time, opts.plumeUp), hy - r * (opts.plumeUp ? 1.02 : 0.78), opts.plumeUp ? 0.88 : 1.15);
+-  if (type === 'q' && blink === 1 && !mood) drawLashes(g, ex, ey, r, lw);
++  if (type === 'q' && blink === 1 && !mood && !opts.simple) drawLashes(g, ex, ey, r, lw);
+ 
+ }
+ 
+@@ -1970,7 +2004,7 @@ function boardAnchors(t, cx, cy, size, dir) {
+ // Símbolo de la pieza del lado de la cola (la cabeza y el sombrero quedan libres del otro lado)
+ function badgeFor(t, col, cx, cy, dir, grow) {
+   const s = L.s * (grow || 1);
+-  drawPieceBadge(ctx, cx - dir * s * 0.29, cy - s * 0.27, Math.max(7, s * 0.18), t, col);
++  drawPieceBadge(ctx, cx - dir * s * 0.29, cy - s * 0.27, Math.max(7, s * 0.17), t, col);
+ }
+ 
+ const PIECE = bi({ k: 'el Rey', q: 'la Reina', r: 'la Torre', b: 'el Alfil', n: 'el Caballo', p: 'un Peón' },
+@@ -2077,6 +2111,11 @@ let checkPending = false;
+ let waves = [];           // ondas de ladrido que viajan hacia el rey
+ let moveLog = [];         // jugadas de la partida en curso (para guardarla y retomarla)
+ const kb = { on: false, sq: 52 }; // cursor del teclado
++let selAt = 0;              // cuándo se seleccionó la pieza (pulso único del borde de captura)
++let finalReview = false;    // PLAY-SALCHI-03: revisando el tablero final con el cartel cerrado
++// VIS-SALCHIDREZ-04: con movimiento reducido no hay desplazamiento, titileo, rebote ni sacudón
++let reducedMotion = false;
++try { const mqRM = matchMedia('(prefers-reduced-motion: reduce)'); reducedMotion = mqRM.matches; if (mqRM.addEventListener) mqRM.addEventListener('change', e => { reducedMotion = e.matches; }); } catch (e) { /* sin matchMedia */ }
+ 
+ function humanTurn() {
+   if (over || pendingPromo) return false;
+@@ -2127,6 +2166,7 @@ function newGame(replay) {
+   drag = null; hint = null; hintBusy = false;
+   checkFx = null; checkPending = false; waves = []; promoFx = null;
+   over = null; aiThinking = false; pendingPromo = null;
++  hideFinalView();
+   blinkSeeds = Array.from({ length: 64 }, () => Math.random() * 5000);
+   inGame = true;
+   kb.sq = opts.mode === 'ai' && opts.color === 'b' ? 12 : 52;
+@@ -2159,16 +2199,20 @@ function loadSave() {
+     return sv;
+   } catch (e) { return null; }
+ }
++// La selección de cada grupo se publica igual en la clase y en aria-pressed (RSP-SALCHIDREZ-03)
++function setPressed(b, on) { b.classList.toggle('on', on); b.setAttribute('aria-pressed', on ? 'true' : 'false'); }
+ function syncCards() {
+   document.querySelectorAll('.cards[data-opt]').forEach(row => {
+     const key = row.dataset.opt;
+-    row.querySelectorAll('button').forEach(b => b.classList.toggle('on', String(opts[key]) === b.dataset.val));
++    row.querySelectorAll('button').forEach(b => setPressed(b, String(opts[key]) === b.dataset.val));
+   });
+   document.getElementById('ai-opts').hidden = opts.mode !== 'ai';
+ }
+ function refreshResume() {
+   const sv = loadSave(), b = document.getElementById('btn-resume');
+   b.hidden = !sv;
++  // SRC-CH02: con una partida guardada, el botón principal es «Nueva partida» y pide confirmación antes de reemplazarla
++  document.getElementById('btn-start').textContent = sv ? tx('Nueva partida', 'New game') : tx('¡A jugar!', 'Play!');
+   if (!sv) return;
+   const n = Math.ceil(sv.moves.length / 2);
+   b.querySelector('small').textContent = sv.mode === 'ai'
+@@ -2357,14 +2401,16 @@ function tryMove(cands, d) {
+ }
+ 
+ function selectSq(sq, chatty) {
+-  selected = sq;
++  selected = sq; selAt = performance.now();
+   selMoves = legalMoves(st).filter(m => m.from === sq);
+   sfx('pick');
+   if (chatty && Math.random() < 0.45) say(sq, pickOne(SAY[typeOf(st.b[sq])]));
++  syncA11yBoard();
+ }
+ 
+ function deselect() {
+   selected = -1; selMoves = [];
++  syncA11yBoard();
+ }
+ 
+ // Punto del pecho del perro cuando lo arrastras: la cabeza queda justo arriba del dedo
+@@ -2694,6 +2740,7 @@ function undo() {
+   over = null; hint = null; idle = {}; bubbles = []; prints = [];
+   checkFx = null; checkPending = false; waves = [];
+   deselect();
++  hideFinalView();
+   hideOverlay('overlay-gameover');
+   if (inCheck(st, st.turn)) startCheckFx(false, true);
+   sfx('undo');
+@@ -2728,14 +2775,21 @@ function paintGameOverText() {
+   const plies = history.length;
+   const me = opts.mode === 'ai' ? opts.color : 'w';
+   const other = me === 'w' ? 'b' : 'w';
+-  const lbl = c => opts.mode === 'ai' ? (c === opts.color ? tx('Comiste', 'You captured') : tx('Comió la máquina', 'Machine captured')) : tx(`Comió ${SIDE_NAME[c]}`, `${SIDE_NAME[c]} captured`);
++  // PLAY-SALCHI-04: «Piezas capturadas por {equipo}»; el número de jugada sigue la notación de ajedrez
++  // (Math.ceil(turnos/2), métrica sin cambios) y la unidad consultable dice cuántos turnos (medias jugadas) fueron.
++  const lbl = c => tx(`Piezas capturadas por ${SIDE_NAME[c]}`, `Pieces captured by ${SIDE_NAME[c]}`);
+   const val = v => typeof v === 'function' ? v() : (v || '');
+   document.getElementById('gameover-title').textContent = val(over.title);
+   document.getElementById('gameover-sub').textContent = val(over.sub) + (over.extra ? ' ' + over.extra() : '');
++  const turnsTxt = tx(`${plies} ${plies === 1 ? 'turno' : 'turnos'}`, `${plies} ${plies === 1 ? 'half-move' : 'half-moves'}`);
++  const movesTitle = tx('Número de jugada según la notación de ajedrez: cada jugada completa son dos turnos (Crema y Chocolate).', 'Move number as in chess notation: each full move is two half-moves (Cream and Chocolate).');
+   document.getElementById('gameover-stats').innerHTML =
+-    `<div><b>${Math.ceil(plies / 2)}</b><span>${tx('Movidas', 'Moves')}</span></div>` +
++    `<div title="${movesTitle}"><b>${Math.ceil(plies / 2)}</b><span>${tx('Jugadas', 'Moves')}</span><small>${turnsTxt}</small></div>` +
+     `<div><b>${captured[me].length}</b><span>${lbl(me)}</span></div>` +
+     `<div><b>${captured[other].length}</b><span>${lbl(other)}</span></div>`;
++  const fb = document.getElementById('btn-final-board');
++  fb.hidden = !inGame;
++  fb.textContent = tx('Ver tablero final', 'View final board');
+ }
+ 
+ function say(sq, text) {
+@@ -2761,7 +2815,7 @@ function render(now) {
+ 
+   // Sacudón en las peleas
+   ctx.save();
+-  if (now >= shake.start && now < shake.until) {
++  if (!reducedMotion && now >= shake.start && now < shake.until) {
+     const k = 1 - (now - shake.start) / (shake.until - shake.start);
+     ctx.translate((Math.random() - 0.5) * 7 * k, (Math.random() - 0.5) * 7 * k);
+   }
+@@ -2769,13 +2823,29 @@ function render(now) {
+   drawBoard(now);
+ 
+   const hl = (sq, col) => { const p = sqXY(sq); ctx.fillStyle = col; ctx.fillRect(p.x - s / 2, p.y - s / 2, s, s); };
+-  if (lastMove) { hl(lastMove.from, 'rgba(255, 240, 130, 0.35)'); hl(lastMove.to, 'rgba(255, 240, 130, 0.5)'); }
+-  if (selected >= 0) hl(selected, 'rgba(255, 196, 60, 0.7)');
++  // VIS-SALCHIDREZ-02: última jugada con relleno tenue y dos esquinas interiores fijas; selección con relleno suave
++  // y borde sólido de 3 px (no tiñe la pieza); foco con halo fijo; captura con borde fijo y un solo pulso al seleccionar
++  const corners = (sq, col) => {
++    const p = sqXY(sq), h = s / 2, c = Math.max(5, s * 0.16);
++    ctx.fillStyle = col;
++    ctx.fillRect(p.x - h + 2, p.y - h + 2, c, 2); ctx.fillRect(p.x - h + 2, p.y - h + 2, 2, c);
++    ctx.fillRect(p.x + h - 2 - c, p.y + h - 4, c, 2); ctx.fillRect(p.x + h - 4, p.y + h - 2 - c, 2, c);
++  };
++  if (lastMove) {
++    hl(lastMove.from, 'rgba(255, 240, 130, 0.16)'); hl(lastMove.to, 'rgba(255, 240, 130, 0.16)');
++    corners(lastMove.from, 'rgba(255, 222, 90, 0.9)'); corners(lastMove.to, 'rgba(255, 222, 90, 0.9)');
++  }
++  if (selected >= 0) {
++    hl(selected, 'rgba(255, 196, 60, 0.22)');
++    const p = sqXY(selected);
++    ctx.save(); ctx.strokeStyle = 'rgba(255, 196, 60, 0.95)'; ctx.lineWidth = 3;
++    ctx.strokeRect(p.x - s / 2 + 1.5, p.y - s / 2 + 1.5, s - 3, s - 3); ctx.restore();
++  }
+   if (kb.on && inGame) {
+     const p = sqXY(kb.sq), lw = Math.max(3, s * 0.06);
+     ctx.save();
+     ctx.strokeStyle = '#00f2cf'; ctx.lineWidth = lw;
+-    ctx.shadowColor = 'rgba(0, 242, 207, 0.8)'; ctx.shadowBlur = 10 + Math.sin(now * 0.006) * 4;
++    ctx.shadowColor = 'rgba(0, 242, 207, 0.8)'; ctx.shadowBlur = 6;
+     roundRectPath(ctx, p.x - s / 2 + lw / 2, p.y - s / 2 + lw / 2, s - lw, s - lw, s * 0.12);
+     ctx.stroke();
+     ctx.restore();
+@@ -2791,8 +2861,8 @@ function render(now) {
+     ctx.fillRect(k.x - s / 2, k.y - s / 2, s, s);
+   }
+ 
+-  // Línea de amenaza: del perro que da jaque al rey
+-  if (checkFx && !(checkFx.mate && now > checkFx.faintStart)) {
++  // Línea de amenaza: del perro que da jaque al rey (también al revisar el tablero final)
++  if (checkFx && (finalReview || !(checkFx.mate && now > checkFx.faintStart))) {
+     const K = sqXY(checkFx.kingSq);
+     for (const a of checkFx.attackers) {
+       const P = sqXY(a);
+@@ -2843,16 +2913,16 @@ function render(now) {
+     const p = sqXY(m.to);
+     const hov = m.to === target;
+     if (m.cap && !m.ep) {
++      const age = now - selAt, pulse = !reducedMotion && age >= 0 && age < 450 ? Math.sin(Math.PI * age / 450) : 0;
+       ctx.save();
+-      ctx.strokeStyle = '#ff6ec7'; ctx.lineWidth = Math.max(3, s * (hov ? 0.1 : 0.065));
+-      ctx.shadowColor = '#ff6ec7'; ctx.shadowBlur = hov ? 22 : 10;
++      ctx.strokeStyle = '#ff6ec7'; ctx.lineWidth = Math.max(3, s * (hov ? 0.1 : 0.065)) * (1 + 0.5 * pulse);
++      ctx.shadowColor = '#ff6ec7'; ctx.shadowBlur = (hov ? 22 : 10) + 10 * pulse;
+       ctx.setLineDash([s * 0.16, s * 0.1]);
+-      ctx.lineDashOffset = -now * 0.02;
+       roundRectPath(ctx, p.x - s / 2 + 4, p.y - s / 2 + 4, s - 8, s - 8, 10);
+       ctx.stroke();
+       ctx.restore();
+     } else {
+-      const bob = Math.sin(now * 0.006 + m.to) * s * 0.03;
++      const bob = reducedMotion ? 0 : Math.sin(now * 0.006 + m.to) * s * 0.03;
+       if (hov) {
+         ctx.fillStyle = 'rgba(255, 209, 102, 0.3)';
+         ctx.fillRect(p.x - s / 2, p.y - s / 2, s, s);
+@@ -2908,7 +2978,7 @@ function render(now) {
+     }
+     const asleep = opts.mode === 'learn' && learn && learn.L.type === 'capture' && col === 'b' && !mood;
+     if (asleep) { mood = 'sleep'; wag = 0; delete idle[sq]; }
+-    if (isSel) { cy -= Math.abs(Math.sin(now * 0.012)) * s * 0.08; wag = 1; }
++    if (isSel) { if (!reducedMotion) cy -= Math.abs(Math.sin(now * 0.012)) * s * 0.08; wag = reducedMotion ? 0.3 : 1; }
+     const id = idle[sq];
+     if (id) {
+       const k = (now - id.start) / 650;
+@@ -2926,10 +2996,11 @@ function render(now) {
+       a.fx += vx / vl * lunge * s * 0.38; a.fy += vy / vl * lunge * s * 0.38;
+     }
+     const blink = ((now + blinkSeeds[sq]) % 4200) < 120;
+-    drawDog(ctx, t, col, a.ox, a.oy, a.fx, a.fy + sniff * a.r * 0.25, a.r, { time: now, seed: sq, wag, blink, mood, mouth, hatScale: BOARD_HAT });
++    drawDog(ctx, t, col, a.ox, a.oy, a.fx, a.fy + sniff * a.r * 0.25, a.r, { time: now, seed: sq, wag, blink, mood, mouth, hatScale: BOARD_HAT, simple: s < 40 });
+     if (sq === chkKing) drawSweat(ctx, a, now);
+     if (asleep) drawZzz(ctx, a, now, sq);
+-    if (opts.glyphs === 'on') badgeFor(t, col, cx, cy, facing[sq] || 1, grow);
++    // Insignia de tipo: siempre si el ajuste está activo; si no, sólo en la pieza seleccionada (VIS-SALCHIDREZ-03)
++    if (opts.glyphs === 'on' || isSel) badgeFor(t, col, cx, cy, facing[sq] || 1, grow);
+     if (isKing) {
+       const ct = now - checkFx.start;
+       if (ct > 150 && ct < 1100) {
+@@ -3105,15 +3176,24 @@ function drawBackground(now, dt) {
+     sun.addColorStop(1, 'rgba(255, 236, 170, 0)');
+     ctx.fillStyle = sun; ctx.fillRect(0, 0, W, H);
+   }
+-  // Noche: estrellas que titilan y luna
++  // VIS-SALCHIDREZ-04: en partida, las partículas quedan fuera del rectángulo acolchado (+8 px) y hay menos
++  const outsideBoard = () => {
++    if (!inGame || !L.s) return;
++    const m = (L.fr || 12) + 8;
++    ctx.beginPath(); ctx.rect(0, 0, W, H); ctx.rect(L.bx - m, L.by - m, L.s * 8 + 2 * m, L.s * 8 + 2 * m); ctx.clip('evenodd');
++  };
++  // Noche: estrellas que titilan (fijas con movimiento reducido) y luna
+   if (T.moon) {
++    ctx.save(); outsideBoard();
+     ctx.fillStyle = '#ffffff';
+-    for (let i = 0; i < 46; i++) {
++    const nStars = inGame ? 24 : 46;
++    for (let i = 0; i < nStars; i++) {
+       const x = (i * 97.3) % W, y = (i * 53.7) % (H * 0.62);
+-      ctx.globalAlpha = 0.3 + 0.7 * (0.5 + 0.5 * Math.sin(now * 0.002 + i * 1.7));
++      ctx.globalAlpha = reducedMotion ? 0.75 : 0.3 + 0.7 * (0.5 + 0.5 * Math.sin(now * 0.002 + i * 1.7));
+       ctx.fillRect(x, y, 2, 2);
+     }
+     ctx.globalAlpha = 1;
++    ctx.restore();
+     const mx = W * 0.84, my = Math.max(34, H * 0.07);
+     const glow = ctx.createRadialGradient(mx, my, 0, mx, my, 90);
+     glow.addColorStop(0, 'rgba(255, 243, 196, 0.35)'); glow.addColorStop(1, 'rgba(255, 243, 196, 0)');
+@@ -3131,10 +3211,11 @@ function drawBackground(now, dt) {
+     for (let x = 23; x < W; x += 46) { ctx.moveTo(x, 0); ctx.lineTo(x, H); }
+     ctx.stroke();
+   }
+-  // Nubes
++  // Nubes (quietas con movimiento reducido)
++  ctx.save(); outsideBoard();
+   ctx.fillStyle = T.cloud;
+   for (const it of bgItems) {
+-    it.x += it.sp * dt;
++    if (!reducedMotion) it.x += it.sp * dt;
+     const cw = it.size * 2.6;
+     if (it.x * W - cw > W) it.x = -cw / W;
+     if (T.lamp) continue;
+@@ -3145,15 +3226,17 @@ function drawBackground(now, dt) {
+     ctx.ellipse(x + r * 0.5, y - r * 0.55, r * 1.05, r * 0.95, 0, 0, Math.PI * 2);
+     ctx.fill();
+   }
+-  // Nieve: copos que caen
++  // Nieve: copos que caen (fijos con movimiento reducido; 24 en partida)
+   if (T.snow) {
+     ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+-    for (let i = 0; i < 60; i++) {
+-      const x = ((i * 71.3) + Math.sin(now * 0.001 + i) * 12 + W) % W;
+-      const y = ((i * 41.9) + now * 0.03 * (1 + i % 3)) % H;
++    const nFlakes = inGame ? 24 : 60, tm = reducedMotion ? 0 : now;
++    for (let i = 0; i < nFlakes; i++) {
++      const x = ((i * 71.3) + Math.sin(tm * 0.001 + i) * 12 + W) % W;
++      const y = ((i * 41.9) + tm * 0.03 * (1 + i % 3)) % H;
+       ctx.beginPath(); ctx.arc(x, y, 1.5 + (i % 3), 0, Math.PI * 2); ctx.fill();
+     }
+   }
++  ctx.restore();
+   // Lomas (pasto, mar y arena, nieve o piso) detrás de la barra
+   const hy = H - 70;
+   ctx.fillStyle = T.hill1;
+@@ -3199,20 +3282,44 @@ function drawBoard(now) {
+     ctx.fillRect(x + c * s, y + r * s, s, s);
+   }
+   const v = ctx.createRadialGradient(x + n / 2, y + n * 0.4, n * 0.2, x + n / 2, y + n / 2, n * 0.75);
+-  v.addColorStop(0, 'rgba(255,255,255,0.04)'); v.addColorStop(1, 'rgba(0,0,0,0.12)');
++  v.addColorStop(0, 'rgba(255,255,255,0.04)'); v.addColorStop(1, 'rgba(0,0,0,0.08)');
+   ctx.fillStyle = v; ctx.fillRect(x, y, n, n);
+   ctx.restore();
+ 
+-  ctx.fillStyle = BOARD.label;
+-  ctx.font = `600 ${Math.max(9, s * 0.16)}px Fredoka, sans-serif`;
++  // VIS-SALCHIDREZ-01: coordenadas en el margen interior del marco cuando hay lugar (fr >= 12), a 2 px del
++  // área de juego; con marcos menores, en su posición de siempre sobre un respaldo del color claro del tema.
++  // Siguen la orientación del tablero (flipped). Fuente mínima 11 px cuando s >= 32; 9 px por debajo.
++  const fsz = s >= 32 ? Math.max(11, s * 0.16) : 9;
++  ctx.font = `600 ${fsz}px Fredoka, sans-serif`;
++  const inFrame = fr >= 12;
++  ctx.save();
+   for (let i = 0; i < 8; i++) {
+     const file = 'abcdefgh'[flipped ? 7 - i : i];
+-    const rank = flipped ? i + 1 : 8 - i;
+-    ctx.textAlign = 'right'; ctx.textBaseline = 'bottom';
+-    ctx.fillText(file, x + i * s + s - 3, y + n - 2);
+-    ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+-    ctx.fillText(String(rank), x + 3, y + i * s + 2);
++    const rank = String(flipped ? i + 1 : 8 - i);
++    if (inFrame) {
++      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
++      ctx.lineWidth = 2.5; ctx.lineJoin = 'round'; ctx.strokeStyle = 'rgba(40, 20, 10, 0.55)'; ctx.fillStyle = 'rgba(255, 243, 222, 0.92)';
++      const fx = x + i * s + s / 2, fy = y + n + 2 + (fr - 2) / 2;
++      ctx.strokeText(file, fx, fy); ctx.fillText(file, fx, fy);
++      const rx = x - 2 - (fr - 2) / 2, ry = y + i * s + s / 2;
++      ctx.strokeText(rank, rx, ry); ctx.fillText(rank, rx, ry);
++    } else {
++      const pad = 1.5;
++      ctx.textAlign = 'right'; ctx.textBaseline = 'bottom';
++      let w = ctx.measureText(file).width;
++      ctx.globalAlpha = 0.9; ctx.fillStyle = BOARD.light;
++      roundRectPath(ctx, x + i * s + s - 3 - w - pad, y + n - 2 - fsz - pad, w + pad * 2, fsz + pad * 2, 3); ctx.fill();
++      ctx.globalAlpha = 1; ctx.fillStyle = BOARD.label;
++      ctx.fillText(file, x + i * s + s - 3, y + n - 2);
++      ctx.textAlign = 'left'; ctx.textBaseline = 'top';
++      w = ctx.measureText(rank).width;
++      ctx.globalAlpha = 0.9; ctx.fillStyle = BOARD.light;
++      roundRectPath(ctx, x + 3 - pad, y + i * s + 2 - pad, w + pad * 2, fsz + pad * 2, 3); ctx.fill();
++      ctx.globalAlpha = 1; ctx.fillStyle = BOARD.label;
++      ctx.fillText(rank, x + 3, y + i * s + 2);
++    }
+   }
++  ctx.restore();
+ }
+ 
+ // Silueta clásica de la pieza, dibujada a mano (los símbolos de texto salen como emoji en
+@@ -3479,16 +3586,25 @@ function playerStatus(color) {
+     if (!over.winner) return { text: tx('Tablas', 'Draw'), col: '#ffd166' };
+     return over.winner === color ? { text: tx('¡Ganó!', 'Won!'), col: '#ffd166' } : { text: tx('Jaque mate', 'Checkmate'), col: '#ff6b8a' };
+   }
++  const machine = opts.mode === 'ai' && color !== opts.color;
+   if (st.turn !== color) {
+     const md = sideMood(color);
+-    if (opts.mode === 'ai' && color !== opts.color) return { text: MOOD_TXT[md] || tx(`Nivel ${LEVELS[opts.level]}`, `Level: ${LEVELS[opts.level]}`), col: md === 'angry' ? '#ff9a6b' : 'rgba(255,246,234,0.68)' };
++    if (machine) {
++      // PLAY-SALCHI-01: mientras la pieza de la máquina todavía se mueve, lo dice; nunca invita al humano a mover perros ajenos
++      const moving = lastMove && st.b[lastMove.to] && colorOf(st.b[lastMove.to]) === color && anims.some(a => !a.fx);
++      if (moving) return { text: tx('La máquina está moviendo.', 'The computer is making its move.'), col: '#ffd166' };
++      return { text: MOOD_TXT[md] || tx(`Nivel ${LEVELS[opts.level]}`, `Level: ${LEVELS[opts.level]}`), col: md === 'angry' ? '#ff9a6b' : 'rgba(255,246,234,0.68)' };
++    }
+     return { text: tx('Esperando', 'Waiting'), col: 'rgba(255,246,234,0.6)' };
+   }
++  // Turno de la máquina: piensa (o está por pensar, mientras termina la animación del humano)
++  if (machine) return { text: tx('La máquina está pensando…', 'The computer is thinking…'), col: '#ffd166' };
+   if (aiThinking) return { text: aiThinkText || tx('Olfateando la jugada…', 'Sniffing out a move…'), col: '#ffd166' };
+   if (hintBusy) return { text: tx('Buscando una pista…', 'Looking for a hint…'), col: '#ffd166' };
+   if (inCheck(st, color)) return { text: tx('¡Jaque! Salva al rey', 'Check! Save the king'), col: '#ff6b8a' };
+   if (!inGame) return { text: tx('Elige cómo jugar', 'Choose how to play'), col: PAL[color].team };
+-  return { text: history.length < 2 ? tx('Toca o arrastra un perro', 'Tap or drag a dog') : tx('Te toca', 'Your turn'), col: PAL[color].team };
++  if (selected >= 0) return { text: tx('Te toca', 'Your turn'), col: PAL[color].team };
++  return { text: tx('Te toca: elegí un perro.', 'Your turn: choose a dog.'), col: PAL[color].team };
+ }
+ 
+ // Tarjeta con avatar, nombre, estado y los perros que capturó ese jugador
+@@ -4005,7 +4121,14 @@ function updateHUD() {
+   const undoBtn = document.getElementById('btn-undo');
+   const learning = opts.mode === 'learn' && !!learn;
+   undoBtn.querySelector('span').textContent = learning ? tx('Otra vez', 'Retry') : tx('Deshacer', 'Undo');
+-  undoBtn.setAttribute('aria-label', learning ? tx('Otra vez', 'Retry') : tx('Deshacer', 'Undo'));
++  // PLAY-SALCHI-02: el nombre accesible y la descripción dicen cuánto se revierte en cada modo
++  const undoDesc = learning ? tx('Otra vez', 'Retry')
++    : opts.mode === 'ai' && st && st.turn === opts.color && history.length >= 2 ? tx('Deshacer tu jugada y la respuesta de la máquina', 'Undo your move and the computer’s reply')
++    : tx('Deshacer última jugada', 'Undo last move');
++  undoBtn.setAttribute('aria-label', undoDesc);
++  undoBtn.title = undoDesc;
++  syncAudioA11y();
++  syncA11yBoard();
+   if (learning) {
+     undoBtn.disabled = busy;
+     document.getElementById('btn-hint').disabled = busy || learn.done || learn.L.type === 'meet' || learn.L.type === 'demo' || (learn.L.type === 'play' && !humanTurn());
+@@ -4014,6 +4137,120 @@ function updateHUD() {
+   undoBtn.disabled = !history.length || busy || !inGame;
+   document.getElementById('btn-hint').disabled = !inGame || !st || !!over || busy || hintBusy || !humanTurn();
+ }
++// PLAY-SALCHI-05: Música/Sonidos informan activado/desactivado sin parecer deshabilitados
++function syncAudioA11y() {
++  const m = document.getElementById('btn-music'), sn = document.getElementById('btn-sound');
++  if (!m || !sn) return;
++  m.classList.toggle('off', !musicOn); sn.classList.toggle('off', !soundOn);
++  m.setAttribute('aria-pressed', musicOn ? 'true' : 'false'); sn.setAttribute('aria-pressed', soundOn ? 'true' : 'false');
++  m.setAttribute('aria-label', musicOn ? tx('Música', 'Music') : tx('Música desactivada', 'Music off'));
++  sn.setAttribute('aria-label', soundOn ? tx('Sonidos', 'Sounds') : tx('Sonidos desactivados', 'Sounds off'));
++}
++
++// ============================================================================
++// RSP-SALCHIDREZ-02 / PLAY-SALCHI-05: tablero semántico (role=grid) y región viva.
++// Misma kb.sq y keyActivate que el cursor del canvas; los textos salen del estado real.
++// ============================================================================
++const SQ_NAME = sq => 'abcdefgh'[sq & 7] + (8 - (sq >> 3));
++const PIECE_A11Y = bi({ k: 'rey', q: 'reina', r: 'torre', b: 'alfil', n: 'caballo', p: 'peón' }, { k: 'king', q: 'queen', r: 'rook', b: 'bishop', n: 'knight', p: 'pawn' });
++let a11yCells = null, a11yFlipped = null, a11yLast = '';
++function buildA11yBoard() {
++  const grid = document.getElementById('a11y-board');
++  grid.innerHTML = ''; a11yCells = [];
++  for (let r = 0; r < 8; r++) {
++    const row = document.createElement('div'); row.setAttribute('role', 'row');
++    for (let c = 0; c < 8; c++) {
++      // El orden del DOM sigue la orientación visual (tablero girado incluido); el nombre de la casilla no cambia
++      const sq = flipped ? (7 - r) * 8 + (7 - c) : r * 8 + c;
++      const cell = document.createElement('div'); cell.setAttribute('role', 'gridcell'); cell.tabIndex = -1; cell.dataset.sq = sq;
++      cell.addEventListener('focus', () => { kb.on = true; if (kb.sq !== sq) { kb.sq = sq; syncA11yBoard(); } });
++      cell.addEventListener('click', () => { kb.on = true; kb.sq = sq; keyActivate(sq); syncA11yBoard(); });
++      row.appendChild(cell); a11yCells.push(cell);
++    }
++    grid.appendChild(row);
++  }
++}
++function syncA11yBoard(focusMove) {
++  const grid = document.getElementById('a11y-board');
++  if (!grid || !st) return;
++  if (!a11yCells || a11yFlipped !== flipped) { a11yFlipped = flipped; buildA11yBoard(); }
++  grid.setAttribute('aria-label', tx('Tablero de ajedrez', 'Chessboard'));
++  const targets = new Map();
++  for (const m of selMoves) targets.set(m.to, m.cap ? 'cap' : 'go');
++  const chk = inGame && inCheck(st, st.turn), kSq = chk ? kingSquare(st.b, st.turn) : -1;
++  for (const cell of a11yCells) {
++    const sq = +cell.dataset.sq, p = st.b[sq];
++    let label = SQ_NAME(sq) + ': ' + (p
++      ? tx(`${PIECE_A11Y[typeOf(p)]} de ${SIDE_NAME[colorOf(p)]}`, `${PIECE_A11Y[typeOf(p)]} for ${SIDE_NAME[colorOf(p)]}`)
++      : tx('vacía', 'empty'));
++    if (sq === selected) label += tx(', seleccionado', ', selected');
++    const tg = targets.get(sq);
++    if (tg) label += tg === 'cap' ? tx(', captura posible', ', possible capture') : tx(', destino posible', ', possible destination');
++    if (sq === kSq) label += tx(', en jaque', ', in check');
++    cell.setAttribute('aria-label', label);
++    cell.setAttribute('aria-selected', sq === selected ? 'true' : 'false');
++    cell.tabIndex = sq === kb.sq ? 0 : -1;
++  }
++  if (focusMove && grid.contains(document.activeElement)) {
++    const c = a11yCells.find(x => +x.dataset.sq === kb.sq);
++    if (c && c !== document.activeElement) c.focus({ preventScroll: true });
++  }
++  announceState();
++}
++// Turno, jugada, captura, jaque y resultado en una región polite; se publica sólo cuando cambia
++function announceState() {
++  const live = document.getElementById('a11y-live');
++  if (!live || !st) return;
++  let text = '';
++  if (!inGame) text = '';
++  else if (over) {
++    const v = x => typeof x === 'function' ? x() : (x || '');
++    text = (v(over.title) + ' ' + v(over.sub)).trim();
++  } else {
++    if (lastMove && history.length) {
++      const prev = history[history.length - 1], p = st.b[lastMove.to];
++      const capd = !!(prev && prev.st && (prev.st.b[lastMove.to] || (p && typeOf(p) === 'p' && (lastMove.to & 7) !== (lastMove.from & 7))));
++      if (p) text += tx(`${PIECE_A11Y[typeOf(p)]} de ${SIDE_NAME[colorOf(p)]} ${SQ_NAME(lastMove.from)}–${SQ_NAME(lastMove.to)}`, `${SIDE_NAME[colorOf(p)]} ${PIECE_A11Y[typeOf(p)]} ${SQ_NAME(lastMove.from)}–${SQ_NAME(lastMove.to)}`) + (capd ? tx(', captura', ', captures') : '') + '. ';
++    }
++    if (inCheck(st, st.turn)) text += tx('¡Jaque! ', 'Check! ');
++    text += opts.mode === 'ai' && st.turn !== opts.color ? tx('La máquina está pensando…', 'The computer is thinking…') : tx(`Turno de ${SIDE_NAME[st.turn]}`, `${SIDE_NAME[st.turn]}’s turn`);
++  }
++  if (text !== a11yLast) { a11yLast = text; live.textContent = text; }
++}
++
++// ============================================================================
++// PLAY-SALCHI-03: ver el tablero final (rey amenazado y línea de ataque) sin perder el resultado
++// ============================================================================
++function showFinalView() {
++  if (!over) return;
++  finalReview = true;
++  const fv = document.getElementById('final-view');
++  document.getElementById('fv-text').textContent = over.winner
++    ? tx(`El rey de ${SIDE_NAME[st.turn]} está en jaque y no tiene una jugada legal para escapar.`, `The king for ${SIDE_NAME[st.turn]} is in check and has no legal move to escape.`)
++    : (typeof over.sub === 'function' ? over.sub() : '');
++  document.getElementById('btn-back-result').textContent = tx('Volver al resultado', 'Back to results');
++  hideOverlay('overlay-gameover');
++  fv.hidden = false;
++  document.getElementById('btn-back-result').focus({ preventScroll: true });
++}
++function hideFinalView() {
++  finalReview = false;
++  const fv = document.getElementById('final-view');
++  if (fv) fv.hidden = true;
++}
++
++// ============================================================================
++// Confirmación explícita (Cancelar con el foco inicial; Escape cancela)
++// ============================================================================
++let confirmCb = null;
++function askConfirm(title, body, okLabel, onOk) {
++  document.getElementById('cf-title').textContent = title;
++  document.getElementById('cf-body').textContent = body;
++  document.getElementById('cf-ok').textContent = okLabel;
++  document.getElementById('cf-cancel').textContent = tx('Cancelar', 'Cancel');
++  confirmCb = onOk;
++  showOverlay('overlay-confirm', { focus: 'cf-cancel' });
++}
+ 
+ let toastTimer = 0;
+ function showToast(text, small) {
+@@ -4752,10 +4989,7 @@ function leaveLesson() {
+   gameId++;
+   if (learn && learn.practice && learn.prev) {
+     opts.level = learn.prev.level; opts.color = learn.prev.color;
+-    document.querySelectorAll('.cards[data-opt]').forEach(row => {
+-      const key = row.dataset.opt;
+-      row.querySelectorAll('button').forEach(b => b.classList.toggle('on', String(opts[key]) === b.dataset.val));
+-    });
++    syncCards();
+   }
+   learn = null;
+   opts.mode = learnPrevMode === 'learn' ? 'ai' : learnPrevMode;
+@@ -5231,8 +5465,9 @@ function paintLessonEnd() {
+   document.getElementById('ld-title').textContent = o.title();
+   document.getElementById('ld-sub').textContent = o.sub();
+   const lastStage = learn.si === LESSON_STAGES.length - 1, lastLesson = learn.li === stage.lessons.length - 1;
+-  document.getElementById('ld-next').textContent = lastLesson ? (lastStage ? tx('Ver etapas', 'See stages') : tx('Siguiente etapa', 'Next stage')) : tx('Siguiente', 'Next');
+-  document.getElementById('ld-again').textContent = o.win ? tx('Otra vez', 'Again') : tx('¡Otra vez!', 'Try again!');
++  document.getElementById('ld-next').textContent = lastLesson ? (lastStage ? tx('Ver etapas', 'See stages') : tx('Siguiente etapa', 'Next stage')) : tx('Siguiente lección', 'Next lesson');
++  // SRC-CH01 / SRC-G03: repetir la lección ganada; reintentar la que no salió
++  document.getElementById('ld-again').textContent = o.win ? tx('Repetir lección', 'Replay lesson') : tx('Reintentar lección', 'Retry lesson');
+ }
+ function showLessonEnd(o) {
+   const stage = LESSON_STAGES[learn.si];
+@@ -5411,7 +5646,7 @@ function init() {
+     row.addEventListener('click', e => {
+       const btn = e.target.closest('button');
+       if (!btn) return;
+-      row.querySelectorAll('button').forEach(b => b.classList.toggle('on', b === btn));
++      row.querySelectorAll('button').forEach(b => setPressed(b, b === btn));
+       const key = row.dataset.opt;
+       opts[key] = key === 'level' ? Number(btn.dataset.val) : btn.dataset.val;
+       document.getElementById('ai-opts').hidden = opts.mode !== 'ai';
+@@ -5419,6 +5654,7 @@ function init() {
+       sfx('pick');
+     });
+   });
++  syncCards(); // aria-pressed desde el inicio (RSP-SALCHIDREZ-03)
+   // Selector de tablero
+   applyTheme(opts.theme);
+   const themesRow = document.getElementById('themes');
+@@ -5427,6 +5663,7 @@ function init() {
+     const b = document.createElement('button');
+     b.type = 'button';
+     b.className = 'theme' + (key === opts.theme ? ' on' : '');
++    b.setAttribute('aria-pressed', key === opts.theme ? 'true' : 'false');
+     b.dataset.theme = key;
+     b.innerHTML = '<i></i><span></span>';
+     const sw = b.querySelector('i');
+@@ -5435,7 +5672,7 @@ function init() {
+       opts.theme = key;
+       try { localStorage.setItem('salchidrez-tema', key); } catch (e) { /* sin storage */ }
+       applyTheme(key);
+-      themesRow.querySelectorAll('.theme').forEach(x => x.classList.toggle('on', x === b));
++      themesRow.querySelectorAll('.theme').forEach(x => setPressed(x, x === b));
+       audioUnlock(); sfx('pick');
+     });
+     themesRow.appendChild(b);
+@@ -5471,15 +5708,30 @@ function init() {
+     resumeGame();
+   });
+   refreshResume();
+-  document.getElementById('btn-start').addEventListener('click', () => {
++  const startGame = () => {
+     if (learn) leaveLesson();
+     if (fsCan && touchDevice && !fsOn()) fsEnter();
+     audioUnlock();
+     hideOverlay('overlay-intro');
+     newGame();
++  };
++  document.getElementById('btn-start').addEventListener('click', () => {
++    if (loadSave()) {
++      askConfirm(tx('¿Reemplazar la partida guardada?', 'Replace the saved game?'),
++        tx('La partida guardada se reemplazará por una nueva.', 'The saved game will be replaced with a new one.'),
++        tx('Nueva partida', 'New game'), startGame);
++      return;
++    }
++    startGame();
+   });
++  document.getElementById('cf-cancel').addEventListener('click', () => { confirmCb = null; hideOverlay('overlay-confirm'); });
++  document.getElementById('cf-ok').addEventListener('click', () => { const cb = confirmCb; confirmCb = null; hideOverlay('overlay-confirm'); if (cb) cb(); });
++  // PLAY-SALCHI-03: revisar el tablero final sin perder el resultado
++  document.getElementById('btn-final-board').addEventListener('click', showFinalView);
++  document.getElementById('btn-back-result').addEventListener('click', () => { hideFinalView(); showOverlay('overlay-gameover'); });
+   document.getElementById('btn-rematch').addEventListener('click', () => { hideOverlay('overlay-gameover'); if (learn && learn.practice) learn.done = false; newGame(); });
+   const toMenu = () => {
++    hideFinalView();
+     if (learn) { leaveLesson(); showLearnMap(); return; }
+     saveGame();
+     refreshResume();
+@@ -5496,10 +5748,7 @@ function init() {
+   document.getElementById('btn-undo').addEventListener('click', undo);
+   initLearn();
+   document.getElementById('btn-hint').addEventListener('click', askHint);
+-  const syncAudioButtons = () => {
+-    document.getElementById('btn-music').classList.toggle('off', !musicOn);
+-    document.getElementById('btn-sound').classList.toggle('off', !soundOn);
+-  };
++  const syncAudioButtons = () => syncAudioA11y();
+   syncAudioButtons();
+   document.getElementById('btn-sound').addEventListener('click', () => {
+     soundOn = !soundOn; savePref('salchidrez-sfx', soundOn);
+@@ -5656,16 +5905,26 @@ function initKeyboard() {
+     const k = e.key;
+     const ov = openOverlays();
+     if (ov.length) {
+-      // Coronación con letras; Esc cierra los paneles que se pueden cerrar
+-      if (pendingPromo && ov.some(o => o.id === 'overlay-promo')) {
++      const top = topOverlay();
++      // Tab y Shift+Tab no salen del panel superior (RSP-SALCHIDREZ-01)
++      if (k === 'Tab' && top) {
++        const f = [...top.querySelectorAll('button:not([disabled]), [href], input:not([disabled]), [tabindex]:not([tabindex="-1"])')].filter(x => x.offsetParent !== null);
++        if (f.length) {
++          const first = f[0], last = f[f.length - 1], a = document.activeElement;
++          if (e.shiftKey && (a === first || !top.contains(a) || a === top.querySelector('h1, h2'))) { e.preventDefault(); last.focus(); }
++          else if (!e.shiftKey && a === last) { e.preventDefault(); first.focus(); }
++        }
++        return;
++      }
++      // Coronación con letras; Escape no elude la elección
++      if (pendingPromo && top && top.id === 'overlay-promo') {
+         const t = { q: 'q', d: 'q', r: 'r', t: 'r', b: 'b', a: 'b', n: 'n', c: 'n' }[k.toLowerCase()];
+         if (t) { const m = pendingPromo.find(c => c.promo === t); hideOverlay('overlay-promo'); pendingPromo = null; commitMove(m, null); e.preventDefault(); }
+         return;
+       }
+-      if (k === 'Escape') {
+-        for (const id of ['overlay-settings', 'overlay-howto', 'overlay-legend']) {
+-          if (document.getElementById(id).classList.contains('show')) { hideOverlay(id); e.preventDefault(); return; }
+-        }
++      if (k === 'Escape' && top) {
++        if (top.id === 'overlay-confirm') { confirmCb = null; hideOverlay(top.id); e.preventDefault(); return; }
++        if (['overlay-settings', 'overlay-howto', 'overlay-legend'].includes(top.id)) { hideOverlay(top.id); e.preventDefault(); return; }
+       }
+       return;
+     }
+@@ -5681,10 +5940,12 @@ function initKeyboard() {
+       const f = flipped ? -1 : 1;
+       c = Math.max(0, Math.min(7, c + dv[0] * f)); r = Math.max(0, Math.min(7, r + dv[1] * f));
+       kb.sq = r * 8 + c;
++      syncA11yBoard(true);
+       return;
+     }
+     if (k === 'Enter' || k === ' ') {
+-      if (document.activeElement && document.activeElement !== document.body && document.activeElement.tagName === 'BUTTON') return;
++      const ae = document.activeElement;
++      if (ae && ae !== document.body && /^(BUTTON|A|INPUT|SELECT|TEXTAREA)$/.test(ae.tagName)) return;
+       e.preventDefault();
+       audioUnlock();
+       if (!kb.on) { kb.on = true; return; }
+@@ -5723,14 +5984,49 @@ function keyActivate(sq) {
+   deselect();
+ }
+ 
+-// Los paneles ocultos quedan inertes: ni el tabulador ni Enter llegan a sus botones
+-function showOverlay(id) { const el = document.getElementById(id); el.inert = false; el.classList.add('show'); }
++// ============================================================================
++// RSP-SALCHIDREZ-01: pila de overlays. Sólo el superior es operable; los demás visibles, la barra,
++// la consigna de la lección, el tablero semántico y el canvas quedan inertes. Al abrir, el foco va al
++// título (o al control indicado); al cerrar, vuelve al disparador.
++// ============================================================================
++const ovStack = ['overlay-intro'];
++const ovTrigger = {};
++const topOverlay = () => ovStack.length ? document.getElementById(ovStack[ovStack.length - 1]) : null;
++function syncInert() {
++  const top = ovStack[ovStack.length - 1] || null;
++  document.querySelectorAll('.overlay').forEach(o => { o.inert = o.id !== top; });
++  const any = !!top;
++  for (const id of ['bar', 'lesson-panel', 'a11y-board', 'final-view', 'game']) { const el = document.getElementById(id); if (el) el.inert = any; }
++}
++function showOverlay(id, o) {
++  o = o || {};
++  const el = document.getElementById(id);
++  const i = ovStack.indexOf(id); if (i >= 0) ovStack.splice(i, 1);
++  const act = document.activeElement;
++  ovTrigger[id] = act && act !== document.body && !el.contains(act) ? act : null;
++  ovStack.push(id);
++  el.classList.add('show');
++  syncInert();
++  let f = o.focus ? document.getElementById(o.focus) : null;
++  if (!f) { const lb = el.getAttribute('aria-labelledby'); f = lb ? document.getElementById(lb) : null; if (f && !f.hasAttribute('tabindex')) f.tabIndex = -1; }
++  if (!f) f = el.querySelector('button:not([disabled]), [href], input:not([disabled])');
++  if (f && o.focus !== false) f.focus({ preventScroll: true });
++}
+ function hideOverlay(id) {
+   const el = document.getElementById(id);
++  const i = ovStack.indexOf(id);
++  const wasTop = i === ovStack.length - 1;
++  if (i >= 0) ovStack.splice(i, 1);
++  const trig = ovTrigger[id]; ovTrigger[id] = null;
+   if (el.contains(document.activeElement)) document.activeElement.blur();
+-  el.classList.remove('show'); el.inert = true;
++  el.classList.remove('show');
++  syncInert();
++  if (!wasTop) return;
++  const top = topOverlay();
++  if (trig && trig.isConnected && trig.offsetParent !== null && (!top || top.contains(trig))) trig.focus({ preventScroll: true });
++  else if (top) { const lb = top.getAttribute('aria-labelledby'); const t = lb && document.getElementById(lb); if (t) { if (!t.hasAttribute('tabindex')) t.tabIndex = -1; t.focus({ preventScroll: true }); } }
+ }
+-document.querySelectorAll('.overlay:not(.show)').forEach(o => { o.inert = true; });
++syncInert();
+ 
+ // BOOT
+ init();

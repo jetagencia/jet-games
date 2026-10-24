@@ -1,0 +1,456 @@
+diff --git a/site/bestiario/index.html b/site/bestiario/index.html
+index 4556290..fbdce80 100644
+--- a/site/bestiario/index.html
++++ b/site/bestiario/index.html
+@@ -4,7 +4,7 @@
+ <meta charset="utf-8">
+ <!-- idioma común de jetgames.fun (copia tal cual de _shared/jet-idioma.js): va primero, antes de pintar cualquier texto -->
+ <script src="jet-idioma.js"></script>
+-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
++<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+ <meta name="theme-color" content="#0d1219">
+ <meta name="apple-mobile-web-app-capable" content="yes">
+ <meta name="mobile-web-app-capable" content="yes">
+@@ -48,11 +48,13 @@
+   * { box-sizing: border-box; }
+   html, body {
+     margin: 0; height: 100%; overflow: hidden; background: #0d1219;
+-    overscroll-behavior: none; touch-action: none;
++    overscroll-behavior: none;
+     -webkit-user-select: none; user-select: none;
+     -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent;
+   }
+-  #gl { position: fixed; inset: 0; width: 100%; height: 100%; display: block; outline: none; }
++  #gl { position: fixed; inset: 0; width: 100%; height: 100%; display: block; outline: none; touch-action: none; }
++  #stick { touch-action: none; }
++  button, a, [role="button"] { touch-action: manipulation; }
+   /* pantalla de arranque: se ve desde el primer instante, antes de que cargue el módulo de Three.js */
+   #boot {
+     position: fixed; inset: 0; z-index: 50; display: grid; place-content: center; gap: 8px; text-align: center; padding: 24px;
+@@ -66,8 +68,25 @@
+   #boot .bar { width: min(220px, 60vw); height: 4px; margin: 10px auto 0; border-radius: 4px; background: rgba(255,255,255,.1); overflow: hidden; }
+   #boot .bar::after { content: ""; display: block; width: 40%; height: 100%; border-radius: 4px; background: linear-gradient(90deg, #7700f4, #00f2cf); animation: bootbar 1.1s ease-in-out infinite; }
+   @keyframes bootbar { from { transform: translateX(-100%); } to { transform: translateX(250%); } }
+-  #boot.err .bar { display: none; }
+-  #boot.err b { color: #ff9a7a; } #boot.err span { opacity: .95; }
++  #boot.err .bar, #boot.err > span { display: none; }
++  #boot.err b { color: #ff9a7a; }
++  #boot-err[hidden] { display: none; }
++  #boot-err { display: grid; gap: 8px; justify-items: center; max-width: min(520px, 92vw); margin: 4px auto 0; }
++  #boot-err h2 { margin: 6px 0 0; font-size: clamp(20px, 5vw, 26px); font-weight: 800; line-height: 1.2; outline: none; }
++  #boot-err h2:focus-visible { outline: 2px solid #00f2cf; outline-offset: 6px; border-radius: 6px; }
++  #boot-err p { margin: 0; font-size: 15px; line-height: 1.5; max-width: 44ch; }
++  #boot-err p.why { opacity: .85; }
++  #boot-err p.status { font: 700 12px/1.3 var(--mono); letter-spacing: .04em; opacity: .75; text-transform: uppercase; }
++  #boot-err p:empty { display: none; }
++  .boot-btns { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 10px; width: 100%; }
++  .boot-btns button, .boot-btns a { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; min-width: 0; width: min(100%, 260px); padding: 0 18px; border-radius: 14px; border: 1px solid rgba(255,255,255,.18); background: rgba(14,17,23,.82); color: var(--ink); font: 600 16px/1 var(--font); cursor: pointer; text-decoration: none; }
++  .boot-btns button { border: 0; color: #fff; background: linear-gradient(135deg, #7700f4, #4b1fd0 55%, #00a9a0); font-weight: 800; }
++  .boot-btns button:disabled { opacity: .6; cursor: default; }
++  .boot-btns a:hover, .boot-btns a:focus-visible { border-color: #00f2cf; outline: none; box-shadow: 0 0 14px rgba(0,242,207,.3); }
++  #boot-details { margin-top: 10px; font-size: 14px; line-height: 1.5; text-align: left; width: 100%; }
++  #boot-details summary { cursor: pointer; text-align: center; color: #00f2cf; min-height: 44px; display: flex; align-items: center; justify-content: center; }
++  #boot-details pre { margin: 6px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; font: 500 12.5px/1.5 var(--mono); opacity: .85; max-height: 32vh; overflow: auto; padding: 8px 10px; border-radius: 8px; background: rgba(255,255,255,.05); }
++  #boot-details pre:empty { display: none; }
+   body.ready #boot { opacity: 0; pointer-events: none; }
+   :focus-visible { outline: 2px solid #f0d49a; outline-offset: 2px; }
+   #gl:focus-visible { outline: none; }
+@@ -284,7 +303,14 @@
+ </style>
+ </head>
+ <body>
+-<div id="boot" role="status"><b>JET<i>//</i><em data-en="Bestiary">Bestiario</em></b><span id="boot-msg" data-en="Loading the village…">Cargando el pueblo…</span><div class="bar"></div></div>
++<div id="boot" role="status" data-state="loading"><b>JET<i>//</i><em data-en="Bestiary">Bestiario</em></b><span id="boot-msg">Cargando el pueblo…</span><div class="bar"></div>
++  <div id="boot-err" hidden>
++    <h2 id="boot-title" tabindex="-1"></h2>
++    <p id="boot-lead"></p><p id="boot-why" class="why"></p><p id="boot-status" class="status"></p>
++    <div class="boot-btns"><button type="button" id="boot-retry"></button><a id="boot-home" href="https://jetgames.fun/" target="_top" rel="noopener"></a></div>
++    <details id="boot-details"><summary id="boot-details-t"></summary><p id="boot-advice"></p><pre id="boot-detail"></pre></details>
++  </div>
++</div>
+ <a id="back" href="https://jetgames.fun/" target="_top" rel="noopener" aria-label="Volver a JET//Games" data-en-aria-label="Back to JET//Games">‹ JET<i>//</i>Games</a>
+ <noscript><style>#boot span { display: none; } #boot::after { content: "Este juego necesita JavaScript para funcionar. · This game needs JavaScript to run."; font-size: 14px; opacity: .9; }</style></noscript>
+ <script>
+@@ -307,6 +333,7 @@
+       }
+       var seg = document.querySelectorAll('#t-lang [data-lang]');
+       for (var j = 0; j < seg.length; j++) seg[j].setAttribute('aria-pressed', String(seg[j].getAttribute('data-lang') === (en ? 'en' : 'es')));
++      if (window.__bootPaint) window.__bootPaint();   // el cargador traduce su estado vigente (carga o error); nunca repone «Cargando» sobre un error
+     }
+     window.__paintStatic = paint;
+     paint();
+@@ -315,22 +342,66 @@
+   })();
+ </script>
+ <script>
+-  // Si algo impide arrancar (módulo caído, navegador sin WebGL 2 o sin import maps, carga eterna) se dice con claridad en vez de dejar la pantalla negra.
++  // Arranque: estados excluyentes loading / error / ready, dueños del texto de #boot. Si algo impide arrancar (módulo caído,
++  // navegador sin WebGL 2 o sin import maps, recurso que no baja) se dice con claridad, con recuperación y salida al catálogo,
++  // y el HUD del mundo queda inerte hasta que el juego esté realmente listo (PLAY-BESTIARIO-01/02/03).
+   (function () {
+-    var boot = document.getElementById('boot'), msg = document.getElementById('boot-msg'), EN = window.JETIdioma && window.JETIdioma.get() === 'en';
+-    function fail(text) {
+-      if (document.body.classList.contains('ready') || (!text && boot.className === 'err')) return;   // un mensaje concreto no se pisa con el genérico
+-      boot.className = 'err'; boot.firstChild.textContent = EN ? 'Couldn’t start' : 'No se pudo iniciar'; msg.textContent = text || (EN ? 'Reload the page; if nothing changes, try another browser.' : 'Recarga la página; si sigue igual, prueba con otro navegador.');
++    var $ = function (id) { return document.getElementById(id); };
++    var boot = $('boot'), msg = $('boot-msg');
++    var TX = {
++      es: { loading: 'Cargando el pueblo…', slow: 'Está tardando más de lo normal. Revisa tu conexión…', title: 'Bestiario no pudo iniciar', status: 'Estado del juego: no disponible',
++        webgl: 'No pudimos iniciar los gráficos 3D.', webglWhy: 'Este navegador no pudo crear el contexto gráfico que necesita Bestiario.',
++        old: 'Tu navegador es demasiado antiguo para este juego.', oldWhy: 'Hace falta Safari 16.4, Chrome 89 o Firefox 108, o superior.',
++        network: 'No pudimos descargar todos los recursos.', unknown: 'La carga se interrumpió. Podés volver a intentarlo.',
++        retry: 'Volver a cargar', retrying: 'Volviendo a cargar…', home: 'Volver a JET//Games', details: 'Ver ayuda y detalles', advice: 'Si el problema continúa, probá otro navegador o dispositivo compatible.' },
++      en: { loading: 'Loading the village…', slow: 'This is taking longer than usual. Check your connection…', title: 'Bestiario could not start', status: 'Game status: unavailable',
++        webgl: 'We couldn’t initialize 3D graphics.', webglWhy: 'This browser couldn’t create the graphics context that Bestiario needs.',
++        old: 'Your browser is too old for this game.', oldWhy: 'It needs Safari 16.4, Chrome 89 or Firefox 108, or newer.',
++        network: 'We couldn’t download all resources.', unknown: 'Loading was interrupted. You can try again.',
++        retry: 'Reload game', retrying: 'Reloading…', home: 'Back to JET//Games', details: 'View help and details', advice: 'If the problem continues, try another compatible browser or device.' }
++    };
++    var t = function () { return TX[window.JETIdioma && window.JETIdioma.get() === 'en' ? 'en' : 'es']; };
++    var B = { state: 'loading', kind: null, detail: '', slow: false, retrying: false };
++    function lockHud(on) { var els = document.querySelectorAll('[data-ui], #gl'); for (var i = 0; i < els.length; i++) { if (on) els[i].setAttribute('inert', ''); else els[i].removeAttribute('inert'); } }
++    function paint() {
++      var T = t();
++      if (B.state === 'loading') { msg.textContent = B.slow ? T.slow : T.loading; return; }
++      if (B.state !== 'error') return;
++      $('boot-title').textContent = T.title;
++      $('boot-lead').textContent = T[B.kind] || T.unknown;
++      $('boot-why').textContent = B.kind === 'webgl' ? T.webglWhy : B.kind === 'old' ? T.oldWhy : '';
++      $('boot-status').textContent = T.status;
++      $('boot-retry').textContent = B.retrying ? T.retrying : T.retry; $('boot-retry').disabled = B.retrying;
++      $('boot-home').textContent = T.home; $('boot-details-t').textContent = T.details; $('boot-advice').textContent = T.advice; $('boot-detail').textContent = B.detail;
+     }
+-    window.__bootFail = fail;
+-    addEventListener('error', function (e) { if (e.target === window || (e.target && (e.target.tagName === 'SCRIPT' || e.target.tagName === 'LINK'))) fail(); }, true);
+-    addEventListener('unhandledrejection', function () { fail(); });
++    // kind: 'webgl' | 'old' | 'network' | 'unknown'. Un texto libre (llamadas antiguas) se muestra como detalle técnico.
++    function fail(kind, detail) {
++      if (document.body.classList.contains('ready') || B.state === 'error') return;   // el juego listo no vuelve a error; la primera causa se conserva
++      if (kind && !TX.es[kind]) { detail = detail || kind; kind = 'unknown'; }
++      B.state = 'error'; B.kind = kind || 'unknown'; B.detail = detail ? String(detail).slice(0, 600) : '';
++      boot.className = 'err'; boot.dataset.state = 'error';
++      boot.setAttribute('role', 'alertdialog'); boot.setAttribute('aria-modal', 'true'); boot.setAttribute('aria-labelledby', 'boot-title'); boot.setAttribute('aria-describedby', 'boot-lead boot-why');
++      $('boot-err').hidden = false; paint(); lockHud(true);
++      setTimeout(function () { try { $('boot-title').focus({ preventScroll: true }); } catch (e) { /* sin foco */ } }, 30);
++    }
++    function ready() { B.state = 'ready'; boot.dataset.state = 'ready'; boot.setAttribute('aria-hidden', 'true'); boot.setAttribute('inert', ''); lockHud(false); }
++    window.__bootFail = fail; window.__bootReady = ready; window.__bootPaint = paint; window.__bootState = function () { return B.state; };
++    $('boot-retry').addEventListener('click', function () { if (B.retrying) return; B.retrying = true; paint(); location.reload(); });
++    addEventListener('error', function (e) {
++      if (B.state !== 'loading') return;
++      var tg = e.target;
++      if (tg && tg !== window && (tg.tagName === 'SCRIPT' || tg.tagName === 'LINK')) { fail('network', (tg.tagName === 'SCRIPT' ? 'script: ' : 'stylesheet: ') + (tg.src || tg.href || '')); return; }
++      if (tg === window) { var m = e.message || (e.error && e.error.message) || ''; fail(/WebGL|context/i.test(m) ? 'webgl' : /import|module|fetch|network|Failed to load/i.test(m) ? 'network' : 'unknown', m); }
++    }, true);
++    addEventListener('unhandledrejection', function (e) { if (B.state !== 'loading') return; var r = e.reason, m = r && (r.message || String(r)) || ''; fail(/WebGL|context/i.test(m) ? 'webgl' : /import|module|fetch|network|Failed to load|TypeError/i.test(m) ? 'network' : 'unknown', m); });
+     try {
+       var c = document.createElement('canvas');
+-      if (!(c.getContext && c.getContext('webgl2'))) fail(EN ? 'Your browser can’t display 3D graphics (WebGL 2 is missing). Turn on hardware acceleration or use an up-to-date Chrome, Safari or Firefox.' : 'Tu navegador no puede mostrar gráficos 3D (falta WebGL 2). Activa la aceleración por hardware o usa Chrome, Safari o Firefox actualizados.');
+-      else if (!HTMLScriptElement.supports || !HTMLScriptElement.supports('importmap')) fail(EN ? 'Your browser is too old for this game (it needs Safari 16.4, Chrome 89 or Firefox 108, or newer).' : 'Tu navegador es demasiado antiguo para este juego (hace falta Safari 16.4, Chrome 89 o Firefox 108, o superior).');
++      if (!(c.getContext && c.getContext('webgl2'))) fail('webgl', 'webgl2 context unavailable');
++      else if (!HTMLScriptElement.supports || !HTMLScriptElement.supports('importmap')) fail('old', 'importmap unsupported');
+     } catch (e) { /* si la prueba falla, que decida el arranque real */ }
+-    setTimeout(function () { if (!document.body.classList.contains('ready') && boot.className !== 'err') msg.textContent = EN ? 'This is taking longer than usual. Check your connection…' : 'Está tardando más de lo normal. Revisa tu conexión…'; }, 12000);
++    if (document.readyState === 'loading') addEventListener('DOMContentLoaded', function () { if (B.state !== 'ready') lockHud(true); }); else if (B.state !== 'ready') lockHud(true);
++    setTimeout(function () { if (B.state === 'loading') { B.slow = true; paint(); } }, 12000);
++    paint();
+   })();
+ </script>
+ <canvas id="gl" tabindex="-1" aria-label="Vista del pueblo. Muévete con las teclas de dirección o arrastrando el dedo." data-en-aria-label="View of the village. Move with the arrow keys or by dragging your finger."></canvas>
+@@ -401,7 +472,7 @@
+ 
+ <script>
+   // El juego arranca después del primer cuadro: la pantalla de carga se pinta al instante aunque el motor ya esté descargado (modulepreload).
+-  requestAnimationFrame(function () { if (window.__preFenix) window.__preFenix(); setTimeout(function () { import('./src/main.js').catch(function () { if (window.__bootFail) window.__bootFail(); }); }, 0); });
++  requestAnimationFrame(function () { if (window.__preFenix) window.__preFenix(); setTimeout(function () { import('./src/main.js').catch(function (e) { if (window.__bootFail) window.__bootFail(/WebGL|context/i.test(String(e && e.message || e)) ? 'webgl' : 'network', e && e.message || e); }); }, 0); });
+ </script>
+ </body>
+ </html>
+diff --git a/site/bestiario/src/main.js b/site/bestiario/src/main.js
+index aa1ae51..9d42147 100644
+--- a/site/bestiario/src/main.js
++++ b/site/bestiario/src/main.js
+@@ -25,8 +25,8 @@ const canvas = $('gl');
+ let renderer;
+ try {
+   renderer = new THREE.WebGLRenderer({ canvas, antialias: !LOW, powerPreference: 'high-performance' });
+-} catch (e) {   // sin WebGL no hay juego: se dice con claridad en vez de dejar la pantalla negra
+-  if (window.__bootFail) window.__bootFail(L('Tu navegador no puede mostrar gráficos 3D. Activa la aceleración por hardware o usa Chrome, Safari o Firefox actualizados.', 'Your browser can’t display 3D graphics. Turn on hardware acceleration or use an up-to-date Chrome, Safari or Firefox.'));
++} catch (e) {   // sin WebGL no hay juego: se dice con claridad en vez de dejar la pantalla negra (el texto lo pone el estado de arranque de index.html)
++  if (window.__bootFail) window.__bootFail('webgl', String(e && e.message || e));
+   throw e;
+ }
+ let pixelRatio = Math.min(devicePixelRatio || 1, DPR_MAX);
+@@ -296,7 +296,7 @@ function talk() {
+   else panels.openCage(actTarget.cage.species);
+ }
+ actBtn.addEventListener('click', talk);
+-addEventListener('keydown', (e) => { if ((e.code === 'Space' || e.code === 'Enter') && !e.repeat && !e.ctrlKey && !e.metaKey && actTarget && !panels.isOpen()) { e.preventDefault(); talk(); } });
++addEventListener('keydown', (e) => { if ((e.code === 'Space' || e.code === 'Enter') && !e.repeat && !e.ctrlKey && !e.metaKey && actTarget && !panels.isOpen() && !titleOn && !battle.active && !(e.target && e.target.closest && e.target.closest('button, a, input, select, textarea, [contenteditable=true], [role=button]'))) { e.preventDefault(); talk(); } });
+ // la jaula más cercana: estando dentro de ella o frente a su puerta
+ function nearestCage() {
+   const p = player.pos; let best = null, bd = Infinity;
+@@ -499,6 +499,7 @@ updateCamera(0, true);
+ render();
+ measureReserved(); updateGoal();
+ document.body.classList.add('ready');
++if (window.__bootReady) window.__bootReady();   // listo: el cargador sale del árbol accesible y el HUD recupera el foco (la portada vuelve a aislarlo)
+ setTimeout(() => { const b = $('boot'); if (b) b.remove(); }, 900);
+ requestAnimationFrame((n) => { last = n; frame(n); });
+ 
+@@ -572,17 +573,27 @@ if (document.fullscreenEnabled) {
+ // La portada aparece al abrir el juego: Continuar / Jugar, Nueva partida, Cómo jugar y Ajustes. Su primer toque arranca la música.
+ var titleOn = true, titleCam = false;
+ var titleCage = world.cages.find((c) => c.species.id === 'fenix') || world.cages[0] || null;   // la portada mira al fénix (y al dragón y al gato de brasa, sus vecinos)
++// Controles del mundo (no la portada): inertes mientras la portada, un panel o un combate estén activos. Cerrar un panel con la
++// portada aún abierta no debe devolverles el foco; panels.setInert avisa por hooks.afterInert y se vuelve a calcular aquí.
++const WORLD_UI = ['labels', 'zone', 'rot', 'coins', 'goal', 'act', 'esc', 'esc-panel', 'cam', 'cam-panel', 'fs', 'hint', 'menu', 'toast'].map($);
++function syncWorldInert() {
++  const worldDisabled = titleOn || panels.isOpen() || battle.active;
++  for (const x of WORLD_UI) if (x) { if (worldDisabled) x.setAttribute('inert', ''); else x.removeAttribute('inert'); }
++  const t = $('title'); if (t) { if (panels.isOpen()) t.setAttribute('inert', ''); else t.removeAttribute('inert'); }
++}
++panels.hooks.afterInert = syncWorldInert;
+ function showTitle(on) {
+   titleOn = on; const t = $('title'); t.hidden = !on; document.body.classList.toggle('title-on', on);
++  syncWorldInert();
+   if (on) {
+     paintTitle();
+     if (!coarse) setTimeout(() => { if (titleOn) $('t-play').focus({ preventScroll: true }); }, 60);
+-  } else { updateGoal(); measureReserved(); }
++  } else { updateGoal(); measureReserved(); if (!panels.isOpen() && !coarse) { const c = $('gl'); if (c && !(document.activeElement && document.activeElement !== document.body && document.activeElement.closest('[data-ui]'))) c.focus({ preventScroll: true }); } }
+ }
+ function paintTitle() {
+   const has = G.hasGame();
+   {
+-    $('t-play').textContent = has ? L('Continuar', 'Continue') : L('Jugar', 'Play');
++    $('t-play').textContent = has ? L('Continuar partida', 'Continue game') : L('Jugar', 'Play');   // SRC-G03: «Continuar partida» recupera el guardado
+     $('t-new').hidden = !has;
+     const beaten = G.leagueBeaten();
+     $('tprog').innerHTML = has ? `<span>${G.isChampion() ? L('♛ Campeón del Bestiario', '♛ Bestiary Champion') : `${L('Liga', 'League')} ${beaten}/${LEAGUE.length}`}</span><span>${L('Bestiario', 'Bestiary')} ${G.dexCount()}/${SPECIES.length}</span><span>${G.state().coins} ${L('monedas', 'coins')}</span>` : '';
+diff --git a/site/bestiario/src/model3d.js b/site/bestiario/src/model3d.js
+index 4298ffb..41cabdd 100644
+--- a/site/bestiario/src/model3d.js
++++ b/site/bestiario/src/model3d.js
+@@ -34,7 +34,7 @@ export const DRAGON_SKINS = {
+ };
+ 
+ function skinMaterial(p, detail) {
+-  const m = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.5, metalness: 0.05 });
++  const m = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.5, metalness: 0 });
+   m.onBeforeCompile = (sh) => {
+     sh.uniforms.uBase = { value: new THREE.Color(p.base) }; sh.uniforms.uLight = { value: new THREE.Color(p.light) };
+     sh.uniforms.uOchre = { value: new THREE.Color(p.ochre) }; sh.uniforms.uEmber = { value: new THREE.Color(p.ember) };
+@@ -50,7 +50,7 @@ function skinMaterial(p, detail) {
+         sc = mix(sc, sc * vec3(0.3, 0.26, 0.26), sR);
+         sc = mix(sc, uOchre, sG * 0.85);
+         diffuseColor.rgb = sc;`)
+-      .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = 0.42 + 0.26 * sR;')
++      .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = 0.52 + 0.24 * sR;')
+       .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance += uEmber * (sR * sG) * 1.6;');
+   };
+   m.customProgramCacheKey = () => 'skin-dragon';
+@@ -58,7 +58,7 @@ function skinMaterial(p, detail) {
+ }
+ 
+ function boneMaterial(p) {
+-  const m = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.36, metalness: 0.04 });
++  const m = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.48, metalness: 0 });
+   m.onBeforeCompile = (sh) => {
+     sh.uniforms.uBone = { value: new THREE.Color(p.bone) }; sh.uniforms.uDark = { value: new THREE.Color(p.bonedark) };
+     sh.vertexShader = sh.vertexShader
+diff --git a/site/bestiario/src/panels.js b/site/bestiario/src/panels.js
+index 851ba8a..ee9019f 100644
+--- a/site/bestiario/src/panels.js
++++ b/site/bestiario/src/panels.js
+@@ -67,6 +67,10 @@ export function createPanels({ say, onSkins, onNewGame, onFeed, themeEnv }) {
+   let confirmKey = null, confirmT = 0;   // botón de compra que espera su segundo toque
+   const applyConfirm = () => { if (!confirmKey) return; for (const x of body.querySelectorAll('[data-confirm]')) if (x.dataset.act + ':' + (x.dataset.id || '') === confirmKey) { x.textContent = x.dataset.ctext || L('Confirmar', 'Confirm'); x.classList.add('warn'); } };
+   let leadOpen = false, pointerDown = false, lastMg = 0, opener = null, replacing = false;
++  let pendingStart = null;   // inicio elegido que espera la confirmación de reemplazar la partida actual (SRC-BE01)
++  let pendingFuse = null;    // par de criaturas que espera la confirmación de fusión (SRC-BE02)
++  const lossText = () => { const nR = S().roster.length; return L(`${nR} ${nR === 1 ? 'criatura' : 'criaturas'}, ${S().coins} monedas, tus emblemas y todos los objetos`, `${nR} ${nR === 1 ? 'creature' : 'creatures'}, ${S().coins} coins, your emblems and every item`); };
++  const focusAuto = () => { const f = body.querySelector('[data-autofocus]'); if (f) f.focus({ preventScroll: true }); };
+   let mg = null;        // ejercicio de entrenamiento en curso
+   const hooks = {};     // sparring(creatureId): lo conecta el módulo de combate
+ 
+@@ -318,7 +322,12 @@ export function createPanels({ say, onSkins, onNewGame, onFeed, themeEnv }) {
+     return lead(L(`Combinar cuesta ${G.FUSE_COST} monedas: se queda la criatura de más nivel (o con más manzanas), conserva lo mejor de las dos (estadísticas, manzanas, poderes y aspectos), sube de nivel (más cuanto más fuerte sea la absorbida) y gana +1 en cada estadística. La absorbida desaparece.`, `Combining costs ${G.FUSE_COST} coins: the higher-level creature (or the one with more apples) stays, keeps the best of both (stats, apples, powers and looks), levels up (more the stronger the absorbed one is) and gains +1 in every stat. The absorbed one disappears.`)) + pairs.map(([a, b]) => {
+       const keep = (a.level + (a.apples || 0) * 0.1) >= (b.level + (b.apples || 0) * 0.1) ? a : b, gone = keep === a ? b : a;
+       const nl = Math.min(G.MAX_LEVEL, Math.max(a.level, b.level) + 1 + Math.floor(Math.min(a.level, b.level) / 5));
+-      return row(ICON.beast(css(ELEMENTS[sp.element].color)), `${keep.name} + ${gone.name}`, L(`${keep.name} absorbe a ${gone.name}, que desaparece. Nivel ${keep.level} → ${nl}.`, `${keep.name} absorbs ${gone.name}, who disappears. Level ${keep.level} → ${nl}.`), price(G.FUSE_COST) + `<button data-act="fuse" data-confirm="1" data-ctext="${L(`Confirmar: ${gone.name} desaparece`, `Confirm: ${gone.name} disappears`)}" data-id="${a.id}|${b.id}"${S().coins < G.FUSE_COST ? ' class="poor"' : ''}>${L('Combinar', 'Combine')}</button>`);
++      const pid = `${a.id}|${b.id}`;
++      if (pendingFuse === pid) {
++        const cost = L(`${G.FUSE_COST} monedas`, `${G.FUSE_COST} coins`);
++        return row(ICON.beast(css(ELEMENTS[sp.element].color)), L('Fusionar criaturas', 'Fuse creatures'), `${L(`${keep.name} se conserva. ${gone.name} desaparecerá.`, `${keep.name} will be kept. ${gone.name} will disappear.`)}<br>${L(`Nivel: ${keep.level} → ${nl}`, `Level: ${keep.level} → ${nl}`)} · ${L(`Costo: ${cost}`, `Cost: ${cost}`)}`, `<button data-act="fusecancel" class="alt" data-autofocus>${L('Cancelar', 'Cancel')}</button><button data-act="fuseok" class="danger" data-id="${pid}"${S().coins < G.FUSE_COST ? ' disabled' : ''}>${L(`Fusionar y consumir ${gone.name}`, `Fuse and consume ${gone.name}`)}</button>`, 'gold');
++      }
++      return row(ICON.beast(css(ELEMENTS[sp.element].color)), `${keep.name} + ${gone.name}`, L(`${keep.name} absorbe a ${gone.name}, que desaparece. Nivel ${keep.level} → ${nl}.`, `${keep.name} absorbs ${gone.name}, who disappears. Level ${keep.level} → ${nl}.`), price(G.FUSE_COST) + `<button data-act="fuse" data-id="${pid}"${S().coins < G.FUSE_COST ? ' class="poor"' : ''}>${L('Fusionar criaturas', 'Fuse creatures')}</button>`);
+     }).join('');
+   }
+ 
+@@ -466,13 +475,16 @@ export function createPanels({ say, onSkins, onNewGame, onFeed, themeEnv }) {
+     const nR = S().roster.length, loss = L(`${nR} ${nR === 1 ? 'criatura' : 'criaturas'}, ${S().coins} monedas, tus emblemas y todos los objetos`, `${nR} ${nR === 1 ? 'creature' : 'creatures'}, ${S().coins} coins, your emblems and every item`);
+     return row(ICON.beast(m ? m.color : '#888'), `${L('Inicio', 'Start')}: ${m ? m.name : '—'}`, L(`Emblemas ${G.leagueBeaten()}/${LEAGUE.length} · Bestiario ${G.dexCount()}/${SPECIES.length} · ${S().stats.wins} combates ganados`, `Emblems ${G.leagueBeaten()}/${LEAGUE.length} · Bestiary ${G.dexCount()}/${SPECIES.length} · ${S().stats.wins} battles won`), '') +
+       lead(L('La partida se guarda sola en este dispositivo después de cada acción. Puedes empezar otra desde cero con cualquiera de los tres inicios.', 'Your game saves itself on this device after every action. You can start a new one from scratch with any of the three starts.')) +
+-      (confirmNew ? `<div class="row"><div class="tx"><b>${L('¿Borrar esta partida?', 'Delete this game?')}</b><small>${L(`Perderás ${loss}. No se puede deshacer.`, `You will lose ${loss}. This can’t be undone.`)}</small></div><div class="rt"><button data-act="newgo" class="danger">${L('Sí, borrar y empezar otra', 'Yes, delete it and start over')}</button><button data-act="newno" class="alt">${L('Cancelar', 'Cancel')}</button></div></div>` :
+-        `<div class="row"><div class="tx"><b>${L('Empezar otra partida', 'Start another game')}</b><small>${modesTxt}</small></div><div class="rt"><button data-act="newask">${L('Nueva partida', 'New game')}</button></div></div>`) + exitRow();
++      `<div class="row"><div class="tx"><b>${L('Empezar otra partida', 'Start another game')}</b><small>${modesTxt} ${L(`Tu partida actual (${loss}) no se borra hasta que confirmes el nuevo inicio.`, `Your current game (${loss}) isn’t deleted until you confirm the new start.`)}</small></div><div class="rt"><button data-act="newgo">${L('Nueva partida', 'New game')}</button></div></div>` + exitRow();
+   }
+ 
+   // ============================ ELECCIÓN DE INICIO ============================
+   function viewInicio() {
+-    const warn = replacing && G.hasGame() ? `<p class="lead empty">${L('Al elegir un inicio se borra tu partida actual. Si te arrepientes, vuelve a tu partida.', 'Choosing a start deletes your current game. If you change your mind, go back to your game.')}</p>` : '';
++    const warn = replacing && G.hasGame() ? `<p class="lead empty">${L('Elige un inicio. Antes de reemplazar tu partida actual se pedirá confirmación; si te arrepientes, vuelve a tu partida.', 'Choose a start. You will be asked to confirm before your current game is replaced; if you change your mind, go back to your game.')}</p>` : '';
++    if (pendingStart && G.hasGame()) {
++      const pm = START_MODES.find((x) => x.id === pendingStart);
++      return `<div class="row gold"><div class="tx"><b>${L('Reemplazar partida actual', 'Replace current game')}</b><small>${L(`Nuevo inicio: ${pm ? pm.name : pendingStart}. Se perderán ${lossText()}. Esta acción no se puede deshacer.`, `New start: ${pm ? pm.name : pendingStart}. You’ll lose ${lossText()}. This cannot be undone.`)}</small></div><div class="rt"><button data-act="startcancel" class="alt" data-autofocus>${L('Cancelar', 'Cancel')}</button><button data-act="startok" class="danger" data-id="${pendingStart}">${L('Borrar y empezar', 'Delete and start')}</button></div></div>`;
++    }
+     return lead(L(`Tu meta: vencer a los ${LEAGUE.length} maestros de la Liga y coronarte Campeón del Bestiario. Las criaturas nacen de huevos que se compran en Criaderos y tardan 5 minutos en eclosionar.`, `Your goal: defeat the ${LEAGUE.length} League masters and be crowned Bestiary Champion. Creatures hatch from eggs bought at the Breeding Grounds, which take 5 minutes to hatch.`)) + warn +
+       `<div class="modes">${START_MODES.map((m) => `<div class="mode" style="--c:${m.color}"><h3>${m.name}</h3><small>${m.tag}</small><ul>${m.bullets.map((b) => `<li>${b}</li>`).join('')}</ul><button data-act="startmode" data-id="${m.id}">${L('Empezar', 'Start')}</button></div>`).join('')}</div>` +
+       (G.hasGame() ? `<div class="backgame"><button data-act="backgame">${L('Volver a mi partida', 'Back to my game')}</button></div>` : '');
+@@ -486,7 +498,7 @@ export function createPanels({ say, onSkins, onNewGame, onFeed, themeEnv }) {
+     mochila: { title: () => L('Mochila', 'Backpack'), css: '#9fd0ff', tabs: bagTabs, view: { criaturas: viewCriaturas, objetos: viewObjetos, huevos: viewHuevos, progreso: viewProgreso } },
+     menu: { title: () => L('Menú', 'Menu'), css: '#b98cff', tabs: menuTabs, view: { ajustes: viewAjustes, ayuda: viewAyuda, partida: viewPartida } },
+     pelea: { title: () => L('Zona de pelea', 'Arena'), css: '#ff5a3c', tabs: peleaTabs, view: { liga: viewLiga, pelear: viewPelear, reglas: viewReglas } },
+-    inicio: { title: () => L('JET//Bestiario', 'JET//Bestiary'), css: '#e8c05a', tabs: () => [], view: { inicio: viewInicio } },
++    inicio: { title: () => (replacing && G.hasGame() ? L('Elegir nueva partida', 'Choose a new game') : L('JET//Bestiario', 'JET//Bestiary')), css: '#e8c05a', tabs: () => [], view: { inicio: viewInicio } },
+   };
+   const canClose = () => !(ctx && ctx.kind === 'inicio' && !G.hasGame());
+ 
+@@ -535,7 +547,7 @@ export function createPanels({ say, onSkins, onNewGame, onFeed, themeEnv }) {
+   function open(kind, npc = null, tab = null, species = null) {
+     if (mg) { cancelAnimationFrame(mg.raf); mg = null; }
+     ctx = { kind, npc, species, tab: tab || VIEWS[kind].tabs()[0]?.[0] || kind };
+-    confirmNew = false;
++    confirmNew = false; pendingStart = null; pendingFuse = null;
+     modal.hidden = false; document.body.classList.add('modal-open'); Sound.sfx('open');
+     msg.textContent = npc ? npc.line : ''; msg.className = 'say'; autoClear();
+     card.style.setProperty('--accent', VIEWS[kind].css);
+@@ -548,13 +560,13 @@ export function createPanels({ say, onSkins, onNewGame, onFeed, themeEnv }) {
+     if (!ctx || !canClose()) return;
+     if (mg) { cancelAnimationFrame(mg.raf); mg = null; }
+     ctx = null; modal.hidden = true; document.body.classList.remove('modal-open'); preview.stop();
+-    setInert(false); replacing = false;
++    setInert(false); replacing = false; pendingStart = null; pendingFuse = null;
+     if (opener && opener.isConnected && opener.getClientRects().length) { try { opener.focus({ preventScroll: true }); } catch (e) { /* sin foco */ } }
+     opener = null;
+   }
+   // mientras hay un menú abierto, lo de detrás no recibe foco ni toques
+   const BG = ['labels', 'zone', 'rot', 'coins', 'goal', 'act', 'esc', 'esc-panel', 'cam', 'cam-panel', 'fs', 'hint', 'menu', 'title'].map($);
+-  function setInert(on) { for (const x of BG) if (x) { if (on) x.setAttribute('inert', ''); else x.removeAttribute('inert'); } }
++  function setInert(on) { for (const x of BG) if (x) { if (on) x.setAttribute('inert', ''); else x.removeAttribute('inert'); } if (hooks.afterInert) hooks.afterInert(); }
+ 
+   modal.addEventListener('pointerdown', (e) => { if (e.target === modal) close(); });
+   $('mclose').addEventListener('click', close);
+@@ -610,13 +622,18 @@ export function createPanels({ say, onSkins, onNewGame, onFeed, themeEnv }) {
+       case 'buyEgg': done(G.buyEgg(id)); break;
+       case 'warm': { const [eg, ap] = id.split('|'); done(G.warmEgg(eg, ap)); break; }
+       case 'hatch': { const r = done(G.hatchEgg(id)); if (r.ok) { Sound.sfx('hatch'); sel = S().roster.findIndex((c) => c === r.creature); } break; }
+-      case 'fuse': { const [a, c2] = id.split('|'); done(G.fuse(a, c2)); break; }
++      case 'fuse': pendingFuse = id; Sound.sfx('click'); render(); focusAuto(); break;
++      case 'fusecancel': pendingFuse = null; render(); break;
++      case 'fuseok': { if (pendingFuse !== id) break; pendingFuse = null; b.disabled = true; const [a, c2] = id.split('|'); done(G.fuse(a, c2)); render(); break; }
+       case 'use': { const c = creature(); if (!c) { flash(L('Primero necesitas una criatura.', 'You need a creature first.'), false); break; } done(G.useItem(id, c.id)); break; }
+       case 'newask': confirmNew = true; render(); break;
+       case 'newno': confirmNew = false; render(); break;
+       case 'newgo': confirmNew = false; replacing = true; open('inicio'); replacing = true; render(); break;   // la partida actual no se borra hasta elegir un inicio
+       case 'backgame': close(); break;
+-      case 'startmode': G.startGame(id); onNewGame(); ctx = { ...ctx, kind: 'mochila' }; close(); Sound.sfx('ok'); say(L(`Partida nueva: ${START_MODES.find((m) => m.id === id).name}.`, `New game: ${START_MODES.find((m) => m.id === id).name}.`)); break;
++      case 'startmode': if (G.hasGame()) { pendingStart = id; Sound.sfx('click'); render(); focusAuto(); break; }   // con progreso: confirmar antes de reemplazar
++        pendingStart = null; G.startGame(id); onNewGame(); ctx = { ...ctx, kind: 'mochila' }; close(); Sound.sfx('ok'); say(L(`Partida nueva: ${START_MODES.find((m) => m.id === id).name}.`, `New game: ${START_MODES.find((m) => m.id === id).name}.`)); break;
++      case 'startcancel': pendingStart = null; render(); break;
++      case 'startok': { if (pendingStart !== id) break; pendingStart = null; b.disabled = true; G.startGame(id); onNewGame(); ctx = { ...ctx, kind: 'mochila' }; close(); Sound.sfx('ok'); say(L(`Partida nueva: ${START_MODES.find((m) => m.id === id).name}.`, `New game: ${START_MODES.find((m) => m.id === id).name}.`)); break; }
+     }
+   });
+ 
+diff --git a/site/bestiario/src/themes.js b/site/bestiario/src/themes.js
+index b998065..d36465e 100644
+--- a/site/bestiario/src/themes.js
++++ b/site/bestiario/src/themes.js
+@@ -26,7 +26,7 @@ export const THEMES = [
+     ground: { dark: 0x3f4a37, mid: 0x546042, light: 0x6b7853, ash: 0x7d7a6e, ashAmt: 0.6 },
+     tint: { sat: 0.85, light: 1.0 }, cover: { color: 0x8a877e, amount: 0.22 }, dirt: { color: 0x2f2a24, amount: 0.35 },
+     trees: { pines: [0x24452f, 0x2c5238, 0x1f3d2b], dead: [0x4a3d32, 0x3d3228, 0x5a4c40], deadRatio: 0.45 },
+-    rock: [0x6a6a70, 0x7a7a82, 0x5a5a62], tuft: [0x6a6e46, 0x7a7648, 0x5a6a40], shroom: [0x8affd0, 0x9ab8ff], extras: [],
++    rock: [0x6a6a70, 0x7a7a82, 0x5a5a62], tuft: [0x6a6e46, 0x7a7648, 0x5a6a40], shroom: [0x8affd0, 0x9ab8ff], path: [0x93805e, 0x6c5b42], extras: [],
+     en: { name: 'Ash Village', desc: 'An overcast, muted day. Worn stone and timber, dry grass and ash underfoot, dirt roads.' },
+   },
+   {
+@@ -37,7 +37,7 @@ export const THEMES = [
+     ground: { dark: 0x3b4247, mid: 0x4a5359, light: 0x5b666c, ash: 0x6a737a, ashAmt: 0.5 },
+     tint: { sat: 0.55, light: 1.0, mul: [0.92, 0.98, 1.1] }, cover: { color: 0xb8c4d0, amount: 0.3 }, dirt: { color: 0x24282c, amount: 0.4 },
+     trees: { pines: [0x1f3a38, 0x264644, 0x1a3230], dead: [0x4a4a4e, 0x3e3e42], deadRatio: 0.3 },
+-    rock: [0x6a727c, 0x7a828c, 0x5a626c], tuft: [0x5a6a64, 0x6a7a74], shroom: [0x9ab8ff, 0xbfd0ff], extras: ['banners'],
++    rock: [0x6a727c, 0x7a828c, 0x5a626c], tuft: [0x5a6a64, 0x6a7a74], shroom: [0x9ab8ff, 0xbfd0ff], path: [0x7c8894, 0x525d69], extras: ['banners'],
+     en: { name: 'Stone Fortress', desc: 'Cold and stern. Blue-grey gravel, pale frosted stone, cold light and red banners along the roads.' },
+   },
+   {
+@@ -48,7 +48,7 @@ export const THEMES = [
+     ground: { dark: 0x2a3220, mid: 0x3d4a2a, light: 0x56683a, ash: 0x4a3f2a, ashAmt: 0.7 },
+     tint: { hue: 0.02, sat: 1.0, light: 0.92, mul: [1.0, 1.04, 0.85] }, cover: { color: 0x5a7a30, amount: 0.38 }, dirt: { color: 0x1f2410, amount: 0.5 },
+     trees: { pines: [0x2f4a28, 0x3a5a2c, 0x26401f], dead: [0x4a4030, 0x3a3324, 0x544a38], deadRatio: 0.7 },
+-    rock: [0x5a6050, 0x6a7058, 0x4a5040], tuft: [0x5a7a30, 0x6a8a38, 0x4a6a28], shroom: [0xc8ff3a, 0x9aff5a], extras: ['pools'],
++    rock: [0x5a6050, 0x6a7058, 0x4a5040], tuft: [0x5a7a30, 0x6a8a38, 0x4a6a28], shroom: [0xc8ff3a, 0x9aff5a], path: [0x7c7053, 0x464a30], extras: ['pools'],
+     en: { name: 'Cursed Swamp', desc: 'Heavy, greenish air. Mud, moss on every surface, dark pools, dead trees and thick fog.' },
+   },
+   {
+@@ -59,7 +59,7 @@ export const THEMES = [
+     ground: { dark: 0x1b1818, mid: 0x2a2424, light: 0x3b3331, ash: 0x4a4340, ashAmt: 0.8 },
+     tint: { sat: 0.8, light: 0.95, mul: [1.06, 0.95, 0.9] }, cover: { color: 0x5a534e, amount: 0.4 }, dirt: { color: 0x140e0c, amount: 0.5 },
+     trees: { pines: [0x2a2623, 0x211e1c, 0x332e2a], dead: [0x1c1917, 0x26211e, 0x141210], deadRatio: 0.8 },
+-    rock: [0x2e2a2a, 0x3a3434, 0x242020], tuft: [0x4a3a2a, 0x5a4430, 0x3a2c20], shroom: [0xff7a2a, 0xffa040], extras: ['lava'],
++    rock: [0x2e2a2a, 0x3a3434, 0x242020], tuft: [0x4a3a2a, 0x5a4430, 0x3a2c20], shroom: [0xff7a2a, 0xffa040], path: [0x8b6554, 0x4b3933], extras: ['lava'],
+     en: { name: 'Volcanic Wasteland', desc: 'Black rock and ash under a reddish, smoky sky. Lava cracks in the ground, charred trees and low orange light.' },
+   },
+   {
+@@ -70,7 +70,7 @@ export const THEMES = [
+     ground: { dark: 0xc2cfdc, mid: 0xdce6f0, light: 0xf0f5fa, ash: 0xaab6c4, ashAmt: 0.5 },
+     tint: { sat: 0.7, light: 1.05, mul: [0.96, 1.0, 1.08] }, cover: { color: 0xf4f8fc, amount: 0.95 }, dirt: { color: 0x6a645e, amount: 0.15 },
+     trees: { pines: [0x3a5a58, 0x45706a, 0x30504c], dead: [0x6a6258, 0x5a5248, 0x7a7268], deadRatio: 0.35 },
+-    rock: [0x8a929c, 0x9aa2ac, 0x7a828c], tuft: [0xcfd8e0, 0xb8c4cc], shroom: [0x9fe8ff, 0xbfd8ff], extras: [],
++    rock: [0x8a929c, 0x9aa2ac, 0x7a828c], tuft: [0xcfd8e0, 0xb8c4cc], shroom: [0x9fe8ff, 0xbfd8ff], path: [0x9da7ad, 0x626e78], extras: [],
+     en: { name: 'Frozen Wasteland', desc: 'Deep snow and a white sky. Everything flat lies buried, frosted pines, bluish rocks and clear, cold light.' },
+   },
+ ];
+diff --git a/site/bestiario/src/ui.css b/site/bestiario/src/ui.css
+index 997b611..bf782ae 100644
+--- a/site/bestiario/src/ui.css
++++ b/site/bestiario/src/ui.css
+@@ -349,3 +349,22 @@ input.vol { width: min(100%, 320px); margin: 10px 0 2px; accent-color: #b98cff;
+ .rt .langseg button { min-width: 52px; min-height: 40px; padding: 0 14px; border-radius: 999px; background: transparent; color: #b5a8d8; font: 700 13px/1 var(--mono, monospace); letter-spacing: .08em; }
+ .rt .langseg button:hover { background: rgba(119,0,244,.18); color: #f5f0ff; }
+ .rt .langseg button.sel { background: linear-gradient(135deg, #7700f4, #00f2cf); color: #fff; }
++
++/* ---------- VIS-BESTIARIO-04: fichas y tienda con jerarquía cálida ---------- */
++#mcard { background: #0e1117; border-color: rgba(233,230,223,.14); }
++#mhead h2 { font-size: 20px; font-weight: 700; letter-spacing: .02em; text-transform: none; }
++.row, .cc { background: #191e25; border-color: rgba(233,230,223,.14); }
++.tx b { font-weight: 700; }
++.tx small { line-height: 1.4; }
++.pr { font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; }
++.row.dim { opacity: 1; }           /* la opción no disponible sigue legible: sólo se atenúa la ilustración */
++.row.dim .ic { opacity: .5; }
++.row.gold { border-width: 2px; border-color: rgba(224,176,64,.6); background: #191e25; }
++@media (min-width: 561px) and (min-height: 461px) { .tx b { font-size: 16px; } .tx small { font-size: 13px; } }
++@media (max-height: 460px) { #mhead h2 { font-size: 15px; } }
++@media (max-width: 560px) and (min-height: 461px) { #mhead h2 { font-size: 17px; } }
++/* ---------- VIS-BESTIARIO-05: barras de vida/experiencia legibles ---------- */
++.bar { height: 8px; border-radius: 4px; background: #323b46; }
++.bar i { border-radius: 4px; transition: width .18s linear; }
++.hp span { font-size: 13px; font-variant-numeric: tabular-nums; opacity: .9; }
++@media (prefers-reduced-motion: reduce) { .bar i { transition: none; } }
+diff --git a/site/bestiario/src/world.js b/site/bestiario/src/world.js
+index 3563c1a..24f8e44 100644
+--- a/site/bestiario/src/world.js
++++ b/site/bestiario/src/world.js
+@@ -1146,8 +1146,8 @@ export function buildWorld(scene, theme = THEMES[0]) {
+         fx.active += ((on ? 1 : 0) - fx.active) * Math.min(1, dt * 8);
+         const pulse = 1 + 0.035 * Math.sin(t * 3 + z.x);
+         fx.ring.scale.setScalar(pulse); fx.fill.scale.setScalar(pulse);
+-        fx.ringMat.opacity = 0.55 + 0.18 * Math.sin(t * 3 + z.x) + 0.25 * fx.active;
+-        fx.fillMat.opacity = 0.12 + 0.2 * fx.active;
++        fx.ringMat.opacity = 0.45 + 0.40 * fx.active;   // VIS-BESTIARIO-03: .45 inactivo / .85 activo, sin oscilación extra
++        fx.fillMat.opacity = 0.06 + 0.12 * fx.active;
+       }
+     },
+   };

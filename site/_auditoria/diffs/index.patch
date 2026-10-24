@@ -1,0 +1,664 @@
+diff --git a/site/index.html b/site/index.html
+index 86f6ea1..c9064f0 100644
+--- a/site/index.html
++++ b/site/index.html
+@@ -323,7 +323,7 @@
+ 
+   /* Mini illustration block */
+   .card-art img { width:100%; height:100%; object-fit:cover; display:block; transition: transform .6s ease; }
+-  .card:hover .card-art img { transform: scale(1.04); }
++  /* hover de imagen: ver bloque de portadas editoriales */
+   .card-art {
+     aspect-ratio: 16 / 9;
+     background: var(--ill-bg);
+@@ -336,10 +336,15 @@
+     display: block;
+     transition: transform 0.55s cubic-bezier(.25,.46,.45,.94);
+   }
+-  .card:hover .card-art svg {
+-    transform: scale(1.08);
+-  }
+ 
++
++
++  /* Portadas editoriales (auditoría 22-10-2026): mismo hover discreto para imagen y vector; sin zoom en táctil ni con movimiento reducido */
++  .card-art img, .card-art svg { transition: transform .5s ease; }
++  .card:hover .card-art img, .card:hover .card-art svg { transform: scale(1.02); }
++  @media (hover: none), (prefers-reduced-motion: reduce) { .card:hover .card-art img, .card:hover .card-art svg { transform: none; } }
++  .card-art picture { display: block; width: 100%; height: 100%; }
++  @media (min-width: 900px) and (max-width: 1199px) { .card.art-contain-f .card-art img { object-fit: contain; background: #0b1a2a; } }
+   .card-body { padding: 18px 22px 22px; flex: 1; display: flex; flex-direction: column; }
+   .card .head {
+     display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px 10px;
+@@ -530,7 +535,7 @@
+ })();
+ </script>
+ </head>
+-<body>
++<body data-cards-editorial="2026-10-22">
+ 
+ <div class="ambient">
+   <div class="blob b1"></div>
+@@ -566,94 +571,8 @@
+   <div class="grid">
+ 
+     <!-- JET//Ball — JezzBall: 4 zones split by walls, balls bounce ONLY inside their zone -->
+-    <a class="card reveal w4" href="https://jetball.jetgames.fun" target="_blank" rel="noopener">
+-      <div class="card-art">
+-        <svg viewBox="0 0 320 180" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+-          <defs>
+-            <linearGradient id="ball-wall-h" x1="0" y1="0" x2="1" y2="0">
+-              <stop offset="0" stop-color="#7700f4"/>
+-              <stop offset="1" stop-color="#00f2cf"/>
+-            </linearGradient>
+-            <linearGradient id="ball-wall-v" x1="0" y1="0" x2="0" y2="1">
+-              <stop offset="0" stop-color="#00f2cf"/>
+-              <stop offset="1" stop-color="#7700f4"/>
+-            </linearGradient>
+-            <linearGradient id="ball-wall-build" x1="0" y1="0" x2="0" y2="1">
+-              <stop offset="0" stop-color="#fdd835"/>
+-              <stop offset="1" stop-color="#ff2bd6"/>
+-            </linearGradient>
+-          </defs>
+-          <!-- subtle grid -->
+-          <g stroke="rgba(0,242,207,0.05)" stroke-width="1">
+-            <line x1="0" y1="30" x2="320" y2="30"/><line x1="0" y1="60" x2="320" y2="60"/>
+-            <line x1="0" y1="90" x2="320" y2="90"/><line x1="0" y1="120" x2="320" y2="120"/>
+-            <line x1="0" y1="150" x2="320" y2="150"/>
+-            <line x1="40" y1="0" x2="40" y2="180"/><line x1="80" y1="0" x2="80" y2="180"/>
+-            <line x1="120" y1="0" x2="120" y2="180"/><line x1="160" y1="0" x2="160" y2="180"/>
+-            <line x1="200" y1="0" x2="200" y2="180"/><line x1="240" y1="0" x2="240" y2="180"/>
+-            <line x1="280" y1="0" x2="280" y2="180"/>
+-          </g>
+-
+-          <!--
+-            LAYOUT (4 zones separated by 2 walls):
+-              · vertical wall at x=160 (full height)
+-              · horizontal wall at y=90 (full width)
+-              · captured zone top-right (160-320, 0-90) — purple
+-            Each ball lives in ONE rectangular zone and bounces inside it.
+-          -->
+-
+-          <!-- captured zone (already cleared) -->
+-          <rect x="160" y="0" width="160" height="90" fill="rgba(119,0,244,0.22)"/>
+-
+-          <!-- VERTICAL wall (full height, gradient) at x=160 -->
+-          <rect x="158" y="0" width="4" height="180" fill="url(#ball-wall-v)" opacity="0.9"/>
+-          <!-- HORIZONTAL wall (full width, gradient) at y=90 -->
+-          <rect x="0" y="88" width="320" height="4" fill="url(#ball-wall-h)" opacity="0.9"/>
+-
+-          <!-- WALL BEING BUILT — short vertical, extending downward in the bottom-left zone -->
+-          <rect x="78" y="92" width="4" height="0" fill="url(#ball-wall-build)" filter="drop-shadow(0 0 4px rgba(253,216,53,0.5))">
+-            <animate attributeName="height" values="0;84;84;0" keyTimes="0;0.45;0.85;1" dur="3.6s" repeatCount="indefinite"/>
+-            <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.05;0.9;1" dur="3.6s" repeatCount="indefinite"/>
+-          </rect>
+-
+-          <!-- BALL 1 (cyan) — confined to TOP-LEFT zone (x: 10–150, y: 12–80) -->
+-          <circle r="7" fill="#00f2cf" filter="drop-shadow(0 0 6px rgba(0,242,207,0.6))">
+-            <animate attributeName="cx"
+-              values="30;145;72;145;30"
+-              keyTimes="0;0.28;0.55;0.82;1"
+-              dur="4.2s" repeatCount="indefinite"/>
+-            <animate attributeName="cy"
+-              values="20;76;38;72;20"
+-              keyTimes="0;0.28;0.55;0.82;1"
+-              dur="4.2s" repeatCount="indefinite"/>
+-          </circle>
+-
+-          <!-- BALL 2 (yellow) — confined RIGHT of the building wall at x=78
+-               (bottom-center zone: x 86–150, y 100–170, never crosses x=78) -->
+-          <circle r="7" fill="#fdd835" filter="drop-shadow(0 0 6px rgba(253,216,53,0.6))">
+-            <animate attributeName="cx"
+-              values="92;148;100;140;92"
+-              keyTimes="0;0.32;0.6;0.85;1"
+-              dur="5s" repeatCount="indefinite"/>
+-            <animate attributeName="cy"
+-              values="160;110;165;120;160"
+-              keyTimes="0;0.32;0.6;0.85;1"
+-              dur="5s" repeatCount="indefinite"/>
+-          </circle>
+-
+-          <!-- BALL 3 (white/cyan) — confined to BOTTOM-RIGHT zone (x: 172–310, y: 100–170) -->
+-          <circle r="7" fill="#e8feff" filter="drop-shadow(0 0 8px rgba(0,242,207,0.7))">
+-            <animate attributeName="cx"
+-              values="190;300;220;280;190"
+-              keyTimes="0;0.3;0.55;0.8;1"
+-              dur="4.6s" repeatCount="indefinite"/>
+-            <animate attributeName="cy"
+-              values="115;165;108;160;115"
+-              keyTimes="0;0.3;0.55;0.8;1"
+-              dur="4.6s" repeatCount="indefinite"/>
+-          </circle>
+-        </svg>
+-      </div>
++    <a class="card reveal w4" href="https://jetball.jetgames.fun" rel="noopener">
++      <div class="card-art"><picture><source media="(min-width: 1200px)" srcset="img/cards/ball-featured.svg"><img src="img/cards/ball.svg" alt="A wall under construction advances toward a ball inside a board split into zones" data-alt-es="Una pared en construcción avanza hacia una bola dentro de un tablero dividido en zonas" loading="lazy" width="320" height="180"></picture></div>
+       <div class="card-body">
+         <div class="head"><h3>JET<span class="slash">//</span>Ball</h3><span class="badge live" data-es="El primero">The original</span></div>
+         <p class="desc" data-es="Construye barreras para encerrar las bolas y conquistar el tablero. Evita que las golpeen mientras se construyen.">Build walls to trap the balls and claim the board. Don't let them hit a wall while it's still going up.</p>
+@@ -662,8 +581,8 @@
+     </a>
+ 
+     <!-- JET//Astro — el astronauta del onboarding de JET, estilo dinosaurio sin conexión (Canvas2D) -->
+-    <a class="card reveal w4" href="https://jetgames.fun/astro/" target="_blank" rel="noopener">
+-      <div class="card-art"><img src="img/astro.jpg?v=2" alt="JET//Astro: un astronauta con jetpack salta asteroides frente a Júpiter" loading="lazy"></div>
++    <a class="card reveal w4" href="https://jetgames.fun/astro/" rel="noopener">
++      <div class="card-art"><img style="object-position:50% 55%" width="320" height="180" src="img/astro.jpg?v=2" alt="Small astronaut boosting over asteroids, with Jupiter behind" data-alt-es="Astronauta pequeño impulsándose sobre asteroides, con Júpiter detrás" loading="lazy"></div>
+       <div class="card-body">
+         <div class="head"><h3>JET<span class="slash">//</span>Astro</h3></div>
+         <p class="desc" data-es="Salta con tu astronauta para esquivar los asteroides frente a Júpiter. Calcula cada impulso y supera tu récord.">Jump with your astronaut to dodge the asteroids in front of Jupiter. Time every boost and beat your best score.</p>
+@@ -671,117 +590,8 @@
+       </div>
+     </a>
+     <!-- JET//Rocket — Snake-with-rocket: ship trail snaking past crystals + asteroid -->
+-    <a class="card reveal" href="https://jetrocket.jetgames.fun" target="_blank" rel="noopener">
+-      <div class="card-art">
+-        <svg viewBox="0 0 320 180" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+-          <defs>
+-            <radialGradient id="rocket-sky" cx="0.5" cy="0.4" r="0.7">
+-              <stop offset="0" stop-color="#1a0a3a"/>
+-              <stop offset="1" stop-color="#03020a"/>
+-            </radialGradient>
+-            <linearGradient id="rocket-body" x1="0" y1="0" x2="1" y2="1">
+-              <stop offset="0" stop-color="#7df0ff"/>
+-              <stop offset="1" stop-color="#00f2cf"/>
+-            </linearGradient>
+-            <radialGradient id="rocket-crystal" cx="0.5" cy="0.5" r="0.5">
+-              <stop offset="0" stop-color="#ffffff"/>
+-              <stop offset="0.5" stop-color="#00f2cf"/>
+-              <stop offset="1" stop-color="#0e8aa0"/>
+-            </radialGradient>
+-            <radialGradient id="rocket-core" cx="0.5" cy="0.5" r="0.5">
+-              <stop offset="0" stop-color="#ffd4ec"/>
+-              <stop offset="0.6" stop-color="#ff2bd6"/>
+-              <stop offset="1" stop-color="#7a0a4a"/>
+-            </radialGradient>
+-          </defs>
+-          <rect width="320" height="180" fill="url(#rocket-sky)"/>
+-
+-          <!-- starfield -->
+-          <g fill="#ffffff">
+-            <circle cx="32"  cy="22"  r="0.9" opacity="0.7"/>
+-            <circle cx="86"  cy="14"  r="0.6" opacity="0.5"/>
+-            <circle cx="140" cy="30"  r="0.7" opacity="0.6"/>
+-            <circle cx="220" cy="20"  r="0.8" opacity="0.6"/>
+-            <circle cx="276" cy="38"  r="0.6" opacity="0.5"/>
+-            <circle cx="48"  cy="156" r="0.7" opacity="0.5"/>
+-            <circle cx="178" cy="160" r="0.6" opacity="0.4"/>
+-            <circle cx="260" cy="148" r="0.8" opacity="0.6"/>
+-            <circle cx="120" cy="100" r="0.5" opacity="0.4"/>
+-            <circle cx="304" cy="92"  r="0.6" opacity="0.5"/>
+-          </g>
+-
+-          <!-- subtle grid (top-down) -->
+-          <g stroke="rgba(0,242,207,0.05)" stroke-width="1">
+-            <line x1="0" y1="60" x2="320" y2="60"/>
+-            <line x1="0" y1="120" x2="320" y2="120"/>
+-            <line x1="80"  y1="0" x2="80"  y2="180"/>
+-            <line x1="160" y1="0" x2="160" y2="180"/>
+-            <line x1="240" y1="0" x2="240" y2="180"/>
+-          </g>
+-
+-          <!-- spinning asteroid lower-right -->
+-          <g transform="translate(248 132)">
+-            <animateTransform attributeName="transform" type="rotate" from="0 0 0" to="360 0 0" dur="14s" repeatCount="indefinite"/>
+-            <polygon points="-12,-4 -6,-12 6,-10 12,-2 10,8 2,12 -8,10 -14,2" fill="#5a4a3a" stroke="#2a1a0a" stroke-width="1"/>
+-            <circle cx="-4" cy="-2" r="2" fill="#3a2a1a"/>
+-            <circle cx="4"  cy="4"  r="1.5" fill="#3a2a1a"/>
+-          </g>
+-
+-          <!-- cyan crystals -->
+-          <polygon points="60,40 68,32 76,40 68,52" fill="url(#rocket-crystal)" filter="drop-shadow(0 0 4px rgba(0,242,207,0.7))">
+-            <animateTransform attributeName="transform" type="rotate" from="0 68 42" to="360 68 42" dur="6s" repeatCount="indefinite"/>
+-          </polygon>
+-          <polygon points="200,72 208,64 216,72 208,84" fill="url(#rocket-crystal)" filter="drop-shadow(0 0 4px rgba(0,242,207,0.7))">
+-            <animateTransform attributeName="transform" type="rotate" from="0 208 74" to="-360 208 74" dur="7s" repeatCount="indefinite"/>
+-          </polygon>
+-          <polygon points="40,128 48,120 56,128 48,140" fill="url(#rocket-crystal)" filter="drop-shadow(0 0 4px rgba(0,242,207,0.7))">
+-            <animateTransform attributeName="transform" type="rotate" from="0 48 130" to="360 48 130" dur="5.5s" repeatCount="indefinite"/>
+-          </polygon>
+-
+-          <!-- rare magenta core (pulses) -->
+-          <g transform="translate(160 132)">
+-            <circle r="8" fill="url(#rocket-core)" filter="drop-shadow(0 0 6px rgba(255,43,214,0.8))">
+-              <animate attributeName="r" values="7;10;7" dur="2.2s" repeatCount="indefinite"/>
+-            </circle>
+-            <circle r="13" fill="none" stroke="#ff2bd6" stroke-width="1" opacity="0.5">
+-              <animate attributeName="r" values="9;18" dur="2.2s" repeatCount="indefinite"/>
+-              <animate attributeName="opacity" values="0.7;0" dur="2.2s" repeatCount="indefinite"/>
+-            </circle>
+-          </g>
+-
+-          <!-- ROCKET path (S-curve) — rocket + trail follow it staggered -->
+-          <path id="rocket-path"
+-                d="M -20 100 Q 60 60, 120 100 T 240 100 Q 290 80, 340 100"
+-                fill="none" stroke="none"/>
+-
+-          <!-- 5 trailing segments (back→front, staggered) -->
+-          <circle r="4.5" fill="#00f2cf" opacity="0.35" filter="drop-shadow(0 0 3px rgba(0,242,207,0.5))">
+-            <animateMotion dur="8s" repeatCount="indefinite" begin="-0.45s"><mpath href="#rocket-path"/></animateMotion>
+-          </circle>
+-          <circle r="5.5" fill="#00f2cf" opacity="0.55" filter="drop-shadow(0 0 4px rgba(0,242,207,0.55))">
+-            <animateMotion dur="8s" repeatCount="indefinite" begin="-0.36s"><mpath href="#rocket-path"/></animateMotion>
+-          </circle>
+-          <circle r="6"   fill="#00f2cf" opacity="0.75" filter="drop-shadow(0 0 4px rgba(0,242,207,0.65))">
+-            <animateMotion dur="8s" repeatCount="indefinite" begin="-0.27s"><mpath href="#rocket-path"/></animateMotion>
+-          </circle>
+-          <circle r="6.5" fill="#00f2cf" opacity="0.9" filter="drop-shadow(0 0 5px rgba(0,242,207,0.7))">
+-            <animateMotion dur="8s" repeatCount="indefinite" begin="-0.18s"><mpath href="#rocket-path"/></animateMotion>
+-          </circle>
+-          <circle r="7"   fill="#00f2cf" filter="drop-shadow(0 0 6px rgba(0,242,207,0.85))">
+-            <animateMotion dur="8s" repeatCount="indefinite" begin="-0.09s"><mpath href="#rocket-path"/></animateMotion>
+-          </circle>
+-
+-          <!-- the rocket itself (chevron, rotates with path) -->
+-          <g>
+-            <animateMotion dur="8s" repeatCount="indefinite" rotate="auto"><mpath href="#rocket-path"/></animateMotion>
+-            <ellipse cx="-8" cy="0" rx="6" ry="3" fill="#ff8000" opacity="0.6">
+-              <animate attributeName="opacity" values="0.4;0.9;0.4" dur="0.3s" repeatCount="indefinite"/>
+-            </ellipse>
+-            <path d="M -8 -6 L 10 0 L -8 6 L -4 0 Z" fill="url(#rocket-body)" stroke="#0a0512" stroke-width="1.4"/>
+-            <circle cx="2" cy="0" r="1.7" fill="#ffffff"/>
+-          </g>
+-        </svg>
+-      </div>
++    <a class="card reveal" href="https://jetrocket.jetgames.fun" rel="noopener">
++      <div class="card-art"><img src="img/cards/rocket.svg" alt="The ship curls around its own crystal tail toward a new crystal" data-alt-es="La nave gira sobre su propia cola de cristales hacia un cristal nuevo" loading="lazy" width="320" height="180"></div>
+       <div class="card-body">
+         <div class="head"><h3>JET<span class="slash">//</span>Rocket</h3></div>
+         <p class="desc" data-es="Guía un cohete que alarga su estela al recoger cristales. Planea tus giros para no chocar con tu propia cola.">Steer a rocket whose trail grows as it collects crystals. Plan your turns so you never crash into your own tail.</p>
+@@ -789,71 +599,8 @@
+       </div>
+     </a>
+     <!-- JET//Slalom — SkiFree top-down: skier in center, gates + trees scroll up -->
+-    <a class="card reveal" href="https://jetslalom.jetgames.fun" target="_blank" rel="noopener">
+-      <div class="card-art">
+-        <svg viewBox="0 0 320 180" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+-          <defs>
+-            <linearGradient id="snow-bg" x1="0" y1="0" x2="0" y2="1">
+-              <stop offset="0" stop-color="#0a1838"/>
+-              <stop offset="1" stop-color="#1a3858"/>
+-            </linearGradient>
+-            <linearGradient id="snow-trail" x1="0" y1="0" x2="0" y2="1">
+-              <stop offset="0" stop-color="rgba(255,255,255,0.4)"/>
+-              <stop offset="1" stop-color="rgba(255,255,255,0)"/>
+-            </linearGradient>
+-          </defs>
+-          <rect width="320" height="180" fill="url(#snow-bg)"/>
+-          <g fill="rgba(255,255,255,0.4)">
+-            <circle cx="40" cy="0" r="1"><animate attributeName="cy" values="-10;200" dur="3s" repeatCount="indefinite"/></circle>
+-            <circle cx="280" cy="0" r="1"><animate attributeName="cy" values="-30;200" dur="2.6s" repeatCount="indefinite"/></circle>
+-            <circle cx="120" cy="0" r="0.8"><animate attributeName="cy" values="-60;200" dur="3.4s" repeatCount="indefinite"/></circle>
+-            <circle cx="200" cy="0" r="0.8"><animate attributeName="cy" values="-90;200" dur="2.8s" repeatCount="indefinite"/></circle>
+-            <circle cx="80" cy="0" r="0.7"><animate attributeName="cy" values="-150;200" dur="3.6s" repeatCount="indefinite"/></circle>
+-            <circle cx="260" cy="0" r="0.7"><animate attributeName="cy" values="-200;200" dur="3.1s" repeatCount="indefinite"/></circle>
+-          </g>
+-          <g>
+-            <g><animateTransform attributeName="transform" type="translate" values="0 200;0 -40" dur="4s" repeatCount="indefinite"/>
+-              <line x1="80"  y1="0" x2="80"  y2="22" stroke="#ff2bd6" stroke-width="3.5" filter="drop-shadow(0 0 4px rgba(255,43,214,0.6))"/>
+-              <line x1="240" y1="0" x2="240" y2="22" stroke="#00f2cf" stroke-width="3.5" filter="drop-shadow(0 0 4px rgba(0,242,207,0.6))"/>
+-            </g>
+-            <g><animateTransform attributeName="transform" type="translate" values="0 280;0 40" dur="4s" repeatCount="indefinite"/>
+-              <line x1="120" y1="0" x2="120" y2="22" stroke="#ff2bd6" stroke-width="3.5" filter="drop-shadow(0 0 4px rgba(255,43,214,0.6))"/>
+-              <line x1="200" y1="0" x2="200" y2="22" stroke="#00f2cf" stroke-width="3.5" filter="drop-shadow(0 0 4px rgba(0,242,207,0.6))"/>
+-            </g>
+-            <g><animateTransform attributeName="transform" type="translate" values="0 360;0 120" dur="4s" repeatCount="indefinite"/>
+-              <line x1="100" y1="0" x2="100" y2="22" stroke="#ff2bd6" stroke-width="3.5" filter="drop-shadow(0 0 4px rgba(255,43,214,0.6))"/>
+-              <line x1="220" y1="0" x2="220" y2="22" stroke="#00f2cf" stroke-width="3.5" filter="drop-shadow(0 0 4px rgba(0,242,207,0.6))"/>
+-            </g>
+-          </g>
+-          <g fill="#0a3848" stroke="#1a5868" stroke-width="1">
+-            <g><animateTransform attributeName="transform" type="translate" values="0 200;0 -30" dur="5s" repeatCount="indefinite"/>
+-              <path d="M 26 0 L 32 -16 L 38 0 Z"/><rect x="31" y="0" width="2" height="4" fill="#082030"/>
+-            </g>
+-            <g><animateTransform attributeName="transform" type="translate" values="0 240;0 10" dur="5s" repeatCount="indefinite"/>
+-              <path d="M 280 0 L 286 -16 L 292 0 Z"/><rect x="285" y="0" width="2" height="4" fill="#082030"/>
+-            </g>
+-            <g><animateTransform attributeName="transform" type="translate" values="0 320;0 90" dur="5s" repeatCount="indefinite"/>
+-              <path d="M 30 0 L 36 -14 L 42 0 Z"/>
+-            </g>
+-            <g><animateTransform attributeName="transform" type="translate" values="0 380;0 150" dur="5s" repeatCount="indefinite"/>
+-              <path d="M 270 0 L 276 -14 L 282 0 Z"/>
+-            </g>
+-          </g>
+-          <g transform="translate(160 130)">
+-            <path d="M -8 4 Q -10 30 -8 50" stroke="url(#snow-trail)" stroke-width="2" fill="none">
+-              <animate attributeName="opacity" values="0.6;0.4;0.6" dur="1.4s" repeatCount="indefinite"/>
+-            </path>
+-            <path d="M 8 4 Q 10 30 8 50" stroke="url(#snow-trail)" stroke-width="2" fill="none">
+-              <animate attributeName="opacity" values="0.4;0.6;0.4" dur="1.4s" repeatCount="indefinite"/>
+-            </path>
+-            <g>
+-              <animateTransform attributeName="transform" type="translate" values="-8 0;8 0;-8 0" dur="3s" repeatCount="indefinite"/>
+-              <path d="M -10 0 L 0 -14 L 10 0 L 6 4 L -6 4 Z" fill="#00f2cf" stroke="#0a0512" stroke-width="1.5" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.4))"/>
+-              <circle cx="0" cy="-8" r="2" fill="#fff"/>
+-            </g>
+-          </g>
+-        </svg>
+-      </div>
++    <a class="card reveal" href="https://jetslalom.jetgames.fun" rel="noopener">
++      <div class="card-art"><img src="img/cards/slalom.svg" alt="The skier carves a turn to pass between the flags of the next gate" data-alt-es="El esquiador traza una curva para pasar entre las banderas de la próxima puerta" loading="lazy" width="320" height="180"></div>
+       <div class="card-body">
+         <div class="head"><h3>JET<span class="slash">//</span>Slalom</h3></div>
+         <p class="desc" data-es="Desciende esquiando, pasa por el lado correcto de las banderas y esquiva obstáculos. Salta rampas, haz trucos y sobrevive a los jefes.">Ski downhill, pass every flag on the correct side and dodge obstacles. Hit the ramps, land tricks and survive the bosses.</p>
+@@ -861,8 +608,8 @@
+       </div>
+     </a>
+     <!-- JET//Flow — Pipe path with plasma actually flowing through it -->
+-    <a class="card reveal" href="https://jetflow.jetgames.fun" target="_blank" rel="noopener">
+-      <div class="card-art"><img src="img/jetflow.jpg" alt="JET//Flow: un astronauta instala tuberías de plasma en una nave" loading="lazy"></div>
++    <a class="card reveal" href="https://jetflow.jetgames.fun" rel="noopener">
++      <div class="card-art"><img style="object-position:45% 50%" width="320" height="180" src="img/jetflow.jpg" alt="A plasma route being built through pipes on a ship board" data-alt-es="Una ruta de plasma en construcción por tuberías sobre el tablero de la nave" loading="lazy"></div>
+       <div class="card-body">
+         <div class="head"><h3>JET<span class="slash">//</span>Flow</h3></div>
+         <p class="desc" data-es="Coloca tuberías para guiar el plasma por los tramos que pide cada nivel. Construye el recorrido antes de que el flujo te alcance y se derrame.">Lay pipes to guide the plasma through the sections each level requires. Finish the route before the flow catches up and spills.</p>
+@@ -870,8 +617,8 @@
+       </div>
+     </a>
+     <!-- JET//Match — Match-3 board with gems cascading + match shockwave -->
+-    <a class="card reveal" href="https://jetmatch.jetgames.fun" target="_blank" rel="noopener">
+-      <div class="card-art"><img src="img/jetmatch.jpg" alt="JET//Match: tablero de gemas" loading="lazy"></div>
++    <a class="card reveal" href="https://jetmatch.jetgames.fun" rel="noopener">
++      <div class="card-art"><img style="object-position:50% 50%" width="320" height="180" src="img/jetmatch.jpg" alt="Board of flat gems: yellow squares, cyan circles, green triangles and magenta diamonds" data-alt-es="Tablero de gemas planas: cuadrados amarillos, círculos cian, triángulos verdes y rombos magenta" loading="lazy"></div>
+       <div class="card-body">
+         <div class="head"><h3>JET<span class="slash">//</span>Match</h3></div>
+         <p class="desc" data-es="Intercambia gemas para alinear tres o más iguales y encadenar combinaciones. Alcanza la meta con jugadas limitadas o contra reloj.">Swap gems to line up three or more and chain combos. Reach the goal with limited moves or against the clock.</p>
+@@ -892,75 +639,8 @@
+   <div class="grid">
+ 
+     <!-- JET//Words — Wordle-style grid with row revealing colors -->
+-    <a class="card reveal" href="https://jetwords.jetgames.fun" target="_blank" rel="noopener">
+-      <div class="card-art">
+-        <svg viewBox="0 0 320 180" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+-          <defs>
+-            <style>
+-              .wd-empty { fill: rgba(245,240,255,0.04); stroke: rgba(245,240,255,0.18); stroke-width: 1.4; }
+-              .wd-gray  { fill: rgba(122,109,150,0.5); stroke: none; }
+-              .wd-yel   { fill: #fdd835; stroke: none; }
+-              .wd-cyan  { fill: #00f2cf; stroke: none; }
+-              .wd-l     { fill: #f5f0ff; font-family: 'Inter', sans-serif; font-weight: 800; font-size: 18px; text-anchor: middle; dominant-baseline: middle; }
+-              .wd-lk    { fill: #0a0512; }
+-            </style>
+-          </defs>
+-          <g transform="translate(85 14)">
+-            <!-- Row 1: PLAYS -->
+-            <g transform="translate(0 0)">
+-              <rect class="wd-gray"  x="0"   y="0" width="26" height="26" rx="2"/>
+-              <rect class="wd-yel"   x="30"  y="0" width="26" height="26" rx="2"/>
+-              <rect class="wd-gray"  x="60"  y="0" width="26" height="26" rx="2"/>
+-              <rect class="wd-gray"  x="90"  y="0" width="26" height="26" rx="2"/>
+-              <rect class="wd-cyan"  x="120" y="0" width="26" height="26" rx="2"/>
+-              <text class="wd-l"      x="13"  y="14">P</text>
+-              <text class="wd-l wd-lk" x="43"  y="14">L</text>
+-              <text class="wd-l"      x="73"  y="14">A</text>
+-              <text class="wd-l"      x="103" y="14">Y</text>
+-              <text class="wd-l wd-lk" x="133" y="14">S</text>
+-            </g>
+-            <!-- Row 2: GAMES -->
+-            <g transform="translate(0 32)">
+-              <rect class="wd-yel"  x="0"   y="0" width="26" height="26" rx="2"/>
+-              <rect class="wd-cyan" x="30"  y="0" width="26" height="26" rx="2"/>
+-              <rect class="wd-gray" x="60"  y="0" width="26" height="26" rx="2"/>
+-              <rect class="wd-yel"  x="90"  y="0" width="26" height="26" rx="2"/>
+-              <rect class="wd-cyan" x="120" y="0" width="26" height="26" rx="2"/>
+-              <text class="wd-l wd-lk" x="13"  y="14">G</text>
+-              <text class="wd-l wd-lk" x="43"  y="14">A</text>
+-              <text class="wd-l"      x="73"  y="14">M</text>
+-              <text class="wd-l wd-lk" x="103" y="14">E</text>
+-              <text class="wd-l wd-lk" x="133" y="14">S</text>
+-            </g>
+-            <!-- Row 3: typing -->
+-            <g transform="translate(0 64)">
+-              <rect class="wd-cyan" x="0" y="0" width="26" height="26" rx="2"/>
+-              <text class="wd-l wd-lk" x="13" y="14">J</text>
+-              <rect class="wd-yel" x="30" y="0" width="26" height="26" rx="2">
+-                <animateTransform attributeName="transform" type="scale" additive="sum"
+-                  values="1 1;1 0.05;1 1;1 1" keyTimes="0;0.15;0.3;1" dur="4s" repeatCount="indefinite"/>
+-              </rect>
+-              <text class="wd-l wd-lk" x="43" y="14">E</text>
+-              <rect x="60" y="0" width="26" height="26" rx="2"
+-                    fill="rgba(0,242,207,0.08)" stroke="#00f2cf" stroke-width="1.8">
+-                <animate attributeName="stroke" values="#00f2cf;#fff;#00f2cf" dur="1.2s" repeatCount="indefinite"/>
+-              </rect>
+-              <text class="wd-l" x="73" y="14">
+-                <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.3;0.7;1" dur="2.4s" repeatCount="indefinite"/>T</text>
+-              <rect class="wd-empty" x="90" y="0" width="26" height="26" rx="2"/>
+-              <rect class="wd-empty" x="120" y="0" width="26" height="26" rx="2"/>
+-            </g>
+-            <!-- Row 4: empty -->
+-            <g transform="translate(0 96)">
+-              <rect class="wd-empty" x="0"   y="0" width="26" height="26" rx="2"/>
+-              <rect class="wd-empty" x="30"  y="0" width="26" height="26" rx="2"/>
+-              <rect class="wd-empty" x="60"  y="0" width="26" height="26" rx="2"/>
+-              <rect class="wd-empty" x="90"  y="0" width="26" height="26" rx="2"/>
+-              <rect class="wd-empty" x="120" y="0" width="26" height="26" rx="2"/>
+-            </g>
+-          </g>
+-        </svg>
+-      </div>
++    <a class="card reveal" href="https://jetwords.jetgames.fun" rel="noopener">
++      <div class="card-art"><img src="img/cards/words-en.svg" alt="Two scored guesses and a third in progress on a five-letter grid" data-alt-es="Dos intentos evaluados y un tercero en curso en una grilla de cinco letras" loading="lazy" width="320" height="180" data-src-es="img/cards/words-es.svg" data-src-en="img/cards/words-en.svg"></div>
+       <div class="card-body">
+         <div class="head"><h3>JET<span class="slash">//</span>Words</h3></div>
+         <p class="desc" data-es="Descubre una palabra de cinco letras en seis intentos, guiándote por los colores. Resuelve el reto diario o practica sin límite.">Find a five-letter word in six tries, guided by the colors. Solve the daily challenge or practice without limits.</p>
+@@ -968,57 +648,8 @@
+       </div>
+     </a>
+     <!-- JET//Box — astronaut pushing cargo crates onto docking pads -->
+-    <a class="card reveal" href="https://jetgames.fun/jetbox/" target="_blank" rel="noopener">
+-      <div class="card-art">
+-        <svg viewBox="0 0 320 180" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+-          <defs>
+-            <linearGradient id="box-wall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#54459a"/><stop offset="1" stop-color="#3a2f74"/></linearGradient>
+-            <linearGradient id="box-crate" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd54f"/><stop offset="1" stop-color="#f5a623"/></linearGradient>
+-            <linearGradient id="box-crate-on" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5ffff0"/><stop offset="1" stop-color="#00b8a8"/></linearGradient>
+-            <pattern id="box-bricks" width="40" height="20" patternUnits="userSpaceOnUse">
+-              <rect width="40" height="20" fill="url(#box-wall)"/>
+-              <path d="M0 20 L20 0 M20 20 L40 0" stroke="rgba(255,255,255,.05)" stroke-width="1"/>
+-            </pattern>
+-          </defs>
+-          <!-- station floor -->
+-          <rect x="0" y="0" width="320" height="180" fill="#120a24"/>
+-          <g stroke="rgba(0,242,207,0.06)" stroke-width="1">
+-            <line x1="60" y1="0" x2="60" y2="180"/><line x1="100" y1="0" x2="100" y2="180"/><line x1="140" y1="0" x2="140" y2="180"/><line x1="180" y1="0" x2="180" y2="180"/><line x1="220" y1="0" x2="220" y2="180"/><line x1="260" y1="0" x2="260" y2="180"/>
+-            <line x1="0" y1="50" x2="320" y2="50"/><line x1="0" y1="90" x2="320" y2="90"/><line x1="0" y1="130" x2="320" y2="130"/>
+-          </g>
+-          <!-- hull walls -->
+-          <rect x="0" y="0" width="320" height="30" fill="url(#box-bricks)"/>
+-          <rect x="0" y="150" width="320" height="30" fill="url(#box-bricks)"/>
+-          <rect x="0" y="0" width="40" height="180" fill="url(#box-bricks)"/>
+-          <rect x="280" y="0" width="40" height="180" fill="url(#box-bricks)"/>
+-          <rect x="140" y="30" width="40" height="40" fill="url(#box-bricks)"/>
+-          <path d="M40 30 H140 M180 30 H280 M40 150 H280" stroke="#00f2cf" stroke-opacity=".5" stroke-width="2"/>
+-          <!-- docking pads -->
+-          <g fill="none" stroke="#00f2cf" stroke-width="2.5">
+-            <circle cx="240" cy="70" r="13"><animate attributeName="stroke-opacity" values="1;.45;1" dur="1.8s" repeatCount="indefinite"/></circle>
+-            <circle cx="240" cy="110" r="13"/>
+-          </g>
+-          <circle cx="240" cy="70" r="3" fill="#00f2cf"/><circle cx="240" cy="110" r="3" fill="#00f2cf"/>
+-          <!-- crate already docked -->
+-          <g transform="translate(222 92)" filter="drop-shadow(0 0 8px rgba(0,242,207,.7))"><rect width="36" height="36" rx="8" fill="#f1eeff"/><rect y="15" width="36" height="6" rx="2" fill="#00bfa8"/><circle cx="18" cy="18" r="8" fill="#1a0f36"/><circle cx="18" cy="18" r="6" fill="#5ffff0"/></g>
+-          <!-- crate being pushed + astronaut -->
+-          <g>
+-            <animateTransform attributeName="transform" type="translate" values="0 0;40 0;40 0;0 0" keyTimes="0;0.45;0.85;1" dur="3.6s" repeatCount="indefinite"/>
+-            <g transform="translate(142 82)"><rect width="36" height="36" rx="8" fill="#f1eeff"/><rect y="15" width="36" height="6" rx="2" fill="#7700f4"/><circle cx="18" cy="18" r="8" fill="#1a0f36"/><circle cx="18" cy="18" r="6" fill="#fdd835" filter="drop-shadow(0 0 4px rgba(253,216,53,.8))"/></g>
+-            <g transform="translate(118 100)">
+-              <ellipse cx="0" cy="17" rx="11" ry="3" fill="rgba(0,0,0,.4)"/>
+-              <path d="M-4 -19 L-6 -25 M4 -19 L6 -25" stroke="#8f97b8" stroke-width="1.6"/>
+-              <circle cx="-6" cy="-26" r="1.8" fill="#fdd835"/><circle cx="6" cy="-26" r="1.8" fill="#fdd835"/>
+-              <rect x="-8" y="-3" width="16" height="16" rx="5" fill="#eef1fa"/>
+-              <rect x="-8" y="8" width="16" height="2" fill="#7700f4"/>
+-              <rect x="6" y="-1" width="12" height="5" rx="2.5" fill="#eef1fa"/>
+-              <circle cx="0" cy="-10" r="10" fill="#f4f6fc"/>
+-              <ellipse cx="3" cy="-10" rx="6" ry="5.5" fill="#00c4d4"/>
+-              <ellipse cx="1" cy="-12" rx="2" ry="1.4" fill="#fff" opacity=".85"/>
+-            </g>
+-          </g>
+-        </svg>
+-      </div>
++    <a class="card reveal" href="https://jetgames.fun/jetbox/" rel="noopener">
++      <div class="card-art"><img src="img/cards/box.svg" alt="The astronaut pushes a container toward a free pad; another container is already in place" data-alt-es="El astronauta empuja un contenedor hacia una plataforma libre; otro contenedor ya está en su sitio" loading="lazy" width="320" height="180"></div>
+       <div class="card-body">
+         <div class="head"><h3>JET<span class="slash">//</span>Box</h3></div>
+         <p class="desc" data-es="Empuja cada contenedor hasta su plataforma en 60 puzles espaciales. No puedes tirar de ellos: evita dejarlos atrapados y busca la solución con menos movimientos.">Push every container onto its pad across 60 space puzzles. You can't pull them: avoid getting them stuck and find the solution with the fewest moves.</p>
+@@ -1026,8 +657,8 @@
+       </div>
+     </a>
+     <!-- Salchidrez — ajedrez de perros salchicha (Canvas2D) -->
+-    <a class="card reveal" href="https://jetgames.fun/salchidrez/" target="_blank" rel="noopener">
+-      <div class="card-art"><img src="img/salchidrez.jpg" alt="Salchidrez: tablero de ajedrez con perros salchicha disfrazados" loading="lazy"></div>
++    <a class="card reveal" href="https://jetgames.fun/salchidrez/" rel="noopener">
++      <div class="card-art"><img style="object-position:100% 50%" width="320" height="180" src="img/salchidrez.jpg" alt="Green chessboard with sausage-dog pieces in costume" data-alt-es="Tablero verde de ajedrez con piezas de perros salchicha disfrazados" loading="lazy"></div>
+       <div class="card-body">
+         <div class="head"><h3>Salchidrez</h3></div>
+         <p class="desc" data-es="Aprende ajedrez desde cero con lecciones paso a paso y piezas de perros salchicha. Juega contra la máquina o con un amigo en el mismo dispositivo.">Learn chess from scratch with step-by-step lessons and sausage-dog pieces. Play against the computer or with a friend on the same device.</p>
+@@ -1036,7 +667,7 @@
+     </a>
+     <!-- JET//Escudos — simulador de competiciones: Mundial, ligas, copas, NBA, NFL, MLB, NHL, F1 -->
+     <a class="card reveal" href="https://jetgames.fun/escudos/" rel="noopener">
+-      <div class="card-art"><img src="img/escudos.jpg" alt="JET//Escudos: escudos de las selecciones" loading="lazy"></div>
++      <div class="card-art"><img style="object-position:50% 50%" width="320" height="180" src="img/escudos.jpg" alt="Mosaic of national team crests" data-alt-es="Mosaico de escudos de selecciones" loading="lazy"></div>
+       <div class="card-body">
+         <div class="head"><h3>JET<span class="slash">//</span>Escudos</h3></div>
+         <p class="desc" data-es="Elige quién gana cada encuentro y crea tu propia historia deportiva. Las tablas y eliminatorias se actualizan con tus resultados en torneos de fútbol y otras competiciones.">Pick the winner of every match and write your own sports story. Tables and knockout rounds update with your results across football tournaments and other competitions.</p>
+@@ -1045,8 +676,8 @@
+     </a>
+ 
+     <!-- JET//Señal — nuevo 2026-10-22 -->
+-    <a class="card reveal w4 w2" href="https://jetgames.fun/senal/" target="_blank" rel="noopener">
+-      <div class="card-art"><img src="img/senal.jpg" alt="JET//Señal: una sonda alienígena que examina objetos" loading="lazy"></div>
++    <a class="card reveal w4 w2" href="https://jetgames.fun/senal/" rel="noopener">
++      <div class="card-art"><img style="object-position:50% 45%" width="320" height="180" src="img/senal.jpg" alt="The alien probe examining a sample of shapes" data-alt-es="La sonda alienígena examinando una muestra de formas" loading="lazy"></div>
+       <div class="card-body">
+         <div class="head"><h3>JET<span class="slash">//</span>Señal</h3><span class="badge live" data-es="Nuevo">New</span></div>
+         <p class="desc" data-es="Descubre la regla secreta con la que una sonda alienígena acepta o rechaza objetos. Arma muestras, pon a prueba tus hipótesis y descífrala con el menor número de pulsos.">Uncover the secret rule an alien probe uses to accept or reject objects. Build samples, test your hypotheses and crack it in as few pulses as possible.</p>
+@@ -1054,8 +685,8 @@
+       </div>
+     </a>
+     <!-- JET//Antes — nuevo 2026-10-22 -->
+-    <a class="card reveal w4" href="https://jetgames.fun/antes/" target="_blank" rel="noopener">
+-      <div class="card-art"><img src="img/antes.jpg" alt="JET//Antes: el astronauta y sus ecos en una estación" loading="lazy"></div>
++    <a class="card reveal w4" href="https://jetgames.fun/antes/" rel="noopener">
++      <div class="card-art"><img style="object-position:50% 92%" width="320" height="180" src="img/antes.jpg" alt="The astronaut and two echoes of past moves holding plates in a corridor" data-alt-es="El astronauta y dos ecos de movimientos pasados sosteniendo placas en un corredor" loading="lazy"></div>
+       <div class="card-body">
+         <div class="head"><h3>JET<span class="slash">//</span>Antes</h3><span class="badge live" data-es="Nuevo">New</span></div>
+         <p class="desc" data-es="Cada intento de tu astronauta queda como un eco que repite lo que hiciste. Coordina con tus copias del pasado para abrir puertas, sostener placas y llegar a la salida.">Every attempt your astronaut makes stays behind as an echo that repeats your moves. Team up with your past copies to open doors, hold plates and reach the exit.</p>
+@@ -1063,8 +694,8 @@
+       </div>
+     </a>
+     <!-- JET//Telemetría — nuevo 2026-10-22 -->
+-    <a class="card reveal" href="https://jetgames.fun/telemetria/" target="_blank" rel="noopener">
+-      <div class="card-art"><img src="img/telemetria.jpg" alt="JET//Telemetría: la cabina con los sensores de la nave" loading="lazy"></div>
++    <a class="card reveal" href="https://jetgames.fun/telemetria/" rel="noopener">
++      <div class="card-art"><img style="object-position:50% 50%" width="320" height="180" src="img/telemetria.jpg" alt="Ship diagnostic cabin with sensor readings" data-alt-es="Cabina de diagnóstico de la nave con lecturas de sensores" loading="lazy"></div>
+       <div class="card-body">
+         <div class="head"><h3>JET<span class="slash">//</span>Telemetría</h3><span class="badge live" data-es="Nuevo">New</span></div>
+         <p class="desc" data-es="Encuentra la avería de la nave con sensores que a veces mienten. Cada lectura gasta oxígeno: decide qué medir y cuándo arriesgarte a reparar.">Find the ship's fault using sensors that sometimes lie. Every reading costs oxygen: choose what to measure and when to risk a repair.</p>
+@@ -1072,8 +703,8 @@
+       </div>
+     </a>
+     <!-- JET//Portada — nuevo 2026-10-22 -->
+-    <a class="card reveal" href="https://jetgames.fun/portada/" target="_blank" rel="noopener">
+-      <div class="card-art"><img src="img/portada.jpg" alt="JET//Portada: la portada de un diario espacial" loading="lazy"></div>
++    <a class="card reveal" href="https://jetgames.fun/portada/" rel="noopener">
++      <div class="card-art"><img style="object-position:0% 50%" width="320" height="180" src="img/portada.jpg" alt="Front page of the newspaper El Eco Orbital being laid out" data-alt-es="Primera plana del diario El Eco Orbital en maquetación" loading="lazy"></div>
+       <div class="card-body">
+         <div class="head"><h3>JET<span class="slash">//</span>Portada</h3><span class="badge live" data-es="Nuevo">New</span></div>
+         <p class="desc" data-es="Arma la portada del diario de la colonia encajando noticias, fotos y anuncios sin dejar huecos. Combina secciones que se potencian y elige reglas de redacción para cada edición.">Lay out the colony newspaper's front page by fitting stories, photos and ads with no gaps. Pair sections that boost each other and pick editorial rules for every edition.</p>
+@@ -1081,8 +712,8 @@
+       </div>
+     </a>
+     <!-- JET//Caja Negra — nuevo 2026-10-22 -->
+-    <a class="card reveal w4" href="https://jetgames.fun/cajanegra/" target="_blank" rel="noopener">
+-      <div class="card-art"><img src="img/cajanegra.jpg" alt="JET//Caja Negra: la caja negra de una nave" loading="lazy"></div>
++    <a class="card reveal w4" href="https://jetgames.fun/cajanegra/" rel="noopener">
++      <div class="card-art"><img style="object-position:50% 45%" width="320" height="180" src="img/cajanegra.jpg" alt="Cockpit frame and report pieces of a case under reconstruction" data-alt-es="Fotograma de la cabina y fichas del informe de un caso en reconstrucción" loading="lazy"></div>
+       <div class="card-body">
+         <div class="head"><h3>JET<span class="slash">//</span>Caja Negra</h3><span class="badge live" data-es="Nuevo">New</span></div>
+         <p class="desc" data-es="Reconstruye un incidente espacial a partir de bitácoras, fotos y mensajes de radio. Completa el informe con las palabras correctas: solo se confirma cuando casi todo está bien.">Rebuild a space incident from logs, photos and radio messages. Complete the report with the right words: it's only confirmed when nearly everything is correct.</p>
+@@ -1103,8 +734,8 @@
+   <div class="grid">
+ 
+     <!-- JET//Cráter — nuevo 2026-10-22 -->
+-    <a class="card reveal w4 w2" href="https://jetgames.fun/crater/" target="_blank" rel="noopener">
+-      <div class="card-art"><img src="img/crater.jpg" alt="JET//Cráter: cráteres lunares para aterrizar" loading="lazy"></div>
++    <a class="card reveal w4 w2" href="https://jetgames.fun/crater/" rel="noopener">
++      <div class="card-art"><img style="object-position:35% 45%" width="320" height="180" src="img/crater.jpg" alt="Crater map with candidate landing sites" data-alt-es="Mapa de cráteres con sitios candidatos para aterrizar" loading="lazy"></div>
+       <div class="card-body">
+         <div class="head"><h3>JET<span class="slash">//</span>Cráter</h3><span class="badge live" data-es="Nuevo">New</span></div>
+         <p class="desc" data-es="Aterriza donde crees que aterrizará la mayoría, sin hablar con nadie. A medianoche se revela el mapa de todos y ves cuánto piensas como el mundo.">Land where you think most players will land, without talking to anyone. At midnight everyone's map is revealed and you see how much you think like the world.</p>
+@@ -1112,8 +743,8 @@
+       </div>
+     </a>
+     <!-- JET//Frentes — nuevo 2026-10-22 -->
+-    <a class="card reveal" href="https://jetgames.fun/frentes/" target="_blank" rel="noopener">
+-      <div class="card-art"><img src="img/frentes.jpg" alt="JET//Frentes: cinco planetas en disputa" loading="lazy"></div>
++    <a class="card reveal" href="https://jetgames.fun/frentes/" rel="noopener">
++      <div class="card-art"><img style="object-position:50% 45%" width="320" height="180" src="img/frentes.jpg" alt="Five planets with fleets assigned to each front" data-alt-es="Cinco planetas con flotas asignadas a cada frente" loading="lazy"></div>
+       <div class="card-body">
+         <div class="head"><h3>JET<span class="slash">//</span>Frentes</h3><span class="badge live" data-es="Nuevo">New</span></div>
+         <p class="desc" data-es="Reparte 100 naves entre cinco planetas y enfréntate a la flota que jugó ayer. Gana cada planeta donde tengas más naves y descubre a cuántos rivales venciste.">Split 100 ships across five planets and face yesterday's fleet. Win every planet where you have more ships and see how many rivals you beat.</p>
+@@ -1121,8 +752,8 @@
+       </div>
+     </a>
+     <!-- JET//Balizas — nuevo 2026-10-22 -->
+-    <a class="card reveal" href="https://jetgames.fun/balizas/" target="_blank" rel="noopener">
+-      <div class="card-art"><img src="img/balizas.jpg" alt="JET//Balizas: una nave entre asteroides y balizas" loading="lazy"></div>
++    <a class="card reveal" href="https://jetgames.fun/balizas/" rel="noopener">
++      <div class="card-art"><img style="object-position:50% 65%" width="320" height="180" src="img/balizas.jpg" alt="The ship leaves a beacon while crossing fog between asteroids" data-alt-es="La nave deja una baliza mientras cruza la niebla entre asteroides" loading="lazy"></div>
+       <div class="card-body">
+         <div class="head"><h3>JET<span class="slash">//</span>Balizas</h3><span class="badge live" data-es="Nuevo">New</span></div>
+         <p class="desc" data-es="Cruza un campo de asteroides cubierto de niebla y deja balizas para guiar a quienes vienen después. Sigue las señales de otros jugadores y vota cuáles te ayudaron.">Fly through a fog-covered asteroid field and leave beacons to guide those who come after you. Follow other players' signals and vote for the ones that helped.</p>
+@@ -1143,8 +774,8 @@
+   <div class="grid">
+ 
+     <!-- JET//Estación Silencio — nuevo 2026-10-22 -->
+-    <a class="card reveal w3" href="https://jetgames.fun/estacion/" target="_blank" rel="noopener">
+-      <div class="card-art"><img src="img/estacion.jpg" alt="JET//Estación Silencio: el astronauta en una estación a la deriva" loading="lazy"></div>
++    <a class="card reveal w3 art-contain-f" href="https://jetgames.fun/estacion/" rel="noopener">
++      <div class="card-art"><img style="object-position:50% 88%" width="320" height="180" src="img/estacion.jpg" alt="Astronaut below a row of consoles in an empty station" data-alt-es="Astronauta bajo una fila de consolas en una estación vacía" loading="lazy"></div>
+       <div class="card-body">
+         <div class="head"><h3>JET<span class="slash">//</span>Estación Silencio</h3><span class="badge live" data-es="Nuevo">New</span></div>
+         <p class="desc" data-es="Despierta solo en una estación a la deriva y descifra 34 enigmas escondidos en imágenes, sonidos y textos. Cada palabra clave repara un sistema y revela qué pasó con la tripulación.">Wake up alone on a drifting station and solve 34 puzzles hidden in images, sounds and texts. Every keyword repairs a system and reveals what happened to the crew.</p>
+@@ -1153,8 +784,8 @@
+     </a>
+ 
+     <!-- JET//Drive — hovercraft, captura banderas en el puerto (3D) -->
+-    <a class="card reveal w3" href="https://raid.jetgames.fun" target="_blank" rel="noopener">
+-      <div class="card-art"><img src="img/jetdrive.jpg" alt="JET//Raid: hovercraft en el puerto" loading="lazy"></div>
++    <a class="card reveal w3" href="https://raid.jetgames.fun" rel="noopener">
++      <div class="card-art"><img style="object-position:55% 55%" width="320" height="180" src="img/jetdrive.jpg" alt="Hovercraft turning on the water" data-alt-es="Hovercraft girando sobre el agua" loading="lazy"></div>
+       <div class="card-body">
+         <div class="head"><h3>JET<span class="slash">//</span>Raid</h3></div>
+         <p class="desc" data-es="Pilota un hovercraft en 3D para capturar banderas, disputar carreras y extraer suministros. Completa 16 misiones sobre el agua usando turbo y equipo contra tus rivales.">Pilot a 3D hovercraft to capture flags, race and extract supplies. Complete 16 missions on the water using boost and gear against your rivals.</p>
+@@ -1162,8 +793,8 @@
+       </div>
+     </a>
+     <!-- JET//Jump — salto ecuestre web (Three.js) -->
+-    <a class="card reveal" href="https://jetgames.fun/jetjump/" target="_blank" rel="noopener">
+-      <div class="card-art"><img src="img/jetjump.jpg" alt="JET//Jump: caballo y jinete en la pista de salto" loading="lazy"></div>
++    <a class="card reveal" href="https://jetgames.fun/jetjump/" rel="noopener">
++      <div class="card-art"><img style="object-position:50% 45%" width="320" height="180" src="img/jetjump.jpg" alt="Horse and rider in the arena" data-alt-es="Caballo y jinete en la pista" loading="lazy"></div>
+       <div class="card-body">
+         <div class="head"><h3>JET<span class="slash">//</span>Jump</h3></div>
+         <p class="desc" data-es="Cuida y entrena a tu caballo para competir en salto ecuestre, desde la liga Club hasta el Gran Premio. Controla el ritmo y cada salto para terminar con menos penalizaciones.">Care for and train your horse to compete in show jumping, from the Club league to the Grand Prix. Control the rhythm and every jump to finish with fewer faults.</p>
+@@ -1171,8 +802,8 @@
+       </div>
+     </a>
+     <!-- JET//Bestiario — cría dragones y otras criaturas, cada una en su jaula (Three.js, prototipo) -->
+-    <a class="card reveal" href="https://jetgames.fun/bestiario/" target="_blank" rel="noopener">
+-      <div class="card-art"><img src="img/bestiario.jpg" alt="JET//Bestiario: un dragón oscuro con las alas abiertas" loading="lazy"></div>
++    <a class="card reveal" href="https://jetgames.fun/bestiario/" rel="noopener">
++      <div class="card-art"><img style="object-position:50% 30%" width="320" height="180" src="img/bestiario.jpg" alt="The ash dragon with wings spread" data-alt-es="El dragón de ceniza con las alas desplegadas" loading="lazy"></div>
+       <div class="card-body">
+         <div class="head"><h3>JET<span class="slash">//</span>Bestiario</h3></div>
+         <p class="desc" data-es="Explora un pueblo en 3D y cría criaturas fantásticas desde el huevo. Alimenta y entrena a tus bestias, y amplía tu equipo con nuevas criaturas.">Explore a 3D village and raise fantastic creatures from the egg. Feed and train your beasts, and grow your team with new creatures.</p>
+@@ -1205,6 +836,8 @@
+     const L = JETIdioma.get(), D = TX[L];
+     document.querySelectorAll('[data-t]').forEach(el => { if (D[el.dataset.t]) el.textContent = D[el.dataset.t]; });
+     document.querySelectorAll('[data-es]').forEach(el => { el.textContent = L === 'es' ? el.dataset.es : el.dataset.en; });
++    document.querySelectorAll('img[data-alt-es]').forEach(img => { if (!img.dataset.altEn) img.dataset.altEn = img.alt; img.alt = L === 'es' ? img.dataset.altEs : img.dataset.altEn; });
++    document.querySelectorAll('img[data-src-es]').forEach(img => { const src = L === 'es' ? img.dataset.srcEs : img.dataset.srcEn; if (img.getAttribute('src') !== src) img.setAttribute('src', src); });
+     WORDS = D.words;
+     rotEls.forEach(el => { el.textContent = WORDS[wIdx % WORDS.length]; });
+     document.querySelectorAll('.lang-sw button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.lang === L)));

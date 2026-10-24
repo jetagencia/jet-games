@@ -36,7 +36,7 @@ for (const g of GAMES) {
     await page.setViewportSize({ width: 1280, height: 720 });
     await page.waitForTimeout(800);
     await page.screenshot({ path: join(OUT, `${name}-1280.png`) });
-    const a11y = await page.evaluate(() => ({ title: document.title, h1: [...document.querySelectorAll('h1')].map(h => h.textContent.trim()).slice(0, 3), buttons: document.querySelectorAll('button').length, emptyButtons: [...document.querySelectorAll('button')].filter(b => !b.textContent.trim() && !b.getAttribute('aria-label') && !b.title).length, dialogs: document.querySelectorAll('[role=dialog],dialog').length, lang: document.documentElement.lang }));
+    const a11y = await page.evaluate(() => ({ title: document.title, h1: [...document.querySelectorAll('h1')].map(h => h.textContent.trim()).slice(0, 3), buttons: document.querySelectorAll('button').length, emptyButtons: [...document.querySelectorAll('button')].filter(b => !b.textContent.trim() && !b.getAttribute('aria-label') && !b.getAttribute('aria-labelledby') && !b.title && !b.querySelector('img[alt],svg[aria-label],svg title')).length, dialogs: document.querySelectorAll('[role=dialog],dialog').length, lang: document.documentElement.lang }));
     report[name] = { ok: true, ms: Date.now() - t0, errors: [...new Set(errors)].slice(0, 12), failed: [...new Set(failed)].filter(u => !/\.(png|jpg|jpeg|webp|svg|mp3|ogg|glb|json|ico|woff2?)(\?|$)/.test(u)).slice(0, 12), missingAssets: [...new Set(failed)].filter(u => /\.(png|jpg|jpeg|webp|svg|mp3|ogg|glb|json|ico|woff2?)(\?|$)/.test(u)).length, ...a11y };
   } catch (e) { report[name] = { ok: false, error: String(e).slice(0, 300), errors: [...new Set(errors)].slice(0, 12) }; }
   await page.close();

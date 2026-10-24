@@ -1,0 +1,1190 @@
+diff --git a/site/telemetria/index.html b/site/telemetria/index.html
+index a3bbfd6..ff7e6d5 100644
+--- a/site/telemetria/index.html
++++ b/site/telemetria/index.html
+@@ -2,7 +2,7 @@
+ <html lang="es">
+ <head>
+ <meta charset="utf-8">
+-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
++<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+ <title>JET//Telemetría · Los instrumentos a veces mienten</title>
+ <meta name="description" content="Eres la última persona despierta en una nave averiada. Lee sensores que a veces mienten, gasta aire con cabeza y repara la pieza correcta. Un juego de deducción para teléfono, tablet y computadora.">
+ <meta name="theme-color" content="#050108">
+@@ -20,13 +20,49 @@
+ <link rel="apple-touch-icon" href="icon-192.png">
+ <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+ <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+-<link rel="stylesheet" href="src/estilos.css?v=4">
++<link rel="stylesheet" href="src/estilos.css?v=5">
++<script>
++/* SRC-G05 — estados de carga (loading / error / ready) antes del JS del juego. Autónomo a propósito:
++   tiene que funcionar aunque falle src/textos.js, por eso lleva sus cadenas ES/EN acá. */
++(function () {
++  var L = (document.documentElement.lang === 'en') ? 'en' : 'es';
++  var T = {
++    es: { cargando: 'Cargando Telemetría…', inter: 'La carga se interrumpió. Podés volver a intentarlo.', red: 'No pudimos descargar todos los recursos.', recargar: 'Volver a cargar', juegos: 'Volver a los juegos' },
++    en: { cargando: 'Loading Telemetry…', inter: 'Loading was interrupted. You can try again.', red: 'We couldn’t download all resources.', recargar: 'Reload game', juegos: 'Back to games' }
++  }[L];
++  var estado = 'cargando', timer = 0;
++  function pintar() {
++    var c = document.getElementById('cargaTxt'); if (!c) return;
++    document.documentElement.setAttribute('data-carga', estado);
++    if (estado === 'cargando') { c.innerHTML = '<p class="carga-txt">' + T.cargando + '</p>'; return; }
++    if (estado === 'listo') return;
++    c.innerHTML = '<p class="carga-txt" role="alert">' + (estado === 'red' ? T.red : T.inter) + '</p>' +
++      '<div class="carga-acc"><button type="button" class="btn pri" id="cargaReintentar">' + T.recargar + '</button>' +
++      '<a class="btn" href="https://jetgames.fun/?lang=' + L + '" target="_top" rel="noopener">' + T.juegos + '</a></div>';
++    var b = document.getElementById('cargaReintentar');
++    if (b) { b.addEventListener('click', function () { location.reload(); }); b.focus(); }
++  }
++  window.JETCarga = {
++    error: function (tipo) { if (estado !== 'cargando') return; clearTimeout(timer); estado = tipo === 'red' ? 'red' : 'error'; pintar(); },
++    listo: function () { clearTimeout(timer); estado = 'listo'; pintar(); window.removeEventListener('error', alError, true); }
++  };
++  function alError(e) {
++    if (estado !== 'cargando') return;
++    var tg = e && e.target;
++    if (tg && tg.tagName === 'SCRIPT') { window.JETCarga.error('red'); return; }
++    if (!tg || tg === window) window.JETCarga.error('error');
++  }
++  window.addEventListener('error', alError, true);
++  timer = setTimeout(function () { if (estado === 'cargando') window.JETCarga.error('error'); }, 15000);
++  document.addEventListener('DOMContentLoaded', pintar);
++})();
++</script>
+ </head>
+ <body>
+ <canvas id="bg" aria-hidden="true"></canvas>
+ 
+ <header id="hdr">
+-  <a id="back" href="https://jetgames.fun/" aria-label="JET//Games">‹ <span>JET<i>//</i>Games</span></a>
++  <a id="back" href="https://jetgames.fun/" aria-label="Volver a los juegos">‹ <span>JET<i>//</i>Games</span></a>
+   <div id="hdrMid" aria-live="off"></div>
+   <div id="hdrR">
+     <button class="ib" id="bFs" type="button" hidden><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+@@ -35,6 +71,8 @@
+   </div>
+ </header>
+ 
++<!-- SRC-G05: título y estado visibles antes del JS; lo retira ui.js al terminar (JETCarga.listo) -->
++<div id="carga" class="carga" role="status" aria-live="polite"><h1 class="logo">JET<i>//</i>Telemetría</h1><div id="cargaTxt"><p class="carga-txt">Cargando Telemetría…</p></div></div>
+ <section id="s-inicio" class="scr"></section>
+ <section id="s-mapa" class="scr"></section>
+ <section id="s-practica" class="scr"></section>
+@@ -47,12 +85,20 @@
+     <canvas id="cvWin" aria-hidden="true"></canvas>
+   </div>
+   <div class="g-nave" id="gNave"><canvas id="cvNave" aria-hidden="true"></canvas><div class="nodos" id="nodos"></div><div class="nave-info" id="naveInfo"></div></div>
+-  <div class="g-lista"><div class="zonas" id="zonas" hidden></div><div class="filas" id="filas" role="list"></div></div>
+-  <div class="g-ora"><div class="ora" id="ora" hidden role="status"><b>ORA</b><span class="t" id="oraT"></span><button class="ob" id="oraB" type="button" hidden></button><button class="ox" id="oraX" type="button" aria-label="×">×</button></div></div>
++  <div class="g-lista">
++    <div class="zonas" id="zonas" hidden></div>
++    <!-- PLAY-TELEMETRIA-01 / VIS-TELEMETRIA-02: encabezado «Probabilidad de avería» y marcas 0/50/100 (sólo con porcentajes visibles y fuera de Veterano) -->
++    <div class="lista-cab" id="listaCab"><span id="listaCabT" data-t="faultProb"></span><span class="ticks" aria-hidden="true"><i>0</i><i>50</i><i>100 %</i></span></div>
++    <div class="filas" id="filas" role="radiogroup" aria-labelledby="listaCabT"></div>
++  </div>
++  <div class="g-ora"><div class="ora" id="ora" hidden role="status"><b>ORA</b><span class="t" id="oraT"></span><button class="ob" id="oraTodo" type="button" hidden data-t="showAll"></button><button class="ob" id="oraB" type="button" hidden></button><button class="ox" id="oraX" type="button" data-ta="closeOra">×</button></div></div>
+   <div class="g-band" id="gBand">
++    <!-- PLAY-TELEMETRIA-02/03/04: objetivo seleccionado, costes totales alternativos y saldos hipotéticos (sólo datos visibles) -->
++    <div class="band-info"><p class="sel-info" id="selInfo"></p><p class="rep-info" id="repInfo" hidden></p></div>
+     <div class="sensores" id="sensores"></div>
++    <div class="leyenda" id="senLeyenda" aria-hidden="true"><span data-t="legendAlert"></span><span data-t="legendNormal"></span></div>
+     <div class="acciones">
+-      <button class="ab" id="bLog" type="button"><svg viewBox="0 0 24 24"><path d="M5 6h14M5 12h14M5 18h9"/></svg><span data-t="log"></span></button>
++      <button class="ab" id="bLog" type="button" aria-expanded="false" aria-controls="sheet"><svg viewBox="0 0 24 24"><path d="M5 6h14M5 12h14M5 18h9"/></svg><span data-t="log"></span></button>
+       <button class="ab" id="bPista" type="button"><svg viewBox="0 0 24 24"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/></svg><span data-t="hint"></span></button>
+       <button class="rep" id="bRep" type="button"><i class="fillh"></i><svg class="ring" viewBox="0 0 36 36"><circle class="bgc" cx="18" cy="18" r="15"/><circle class="fg" cx="18" cy="18" r="15"/></svg><span class="rl"><b id="repL"></b><small id="repS"></small></span></button>
+     </div>
+@@ -61,11 +107,13 @@
+ </section>
+ <section id="s-res" class="scr"></section>
+ 
+-<div id="sheet" role="dialog" aria-modal="false"><div class="asa"></div><div class="top"><h2 data-t="log"></h2><button class="x" id="sheetX" type="button" aria-label="×">×</button></div><div class="logl" id="logSheet"></div></div>
++<!-- RSP-MODALS-01 / PLAY-TELEMETRIA-07: la hoja del registro es un diálogo con nombre; el fondo queda inerte mientras está abierta -->
++<div id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetT"><div class="asa"></div><div class="top"><h2 id="sheetT" data-t="log"></h2><button class="x" id="sheetX" type="button" data-ta="closeLog">×</button></div><div class="logl" id="logSheet"></div></div>
+ <div class="ov" id="ov-pausa" role="dialog" aria-modal="true"></div>
+ <div class="ov" id="ov-ajustes" role="dialog" aria-modal="true"></div>
+ <div class="ov" id="ov-como" role="dialog" aria-modal="true"></div>
+ <div class="ov" id="ov-diario" role="dialog" aria-modal="true"></div>
++<div class="ov" id="ov-confirm" role="alertdialog" aria-modal="true"></div>
+ <div id="flash"></div>
+ <div id="toast" role="status"></div>
+ <div id="aria" class="sr" aria-live="polite"></div>
+@@ -74,16 +122,16 @@
+ <script>/* Migración única: el idioma que este juego guardaba en sus preferencias pasa a ser la elección común de jetgames.fun (jet_lang). */
+ (function(){try{if(/(?:^|;\s*)jet_lang=(es|en)/.test(document.cookie)||/^(es|en)$/.test(localStorage.getItem('jet_lang')||''))return;var p=JSON.parse(localStorage.getItem('jet-telemetria:prefs')||'null');if(p&&(p.lang==='es'||p.lang==='en'))localStorage.setItem('jet_lang',p.lang);}catch(e){}})();</script>
+ <script src="src/jet-idioma.js?v=1"></script>
+-<script src="src/textos.js?v=4"></script>
++<script src="src/textos.js?v=5"></script>
+ <script src="src/nucleo.js?v=1"></script>
+ <script src="src/casos.js?v=1"></script>
+ <script src="src/campana.js?v=3"></script>
+ <script src="src/piloto.js?v=1"></script>
+ <script src="src/astronauta-oficial.js?v=1"></script>
+-<script src="src/cabina.js?v=3"></script>
++<script src="src/cabina.js?v=4"></script>
+ <script src="src/audio.js?v=2"></script>
+ <script src="src/sfx.js?v=2"></script>
+ <script src="src/musica.js?v=2"></script>
+-<script src="src/ui.js?v=7"></script>
++<script src="src/ui.js?v=8"></script>
+ </body>
+ </html>
+diff --git a/site/telemetria/src/cabina.js b/site/telemetria/src/cabina.js
+index 6da3862..e3c012b 100644
+--- a/site/telemetria/src/cabina.js
++++ b/site/telemetria/src/cabina.js
+@@ -95,7 +95,8 @@ var CABINA = (function () {
+         c.restore();
+       }
+     } else {
+-      dibujarEstrellas(c, w, h, t, 0.35, 0.55);
++      // VIS-TELEMETRIA-03: en juego el fondo baja al plano de ambiente (estrellas al 35 % de su alpha de menú)
++      dibujarEstrellas(c, w, h, t, 0.35, 0.35);
+     }
+     // luz ambiente: barrido de alarma ámbar o calma cian
+     var col = luz === 'ok' ? '0,242,207' : luz === 'peligro' ? '255,68,102' : '255,176,32';
+@@ -141,8 +142,8 @@ var CABINA = (function () {
+     var m = ajustar(cv), c = cv.getContext('2d'), w = m.w, h = m.h;
+     c.setTransform(m.d, 0, 0, m.d, 0, 0); c.clearRect(0, 0, w, h);
+     var g = geometria(caso, w, h);
+-    // anillos de radar de fondo
+-    c.strokeStyle = 'rgba(119,0,244,.12)'; c.lineWidth = 1;
++    // anillos de radar de fondo (VIS-TELEMETRIA-03: rejilla alpha .06; los nodos son el contraste dominante)
++    c.strokeStyle = 'rgba(119,0,244,.06)'; c.lineWidth = 1;
+     for (var r = 1; r <= 3; r++) { c.beginPath(); c.ellipse(w / 2, h / 2, g.bw * 0.22 * r, g.bh * 0.3 * r, 0, 0, 7); c.stroke(); }
+     // toberas
+     var x = g.bx, y = g.by, bw = g.bw, bh = g.bh;
+@@ -158,7 +159,8 @@ var CABINA = (function () {
+     // casco
+     var hg = c.createLinearGradient(0, y, 0, y + bh); hg.addColorStop(0, '#22163f'); hg.addColorStop(0.5, '#160d2c'); hg.addColorStop(1, '#0d0720');
+     c.fillStyle = hg; casco(c, g); c.fill();
+-    c.strokeStyle = est.luz === 'ok' ? 'rgba(0,242,207,.55)' : est.luz === 'peligro' ? 'rgba(255,68,102,.55)' : 'rgba(181,168,216,.4)'; c.lineWidth = 1.6; casco(c, g); c.stroke();
++    // contorno 1.5 px neutro; el estado (aire, reparación) lo comunican la barra de aire, la onda y los nodos, no el casco
++    c.strokeStyle = 'rgba(181,168,216,.5)'; c.lineWidth = 1.5; casco(c, g); c.stroke();
+     // zonas
+     if (caso.hayZonas) {
+       c.save(); casco(c, g); c.clip();
+@@ -171,8 +173,8 @@ var CABINA = (function () {
+       });
+       c.restore();
+     }
+-    // conductos entre nodos
+-    c.strokeStyle = 'rgba(119,0,244,.35)'; c.lineWidth = 1.5;
++    // conductos entre nodos (cableado decorativo alpha .18: no debe parecer el resultado de un sensor)
++    c.strokeStyle = 'rgba(119,0,244,.18)'; c.lineWidth = 1.5;
+     var orden = g.pos.map(function (p, q) { return q; }).sort(function (a, b) { return g.pos[a].x - g.pos[b].x; });
+     c.beginPath(); orden.forEach(function (q, k) { var p = g.pos[q]; if (k) c.lineTo(p.x, p.y); else c.moveTo(p.x, p.y); }); c.stroke();
+     // onda de luz al reparar
+diff --git a/site/telemetria/src/estilos.css b/site/telemetria/src/estilos.css
+index 638c89e..1e622e5 100644
+--- a/site/telemetria/src/estilos.css
++++ b/site/telemetria/src/estilos.css
+@@ -14,9 +14,18 @@ button{color:inherit}
+ h1,h2,h3,p{margin:0}
+ .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+ :focus{outline:none}
+-:focus-visible{outline:2px solid var(--cy);outline-offset:2px}
++:focus-visible{outline:2px solid #fff;outline-offset:2px;box-shadow:0 0 0 4px rgba(5,1,8,.85)}
+ #bg{position:fixed;inset:0;width:100%;height:100%;display:block;z-index:0}
+ 
++/* SRC-G05: estado de carga visible antes del JS (loading / error / ready excluyentes, gobernados por html[data-carga]) */
++.carga{position:fixed;inset:calc(var(--hdr) + var(--sat)) 0 0 0;z-index:6;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:20px;text-align:center}
++.carga .logo{font-size:clamp(30px,8vw,52px)}
++.carga-txt{font:600 14px var(--mono);color:var(--dim);letter-spacing:.04em;margin:0}
++html[data-carga="cargando"] .carga-txt::after{content:'';display:block;width:120px;height:3px;margin:12px auto 0;border-radius:99px;background:linear-gradient(90deg,transparent,var(--cy),transparent);animation:cargaBarra 1.4s linear infinite}
++@keyframes cargaBarra{from{background-position:-120px 0}to{background-position:120px 0}}
++.carga-acc{display:grid;gap:10px;width:min(300px,100%);margin-top:4px}
++html[data-carga="listo"] #carga{display:none!important}
++
+ /* ---------- Cabecera fija ---------- */
+ #hdr{position:fixed;top:0;left:0;right:0;z-index:40;height:calc(var(--hdr) + var(--sat));padding:calc(6px + var(--sat)) calc(10px + var(--sar)) 6px calc(10px + var(--sal));display:flex;align-items:center;gap:8px;pointer-events:none}
+ #hdr>*{pointer-events:auto}
+@@ -34,7 +43,7 @@ h1,h2,h3,p{margin:0}
+ 
+ /* ---------- Pantallas ---------- */
+ /* las pantallas empiezan debajo de la cabecera: al desplazar, nada pasa por debajo de «‹ JET//Games» ni de los botones */
+-.scr{position:fixed;inset:calc(var(--hdr) + var(--sat)) 0 0 0;z-index:5;display:none;flex-direction:column;align-items:center;padding:10px calc(14px + var(--sar)) calc(14px + var(--sab)) calc(14px + var(--sal));overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;touch-action:pan-y}
++.scr{position:fixed;inset:calc(var(--hdr) + var(--sat)) 0 0 0;z-index:5;display:none;flex-direction:column;align-items:center;padding:10px calc(14px + var(--sar)) calc(14px + var(--sab)) calc(14px + var(--sal));overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;touch-action:pan-y pinch-zoom}
+ .scr.on{display:flex;animation:entra .26s var(--ease)}
+ .scr:not(#s-juego){-webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 10px);mask-image:linear-gradient(to bottom,transparent 0,#000 10px)}
+ @keyframes entra{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@@ -103,7 +112,7 @@ h1,h2,h3,p{margin:0}
+ .ruta{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,320px),1fr));gap:12px;position:relative}
+ .est{position:relative;background:var(--card2);border:1px solid var(--line);border-radius:18px;padding:14px 12px 12px 14px;overflow:hidden}
+ .est::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(var(--vi),var(--cy));opacity:.7}
+-.est.lock{opacity:.6}
++.est.lock{opacity:.85}
+ .est.lock::before{background:var(--line2)}
+ .est h3{font-size:15px;font-weight:700;display:flex;align-items:baseline;gap:8px}
+ .est h3 span{font:700 11px var(--mono);letter-spacing:.12em;color:var(--cy)}
+@@ -113,7 +122,7 @@ h1,h2,h3,p{margin:0}
+ .cb{min-height:52px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;font:800 15px var(--mono);padding:0;transition:transform .12s,background .15s,border-color .15s}
+ .cb:hover{background:rgba(119,0,244,.2)}
+ .cb:active{transform:scale(.94)}
+-.cb[disabled]{cursor:default;opacity:.45}
++.cb[disabled]{cursor:default;opacity:.6}
+ .cb .s{font-size:11px;letter-spacing:1px;color:#5b5275}
+ .cb .s b{color:var(--amb);font-weight:400}
+ .cb.cur{border-color:var(--cy);box-shadow:0 0 0 1px var(--cy) inset,0 0 18px rgba(0,242,207,.2)}
+@@ -159,10 +168,13 @@ h1,h2,h3,p{margin:0}
+ .aire-bar .f{position:absolute;inset:0 auto 0 0;width:100%;background:linear-gradient(90deg,#00b8c8,var(--cy));border-radius:99px;transition:width .45s var(--ease),background .4s;box-shadow:0 0 16px rgba(0,242,207,.35)}
+ .aire-bar .gh{position:absolute;inset:0 auto 0 0;background:rgba(255,255,255,.28);border-radius:99px;transition:opacity .8s;opacity:0}
+ .aire.mid .aire-bar .f{background:linear-gradient(90deg,#d98a00,var(--amb));box-shadow:0 0 16px rgba(255,176,32,.35)}
+-.aire.low .aire-bar .f{background:linear-gradient(90deg,#c0183c,var(--red));box-shadow:0 0 18px rgba(255,68,102,.5);animation:latido 1s ease-in-out infinite}
+-@keyframes latido{50%{filter:brightness(1.5)}}
++/* VIS-TELEMETRIA-04: aire bajo = borde rojo estable + símbolo junto al número, con un único pulso de 200 ms al cruzar el umbral (sin latido continuo) */
++.aire.low .aire-bar{border-color:var(--red);box-shadow:0 0 0 1px rgba(255,68,102,.5);animation:aireAviso .2s ease 1}
++.aire.low .aire-bar .f{background:linear-gradient(90deg,#c0183c,var(--red));box-shadow:0 0 18px rgba(255,68,102,.5)}
++@keyframes aireAviso{50%{box-shadow:0 0 0 4px rgba(255,68,102,.6)}}
+ .aire-v{font:800 22px var(--mono);min-width:2.2ch;text-align:right;font-variant-numeric:tabular-nums}
+ .aire.low .aire-v{color:var(--red)}
++.aire.low .aire-v::before{content:'⚠ ';font-size:15px;vertical-align:2px}
+ .aire.mid .aire-v{color:var(--amb)}
+ .aire-u{font:700 11px var(--mono);color:var(--dim);letter-spacing:.1em}
+ #cvWin{width:44px;height:44px;border-radius:12px;border:1px solid var(--line2);flex:none;background:#0b0618}
+@@ -175,12 +187,16 @@ h1,h2,h3,p{margin:0}
+ .nodo svg{width:calc(var(--nd,44px) * .48);height:calc(var(--nd,44px) * .48);stroke:var(--dim);fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;position:relative}
+ .nodo .halo{position:absolute;inset:-2px;border-radius:50%;background:radial-gradient(circle,rgba(255,176,32,var(--s,0)) 0%,rgba(255,176,32,0) 70%);transition:background .45s}
+ .nodos.llena .nodo{pointer-events:none}
+-.nodo.sel{transform:scale(1.15);border-color:var(--cy);box-shadow:0 0 0 3px rgba(0,242,207,.25),0 0 22px rgba(0,242,207,.45)}
++/* VIS-TELEMETRIA-01: selección = anillo exterior cian fijo de 2 px (sin escalar ni mover el centro); reparado = ✓ en sello interior y relleno
++   cian suave; mayor probabilidad = borde ámbar (ya existente); descartado = ✕ y discontinuo, legible a .7 */
++.nodo.sel{border-color:var(--cy);box-shadow:0 0 0 2px var(--cy)}
+ .nodo.sel svg{stroke:var(--cy)}
+ .nodo.top{border-color:var(--amb)}
+-.nodo.rep{border-color:var(--cy);background:rgba(0,242,207,.18)}
++.nodo.rep{border-color:rgba(0,242,207,.45);background:rgba(0,242,207,.14)}
+ .nodo.rep svg{stroke:var(--cy)}
+-.nodo.desc{opacity:.45;border-style:dashed}
++.nodo.rep::after{content:'✓';position:absolute;right:-2px;bottom:-4px;width:14px;height:14px;border-radius:50%;background:var(--cy);color:#04201b;font:800 10px/14px var(--mono);text-align:center}
++.nodo.sel.rep{box-shadow:0 0 0 2px var(--cy)}
++.nodo.desc{opacity:.7;border-style:dashed}
+ .nodo.desc::after{content:'✕';position:absolute;right:-4px;top:-6px;font:800 12px var(--mono);color:var(--red)}
+ .nodo.lamp-A{box-shadow:0 0 0 4px rgba(255,176,32,.35),0 0 26px rgba(255,176,32,.6)}
+ .nodo.lamp-N{box-shadow:0 0 0 4px rgba(0,242,207,.3),0 0 22px rgba(0,242,207,.45)}
+@@ -196,7 +212,14 @@ h1,h2,h3,p{margin:0}
+ .zb .chips{gap:2px}
+ 
+ /* filas */
+-.filas{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;touch-action:pan-y;display:grid;align-content:start;gap:4px;padding:2px 2px 8px;margin:0 -2px;scrollbar-width:thin;scrollbar-color:rgba(119,0,244,.5) transparent}
++/* PLAY-TELEMETRIA-01 / VIS-TELEMETRIA-02: encabezado «Probabilidad de avería»; marcas 0/50/100 sólo con porcentajes visibles y fuera de Veterano */
++.lista-cab{display:grid;grid-template-columns:26px minmax(0,1fr) minmax(64px,34%) 50px;gap:8px;align-items:end;padding:2px 10px 4px;font:700 10.5px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
++.lista-cab>span:first-child{grid-column:1/3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
++@media (max-width:420px){.lista-cab{font-size:9.5px;letter-spacing:.06em}.lista-cab .ticks{display:none!important}}
++.lista-cab .ticks{grid-column:3;display:none;justify-content:space-between;font:600 9px var(--mono);letter-spacing:0;color:#5b5275;text-transform:none}
++.lista-cab .ticks i{font-style:normal}
++body.pct:not(.vet) .lista-cab .ticks{display:flex}
++.filas{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;touch-action:pan-y pinch-zoom;display:grid;align-content:start;gap:4px;padding:2px 2px 8px;margin:0 -2px;scrollbar-width:thin;scrollbar-color:rgba(119,0,244,.5) transparent}
+ .fila{display:grid;grid-template-columns:26px minmax(0,1fr) minmax(64px,34%) 50px;align-items:center;gap:8px;min-height:46px;padding:4px 10px;border-radius:12px;border:1px solid transparent;background:rgba(255,255,255,.03);cursor:pointer;transition:background .15s,border-color .15s,transform .12s;position:relative}
+ .fila:hover{background:rgba(255,255,255,.06)}
+ .fila:active{transform:scale(.985)}
+@@ -207,8 +230,9 @@ h1,h2,h3,p{margin:0}
+ .fila .nom{font-size:14.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ .fila .nom em{font:800 9.5px var(--mono);letter-spacing:.1em;font-style:normal;color:#1a0d00;background:var(--amb);border-radius:5px;padding:2px 5px;margin-left:6px;vertical-align:2px}
+ .barra{height:12px;border-radius:99px;background:rgba(255,255,255,.07);position:relative;overflow:visible}
+-.barra .f{position:absolute;left:0;top:0;bottom:0;border-radius:99px;background:linear-gradient(90deg,rgba(119,0,244,.9),#b05cff);transition:width .45s var(--ease),background .3s}
+-.barra .gh{position:absolute;left:0;top:0;bottom:0;border-radius:99px;background:rgba(245,240,255,.3);transition:opacity .8s;opacity:0}
++/* VIS-TELEMETRIA-02: misma escala 0–100 % en todas las filas; violeta sólido en barras normales (el ámbar semántico de .fila.top se conserva abajo) */
++.barra .f{position:absolute;left:0;top:0;bottom:0;border-radius:99px;background:#a46bff;transition:width .22s var(--ease),background .3s}
++.barra .gh{position:absolute;left:0;top:0;bottom:0;border-radius:99px;background:rgba(245,240,255,.3);transition:opacity .35s;opacity:0}
+ .fila.top .barra .f{background:linear-gradient(90deg,#d98a00,var(--amb));box-shadow:0 0 12px rgba(255,176,32,.45)}
+ .barra .f.flash{animation:flash .5s}
+ @keyframes flash{0%{box-shadow:0 0 0 0 rgba(255,255,255,.8)}100%{box-shadow:0 0 0 6px rgba(255,255,255,0)}}
+@@ -224,7 +248,7 @@ body.pct .fila .pct{display:block}
+ .fila .st{grid-column:3;font:700 11px var(--mono);letter-spacing:.1em}
+ .fila.rep .st{color:var(--cy)}
+ .fila.desc .st{color:var(--red);opacity:.8}
+-.fila.desc{opacity:.6}
++.fila.desc{opacity:.7}
+ .chips{display:flex;gap:3px;justify-content:flex-end;align-items:center;min-width:0}
+ .chip{font:800 12px/1 var(--mono);width:14px;text-align:center}
+ .chip.A{color:var(--amb)}
+@@ -234,8 +258,9 @@ body.pct .fila .pct{display:block}
+ .lamp{position:absolute;right:8px;top:50%;transform:translateY(-50%);font:800 11px var(--mono);letter-spacing:.1em;padding:5px 8px;border-radius:8px;pointer-events:none;opacity:0;z-index:2}
+ .lamp.A{background:var(--amb);color:#1a0d00;box-shadow:0 0 20px rgba(255,176,32,.6)}
+ .lamp.N{background:var(--cy);color:#04201b;box-shadow:0 0 20px rgba(0,242,207,.5)}
+-.lamp.on{animation:bombilla .9s forwards}
+-@keyframes bombilla{0%{opacity:0}8%{opacity:1}16%{opacity:.15}26%{opacity:1}34%{opacity:.3}44%,80%{opacity:1}100%{opacity:0}}
++/* VIS-TELEMETRIA-04: aparición 120 ms, permanencia 700 ms y salida 180 ms, sin apagones intermedios */
++.lamp.on{animation:bombilla 1s forwards}
++@keyframes bombilla{0%{opacity:0}12%{opacity:1}82%{opacity:1}100%{opacity:0}}
+ body.vet .barra,body.vet .fila .pct,body.vet .nodo .halo,body.vet .fila em{visibility:hidden}
+ 
+ /* ORA */
+@@ -245,12 +270,22 @@ body.vet .barra,body.vet .fila .pct,body.vet .nodo .halo,body.vet .fila em{visib
+ .ora .t{flex:1;font:500 13.5px/1.35 var(--mono);color:#d8fff7;min-width:0}
+ .ora .ob{flex:none;min-height:40px;padding:0 12px;border-radius:10px;border:1px solid var(--cy);background:rgba(0,242,207,.12);color:var(--cy);font:700 12px var(--mono);cursor:pointer}
+ .ora .ob[hidden]{display:none}
++.ora .t{cursor:pointer}
++#oraTodo{background:transparent;color:var(--dim);border-color:var(--line2)}
+ .ora .ox{flex:none;width:44px;height:44px;border:0;background:none;color:var(--dim);font-size:18px;cursor:pointer;padding:0;position:relative}
+ .ora .ox::before{content:'';position:absolute;inset:-4px}
+ .ora.ev{border-color:rgba(255,68,102,.6);background:rgba(36,6,16,.9)}
+ .ora.ev b{color:var(--red)}
+ 
+ /* bandeja */
++/* PLAY-TELEMETRIA-02/03/04: objetivo seleccionado y costes/saldos hipotéticos junto a las acciones */
++.band-info{display:grid;gap:3px;padding:0 2px}
++.sel-info{font:700 11.5px var(--mono);letter-spacing:.06em;color:var(--cy);margin:0}
++.sel-info.vacio2{color:var(--dim)}
++.rep-info{font:500 12px/1.4 var(--mono);color:var(--dim);margin:0}
++.rep-info.riesgo{color:#ffb3c1}
++.leyenda{display:flex;gap:14px;font:600 10.5px var(--mono);color:var(--dim);padding:0 2px}
++.leyenda span:first-child{color:var(--amb)}.leyenda span:last-child{color:var(--cy)}
+ .sensores{display:grid;grid-template-columns:repeat(auto-fit,minmax(92px,1fr));grid-auto-rows:max-content;gap:6px}
+ .sen{position:relative;min-height:58px;border-radius:14px;border:1px solid var(--line2);background:var(--card2);padding:7px 9px 6px;display:flex;flex-direction:column;gap:3px;align-items:flex-start;cursor:pointer;text-align:left;transition:transform .12s,border-color .15s,background .15s,opacity .2s,box-shadow .2s;overflow:hidden}
+ .sen:active{transform:scale(.96)}
+@@ -290,7 +325,7 @@ body.vet .barra,body.vet .fila .pct,body.vet .nodo .halo,body.vet .fila em{visib
+ .ab.used svg{stroke:var(--amb)}
+ .rep{container-type:inline-size;position:relative;min-height:52px;border-radius:14px;border:0;cursor:pointer;color:#fff;background:linear-gradient(135deg,#7700f4,#00a99a);box-shadow:0 10px 24px rgba(119,0,244,.35);display:flex;align-items:center;justify-content:center;gap:12px;padding:0 14px;overflow:hidden;touch-action:none;transition:transform .12s,filter .2s,opacity .2s}
+ .rep .rl{display:flex;flex-direction:column;align-items:flex-start;line-height:1.15;position:relative;z-index:1;min-width:0}
+-.rep .rl b{font:800 15px var(--mono);letter-spacing:.1em;white-space:nowrap}
++.rep .rl b{font:800 15px var(--mono);letter-spacing:.1em;white-space:nowrap;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+ .rep .rl small{font:600 11px var(--mono);opacity:.88;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+ .rep .rl b .rc{font-weight:700;opacity:.92}
+ .rep.hold .rl small{opacity:1}
+@@ -312,7 +347,7 @@ body.vet .barra,body.vet .fila .pct,body.vet .nodo .halo,body.vet .fila em{visib
+ #sheet.on{transform:none;visibility:visible;transition:transform .26s var(--ease)}
+ #sheet .asa{width:44px;height:5px;border-radius:9px;background:var(--line2);margin:0 auto 8px}
+ #sheet .top{margin-bottom:8px}
+-.logl{overflow-y:auto;touch-action:pan-y;display:grid;align-content:start;gap:4px;font:500 13px var(--mono)}
++.logl{overflow-y:auto;touch-action:pan-y pinch-zoom;display:grid;align-content:start;gap:4px;font:500 13px var(--mono)}
+ .le{display:grid;grid-template-columns:28px 1fr auto;gap:8px;align-items:center;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.03)}
+ .le .n{color:var(--dim);font-size:11px}
+ .le .r{font-weight:800;font-size:11.5px;letter-spacing:.06em}
+@@ -321,9 +356,13 @@ body.vet .barra,body.vet .fila .pct,body.vet .nodo .halo,body.vet .fila em{visib
+ .vacio{color:var(--dim);font-size:14px;padding:12px 4px}
+ 
+ /* ---------- Composición horizontal amplia ---------- */
+-body.lay-l #s-juego{grid-template-columns:minmax(0,38fr) minmax(0,37fr) minmax(250px,25fr);grid-template-rows:auto minmax(0,1fr) auto;grid-template-areas:"aire aire aire" "nave lista band" "nave ora band";column-gap:12px;padding-left:calc(12px + var(--sal));padding-right:calc(12px + var(--sar));padding-bottom:calc(12px + var(--sab))}
++/* PLAY-TELEMETRIA-02: tres zonas alineadas (esquema · diagnóstico · acciones); ORA queda en la columna de acciones, junto a los controles que explica */
++body.lay-l #s-juego{grid-template-columns:minmax(0,38fr) minmax(0,37fr) minmax(250px,25fr);grid-template-rows:auto minmax(0,1fr) auto;grid-template-areas:"aire aire aire" "nave lista band" "nave lista ora";column-gap:12px;padding-left:calc(12px + var(--sal));padding-right:calc(12px + var(--sar));padding-bottom:calc(12px + var(--sab))}
++body.lay-l .g-ora{padding-top:6px}
++/* el registro en línea rellena la columna de acciones también en pantallas anchas no «desk» cuando hay altura */
++@media (min-height:620px){body.lay-l .g-log{display:flex;flex-direction:column;min-height:96px;flex:1;border-top:1px solid var(--line);padding-top:8px}body.lay-l .g-log .logl{flex:1;min-height:0}body.lay-l .g-log h4{margin:0 0 6px;font:700 11px var(--mono);letter-spacing:.14em;color:var(--dim)}body.lay-l #bLog{display:none}}
+ body.lay-l .g-band,body.lay-s .g-band{min-height:0;overflow:hidden}
+-body.lay-l .sensores,body.lay-s .sensores{overflow-y:auto;min-height:0;flex:0 1 auto;touch-action:pan-y;scrollbar-width:thin;padding:2px}
++body.lay-l .sensores,body.lay-s .sensores{overflow-y:auto;min-height:0;flex:0 1 auto;touch-action:pan-y pinch-zoom;scrollbar-width:thin;padding:2px}
+ body.lay-l .acciones,body.lay-s .acciones{flex:none}
+ body.lay-l .g-band{background:rgba(12,6,28,.7);border:1px solid var(--line);border-radius:18px;padding:10px}
+ body.lay-l .sensores{grid-template-columns:1fr}
+@@ -357,6 +396,10 @@ body.lay-s .fila .barra{grid-column:2/4;grid-row:2;height:8px}
+ body.lay-s .fila .st{grid-column:2/4;grid-row:2}
+ body.lay-s .fila .nom{font-size:13px}
+ body.lay-s .fila .pct{right:50px}
++body.lay-s .lista-cab{grid-template-columns:1fr auto;padding:0 6px 2px}
++body.lay-s .lista-cab>span:first-child{grid-column:1}
++body.lay-s .lista-cab .ticks{display:none!important}
++body.lay-s .leyenda,body.lay-s .rep-info{display:none}
+ body.lay-s .g-band{background:rgba(12,6,28,.7);border:1px solid var(--line);border-radius:16px;padding:8px;margin-bottom:4px}
+ body.lay-s .sensores{grid-template-columns:repeat(auto-fit,minmax(110px,1fr))}
+ body.lay-s .fila .nom em{font-size:0;padding:0;width:8px;height:8px;border-radius:50%;display:inline-block;vertical-align:2px;box-shadow:0 0 8px var(--amb)}
+@@ -372,10 +415,11 @@ body.lay-s #hdrMid{font-size:11px}
+ /* ---------- Teléfono estrecho ---------- */
+ @media (max-width:360px){.fila{grid-template-columns:22px minmax(0,1fr) minmax(56px,29%) 42px;gap:6px;padding:4px 8px}.fila .nom{font-size:13.5px;letter-spacing:-.01em}.sensores{grid-template-columns:repeat(auto-fit,minmax(86px,1fr))}.sen .n{font-size:11px;letter-spacing:.04em}#back{padding:0 10px 0 9px;font-size:11px}#hdrMid{font-size:11px;letter-spacing:.08em}
+   .acciones .ab{min-width:50px;padding:0}.acciones .ab span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}}
+-@media (max-height:700px) and (max-aspect-ratio:1/1){#s-juego{grid-template-rows:auto minmax(64px,20%) minmax(0,1fr) auto auto}.sen{min-height:52px;padding:5px 8px}.rep,.ab{min-height:48px}}
++@media (max-height:700px) and (max-aspect-ratio:1/1){#s-juego{grid-template-rows:auto minmax(64px,20%) minmax(0,1fr) auto auto}.sen{min-height:52px;padding:5px 8px}.rep,.ab{min-height:48px}.rep-info .ri-s{display:none}.leyenda{display:none}}
+ 
+ /* ---------- Superposiciones ---------- */
+-.ov{position:fixed;inset:0;z-index:50;display:none;align-items:center;justify-content:center;padding:calc(12px + var(--sat)) calc(12px + var(--sar)) calc(12px + var(--sab)) calc(12px + var(--sal));background:rgba(5,1,8,.62);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);overflow-y:auto;touch-action:pan-y}
++.ov{position:fixed;inset:0;z-index:50;display:none;align-items:center;justify-content:center;padding:calc(12px + var(--sat)) calc(12px + var(--sar)) calc(12px + var(--sab)) calc(12px + var(--sal));background:rgba(5,1,8,.62);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);overflow-y:auto;touch-action:pan-y pinch-zoom}
++#ov-confirm{z-index:55}
+ .ov.on{display:flex;animation:fade .2s}
+ @keyframes fade{from{opacity:0}}
+ .ov .card{animation:pop .26s cubic-bezier(.2,1.25,.4,1);margin:auto}
+@@ -412,9 +456,16 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
+ .res-air{text-align:center}
+ .res-air b{display:block;font:800 52px/1 var(--mono);font-variant-numeric:tabular-nums}
+ .res-air span{font:700 11px var(--mono);letter-spacing:.14em;color:var(--dim)}
++.stars-w{display:flex;flex-direction:column;align-items:center;gap:4px}
+ .stars{display:flex;gap:8px}
+ .stars svg{width:40px;height:40px;opacity:.16;transform:scale(.6) rotate(-20deg);transition:opacity .3s,transform .5s cubic-bezier(.2,1.6,.4,1)}
+ .stars svg.on{opacity:1;transform:none}
++.stars-txt{font:700 12px var(--mono);letter-spacing:.06em;color:var(--dim);text-align:center}
++/* PLAY-TELEMETRIA-06: explicación de la métrica y de los umbrales reales */
++.est-ayuda{margin:14px 0 0;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid var(--line);font-size:13px;line-height:1.45;color:var(--dim)}
++.est-ayuda b{color:var(--ink);font-family:var(--mono);font-size:13px}
++.est-ayuda ul{margin:6px 0 0;padding-left:18px}
++.est-ayuda li{margin:2px 0}
+ .acc{position:relative;width:86px;height:86px}
+ .acc svg{width:86px;height:86px;transform:rotate(-90deg)}
+ .acc circle{fill:none;stroke-width:7}
+@@ -430,7 +481,9 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
+ .lineas .calc{color:var(--dim);font:600 12px var(--mono)}
+ .repl h4{margin:16px 0 4px;font:700 11px var(--mono);letter-spacing:.14em;color:var(--dim)}
+ .repl p.h{font-size:13px;color:var(--dim)}
+-.tl{display:flex;gap:6px;overflow-x:auto;padding:10px 2px;touch-action:pan-x;scrollbar-width:thin}
++.tl{display:flex;gap:6px;overflow-x:auto;padding:10px 2px;touch-action:pan-x pinch-zoom;scrollbar-width:thin}
++#rAna{margin-top:14px}
++.repl[hidden]{display:none}
+ .tc{flex:none;min-width:48px;min-height:48px;border-radius:12px;border:1px solid var(--line2);background:rgba(255,255,255,.04);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;font:700 11px var(--mono);color:var(--dim);padding:2px 6px}
+ .tc span{font-size:17px;line-height:1}
+ .tc.warn{border-color:var(--amb);background:rgba(255,176,32,.1);color:var(--amb)}
+@@ -453,7 +506,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
+ /* ---------- Cómo jugar ---------- */
+ .how{overflow:hidden}
+ .slides-w{overflow:hidden}
+-.slides{display:flex;transition:transform .3s var(--ease);touch-action:pan-y}
++.slides{display:flex;transition:transform .3s var(--ease);touch-action:pan-y pinch-zoom}
+ .slide{flex:0 0 100%;min-width:0;padding:2px}
+ .slide h3{font-size:19px;font-weight:700;margin:4px 0 6px}
+ .slide p{color:var(--dim);font-size:14.5px;line-height:1.45;min-height:42px}
+diff --git a/site/telemetria/src/textos.js b/site/telemetria/src/textos.js
+index 880fe33..fe6cd91 100644
+--- a/site/telemetria/src/textos.js
++++ b/site/telemetria/src/textos.js
+@@ -1,17 +1,30 @@
+-/* JET//Telemetría — todos los textos (español neutro de tú / inglés neutro). DISENO.md §12. */
++/* JET//Telemetría — todos los textos (español neutro de tú; las cadenas de la auditoría 2026-10-22 llegan en es-AR con voseo / inglés neutro). DISENO.md §12. */
+ var T = {
+   es: {
+     title: 'JET//Telemetría', tagline: 'Los instrumentos a veces mienten. El aire no.',
+-    back: 'JET//Games', start: 'Empezar', continueCase: 'Continuar caso {c}', continueAir: '{a} min de aire',
++    back: 'Volver a los juegos', start: 'Empezar', continueCase: 'Continuar caso {c}', continueAir: '{a} min de aire',
+     campaign: 'Campaña', campaignNext: 'Continuar campaña', caseN: 'Caso {c}', daily: 'Caso del día #{n}', dailyShort: 'Caso del día',
+     dailyPending: 'Pendiente', dailyDoneShort: 'Hecho', streak: 'Racha {n}', practice: 'Práctica', how: 'Cómo jugar', settings: 'Ajustes',
+     fullscreen: 'Pantalla completa', exitFullscreen: 'Salir de pantalla completa', stars: 'Estrellas', chapter: 'Capítulo {n}',
+     lockedDaily: 'Termina el caso 1-3 para abrirlo', lockedPractice: 'Termina el caso 1-3 para abrirlo',
+     air: 'AIRE', min: 'MIN', minShort: 'min', caseLabel: 'CASO {c}', dailyLabel: 'DIARIO #{n}', practiceLabel: 'PRÁCTICA',
+-    pause: 'Pausa', resume: 'Continuar', restart: 'Reiniciar caso', restartSure: '¿Seguro? Se pierde esta partida', quit: 'Salir al inicio', quitNote: 'La partida queda guardada.',
++    pause: 'Pausa', resume: 'Reanudar partida', restart: 'Reiniciar caso', restartSure: 'Se pierde el intento actual de este caso. La campaña y las estrellas ya ganadas no cambian.', quit: 'Volver al menú', quitNote: 'La partida queda guardada.',
++    cancel: 'Cancelar',
+     pick: 'Elige primero un sistema', pickZone: 'Elige primero una zona', pickRepair: 'Elige un sistema',
+     sensorWrongPoint: 'Este sensor lee un sistema: elige uno', sensorWrongZone: 'Este sensor lee una zona entera: elige Proa, Centro o Popa',
+     read: 'Leer', repair: 'Reparar', repairHold: 'Mantén pulsado', repairHoldTip: 'Mantén pulsado Reparar hasta llenar el círculo', repairDouble: 'Toca dos veces', repairMiss: 'fallo −{x}', noAir: 'Te quedarías sin aire',
++    // SRC-TE01 / PLAY-TELEMETRIA-01..04 · costes totales alternativos, saldos hipotéticos y rótulos (sólo datos visibles, nunca la avería real)
++    measure: 'Medir · {c} min de aire', repairTarget: 'Reparar {sistema}',
++    repairCosts: 'Si está averiado: −{coste_acierto} min. Si está sano: −{coste_error} min en total.',
++    holdConfirm: 'Mantené pulsado para confirmar.', airThinking: 'El aire se consume al actuar, no mientras pensás.',
++    airRule: 'El aire se consume al realizar acciones; no es una cuenta regresiva en tiempo real.',
++    airScenarios: 'Si hay avería, quedarían {aire_final_acierto} min. Si no hay avería, quedarían {aire_final_error} min. Llegar a 0 min o menos termina la partida.',
++    airRiskEven: 'Esta acción agota el aire incluso si acertás.', repairNoAir: 'Reparaste {sistema}, pero agotaste el aire.',
++    chooseTarget: 'Elegí un objetivo para continuar.', insufficient: 'No tenés aire suficiente para esta acción.',
++    selectedSystem: 'Sistema seleccionado: {sistema}', selectedTarget: 'Objetivo seleccionado: {objetivo}', selectSystem: 'Seleccionar sistema',
++    faultProb: 'Probabilidad de avería', lastReading: 'Última lectura: {resultado}', readingProb: '{porcentaje} % de probabilidad según las lecturas',
++    highestProb: 'Mayor probabilidad', legendAlert: '▲ Alerta', legendNormal: '○ Normal',
++    showAll: 'Mostrar todo', closeAdvice: 'Cerrar consejo', closeOra: 'Cerrar consejo de ORA', closeLog: 'Cerrar registro',
+     alert: 'ALERTA', normal: 'NORMAL', likely: 'PROBABLE', repaired: 'REPARADO', discarded: 'DESCARTADO',
+     reliab: 'Acierta {k} de cada 10', costMin: '{c} MIN', damagedTag: 'DAÑADO', doubtfulTag: 'DUDOSO', trust: 'Confianza en el sensor',
+     jumpy: 'Nunca se le escapa una avería, pero 3 de cada 10 veces grita sin motivo.',
+@@ -20,19 +33,26 @@ var T = {
+     damaged: 'Sobretensión: daño en {s}', doubtful: '{s}: quizá no funciona (1 de 2)',
+     faults: 'Averías detectadas: {n}', faultsLeft: 'Averías: {n} · reparadas: {r}',
+     zones: ['PROA', 'CENTRO', 'POPA'], zoneNames: ['Proa', 'Centro', 'Popa'],
+-    log: 'Registro', logEmpty: 'Todavía no hay lecturas.', hint: 'Pista', hintCost: 'La pista cuesta la tercera estrella de este caso.', hintShow: 'Ver pista',
++    log: 'Registro', logEmpty: 'Todavía no hay lecturas.', hint: 'Pista', hintCost: 'Si usás pista, podés obtener como máximo 2 estrellas.', hintShow: 'Ver pista · máximo 2 estrellas en este caso',
+     hintRead: 'El piloto automático leería {s} con {x}.', hintReadZone: 'El piloto automático barrería la zona {s}.', hintRepair: 'El piloto automático repararía {s} ahora.',
+     thinking: 'Calculando…',
+     brief: 'PARTE DE AVERÍA', briefCase: 'PARTE DE AVERÍA · CASO {c}', briefDaily: 'PARTE DE AVERÍA · CASO DEL DÍA #{n}', briefPractice: 'PARTE DE AVERÍA · PRÁCTICA',
+     symptom: 'Síntoma', systems: 'Sistemas a bordo', sensors: 'Sensores', airStart: 'Aire inicial', repairCost: 'Reparar', repairCostV: '{r} min · si fallas −{x} min',
++    repairCostBrief: 'Si está averiado: −{coste_acierto} min. Si está sano: −{coste_error} min en total.',
+     logbook: 'Bitácora', logbookLine: '{s} falló {n} veces en este viaje', enter: 'Entrar en cabina', newTag: 'NUEVO', seed: 'Semilla {s}',
+     win: 'SISTEMA RESTABLECIDO', lose: 'SIN AIRE', wasBroken: 'Pieza averiada: {s}', wereBroken: 'Piezas averiadas: {s}',
+-    finalAir: 'Aire final', ref: 'Aire esperado del piloto automático', lostDec: 'Aire perdido por tus decisiones', luck: 'Suerte', badLuck: 'Mala suerte',
+-    unluckyBadge: 'Mala suerte de manual', accuracy: 'Precisión de mando', quick: 'estimación rápida', replay: 'Repetición comentada', replayHint: 'Toca una acción para ver qué pensaba el piloto automático.',
+-    next: 'Siguiente', again: 'Otra vez', share: 'Compartir', map: 'Mapa', home: 'Inicio', practiceThis: 'Practicar este caso', notCounted: 'No cuenta para el caso del día.',
+-    dailyDone: 'Ya resolviste el caso de hoy. El próximo llega en {t}', copied: 'Copiado ✓', copyFail: 'Copia este texto:',
++    finalAir: 'Aire final', ref: 'Estimación del piloto automático', lostDec: 'Aire perdido por tus decisiones', luck: 'Suerte', badLuck: 'Mala suerte',
++    unluckyBadge: 'Mala suerte de manual', accuracy: 'Puntaje de decisiones', quick: 'estimación rápida', replay: 'Repetición comentada', replayHint: 'Toca una acción para ver qué pensaba el piloto automático.',
++    // PLAY-TELEMETRIA-05/06 · SRC-TE02 · resultado
++    next: 'Siguiente caso', again: 'Otra vez', retry: 'Reintentar caso', replayCase: 'Repetir caso', otherCase: 'Elegir otro caso', analysis: 'Ver análisis de decisiones', campaign2: 'Ver campaña',
++    earnedStars: '{estrellas} de 3 estrellas', decScore: 'Puntaje de decisiones: {prec}/100', decScorePending: 'Calculando puntaje de decisiones…',
++    decScoreHelp: 'Compara tus decisiones con las opciones evaluadas por el piloto automático según la información disponible en cada paso. Es una estimación, no un porcentaje de diagnósticos acertados.',
++    starThreshold: 'Para {objetivo} estrellas: ganá el caso y alcanzá un puntaje de decisiones de al menos {umbral_precision}/100.', oneStar: 'Para 1 estrella: ganá el caso.',
++    tutStars: 'En este tutorial: 3 estrellas si ganás; 0 si perdés.',
++    share: 'Compartir resultado', map: 'Ver campaña', home: 'Volver al menú', practiceThis: 'Practicar este caso', notCounted: 'No cuenta para el caso del día.',
++    dailyDone: 'Ya resolviste el caso de hoy. El próximo llega en {t}', copied: 'Texto copiado', copyFail: 'No pudimos copiarlo automáticamente. Seleccioná y copiá este texto.', copyText: 'Copiar texto',
+     noSave: 'Tu progreso no se guardará en este navegador',
+-    locked: 'Gana 4 casos del capítulo anterior', lockedFinal: 'Gana 4 casos del capítulo 8',
++    locked: 'Bloqueado: ganá {cantidad} casos del capítulo anterior.', lockedFinal: 'Bloqueado: ganá {cantidad} casos del capítulo anterior.',
+     veteran: 'Modo Veterano', veteranDesc: 'Sin barras, solo tus lecturas', veteranLocked: 'Se abre al terminar el capítulo 4',
+     practiceTitle: 'Práctica', practiceDesc: 'Casos nuevos de cualquier capítulo abierto. No cambian tu campaña.', practiceEmpty: 'Abre capítulos en la campaña para practicarlos aquí.',
+     mapTitle: 'Regreso a casa', mapSub: '{s} de {t} estrellas', finalCase: 'Reentrada', chapterDone: 'Capítulo completo',
+@@ -40,6 +60,8 @@ var T = {
+     music: 'Música', sfx: 'Efectos', vibration: 'Vibración', language: 'Idioma', percents: 'Mostrar porcentajes', copilot: 'Copiloto ORA',
+     reducedMotion: 'Movimiento reducido', contrast: 'Contraste alto', doubleTap: 'Reparar con doble toque', volume: 'Volumen',
+     erase: 'Borrar progreso', eraseAll: '¿Borrar todo? Toca otra vez', eraseHold: 'Mantén pulsado 2 s para borrar todo', erased: 'Progreso borrado',
++    eraseTitle: '¿Borrar todo el progreso de {juego}?', eraseBody: 'Se borrarán {datos}. Esta acción no se puede deshacer.',
++    eraseData: 'la campaña (estrellas, puntajes e intentos), el caso del día con su racha y la partida guardada',
+     close: 'Cerrar', on: 'Sí', off: 'No',
+     // ORA
+     ora: 'ORA',
+@@ -95,7 +117,7 @@ var T = {
+     how3t: 'Los sensores a veces mienten', how3: 'Nueve de cada diez lecturas dicen la verdad. Una no. Por eso conviene repetir.',
+     how4t: 'Repara cuando estés seguro', how4: 'Mantén pulsado Reparar. Si fallas, pierdes mucho aire.', how4ok: '¡Reparado!',
+     // ventana aria
+-    ariaRead: '{x} sobre {s}: {o}. Sospecha de {s} {p}.', ariaReadZone: '{x} sobre {s}: {o}.', ariaRepairOk: '{s}: reparación correcta.', ariaRepairKo: '{s} funcionaba bien. Pierdes {d} minutos.',
++    ariaRead: '{x} sobre {s}: {o}. Sospecha de {s} {p}.', ariaReadZone: '{x} sobre {s}: {o}.', ariaRepairOk: 'Avería reparada: {s}.', ariaRepairKo: '{s} funcionaba bien. Pierdes {d} minutos.',
+     pctOf: '{p} %', calc: 'Calculando…', updated: 'Nueva versión',
+     // sistemas y sensores
+     sys: { prop: 'Propulsión', nav: 'Navegación', radar: 'Radar', energia: 'Energía', refri: 'Refrigeración', comms: 'Comunicaciones', giro: 'Giroscopios', vital: 'Soporte vital', escudo: 'Escudo térmico', acople: 'Acople' },
+@@ -111,16 +133,28 @@ var T = {
+   },
+   en: {
+     title: 'JET//Telemetry', tagline: "Instruments sometimes lie. The air doesn't.",
+-    back: 'JET//Games', start: 'Start', continueCase: 'Continue case {c}', continueAir: '{a} min of air',
++    back: 'Back to games', start: 'Start', continueCase: 'Continue case {c}', continueAir: '{a} min of air',
+     campaign: 'Campaign', campaignNext: 'Continue campaign', caseN: 'Case {c}', daily: 'Daily case #{n}', dailyShort: 'Daily case',
+     dailyPending: 'Pending', dailyDoneShort: 'Done', streak: 'Streak {n}', practice: 'Practice', how: 'How to play', settings: 'Settings',
+     fullscreen: 'Full screen', exitFullscreen: 'Exit full screen', stars: 'Stars', chapter: 'Chapter {n}',
+     lockedDaily: 'Finish case 1-3 to unlock it', lockedPractice: 'Finish case 1-3 to unlock it',
+     air: 'AIR', min: 'MIN', minShort: 'min', caseLabel: 'CASE {c}', dailyLabel: 'DAILY #{n}', practiceLabel: 'PRACTICE',
+-    pause: 'Paused', resume: 'Resume', restart: 'Restart case', restartSure: 'Sure? This run will be lost', quit: 'Quit to menu', quitNote: 'Your run is saved.',
++    pause: 'Paused', resume: 'Resume game', restart: 'Restart case', restartSure: 'The current attempt at this case will be lost. Your campaign and the stars you already earned do not change.', quit: 'Back to menu', quitNote: 'Your run is saved.',
++    cancel: 'Cancel',
+     pick: 'Pick a system first', pickZone: 'Pick a zone first', pickRepair: 'Pick a system',
+     sensorWrongPoint: 'This sensor reads one system: pick one', sensorWrongZone: 'This sensor reads a whole zone: pick Bow, Mid or Stern',
+     read: 'Read', repair: 'Repair', repairHold: 'Hold', repairHoldTip: 'Hold Repair until the ring fills up', repairDouble: 'Tap twice', repairMiss: 'miss −{x}', noAir: 'You would run out of air',
++    measure: 'Measure · {c} min of air', repairTarget: 'Repair {sistema}',
++    repairCosts: 'If faulty: −{coste_acierto} min. If healthy: −{coste_error} min in total.',
++    holdConfirm: 'Press and hold to confirm.', airThinking: 'Air is used when you act, not while you think.',
++    airRule: 'Air is used when you take actions; it is not a real-time countdown.',
++    airScenarios: 'If there is a fault, {aire_final_acierto} min would remain. If there is no fault, {aire_final_error} min would remain. Reaching 0 min or less ends the game.',
++    airRiskEven: 'This action uses up your air even if you repair the faulty system.', repairNoAir: 'You repaired {sistema}, but ran out of air.',
++    chooseTarget: 'Choose a target to continue.', insufficient: 'You don’t have enough air for this action.',
++    selectedSystem: 'Selected system: {sistema}', selectedTarget: 'Selected target: {objetivo}', selectSystem: 'Select a system',
++    faultProb: 'Fault probability', lastReading: 'Last reading: {resultado}', readingProb: '{porcentaje}% probability based on the readings',
++    highestProb: 'Highest probability', legendAlert: '▲ Alert', legendNormal: '○ Normal',
++    showAll: 'Show all', closeAdvice: 'Close advice', closeOra: 'Close ORA’s advice', closeLog: 'Close log',
+     alert: 'ALERT', normal: 'NORMAL', likely: 'LIKELY', repaired: 'REPAIRED', discarded: 'RULED OUT',
+     reliab: 'Right {k} times out of 10', costMin: '{c} MIN', damagedTag: 'DAMAGED', doubtfulTag: 'DOUBTFUL', trust: 'Trust in this sensor',
+     jumpy: 'Never misses a fault, but 3 times out of 10 it cries wolf.',
+@@ -129,25 +163,33 @@ var T = {
+     damaged: 'Power surge: {s} damaged', doubtful: '{s} may be broken (1 in 2)',
+     faults: 'Faults detected: {n}', faultsLeft: 'Faults: {n} · repaired: {r}',
+     zones: ['BOW', 'MID', 'STERN'], zoneNames: ['Bow', 'Mid', 'Stern'],
+-    log: 'Log', logEmpty: 'No readings yet.', hint: 'Hint', hintCost: "A hint costs this case's third star.", hintShow: 'Show hint',
++    log: 'Log', logEmpty: 'No readings yet.', hint: 'Hint', hintCost: 'If you use a hint, you can get at most 2 stars.', hintShow: 'View hint · maximum 2 stars for this case',
+     hintRead: 'The autopilot would read {s} with {x}.', hintReadZone: 'The autopilot would sweep the {s} zone.', hintRepair: 'The autopilot would repair {s} now.',
+     thinking: 'Thinking…',
+     brief: 'FAULT REPORT', briefCase: 'FAULT REPORT · CASE {c}', briefDaily: 'FAULT REPORT · DAILY CASE #{n}', briefPractice: 'FAULT REPORT · PRACTICE',
+     symptom: 'Symptom', systems: 'Systems on board', sensors: 'Sensors', airStart: 'Starting air', repairCost: 'Repair', repairCostV: '{r} min · if you miss −{x} min',
++    repairCostBrief: 'If faulty: −{coste_acierto} min. If healthy: −{coste_error} min in total.',
+     logbook: 'Logbook', logbookLine: '{s} failed {n} times on this trip', enter: 'Enter the cockpit', newTag: 'NEW', seed: 'Seed {s}',
+     win: 'SYSTEM RESTORED', lose: 'OUT OF AIR', wasBroken: 'The broken part was: {s}', wereBroken: 'The broken parts were: {s}',
+-    finalAir: 'Final air', ref: "Autopilot's expected air", lostDec: 'Air lost to your decisions', luck: 'Luck', badLuck: 'Bad luck',
+-    unluckyBadge: 'Textbook bad luck', accuracy: 'Command accuracy', quick: 'quick estimate', replay: 'Annotated replay', replayHint: 'Tap an action to see what the autopilot was thinking.',
+-    next: 'Next', again: 'Again', share: 'Share', map: 'Map', home: 'Home', practiceThis: 'Practice this case', notCounted: "Doesn't count for the daily case.",
+-    dailyDone: "You've solved today's case. The next one arrives in {t}", copied: 'Copied ✓', copyFail: 'Copy this text:',
++    finalAir: 'Final air', ref: 'Autopilot estimate', lostDec: 'Air lost to your decisions', luck: 'Luck', badLuck: 'Bad luck',
++    unluckyBadge: 'Textbook bad luck', accuracy: 'Decision score', quick: 'quick estimate', replay: 'Annotated replay', replayHint: 'Tap an action to see what the autopilot was thinking.',
++    next: 'Next case', again: 'Again', retry: 'Retry case', replayCase: 'Replay case', otherCase: 'Choose another case', analysis: 'View decision analysis', campaign2: 'View campaign',
++    earnedStars: '{estrellas} of 3 stars', decScore: 'Decision score: {prec}/100', decScorePending: 'Calculating decision score…',
++    decScoreHelp: 'Compares your decisions with the options evaluated by the autopilot using the information available at each step. It is an estimate, not the percentage of correct diagnoses.',
++    starThreshold: 'For {objetivo} stars: win the case and reach a decision score of at least {umbral_precision}/100.', oneStar: 'For 1 star: win the case.',
++    tutStars: 'In this tutorial: 3 stars if you win; 0 if you lose.',
++    share: 'Share result', map: 'View campaign', home: 'Back to menu', practiceThis: 'Practice this case', notCounted: "Doesn't count for the daily case.",
++    dailyDone: "You've solved today's case. The next one arrives in {t}", copied: 'Text copied', copyFail: 'We couldn’t copy it automatically. Select and copy this text.', copyText: 'Copy text',
+     noSave: "Your progress won't be saved in this browser",
+-    locked: 'Win 4 cases in the previous chapter', lockedFinal: 'Win 4 cases in chapter 8',
++    locked: 'Locked: win {cantidad} cases in the previous chapter.', lockedFinal: 'Locked: win {cantidad} cases in the previous chapter.',
+     veteran: 'Veteran mode', veteranDesc: 'No bars, just your readings', veteranLocked: 'Unlocks after chapter 4',
+     practiceTitle: 'Practice', practiceDesc: "New cases from any open chapter. They don't change your campaign.", practiceEmpty: 'Open chapters in the campaign to practice them here.',
+     mapTitle: 'The way home', mapSub: '{s} of {t} stars', finalCase: 'Re-entry', chapterDone: 'Chapter complete',
+     music: 'Music', sfx: 'Sound effects', vibration: 'Vibration', language: 'Language', percents: 'Show percentages', copilot: 'ORA copilot',
+     reducedMotion: 'Reduced motion', contrast: 'High contrast', doubleTap: 'Repair with a double tap', volume: 'Volume',
+-    erase: 'Erase progress', eraseAll: 'Erase everything? Tap again', eraseHold: 'Hold for 2 s to erase everything', erased: 'Progress erased',
++    erase: 'Delete progress', eraseAll: 'Erase everything? Tap again', eraseHold: 'Hold for 2 s to erase everything', erased: 'Progress deleted',
++    eraseTitle: 'Delete all progress in {juego}?', eraseBody: '{datos} will be deleted. This cannot be undone.',
++    eraseData: 'The campaign (stars, scores and attempts), the daily case with its streak, and the saved game',
+     close: 'Close', on: 'On', off: 'Off',
+     ora: 'ORA',
+     ora1: 'One of these four parts is broken. Tap Radar.',
+@@ -198,7 +240,7 @@ var T = {
+     how2t: 'Read with a sensor', how2: 'Pick a system and tap a sensor. Watch the bars move.', how2b: 'Tap the probe',
+     how3t: 'Sensors sometimes lie', how3: "Nine readings out of ten tell the truth. One doesn't. That's why repeating helps.",
+     how4t: 'Repair when you are sure', how4: 'Hold Repair. If you miss, you lose a lot of air.', how4ok: 'Repaired!',
+-    ariaRead: '{x} on {s}: {o}. Suspicion of {s} {p}.', ariaReadZone: '{x} on {s}: {o}.', ariaRepairOk: '{s} repaired.', ariaRepairKo: '{s} was fine. You lose {d} minutes.',
++    ariaRead: '{x} on {s}: {o}. Suspicion of {s} {p}.', ariaReadZone: '{x} on {s}: {o}.', ariaRepairOk: 'Fault repaired: {s}.', ariaRepairKo: '{s} was fine. You lose {d} minutes.',
+     pctOf: '{p}%', calc: 'Thinking…', updated: 'New version',
+     sys: { prop: 'Propulsion', nav: 'Navigation', radar: 'Radar', energia: 'Power', refri: 'Cooling', comms: 'Comms', giro: 'Gyroscopes', vital: 'Life support', escudo: 'Heat shield', acople: 'Docking' },
+     sen: { SONDA: 'Precision probe', RAPIDO: 'Quick scan', ZONA: 'Zone sweep', ALARMISTA: 'Jumpy detector', PRUDENTE: 'Cautious detector' },
+diff --git a/site/telemetria/src/ui.js b/site/telemetria/src/ui.js
+index 69ae1bf..bb0c0c4 100644
+--- a/site/telemetria/src/ui.js
++++ b/site/telemetria/src/ui.js
+@@ -14,7 +14,10 @@
+   function lset(k, v) { try { localStorage.setItem(PFX + k, JSON.stringify(v)); } catch (e) {} }
+   function ldel(k) { try { localStorage.removeItem(PFX + k); } catch (e) {} }
+ 
+-  var PDEF = { v: 1, music: true, musicVol: 0.7, sfx: true, sfxVol: 0.85, vib: true, lang: null, pct: false, ora: true, rm: null, hc: false, dbl: false };
++  // PLAY-TELEMETRIA-01: los porcentajes se muestran por defecto (una preferencia guardada sigue mandando)
++  var PDEF = { v: 1, music: true, musicVol: 0.7, sfx: true, sfxVol: 0.85, vib: true, lang: null, pct: true, ora: true, rm: null, hc: false, dbl: false };
++  // Umbrales vigentes (ui.js 839) y regla de apertura de capítulos (capAbierto): se leen desde acá para que texto y cálculo nunca diverjan
++  var UMBRAL_EST = { 2: 80, 3: 95 }, GANAR_PARA_ABRIR = 4, MAX_EST_PISTA = 2;
+   var P = Object.assign({}, PDEF, lget('prefs', {}));
+   /* Idioma: una sola elección para todo jetgames.fun (src/jet-idioma.js). El idioma propio que guardaba este juego
+      (P.lang) se migró a jet_lang en index.html y ya no se usa. */
+@@ -24,7 +27,7 @@
+   function guardarPrefs() { lset('prefs', P); }
+   function t(k, v) {
+     var s = T[L][k]; if (s === undefined) s = T.es[k];
+-    if (typeof s === 'string' && v) s = s.replace(/\{(\w+)\}/g, function (m, x) { return v[x] != null ? v[x] : m; });
++    if (typeof s === 'string' && v) s = s.replace(/\{([^{}]+)\}/g, function (m, x) { return v[x] != null ? v[x] : m; });
+     return s;
+   }
+   window.TXT = function (k) { return T[L][k]; };
+@@ -87,7 +90,7 @@
+     return { modo: 'diario', id: 'D' + num, tpl: tpl.id, s: e[0], a: e[1], num: num, fecha: f };
+   }
+   function ganados(cap) { return CASOS.capitulo(cap).filter(function (x) { return (PR.est[x.id] || 0) > 0; }).length; }
+-  function capAbierto(cap) { return cap === 1 || (cap === 9 ? ganados(8) >= 4 : ganados(cap - 1) >= 4); }
++  function capAbierto(cap) { return cap === 1 || (cap === 9 ? ganados(8) >= GANAR_PARA_ABRIR : ganados(cap - 1) >= GANAR_PARA_ABRIR); }
+   function vetAbierto() { return ganados(4) >= 4; }
+   function estrellasTot() { var s = 0; for (var k in PR.est) s += PR.est[k] || 0; return s; }
+   function capActual() { for (var c = 8; c >= 1; c--) if (capAbierto(c)) return c; return 1; }
+@@ -125,11 +128,14 @@
+     document.documentElement.lang = L;
+     AUDIO.setPrefs({ music: P.music, musicVol: P.musicVol, sfx: P.sfx, sfxVol: P.sfxVol });
+     $$('[data-t]').forEach(function (el) { el.textContent = t(el.getAttribute('data-t')); });
++    $$('[data-ta]').forEach(function (el) { el.setAttribute('aria-label', t(el.getAttribute('data-ta'))); el.title = t(el.getAttribute('data-ta')); });
+     $('#bAjustes').setAttribute('aria-label', t('settings'));
+     $('#bPausa').setAttribute('aria-label', t('pause'));
+     $('#bFs').setAttribute('aria-label', enFS() ? t('exitFullscreen') : t('fullscreen'));
++    $('#back').setAttribute('aria-label', t('back'));
+     $('#bLog').setAttribute('aria-label', t('log')); $('#bPista').setAttribute('aria-label', t('hint'));
+-    $('#s-inicio').setAttribute('aria-label', t('home'));
++    $('#s-inicio').setAttribute('aria-label', t('title'));
++    $('#gAire').title = t('airRule');
+     document.title = t('title') + ' · ' + t('tagline').replace(/\.$/, '');
+   }
+ 
+@@ -185,15 +191,75 @@
+     if (id !== 'juego') { cerrarHoja(); MUSICA.respirar(false); }
+     MUSICA.tema(id === 'juego' ? 'juego' : 'menu');
+     var s = $('#s-' + id); if (s) s.scrollTop = 0;
+-    setTimeout(function () { var f = $('#s-' + id + ' .btn.pri, #s-' + id + ' button'); if (f && document.activeElement === document.body && !matchMedia('(pointer:coarse)').matches) f.focus({ preventScroll: true }); }, 60);
++    // RSP-MODALS-01: si el foco quedó en el cuerpo (el control anterior desapareció), va al primer control lógico de la pantalla revelada,
++    // sin condicionarlo al tipo de puntero (un táctil puede tener teclado)
++    setTimeout(function () { var f = $('#s-' + id + ' [data-foco]') || $('#s-' + id + ' .btn.pri, #s-' + id + ' button'); if (f && (document.activeElement === document.body || !visibleEl(document.activeElement))) f.focus({ preventScroll: true }); }, 60);
+     dibujar(true);
+   }
+-  function abrirOv(id) {
++  /* ---------- RSP-MODALS-01: superposiciones con activador, fondo inerte, nombre, ciclo de Tab y retorno de foco ---------- */
++  var ovPila = []; // una entrada por capa abierta: { id, act (elemento activador), actId }
++  var FOCUSABLE = 'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
++  function visibleEl(n) { return !!n && n.isConnected && !n.closest('[hidden]') && n.getClientRects().length > 0 && !n.closest('[inert]'); }
++  function focusables(raiz) { return $$(FOCUSABLE, raiz).filter(function (n) { return visibleEl(n) && n.getAttribute('aria-hidden') !== 'true'; }); }
++  function fondoInerte() {
++    var on = !!ovAbierto, hoja = $('#sheet').classList.contains('on');
++    ['#hdr', '#s-inicio', '#s-mapa', '#s-practica', '#s-brief', '#s-juego', '#s-res', '#carga'].forEach(function (s) { var e = $(s); if (e) e.inert = on || hoja; });
++    $('#sheet').inert = on; // la hoja del registro queda detrás de pausa/ajustes
++  }
++  function nombrarDialogo(ov) {
++    var h = $('h2,h3', ov); if (!h) { ov.removeAttribute('aria-labelledby'); return; }
++    if (!h.id) h.id = ov.id + '-t';
++    ov.setAttribute('aria-labelledby', h.id);
++  }
++  function abrirOv(id, activador) {
++    var act = activador || document.activeElement, ov = $('#ov-' + id);
++    var top = ovPila[ovPila.length - 1];
++    // se reabre la misma capa (Ajustes vuelve a Pausa): se conserva su activador original
++    if (!top || top.id !== id) ovPila.push({ id: id, act: (act && act !== document.body && !ov.contains(act)) ? act : null, actId: act && act.id });
+     $$('.ov').forEach(function (o) { o.classList.toggle('on', o.id === 'ov-' + id); });
+     ovAbierto = id; sfx('panel');
+-    setTimeout(function () { var f = $('#ov-' + id + ' .btn.pri') || $('#ov-' + id + ' button'); if (f) f.focus({ preventScroll: true }); }, 40);
++    nombrarDialogo(ov); fondoInerte();
++    setTimeout(function () {
++      if (ovAbierto !== id || ov.contains(document.activeElement)) return;
++      var f = $('[data-foco]', ov) || $('.btn.pri', ov) || $('button', ov) || ov;
++      if (f === ov) ov.tabIndex = -1;
++      f.focus({ preventScroll: true });
++    }, 40);
++  }
++  function cerrarOv() {
++    if (!ovAbierto) return;
++    var e = ovPila.pop();
++    $$('.ov').forEach(function (o) { o.classList.remove('on'); }); ovAbierto = null; sfx('panel');
++    fondoInerte();
++    // el foco vuelve al activador en el siguiente tick: quien cierra puede reabrir otra capa (Ajustes → Pausa)
++    setTimeout(function () {
++      if (!e) return;
++      if (ovAbierto) { var b = e.actId && $('#' + e.actId); if (b && visibleEl(b) && $('#ov-' + ovAbierto).contains(b)) b.focus({ preventScroll: true }); return; }
++      var dest = (e.act && visibleEl(e.act)) ? e.act : (e.actId && visibleEl($('#' + e.actId)) ? $('#' + e.actId) : null);
++      if (dest) dest.focus({ preventScroll: true });
++      else if (pantalla) { var f = $('#s-' + pantalla + ' .btn.pri, #s-' + pantalla + ' button'); if (f && visibleEl(f)) f.focus({ preventScroll: true }); }
++    }, 0);
++  }
++  // Tab y Shift+Tab recorren sólo la capa superior (aria-modal no reemplaza el control de foco)
++  document.addEventListener('keydown', function (e) {
++    if (e.key !== 'Tab') return;
++    var capa = ovAbierto ? $('#ov-' + ovAbierto) : ($('#sheet').classList.contains('on') ? $('#sheet') : null);
++    if (!capa) return;
++    var f = focusables(capa);
++    if (!f.length) { e.preventDefault(); return; }
++    var first = f[0], last = f[f.length - 1], act = document.activeElement;
++    if (e.shiftKey && (act === first || !capa.contains(act))) { e.preventDefault(); last.focus(); }
++    else if (!e.shiftKey && (act === last || !capa.contains(act))) { e.preventDefault(); first.focus(); }
++  }, true);
++  // confirmación explícita y cancelable (SRC-G04): Cancelar con el foco inicial, botón peligro aparte
++  function confirmar(o) {
++    var ov = $('#ov-confirm');
++    ov.innerHTML = '<div class="card"><h2 style="font-size:20px;font-weight:700">' + esc(o.titulo) + '</h2><p class="muted" style="margin:10px 0 16px;font-size:14.5px;line-height:1.45">' + esc(o.texto) + '</p>' +
++      '<div class="row2"><button class="btn" id="cfNo" type="button" data-foco>' + esc(t('cancel')) + '</button><button class="btn red" id="cfSi" type="button">' + esc(o.boton) + '</button></div></div>';
++    abrirOv('confirm');
++    $('#cfNo').onclick = function () { sfx('boton'); cerrarOv(); if (o.cancelar) o.cancelar(); };
++    $('#cfSi').onclick = function () { sfx('boton'); cerrarOv(); o.ok(); };
+   }
+-  function cerrarOv() { $$('.ov').forEach(function (o) { o.classList.remove('on'); }); ovAbierto = null; sfx('panel'); }
+   function toast(msg, ms) { var el = $('#toast'); el.textContent = msg; el.classList.add('on'); clearTimeout(toast.tm); toast.tm = setTimeout(function () { el.classList.remove('on'); }, ms || 2200); }
+   function anunciar(msg) { var a = $('#aria'); a.textContent = ''; setTimeout(function () { a.textContent = msg; }, 30); }
+ 
+@@ -242,12 +308,13 @@
+     for (var c = 1; c <= 9; c++) {
+       var ab = capAbierto(c), lista = c === 9 ? [CASOS.porId.F] : CASOS.capitulo(c);
+       html += '<div class="est' + (ab ? '' : ' lock') + (c === 9 ? ' fin' : '') + '"><h3><span>' + (c === 9 ? 'FINAL' : (L === 'es' ? 'CAP ' : 'CH ') + c) + '</span>' + esc(t('caps')[c - 1]) + '</h3>';
+-      if (!ab) html += '<div class="lk">🔒 ' + esc(c === 9 ? t('lockedFinal') : t('locked')) + '</div>';
++      // PLAY-TELEMETRIA-06: requisito legible, con la cantidad real de la regla de apertura
++      if (!ab) html += '<div class="lk">🔒 ' + esc(t(c === 9 ? 'lockedFinal' : 'locked', { cantidad: GANAR_PARA_ABRIR })) + '</div>';
+       html += '<div class="casos">';
+       lista.forEach(function (x) {
+         var e = (PR.vet && va ? PR.estV[x.id] : PR.est[x.id]) || 0, st = '';
+         for (var k = 0; k < 3; k++) st += k < e ? '<b>★</b>' : '★';
+-        html += '<button class="cb' + (x.id === cur ? ' cur' : '') + '" type="button" data-id="' + x.id + '"' + (ab ? '' : ' disabled') + ' aria-label="' + esc(t('caseN', { c: x.id === 'F' ? t('finalCase') : x.id })) + ', ' + e + ' ★">' + (x.id === 'F' ? esc(t('finalCase')) : x.n) + '<span class="s">' + st + '</span></button>';
++        html += '<button class="cb' + (x.id === cur ? ' cur' : '') + '" type="button" data-id="' + x.id + '"' + (ab ? '' : ' disabled') + ' aria-label="' + esc(t('caseN', { c: x.id === 'F' ? t('finalCase') : x.id })) + ', ' + esc(t('earnedStars', { estrellas: e })) + '">' + (x.id === 'F' ? esc(t('finalCase')) : x.n) + '<span class="s" aria-hidden="true">' + st + '</span></button>';
+       });
+       html += '</div></div>';
+     }
+@@ -296,7 +363,7 @@
+     var html = '<div class="card"><div class="top"><h2>' + esc(t('daily', { n: NUCLEO.numeroDiario(hoy()) })) + '</h2><button class="x" id="dX" type="button" aria-label="' + esc(t('close')) + '">×</button></div>' +
+       '<p class="muted" style="font-size:14.5px">' + esc(t('dailyDone', { t: '' }).replace(/\s*$/, '')) + '</p><div class="cuenta" id="dCta">' + cuentaAtras() + '</div>' +
+       '<div class="lineas"><div><span>' + esc(r.fin === 'win' ? t('win') : t('lose')) + '</span><b class="' + (r.fin === 'win' ? 'pos' : 'neg') + '">' + esc(t('air')) + ' ' + (r.aire || 0) + '/' + (r.aire0 || 0) + '</b></div>' +
+-      (r.prec != null ? '<div><span>' + esc(t('accuracy')) + '</span><b>' + r.prec + (L === 'es' ? ' %' : '%') + '</b></div>' : '') +
++      (r.prec != null ? '<div><span>' + esc(t('accuracy')) + '</span><b>' + r.prec + '/100</b></div>' : '') +
+       '<div><span>' + esc(t('streak', { n: '' }).trim()) + '</span><b>🔥 ' + rachaVis() + '</b></div></div>' +
+       '<div class="res-btns"><button class="btn pri" id="dSh" type="button">' + esc(t('share')) + '</button><button class="btn" id="dPr" type="button">' + esc(t('practiceThis')) + '</button></div></div>';
+     $('#ov-diario').innerHTML = html;
+@@ -321,7 +388,9 @@
+     add('', '\n' + t('symptom').toUpperCase() + ': '); add('w', t('sintomas')[caso.sintoma] + '\n');
+     add('', t('faults', { n: caso.nF }) + '\n');
+     add('', t('airStart').toUpperCase() + ': '); add('w', caso.aire0 + ' MIN\n');
+-    add('', t('repairCost').toUpperCase() + ': '); add('', t('repairCostV', { r: caso.R, x: caso.R + caso.Rx }) + '\n');
++    add('k', t('airRule') + '\n');
++    // SRC-TE01: dos costes TOTALES alternativos (caso.R / caso.R + caso.Rx), nunca el error como «minutos adicionales»
++    add('', t('repairCost').toUpperCase() + ': '); add('', t('repairCostBrief', { coste_acierto: caso.R, coste_error: caso.R + caso.Rx }) + '\n');
+     add('', t('systems').toUpperCase() + ' (' + caso.N + '): '); add('k', caso.sis.map(function (s, q) { return nombreSis(caso, q); }).join(' · ') + '\n');
+     if (caso.bitacora.length) { add('', '\n' + t('logbook').toUpperCase() + '\n'); caso.bitacora.forEach(function (b) { add('w', '· ' + t('logbookLine', { s: nombreSis(caso, b.i), n: b.veces }) + '\n'); }); }
+     caso.sensores.forEach(function (s) { if (s.dudoso) add('w', '\n⚠ ' + t('doubtful', { s: nomSen(s.k) }) + '\n'); });
+@@ -395,15 +464,16 @@
+     $('#nodos').innerHTML = c.sis.map(function (s, q) { return '<button class="nodo" type="button" data-i="' + q + '" aria-label="' + esc(nombreSis(c, q)) + '"><i class="halo"></i>' + svg(s.k) + '</button>'; }).join('');
+     var zs = $('#zonas'); zs.hidden = !c.hayZonas;
+     zs.innerHTML = c.hayZonas ? [2, 1, 0].filter(function (z) { return c.zonas[z]; }).map(function (z) { return '<button class="zb" type="button" data-z="' + z + '">' + esc(t('zones')[z]) + '<span class="chips"></span></button>'; }).join('') : '';
++    // PLAY-TELEMETRIA-07: selección exclusiva como radiogroup (un solo sistema anunciado como seleccionado)
+     $('#filas').innerHTML = c.sis.map(function (s, q) {
+-      return '<div class="fila" role="button" tabindex="0" data-i="' + q + '"><span class="ico">' + svg(s.k) + '</span><span class="nom"><span class="nt">' + esc(nombreSis(c, q)) + '</span></span>' +
++      return '<div class="fila" role="radio" aria-checked="false" tabindex="0" data-i="' + q + '"><span class="ico">' + svg(s.k) + '</span><span class="nom"><span class="nt">' + esc(nombreSis(c, q)) + '</span></span>' +
+         '<span class="barra"><i class="gh"></i><i class="f"></i><i class="pv a"></i><i class="pv n"></i></span><span class="st" hidden></span><span class="chips"></span><span class="pct"></span><span class="lamp"></span></div>';
+     }).join('');
+     $('#sensores').innerHTML = st.sens.map(function (s, q) {
+       var k = c.sensores[q].k;
+       return '<button class="sen" type="button" data-s="' + q + '"><span class="n"><span>' + esc(t('senShort')[k]) + '</span><i>' + s.coste + ' MIN</i></span><span class="dw"></span><span class="d"></span></button>';
+     }).join('');
+-    $('#filas').setAttribute('role', 'group');
++    $('#filas').setAttribute('role', 'radiogroup'); $('#filas').setAttribute('aria-label', t('selectSystem'));
+     G.shown = NUCLEO.marginales(st);
+     $('#bPista').classList.toggle('used', G.pista);
+     document.body.classList.toggle('vet', G.vet);
+@@ -438,27 +508,34 @@
+       if (anim && Math.abs(old - v) > 0.004 && !rmActivo()) {
+         gh.style.transition = 'none'; gh.style.width = (old * 100) + '%'; gh.style.opacity = '1';
+         void gh.offsetWidth; gh.style.transition = '';
+-        setTimeout(function () { gh.style.opacity = '0'; }, 400);
++        setTimeout(function () { gh.style.opacity = '0'; }, 350); // VIS-TELEMETRIA-02: fantasma anterior de 350 ms
+         if (v - old > 0.25) { fi.classList.remove('flash'); void fi.offsetWidth; fi.classList.add('flash'); }
+       }
+       fi.style.width = (v * 100).toFixed(2) + '%';
+       var nom = $('.nom', f), em = $('em', nom);
+-      var lik = v >= 0.8 && !rep && !desc;
+-      if (lik && !em) nom.insertAdjacentHTML('beforeend', '<em>' + esc(t('likely')) + '</em>');
+-      if (!lik && em) em.remove();
+-      if (!!lik !== !!em) ajustarProbable(f);
++      // VIS-TELEMETRIA-01: el estado «top» (ya expuesto por la barra ámbar) se rotula «Mayor probabilidad»; PROBABLE queda para >= 80 % sin ser el máximo
++      var esTop = q === top && tv >= 0.5 && !rep, lik = esTop || (v >= 0.8 && !rep && !desc);
++      var emTxt = esTop ? t('highestProb') : t('likely');
++      if (lik && !em) { nom.insertAdjacentHTML('beforeend', '<em>' + esc(emTxt) + '</em>'); em = $('em', nom); }
++      if (!lik && em) { em.remove(); em = null; }
++      if (em && em.textContent !== emTxt) em.textContent = emTxt;
++      if (!!lik !== !!em || (em && em.dataset.t !== emTxt)) { if (em) em.dataset.t = emTxt; ajustarProbable(f); }
+       $('.pct', f).textContent = (rep || desc) ? '' : pct(v);
+       var mis = lect.filter(function (a) { return a.T === q; }), n = G.vet ? 6 : 3;
+       var ch = $('.chips', f), html = mis.slice(-n).map(function (a, k, arr) { return '<span class="chip ' + a.o + (anim && k === arr.length - 1 && a === lect[lect.length - 1] ? ' nw' : '') + '">' + (a.o === 'A' ? '▲' : '○') + '</span>'; }).join('');
+       if (ch.innerHTML !== html) ch.innerHTML = html;
+-      f.setAttribute('aria-label', nombreSis(c, q) + '. ' + (rep ? t('repaired') : desc ? t('discarded') : pct(v)) + (mis.length ? '. ' + mis.slice(-3).map(function (a) { return a.o === 'A' ? t('alert') : t('normal'); }).join(', ') : ''));
+-      f.setAttribute('aria-pressed', !!(G.sel && G.sel.T === q));
++      // PLAY-TELEMETRIA-01: probabilidad acumulada (según las lecturas) separada de la última lectura; en Veterano no se anuncia la probabilidad oculta
++      var ult = mis.length ? mis[mis.length - 1] : null;
++      var estadoTxt = rep ? t('repaired') : desc ? t('discarded') : (G.vet ? '' : t('readingProb', { porcentaje: Math.round(v * 100) }) + (esTop ? '. ' + t('highestProb') : ''));
++      f.setAttribute('aria-label', nombreSis(c, q) + (estadoTxt ? '. ' + estadoTxt : '') + (ult ? '. ' + t('lastReading', { resultado: ult.o === 'A' ? t('alert') : t('normal') }) : ''));
++      f.setAttribute('aria-checked', !!(G.sel && G.sel.T === q));
+     });
+     G.shown = m.slice();
+     $$('#nodos .nodo').forEach(function (b) {
+       var q = +b.getAttribute('data-i'), rep = (st.rep >> q) & 1, desc = (st.desc >> q) & 1;
+       b.classList.toggle('sel', !!(G.sel && G.sel.T === q)); b.classList.toggle('rep', !!rep); b.classList.toggle('desc', !!desc);
+       b.classList.toggle('top', q === top && tv >= 0.5 && !rep);
++      b.setAttribute('aria-pressed', !!(G.sel && G.sel.T === q));
+       $('.halo', b).style.setProperty('--s', (rep || desc) ? 0 : (m[q] * 0.85).toFixed(3));
+     });
+     $$('#zonas .zb').forEach(function (b) {
+@@ -488,18 +565,35 @@
+       if (dw.innerHTML !== html) dw.innerHTML = html;
+       var d = k === 'ALARMISTA' ? t('jumpy') : k === 'PRUDENTE' ? t('cautious') : k === 'ZONA' ? t('zoneDesc') : t('reliab', { k: Math.round(s.sens * 10) });
+       $('.d', b).textContent = d;
+-      b.setAttribute('aria-label', nomSen(k) + '. ' + s.coste + ' ' + t('minShort') + '. ' + d + (s.danado ? ' ' + t('damagedTag') : '') + (s.coste >= st.aire ? '. ' + t('noAir') : ''));
++      // SRC-TE01: coste del sensor vigente y motivo real de deshabilitación (sin revelar la avería)
++      b.setAttribute('aria-label', nomSen(k) + '. ' + t('measure', { c: s.coste }) + '. ' + d + (s.danado ? ' ' + t('damagedTag') : '') + (s.coste >= st.aire ? '. ' + t('insufficient') : (G.sel && !ok ? '. ' + (s.tipo === 'z' ? t('sensorWrongZone') : t('sensorWrongPoint')) : '')));
+     });
+-    // reparar
++    // objetivo seleccionado (PLAY-TELEMETRIA-02)
++    var selInfo = $('#selInfo');
++    var selTxt = !G.sel ? t('selectSystem') : G.sel.T >= 100 ? t('selectedTarget', { objetivo: t('zoneNames')[G.sel.T - 100] }) : t('selectedSystem', { sistema: nombreSis(c, G.sel.T) });
++    if (selInfo.textContent !== selTxt) selInfo.textContent = selTxt;
++    selInfo.classList.toggle('vacio2', !G.sel);
++    // reparar — PLAY-TELEMETRIA-03/04 · SRC-TE01: los dos costes TOTALES alternativos (acierto = caso.R; error = caso.R + caso.Rx, se resta una sola vez)
++    // y los dos saldos hipotéticos, calculados sólo con el aire visible y los costes del caso: nunca se consulta st.real.
+     var selSis = G.sel && G.sel.T < 100 ? G.sel.T : -1, valido = selSis >= 0 && ((cand >> selSis) & 1);
++    var costeOk = c.R, costeErr = c.R + c.Rx, aireOk = Math.max(0, st.aire - costeOk), aireErr = Math.max(0, st.aire - costeErr);
++    var riesgo = valido && st.aire <= costeOk; // cualquier rama pública agota el aire
+     var bR = $('#bRep');
+-    bR.classList.toggle('off', !valido); bR.classList.toggle('warn', valido && c.R >= st.aire);
+-    var repL = esc(t('repair').toUpperCase()) + '<span class="rc"> · ' + c.R + ' MIN</span>';
+-    var repS = !valido ? esc(t('pickRepair')) : c.R >= st.aire ? esc(t('noAir')) : G.armado ? esc(t('repairDouble')) :
+-      '<span class="rh">' + esc(P.dbl ? t('repairDouble') : t('repairHold')) + ' · </span>' + esc(t('repairMiss', { x: c.R + c.Rx }));
++    bR.classList.toggle('off', !valido); bR.classList.toggle('warn', riesgo);
++    var repL = esc(valido ? t('repairTarget', { sistema: nombreSis(c, selSis) }) : t('repair'));
++    var repS = !valido ? esc(t('pickRepair')) : G.armado ? esc(t('repairDouble')) : esc(P.dbl ? t('repairDouble') : t('holdConfirm'));
+     if ($('#repL').innerHTML !== repL) $('#repL').innerHTML = repL;
+     if ($('#repS').innerHTML !== repS) $('#repS').innerHTML = repS;
+-    bR.setAttribute('aria-label', t('repair') + (valido ? ' ' + nombreSis(c, selSis) : '') + ', ' + c.R + ' ' + t('minShort') + '. ' + $('#repS').textContent);
++    var repInfo = $('#repInfo'), infoTxt = '', infoHtml = '';
++    if (valido && !st.fin) {
++      var tC = t('repairCosts', { coste_acierto: costeOk, coste_error: costeErr }), tS = t('airScenarios', { aire_final_acierto: aireOk, aire_final_error: aireErr }) + (riesgo ? ' ' + t('airRiskEven') : '');
++      infoTxt = tC + ' ' + tS;
++      // en teléfonos verticales bajos la segunda frase se oculta visualmente (CSS .ri-s); el nombre accesible de Reparar la conserva íntegra
++      infoHtml = '<span class="ri-c">' + esc(tC) + '</span> <span class="ri-s">' + esc(tS) + '</span>';
++    }
++    repInfo.hidden = !infoTxt; repInfo.classList.toggle('riesgo', riesgo);
++    if (repInfo.dataset.txt !== infoTxt) { repInfo.dataset.txt = infoTxt; repInfo.innerHTML = infoHtml; }
++    bR.setAttribute('aria-label', (valido ? t('repairTarget', { sistema: nombreSis(c, selSis) }) : t('repair')) + '. ' + (valido ? infoTxt + ' ' : '') + $('#repS').textContent);
+     // información de la nave
+     var nRep = NUCLEO.bitcount(st.rep);
+     $('#naveInfo').innerHTML = c.nF === 2 ? esc(t('faultsLeft', { n: 2, r: nRep })) : esc(t('faults', { n: 1 }));
+@@ -555,7 +649,7 @@
+     if (!G || G.bloq || G.st.fin) return;
+     var sen = G.st.sens[s], el = $('#sensores .sen[data-s="' + s + '"]');
+     if (!sen) return;
+-    if (!G.sel) { tiembla(el); sfx('error'); avisoBreve(sen.tipo === 'z' ? t('pickZone') : t('pick')); return; }
++    if (!G.sel) { tiembla(el); sfx('error'); avisoBreve(sen.tipo === 'z' ? t('pickZone') : t('chooseTarget')); return; }
+     var T = G.sel.T;
+     if (sen.tipo === 'z' && T < 100) { tiembla(el); sfx('error'); avisoBreve(t('sensorWrongZone')); return; }
+     if (sen.tipo === 'p' && T >= 100) { tiembla(el); sfx('error'); avisoBreve(t('sensorWrongPoint')); return; }
+@@ -685,18 +779,22 @@
+   function oraDecir(txt, o) {
+     o = o || {};
+     if (!o.tut && !o.ev && !o.forzar && !P.ora) return;
+-    var el = $('#ora'), tt = $('#oraT'), b = $('#oraB');
++    var el = $('#ora'), tt = $('#oraT'), b = $('#oraB'), todo = $('#oraTodo');
+     el.hidden = false; el.classList.toggle('ev', !!o.ev);
+     G && (G.oraTipo = o.tipo || (o.tut ? 'tut' : 'msg'));
+     clearInterval(oraDecir.tm);
+     b.hidden = !o.btn;
+     if (o.btn) { b.textContent = o.btn.label; b.onclick = function () { sfx('boton'); o.btn.fn(); }; }
+-    if (rmActivo()) tt.textContent = txt;
+-    else { var k = 0; tt.textContent = ''; oraDecir.tm = setInterval(function () { k += 2; tt.textContent = txt.slice(0, k); if (k >= txt.length) clearInterval(oraDecir.tm); }, 22); }
++    // PLAY-TELEMETRIA-02: la animación nunca obliga a esperar; «Mostrar todo» (o tocar el texto) revela el consejo completo
++    var completar = function () { clearInterval(oraDecir.tm); tt.textContent = txt; todo.hidden = true; };
++    if (rmActivo()) { tt.textContent = txt; todo.hidden = true; }
++    else { var k = 0; tt.textContent = ''; todo.hidden = false; oraDecir.tm = setInterval(function () { k += 2; tt.textContent = txt.slice(0, k); if (k >= txt.length) completar(); }, 22); }
++    todo.onclick = function () { sfx('boton'); completar(); };
++    tt.onclick = completar;
+     sfx('ora');
+     anunciar(t('ora') + ': ' + txt);
+   }
+-  function ocultarOra() { clearInterval(oraDecir.tm); $('#ora').hidden = true; if (G) G.oraTipo = null; }
++  function ocultarOra() { clearInterval(oraDecir.tm); $('#ora').hidden = true; $('#oraTodo').hidden = true; if (G) G.oraTipo = null; }
+   function avisoBreve(txt) {
+     var d = tutDef(); if (d && !d[Math.min(G.tutStep, d.length - 1)].libre) return;
+     oraDecir(txt, { forzar: true, tipo: 'aviso' });
+@@ -785,8 +883,23 @@
+     $('#logSheet').innerHTML = html; $('#logInline').innerHTML = html;
+     var li = $('#logInline'); li.scrollTop = li.scrollHeight;
+   }
+-  function abrirHoja() { renderLog(); $('#sheet').classList.add('on'); sfx('panel'); var l = $('#logSheet'); l.scrollTop = l.scrollHeight; }
+-  function cerrarHoja() { var s = $('#sheet'); if (s.classList.contains('on')) { s.classList.remove('on'); sfx('panel'); } }
++  // PLAY-TELEMETRIA-07: la hoja del registro gestiona su foco, vuelve inerte el fondo y devuelve el foco a quien la abrió
++  var hojaAct = null;
++  function abrirHoja() {
++    renderLog(); hojaAct = document.activeElement;
++    $('#sheet').classList.add('on'); sfx('panel'); var l = $('#logSheet'); l.scrollTop = l.scrollHeight;
++    $('#bLog').setAttribute('aria-expanded', 'true');
++    fondoInerte();
++    setTimeout(function () { $('#sheetX').focus({ preventScroll: true }); }, 40);
++  }
++  function cerrarHoja() {
++    var s = $('#sheet'); if (!s.classList.contains('on')) return;
++    s.classList.remove('on'); sfx('panel');
++    $('#bLog').setAttribute('aria-expanded', 'false');
++    fondoInerte();
++    var a = hojaAct; hojaAct = null;
++    if (a && visibleEl(a)) a.focus({ preventScroll: true }); else if (visibleEl($('#bLog'))) $('#bLog').focus({ preventScroll: true });
++  }
+ 
+   /* ---------- Pausa ---------- */
+   function pausar() {
+@@ -802,11 +915,12 @@
+     abrirOv('pausa');
+     MUSICA.capas({ decision: 1 });
+     $('#pzC').onclick = continuar;
++    // SRC-G03/G04: reiniciar pierde el intento actual → confirmación explícita y cancelable, sin doble toque temporal
+     if ($('#pzR')) $('#pzR').onclick = function () {
+-      var b = $('#pzR');
+-      if (b.dataset.arm === '1') { cerrarOv(); MUSICA.capas({ decision: 0 }); var d = G.desc.modo === 'campana' ? descCampana(G.desc.id) : G.desc; G = null; ldel('partida'); iniciarJuego(d, [], {}); return; }
+-      b.dataset.arm = '1'; b.textContent = t('restartSure'); b.classList.add('red'); sfx('error');
+-      setTimeout(function () { if (b.isConnected) { b.dataset.arm = ''; b.textContent = t('restart'); b.classList.remove('red'); } }, 3000);
++      sfx('boton');
++      confirmar({ titulo: t('restart'), texto: t('restartSure'), boton: t('restart'),
++        ok: function () { ovPila.length = 0; MUSICA.capas({ decision: 0 }); var d = G.desc.modo === 'campana' ? descCampana(G.desc.id) : G.desc; G = null; ldel('partida'); iniciarJuego(d, [], {}); },
++        cancelar: function () { pausar(); } });
+     };
+     $('#pzA').onclick = function () { abrirAjustes('pausa'); };
+     $('#pzS').onclick = function () { guardar(); cerrarOv(); MUSICA.capas({ decision: 0 }); MUSICA.respirar(false); G = null; renderInicio(); mostrar('inicio'); };
+@@ -836,8 +950,9 @@
+         var norm = Math.max(8, ini.V - ini.hoja);
+         var prec = Math.max(0, Math.min(100, Math.round(100 * (1 - arr / norm))));
+         var E = Math.round(ini.esperado != null ? ini.esperado : Math.max(0, ini.V)), Lo = Math.round(arr), U = G.res.aire - (E - Lo);
+-        var est = win ? (prec >= 95 ? 3 : prec >= 80 ? 2 : 1) : 0;
+-        if (G.pista) est = Math.min(est, 2);
++        // Regla vigente (decisión 6): victoria → 3 con prec >= 95, 2 con prec >= 80, 1 en el resto; derrota → 0; pista limita a 2 (Math.min), no resta una
++        var est = win ? (prec >= UMBRAL_EST[3] ? 3 : prec >= UMBRAL_EST[2] ? 2 : 1) : 0;
++        if (G.pista) est = Math.min(est, MAX_EST_PISTA);
+         Object.assign(G.res, { prec: prec, E: E, Lo: Lo, U: U, est: est, pasos: pasos, quick: G.quick });
+         registrarProgreso(G, false);
+         renderRes(true);
+@@ -875,28 +990,40 @@
+     var url = 'https://jetgames.fun/telemetria/' + (g.desc.modo === 'diario' ? '?diario' : '');
+     return cab + '\n' + em + '\n' + lin + (g.desc.modo === 'diario' && rachaVis() ? '\n' + t('shareStreak') + ' 🔥' + rachaVis() : '') + '\n' + url;
+   }
++  // SRC-G06: compartir sólo por acción del jugador; cancelar el diálogo nativo no muestra nada; éxito sólo tras confirmar el copiado;
++  // si no se puede copiar, el texto íntegro queda seleccionable (patrón de Señal) con «Copiar texto» y «Cerrar».
+   function compartir(txt) {
+     sfx('boton');
+-    var copiar = function () {
+-      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(function () { toast(t('copied')); }, mostrarTexto);
+-      else mostrarTexto();
+-    };
+-    function mostrarTexto() {
+-      // sin API de portapapeles: copia clásica y, si tampoco se puede, un cuadro con el texto ya seleccionado
++    var activador = document.activeElement; // la copia clásica mueve el foco a un textarea temporal: el retorno debe ir al botón real
++    var copiarClasico = function () {
+       var ta = document.createElement('textarea'), ok = false;
+       ta.value = txt; ta.setAttribute('readonly', ''); ta.style.cssText = 'position:fixed;left:-9999px;top:0;opacity:0';
+       document.body.appendChild(ta); ta.select();
+       try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+-      ta.remove();
+-      if (ok) { toast(t('copied')); return; }
++      ta.remove(); return ok;
++    };
++    var copiar = function () {
++      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(function () { toast(t('copied')); }, function () { if (copiarClasico()) toast(t('copied')); else mostrarTexto(); });
++      else if (copiarClasico()) toast(t('copied'));
++      else mostrarTexto();
++    };
++    function mostrarTexto() {
+       var ov = $('#ov-copiar');
+       if (!ov) { ov = document.createElement('div'); ov.className = 'ov'; ov.id = 'ov-copiar'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); document.body.appendChild(ov); ov.addEventListener('click', function (e) { if (e.target === ov) $('#cpX').click(); }); }
+       var volver = ovAbierto;
+-      ov.innerHTML = '<div class="card"><div class="top"><h2>' + esc(t('share')) + '</h2><button class="x" id="cpX" type="button" aria-label="' + esc(t('close')) + '">×</button></div>' +
+-        '<p class="muted" style="font-size:14px">' + esc(t('copyFail')) + '</p><textarea id="cpT" class="cpt" readonly rows="6" aria-label="' + esc(t('share')) + '">' + esc(txt) + '</textarea></div>';
+-      abrirOv('copiar');
+-      $('#cpX').onclick = function () { cerrarOv(); if (volver === 'diario') { renderDiarioHecho(); abrirOv('diario'); } };
++      ov.innerHTML = '<div class="card"><div class="top"><h2 id="cpH">' + esc(t('share')) + '</h2><button class="x" id="cpX" type="button" aria-label="' + esc(t('close')) + '">×</button></div>' +
++        '<p class="muted" style="font-size:14px">' + esc(t('copyFail')) + '</p><textarea id="cpT" class="cpt" readonly rows="6" aria-labelledby="cpH" data-foco>' + esc(txt) + '</textarea>' +
++        '<div class="row2" style="margin-top:12px"><button class="btn pri" id="cpC" type="button">' + esc(t('copyText')) + '</button><button class="btn" id="cpX2" type="button">' + esc(t('close')) + '</button></div></div>';
++      abrirOv('copiar', activador);
++      var cerrar = function () { cerrarOv(); if (volver === 'diario') { renderDiarioHecho(); abrirOv('diario'); } };
++      $('#cpX').onclick = cerrar; $('#cpX2').onclick = cerrar;
+       var area = $('#cpT'); setTimeout(function () { area.focus(); area.select(); }, 60);
++      $('#cpC').onclick = function () {
++        area.focus(); area.select();
++        var fin = function (ok) { if (ok) toast(t('copied')); else toast(t('copyFail'), 3000); };
++        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(function () { fin(true); }, function () { fin(copiarClasico()); });
++        else fin(copiarClasico());
++      };
+     }
+     if (navigator.share) navigator.share({ text: txt }).catch(function (e) { if (!e || e.name !== 'AbortError') copiar(); });
+     else copiar();
+@@ -925,16 +1052,29 @@
+     var g = G, r = g.res, c = g.caso, win = r.fin === 'win', tut = g.tpl.tut === 1 || g.tpl.tut === 2;
+     var rotos = c.F.map(function (q) { return nombreSis(c, q); });
+     var circ = 238.76, prec = r.prec;
++    // PLAY-TELEMETRIA-04: reparación correcta seguida de agotamiento del aire (precedencia vigente de NUCLEO.aplicar: aire <= 0 antes que real === 0)
++    var ultima = g.st.acciones[g.st.acciones.length - 1];
++    var subExtra = (!win && ultima && ultima.t === 'R' && ultima.ok) ? ' · ' + t('repairNoAir', { sistema: nombreSis(c, ultima.i) }) : '';
+     var html = '<div class="card wide"><div class="kick" style="text-align:center">' + esc(etiquetaCaso(g.desc)) + '</div>' +
+-      '<h2 class="res-h ' + (win ? 'win' : 'lose') + '" style="margin-top:6px">' + esc(win ? t('win') : t('lose')) + '</h2>' +
+-      '<p class="res-sub">' + esc(rotos.length > 1 ? t('wereBroken', { s: rotos.join(' · ') }) : t('wasBroken', { s: rotos[0] })) + (win && g.desc.id === 'F' ? ' · ' + esc(t('homeArrived')) : '') + '</p>' +
++      '<h2 class="res-h ' + (win ? 'win' : 'lose') + '" style="margin-top:6px" id="resT">' + esc(win ? t('win') : t('lose')) + '</h2>' +
++      '<p class="res-sub">' + esc(rotos.length > 1 ? t('wereBroken', { s: rotos.join(' · ') }) : t('wasBroken', { s: rotos[0] })) + esc(subExtra) + (win && g.desc.id === 'F' ? ' · ' + esc(t('homeArrived')) : '') + '</p>' +
+       '<div class="res-main"><div class="res-air"><b id="rAir">' + (actualizar ? r.aire : 0) + '</b><span>' + esc(t('finalAir').toUpperCase()) + ' · ' + esc(t('min')) + '</span></div>' +
+-      '<div class="stars" id="rStars">' + STAR + STAR + STAR + '</div>' +
+-      (tut ? '' : '<div class="acc"><svg viewBox="0 0 86 86"><circle class="bgc" cx="43" cy="43" r="38"/><circle class="fg" id="rRing" cx="43" cy="43" r="38" stroke-dasharray="' + circ + '" stroke-dashoffset="' + circ + '"/></svg><b>' + (prec == null ? '…' : prec) + '</b><small>' + esc(t('accuracy').toUpperCase()) + '</small></div>') + '</div>';
++      // PLAY-TELEMETRIA-06: estrellas reales del resultado, visibles y accesibles; mientras el análisis está pendiente no se anuncian como definitivas
++      '<div class="stars-w"><div class="stars" id="rStars" role="img" aria-label="' + esc(t('earnedStars', { estrellas: r.est })) + '">' + STAR + STAR + STAR + '</div><p class="stars-txt" id="rStarsTxt">' + esc(t('earnedStars', { estrellas: r.est })) + (!tut && prec == null ? ' · ' + esc(t('decScorePending')) : '') + '</p></div>' +
++      (tut ? '' : '<div class="acc" role="img" aria-label="' + esc(prec == null ? t('decScorePending') : t('decScore', { prec: prec })) + '"><svg viewBox="0 0 86 86" aria-hidden="true"><circle class="bgc" cx="43" cy="43" r="38"/><circle class="fg" id="rRing" cx="43" cy="43" r="38" stroke-dasharray="' + circ + '" stroke-dashoffset="' + circ + '"/></svg><b aria-hidden="true">' + (prec == null ? '…' : prec) + '</b><small aria-hidden="true">' + esc(t('accuracy').toUpperCase()) + '</small></div>') + '</div>';
+     if (!win && prec != null && prec >= 95) html += '<span class="badge">' + esc(t('unluckyBadge')) + '</span>';
++    // explicación de la métrica y de los umbrales reales (rama tutorial 1/2 aparte)
++    html += '<div class="est-ayuda">';
++    if (tut) html += '<p>' + esc(t('tutStars')) + '</p>';
++    else {
++      html += '<p><b>' + esc(prec == null ? t('decScorePending') : t('decScore', { prec: prec })) + '</b> ' + esc(t('decScoreHelp')) + '</p>';
++      html += '<ul><li>' + esc(t('oneStar')) + '</li><li>' + esc(t('starThreshold', { objetivo: 2, umbral_precision: UMBRAL_EST[2] })) + '</li>' +
++        (g.pista ? '<li>' + esc(t('hintCost')) + '</li>' : '<li>' + esc(t('starThreshold', { objetivo: 3, umbral_precision: UMBRAL_EST[3] })) + '</li>') + '</ul>';
++    }
++    html += '</div>';
+     if (!tut) {
+       html += '<div class="lineas">';
+-      if (prec == null) html += '<div><span class="calc">' + esc(t('calc')) + '</span></div>';
++      if (prec == null) html += '<div><span class="calc">' + esc(t('decScorePending')) + '</span></div>';
+       else {
+         html += '<div><span>' + esc(t('ref')) + '</span><b>' + r.E + ' ' + esc(t('minShort')) + '</b></div>' +
+           '<div><span>' + esc(t('lostDec')) + '</span><b class="' + (r.Lo > 0 ? 'neg' : '') + '">' + (r.Lo > 0 ? '−' : '') + r.Lo + ' ' + esc(t('minShort')) + '</b></div>' +
+@@ -942,27 +1082,39 @@
+         if (r.quick) html += '<div><span class="calc">' + esc(t('quick')) + '</span></div>';
+       }
+       html += '</div>';
++      // SRC-TE02: «Ver análisis de decisiones» despliega la repetición comentada (estimación, no certeza)
+       if (prec != null && g.st.acciones.length) {
+-        html += '<div class="repl"><h4>' + esc(t('replay').toUpperCase()) + '</h4><p class="h">' + esc(t('replayHint')) + '</p><div class="tl" id="rTl">' +
++        html += '<button class="btn" id="rAna" type="button" aria-expanded="' + (!!r.anaAbierto) + '" aria-controls="rRepl">' + esc(t('analysis')) + '</button>' +
++          '<div class="repl" id="rRepl"' + (r.anaAbierto ? '' : ' hidden') + '><h4>' + esc(t('replay').toUpperCase()) + '</h4><p class="h">' + esc(t('replayHint')) + '</p><div class="tl" id="rTl">' +
+           g.st.acciones.map(function (a, k) { var p = r.pasos[k]; var ab = a.t === 'L' ? (a.T >= 100 ? t('zones')[a.T - 100].slice(0, 3) : nombreSis(c, a.T).slice(0, 3).toUpperCase()) : nombreSis(c, a.i).slice(0, 3).toUpperCase(); return '<button class="tc' + (p && p.arrep > 2 ? ' warn' : '') + '" type="button" data-k="' + k + '" aria-label="' + esc(accTexto(c, a)) + '">' + icoPaso(a) + '' + esc(ab) + '</button>'; }).join('') +
+           '</div><div class="det" id="rDet"></div></div>';
+       }
+       if (g.desc.id === '1-3' && prec != null && r.pasos.some(function (p, k) { return g.st.acciones[k].t === 'L' && p.arrep > 2; })) html += '<div class="ora" style="margin-top:12px"><b>ORA</b><span class="t">' + esc(t('oraRisk')) + '</span></div>';
+     }
+-    // botones
++    // botones — PLAY-TELEMETRIA-05 / SRC-TE02: en derrota, «Reintentar caso» es la acción primaria y enfocada; en victoria, «Siguiente caso».
++    // «Elegir otro caso» (campaña) lleva al mapa; «Volver al menú» siempre disponible. El caso fallido nunca se presenta como superado.
+     var d = g.desc, nx = null;
+     if (d.modo === 'campana') {
+       var i = CASOS.CAMPANA.findIndex(function (x) { return x.id === d.id; }), sig = CASOS.CAMPANA[i + 1];
+       if (sig && capAbierto(sig.cap)) nx = sig.id;
+     }
++    var puedeRepetir = d.modo !== 'diario';
+     html += '<div class="res-btns">';
+-    if (d.luego === 'diario') html += '<button class="btn pri big" id="rNext" type="button">' + esc(t('dailyShort')) + '</button>';
+-    else if (d.modo === 'campana') html += nx ? '<button class="btn pri big" id="rNext" type="button">' + esc(t('next')) + '<small>' + esc(t('caseN', { c: nx === 'F' ? t('finalCase') : nx })) + '</small></button>' : '<button class="btn pri big" id="rMap" type="button">' + esc(t('map')) + '</button>';
+-    else if (d.modo === 'practica' || d.modo === 'prueba') html += '<button class="btn pri big" id="rNext" type="button">' + esc(t('next')) + '</button>';
+-    else html += '<button class="btn pri big" id="rShare" type="button">' + esc(t('share')) + '</button>';
+-    if (d.modo === 'diario') html += '<div class="row2"><button class="btn" id="rPrac" type="button">' + esc(t('practiceThis')) + '</button><button class="btn" id="rHome" type="button">' + esc(t('home')) + '</button></div><p class="muted" style="text-align:center;font-size:13px">' + esc(t('dailyDone', { t: cuentaAtras() })) + '</p>';
+-    else html += '<div class="row2"><button class="btn" id="rAgain" type="button">' + esc(t('again')) + '</button><button class="btn" id="rShare2" type="button">' + esc(t('share')) + '</button></div>' +
+-      (d.modo === 'campana' && !nx ? '<button class="btn" id="rHome" type="button">' + esc(t('home')) + '</button>' : '<div class="row2"><button class="btn" id="rMap2" type="button">' + esc(t('map')) + '</button><button class="btn" id="rHome" type="button">' + esc(t('home')) + '</button></div>');
++    if (!win && puedeRepetir) {
++      html += '<button class="btn pri big" id="rAgain" type="button" data-foco>' + esc(t('retry')) + '</button>';
++      if (d.luego === 'diario') html += '<button class="btn" id="rNext" type="button">' + esc(t('dailyShort')) + '</button>';
++      else if (d.modo === 'campana') html += '<div class="row2"><button class="btn" id="rMap2" type="button">' + esc(t('otherCase')) + '</button><button class="btn" id="rShare2" type="button">' + esc(t('share')) + '</button></div>';
++      else html += '<div class="row2"><button class="btn" id="rNext" type="button">' + esc(t('next')) + '</button><button class="btn" id="rShare2" type="button">' + esc(t('share')) + '</button></div>';
++      html += '<button class="btn" id="rHome" type="button">' + esc(t('home')) + '</button>';
++    } else {
++      if (d.luego === 'diario') html += '<button class="btn pri big" id="rNext" type="button" data-foco>' + esc(t('dailyShort')) + '</button>';
++      else if (d.modo === 'campana') html += nx ? '<button class="btn pri big" id="rNext" type="button" data-foco>' + esc(t('next')) + '<small>' + esc(t('caseN', { c: nx === 'F' ? t('finalCase') : nx })) + '</small></button>' : '<button class="btn pri big" id="rMap" type="button" data-foco>' + esc(t('campaign2')) + '</button>';
++      else if (d.modo === 'practica' || d.modo === 'prueba') html += '<button class="btn pri big" id="rNext" type="button" data-foco>' + esc(t('next')) + '</button>';
++      else html += '<button class="btn pri big" id="rShare" type="button" data-foco>' + esc(t('share')) + '</button>';
++      if (d.modo === 'diario') html += '<div class="row2"><button class="btn" id="rPrac" type="button">' + esc(t('practiceThis')) + '</button><button class="btn" id="rHome" type="button">' + esc(t('home')) + '</button></div><p class="muted" style="text-align:center;font-size:13px">' + esc(t('dailyDone', { t: cuentaAtras() })) + '</p>';
++      else html += '<div class="row2"><button class="btn" id="rAgain" type="button">' + esc(t('replayCase')) + '</button><button class="btn" id="rShare2" type="button">' + esc(t('share')) + '</button></div>' +
++        (d.modo === 'campana' && !nx ? '<button class="btn" id="rHome" type="button">' + esc(t('home')) + '</button>' : '<div class="row2"><button class="btn" id="rMap2" type="button">' + esc(t('campaign2')) + '</button><button class="btn" id="rHome" type="button">' + esc(t('home')) + '</button></div>');
++    }
+     html += '</div></div>';
+     $('#s-res').innerHTML = html;
+     var on = function (id, f) { var e = $('#' + id); if (e) e.onclick = function () { sfx('boton'); f(); }; };
+@@ -977,6 +1129,7 @@
+     on('rShare', function () { compartir(textoCompartir(g)); });
+     on('rShare2', function () { compartir(textoCompartir(g)); });
+     on('rPrac', function () { var dd = Object.assign({}, d, { modo: 'practica', id: 'P' }); G = null; iniciarBrief(dd); });
++    on('rAna', function () { var b = $('#rAna'), p = $('#rRepl'); r.anaAbierto = !r.anaAbierto; b.setAttribute('aria-expanded', r.anaAbierto); p.hidden = !r.anaAbierto; if (r.anaAbierto) p.scrollIntoView({ block: 'nearest', behavior: rmActivo() ? 'auto' : 'smooth' }); });
+     $$('#rTl .tc').forEach(function (b) { b.onclick = function () { verPaso(+b.getAttribute('data-k')); }; });
+     // animaciones de entrada
+     var stars = $$('#rStars svg');
+@@ -1064,25 +1217,22 @@
+     $('#aSv').oninput = function (e) { P.sfxVol = +e.target.value; AUDIO.setPrefs({ sfxVol: P.sfxVol }); };
+     $('#aSv').onchange = function () { guardarPrefs(); sfx('alerta'); }; $('#aMv').onchange = guardarPrefs;
+     $('#aEs').onclick = function () { cambiarIdioma('es'); }; $('#aEn').onclick = function () { cambiarIdioma('en'); };
++    // SRC-G04: confirmación explícita (sin doble toque ni pulsación larga), Cancelar enfocado, enumeración de lo que se borra.
++    // Las preferencias (audio, porcentajes, contraste…) y el idioma del sitio no se tocan: borrarTodo sólo elimina progreso, diario y partida.
+     var bB = $('#aB');
+     bB.onclick = function () {
+-      if (bB.dataset.arm !== '1') { bB.dataset.arm = '1'; bB.textContent = t('eraseAll'); sfx('error'); setTimeout(function () { if (bB.isConnected && bB.dataset.arm === '1') { bB.dataset.arm = ''; bB.textContent = t('erase'); } }, 4000); return; }
+-      bB.dataset.arm = '2';
+-      bB.outerHTML = '<button class="btn red holdbtn" id="aB2" type="button"><i class="hf"></i><span>' + esc(t('eraseHold')) + '</span></button>';
+-      var b2 = $('#aB2'), hold = null;
+-      var ini = function (e) { e.preventDefault(); var t0 = performance.now(); (function f() { var p = Math.min(1, (performance.now() - t0) / 2000); $('.hf', b2).style.transform = 'scaleX(' + p + ')'; if (p >= 1) { hold = null; borrarTodo(); return; } hold = requestAnimationFrame(f); })(); };
+-      var fin = function () { if (hold) { cancelAnimationFrame(hold); hold = null; $('.hf', b2).style.transform = 'scaleX(0)'; } };
+-      b2.addEventListener('pointerdown', ini); ['pointerup', 'pointerleave', 'pointercancel'].forEach(function (ev) { b2.addEventListener(ev, fin); });
+-      b2.addEventListener('keydown', function (e) { if ((e.key === 'Enter' || e.key === ' ') && !e.repeat && !hold) ini(e); });
+-      b2.addEventListener('keyup', function (e) { if (e.key === 'Enter' || e.key === ' ') fin(); });
+-      b2.focus();
++      sfx('boton');
++      var volver = volverAjustes;
++      confirmar({ titulo: t('eraseTitle', { juego: t('title') }), texto: t('eraseBody', { datos: t('eraseData') }), boton: t('erase'),
++        ok: function () { borrarTodo(); },
++        cancelar: function () { abrirAjustes(volver); } });
+     };
+   }
+   function borrarTodo() {
+     ldel('progreso'); ldel('diario'); ldel('partida');
+     PR = { v: 1, est: {}, estV: {}, prec: {}, int: {}, tut3: false, vet: false, jugado: false };
+     DI = { v: 1, fecha: null, empezado: false, terminado: false, res: null, racha: 0, ultimo: null };
+-    G = null; cerrarOv(); toast(t('erased')); sfx('ko'); renderInicio(); mostrar('inicio');
++    G = null; ovPila.length = 0; cerrarOv(); $$('.ov').forEach(function (o) { o.classList.remove('on'); }); ovAbierto = null; fondoInerte(); toast(t('erased')); sfx('ko'); renderInicio(); mostrar('inicio');
+   }
+   /* Cambio de idioma en vivo (desde el inicio, Ajustes o window.JETIdioma.set): repinta todo sin tocar la partida. */
+   window.addEventListener('jet-idioma', function (e) {
+@@ -1201,9 +1351,9 @@
+   $('#bAjustes').onclick = function () { sfx('boton'); if (pantalla === 'juego' && G && !G.st.fin) { pausar(); abrirAjustes('pausa'); } else abrirAjustes(null); };
+   $('#bFs').onclick = alternarFS;
+   $('#back').addEventListener('click', function () { if (G && pantalla === 'juego') guardar(); });
+-  $$('.ov').forEach(function (o) { o.addEventListener('click', function (e) { if (e.target !== o) return; if (ovAbierto === 'pausa') continuar(); else if (ovAbierto === 'ajustes') $('#aX').click(); else cerrarOv(); }); });
+-  document.addEventListener('dblclick', function (e) { e.preventDefault(); }, { passive: false });
+-  document.addEventListener('gesturestart', function (e) { e.preventDefault(); });
++  // la confirmación (alertdialog) no se cierra tocando el fondo: sólo Cancelar o Escape
++  $$('.ov').forEach(function (o) { o.addEventListener('click', function (e) { if (e.target !== o) return; if (ovAbierto === 'pausa') continuar(); else if (ovAbierto === 'ajustes') $('#aX').click(); else if (ovAbierto === 'confirm') { var c = $('#cfNo'); if (c) c.click(); } else cerrarOv(); }); });
++  // RSP-GLOBAL-01: sin bloqueos globales de doble clic ni de gesto de zoom; el control de puntero queda sólo en Reparar (.rep) y el rango
+ 
+   /* ================= Teclado ================= */
+   var sensKeys = ['q', 'w', 'e', 'a', 's'];
+@@ -1212,12 +1362,13 @@
+     var k = e.key.toLowerCase();
+     if (k === 'm') { P.music = P.sfx = !(P.music || P.sfx); guardarPrefs(); aplicarPrefs(); toast((P.music ? '🔊 ' : '🔇 ') + t('music') + ' / ' + t('sfx')); return; }
+     if (ovAbierto) {
+-      if (k === 'escape') { e.preventDefault(); if (ovAbierto === 'pausa') continuar(); else if (ovAbierto === 'ajustes') $('#aX').click(); else if (ovAbierto === 'copiar') $('#cpX').click(); else cerrarOv(); }
++      if (k === 'escape') { e.preventDefault(); if (ovAbierto === 'pausa') continuar(); else if (ovAbierto === 'ajustes') $('#aX').click(); else if (ovAbierto === 'copiar') $('#cpX').click(); else if (ovAbierto === 'confirm') { var cn = $('#cfNo'); if (cn) cn.click(); } else cerrarOv(); }
+       else if (ovAbierto === 'como' && (k === 'arrowright' || k === 'arrowleft')) { var bt = $(k === 'arrowright' ? '#cN' : '#cP'); if (bt && !bt.disabled) bt.click(); }
+       return;
+     }
+     if (pantalla === 'juego' && G) {
+-      if ($('#sheet').classList.contains('on') && k === 'escape') { cerrarHoja(); return; }
++      // con la hoja del registro abierta, el fondo es inerte: ninguna tecla de la cabina actúa detrás
++      if ($('#sheet').classList.contains('on')) { if (k === 'escape' || k === 'l') { e.preventDefault(); cerrarHoja(); } return; }
+       if (k === 'escape' || k === 'p') { e.preventDefault(); pausar(); return; }
+       if (G.st.fin) return;
+       if (/^[0-9]$/.test(k)) { var n = k === '0' ? 9 : +k - 1; if (n < G.caso.N) seleccionar(n); return; }
+@@ -1241,7 +1392,8 @@
+       else if (pantalla === 'res') { var h = $('#rHome'); if (h) h.click(); }
+       return;
+     }
+-    if (k === 'enter' && document.activeElement === document.body) { var p = $('#s-' + pantalla + ' .btn.pri'); if (p) { e.preventDefault(); p.click(); } }
++    // PLAY-TELEMETRIA-05: en el resultado, Enter sólo actúa sobre el botón enfocado (nunca avanza de caso por un atajo global)
++    if (k === 'enter' && document.activeElement === document.body && pantalla !== 'res') { var p = $('#s-' + pantalla + ' .btn.pri'); if (p) { e.preventDefault(); p.click(); } }
+   });
+   document.addEventListener('keyup', function (e) { if (e.key.toLowerCase() === 'r' && pantalla === 'juego') finMantener(false); });
+ 
+@@ -1332,4 +1484,6 @@
+     var p = partidaGuardada();
+     if (p && QS.has('continuar')) reanudar(p);
+   })();
++  // SRC-G05: el juego quedó listo; el estado de carga del HTML pasa a «listo» (loading/error/ready excluyentes)
++  if (window.JETCarga) window.JETCarga.listo();
+ })();

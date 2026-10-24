@@ -1,0 +1,1211 @@
+diff --git a/site/senal/index.html b/site/senal/index.html
+index ad77d55..3ab1fa2 100644
+--- a/site/senal/index.html
++++ b/site/senal/index.html
+@@ -2,7 +2,7 @@
+ <html lang="es">
+ <head>
+ <meta charset="utf-8">
+-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
++<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+ <title>JET//Señal · Descifra la regla secreta</title>
+ <meta name="description" content="Una sonda acepta o rechaza filas de piezas según una regla secreta. Arma muestras, escucha sus respuestas y descifra la regla con la menor cantidad de pruebas. Una señal nueva cada día.">
+ <meta name="theme-color" content="#050108">
+@@ -19,7 +19,45 @@
+ <link rel="apple-touch-icon" href="icon-192.png">
+ <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+ <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+-<link rel="stylesheet" href="src/style.css?v=5">
++<link rel="stylesheet" href="src/style.css?v=6">
++<script>
++/* SRC-G05 — estados de carga (loading / error / ready) antes del JS del juego. Autónomo a propósito:
++   tiene que funcionar aunque falle src/i18n.js, por eso lleva sus cadenas ES/EN acá. */
++(function () {
++  var L = (document.documentElement.lang === 'en') ? 'en' : 'es';
++  var T = {
++    es: { cargando: 'Cargando Señal…', inter: 'La carga se interrumpió. Podés volver a intentarlo.', red: 'No pudimos descargar todos los recursos.', recargar: 'Volver a cargar', juegos: 'Volver a los juegos' },
++    en: { cargando: 'Loading Signal…', inter: 'Loading was interrupted. You can try again.', red: 'We couldn’t download all resources.', recargar: 'Reload game', juegos: 'Back to games' }
++  }[L];
++  var estado = 'cargando', timer = 0;
++  function caja() { return document.getElementById('carga'); }
++  function pintar() {
++    var c = caja(); if (!c) return;
++    document.documentElement.setAttribute('data-carga', estado);
++    if (estado === 'cargando') { c.innerHTML = '<p class="carga-txt">' + T.cargando + '</p>'; return; }
++    if (estado === 'listo') { c.hidden = true; return; }
++    var catalogo = 'https://jetgames.fun/?lang=' + L;
++    c.innerHTML = '<p class="carga-txt" role="alert">' + (estado === 'red' ? T.red : T.inter) + '</p>' +
++      '<div class="carga-acc"><button type="button" class="btn-pri" id="cargaReintentar">' + T.recargar + '</button>' +
++      '<a class="btn-sec" href="' + catalogo + '" target="_top" rel="noopener">' + T.juegos + '</a></div>';
++    var b = document.getElementById('cargaReintentar');
++    if (b) { b.addEventListener('click', function () { location.reload(); }); b.focus(); }
++  }
++  window.JETCarga = {
++    error: function (tipo) { if (estado !== 'cargando') return; clearTimeout(timer); estado = tipo === 'red' ? 'red' : 'error'; pintar(); },
++    listo: function () { clearTimeout(timer); estado = 'listo'; pintar(); window.removeEventListener('error', alError, true); }
++  };
++  function alError(e) {
++    if (estado === 'listo') return;
++    var tg = e && e.target;
++    if (tg && tg.tagName === 'SCRIPT') { window.JETCarga.error('red'); return; }
++    if (!tg || tg === window) window.JETCarga.error('error');
++  }
++  window.addEventListener('error', alError, true);
++  timer = setTimeout(function () { if (estado === 'cargando') window.JETCarga.error('error'); }, 15000);
++  document.addEventListener('DOMContentLoaded', pintar);
++})();
++</script>
+ </head>
+ <body>
+ <div id="app">
+@@ -39,6 +77,7 @@
+         <p class="lema" data-t="lema">Descifra la regla secreta de la Sonda.</p>
+       </div>
+       <div class="ini-acc">
++        <div id="carga" class="carga" role="status" aria-live="polite"><p class="carga-txt">Cargando Señal…</p></div>
+         <div id="rachaIni" class="racha" hidden><span class="pulso"></span><b></b></div>
+         <button id="btnPrincipal" class="btn-pri grande" type="button"><span class="bp-t"></span><span class="bp-s"></span></button>
+         <div id="tarjetaHoy" class="tarjeta-hoy" hidden>
+@@ -59,11 +98,11 @@
+   </section>
+ 
+   <!-- JUEGO -->
+-  <section id="juego" class="pant" aria-label="JET//Señal">
++  <section id="juego" class="pant" aria-label="JET//Señal" tabindex="-1">
+     <div id="zSonda" class="zona">
+       <canvas id="cvSonda" aria-hidden="true"></canvas>
+       <div class="hud hud-l"><span id="hudTitulo"></span></div>
+-      <div class="hud hud-r"><span data-t="muestras">MUESTRAS</span> <b id="hudN" class="odo">0</b><span id="hudDelta" class="delta"></span></div>
++      <div class="hud hud-r" id="hudR" role="group"><span id="hudLbl"></span> <b id="hudN" class="odo">0</b><span id="hudTotal" class="hud-sub"></span><span id="hudDelta" class="delta"></span></div>
+       <div id="sondaVivo" class="sr" aria-live="polite"></div>
+     </div>
+     <div id="zRegistro" class="zona">
+@@ -71,12 +110,21 @@
+       <div class="col rej"><h2><span data-t="rechazadas">RECHAZADAS</span><span class="cnt" id="cntR">0</span></h2><div class="lista" id="listaR" tabindex="0"></div></div>
+     </div>
+     <div id="zBandeja" class="zona">
+-      <div id="bandeja" role="group"></div>
++      <div id="bandeja" role="group" data-ta="escuchaSonda"></div>
++      <div id="ayudaBand" class="ayuda-band" hidden>
++        <p class="ab-t" data-t="armaMuestra">Armá una muestra</p>
++        <p data-t="bandejaVacia">Toca piezas para armar una muestra</p>
++        <p data-t="reemplazarRanura">Tocá una casilla ocupada para reemplazar su pieza.</p>
++        <p data-t="quitarRanura"></p>
++        <p data-t="pulsoDef"></p>
++        <ul class="atajos ab-atajos"><li data-t="atajoEnviar"></li><li data-t="atajoFormular"></li><li data-t="atajoPausa"></li></ul>
++      </div>
+     </div>
+     <div id="zAcciones" class="zona">
+       <button id="btnVaciar" class="btn-ic" type="button" data-ta="vaciarAria"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+-      <button id="btnEnviar" class="btn-pri" type="button"><span data-t="enviar">Enviar</span></button>
++      <button id="btnEnviar" class="btn-pri" type="button"><span data-t="enviar">Enviar muestra</span></button>
+       <button id="btnFormular" class="btn-form" type="button"><span data-t="formular">Formular regla</span></button>
++      <button id="btnAtajos" class="btn-ic" type="button" data-ta="mostrarAtajos" aria-expanded="false" aria-controls="ayudaBand"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9.6 9.4a2.5 2.5 0 1 1 3.4 2.3c-.7.3-1 .8-1 1.5v.4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="17" r="1.1" fill="currentColor"/></svg></button>
+     </div>
+     <div id="zPaleta" class="zona"><div id="paleta" role="group"></div></div>
+     <div id="panel" class="zona" hidden></div>
+@@ -95,12 +143,12 @@
+ <noscript><p style="color:#fff;font-family:sans-serif;padding:20px">JET//Señal necesita JavaScript. · JET//Signal needs JavaScript.</p></noscript>
+ <script src="src/reglas.js?v=2"></script>
+ <script src="src/verificador.js?v=2"></script>
+-<script src="src/i18n.js?v=5"></script>
+-<script src="src/piezas.js?v=2"></script>
++<script src="src/i18n.js?v=6"></script>
++<script src="src/piezas.js?v=3"></script>
+ <script src="src/sonda.js?v=2"></script>
+ <script src="src/audio.js?v=4"></script>
+ <script src="src/banco.js?v=2" defer></script>
+ <script src="src/calendario.js?v=2" defer></script>
+-<script src="src/app.js?v=7" defer></script>
++<script src="src/app.js?v=8" defer></script>
+ </body>
+ </html>
+diff --git a/site/senal/src/app.js b/site/senal/src/app.js
+index 464498e..3ffc94b 100644
+--- a/site/senal/src/app.js
++++ b/site/senal/src/app.js
+@@ -27,7 +27,7 @@
+   const reducidoSO = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+   // El idioma es el de todo jetgames.fun (src/jet-idioma.js): ?lang > cookie jet_lang / localStorage > navegador.
+   const JI = window.JETIdioma;
+-  const aj = Object.assign({ musica: true, volMusica: 0.7, efectos: true, volEfectos: 0.8, vibracion: true, letras: false, movReducido: reducidoSO }, st.get('ajustes', {}));
++  const aj = Object.assign({ musica: true, volMusica: 0.7, efectos: true, volEfectos: 0.8, vibracion: true, letras: false, movReducido: reducidoSO, atajos: false }, st.get('ajustes', {}));
+   if ('idioma' in aj) {
+     // Migración única: el idioma que el juego guardaba por su cuenta pasa a la elección común,
+     // salvo que ya haya una elección del sitio (cookie o localStorage) o un ?lang en la dirección.
+@@ -44,7 +44,7 @@
+     if (s == null) s = TT.es[k];
+     if (s == null) return k;
+     if (vars && vars.p != null && vars.pw == null) vars = Object.assign({ pw: TT[lang()][vars.p === 1 ? 'pulsoS' : 'pulsoP'] }, vars);
+-    if (typeof s === 'string' && vars) s = s.replace(/\{(\w+)\}/g, (m, x) => vars[x] != null ? vars[x] : m);
++    if (typeof s === 'string' && vars) s = s.replace(/\{([^{}]+)\}/g, (m, x) => vars[x] != null ? vars[x] : m);
+     return s;
+   }
+   const marcado = s => esc(s).replace(/\u0001/g, '<b>').replace(/\u0002/g, '</b>');
+@@ -66,6 +66,10 @@
+       if (el && el.paleta && el.paleta.children.length) { renderPaleta(); renderBandeja(); renderRegistro(); }
+     }
+     document.body.classList.toggle('reducido', !!aj.movReducido);
++    // PLAY-SENAL-05: ayuda compacta junto a la bandeja + tecla visible sobre cada pieza
++    document.body.classList.toggle('atajos-on', !!aj.atajos);
++    if (el && el.btnAtajos) { el.btnAtajos.setAttribute('aria-expanded', aj.atajos ? 'true' : 'false'); el.btnAtajos.classList.toggle('on', !!aj.atajos); }
++    if (el && el.ayudaBand) el.ayudaBand.hidden = !aj.atajos;
+     A.prefs({ musica: aj.musica, volMusica: aj.volMusica, efectos: aj.efectos, volEfectos: aj.volEfectos });
+   }
+   const vibrar = p => { if (aj.vibracion && navigator.vibrate) try { navigator.vibrate(p); } catch (e) { /* nada */ } };
+@@ -175,7 +179,8 @@
+   // ---------- partida ----------
+   let partida = null, fnSecreta = null, codeSecreta = null;
+   const enviadas = p => p.registro.filter(e => e.t === 'e').length;
+-  const pulsosDe = p => enviadas(p) + 2 * p.fallos;
++  const COSTO_FALLO = 2; // pulsos que suma una comprobación de regla rechazada (regla vigente, no se modifica)
++  const pulsosDe = p => enviadas(p) + COSTO_FALLO * p.fallos;
+   const claveDe = p => p.modo === 'practica' ? 'practica' : p.modo === 'tutorial' ? 'tutorial' : 'diario:' + p.fecha;
+   function crearPartida(o) {
+     return {
+@@ -202,7 +207,8 @@
+     toast: $('#toast'), hudN: $('#hudN'), hudTitulo: $('#hudTitulo'), hudDelta: $('#hudDelta'), btnEnviar: $('#btnEnviar'), btnFormular: $('#btnFormular'),
+     btnVaciar: $('#btnVaciar'), btnPausa: $('#btnPausa'), btnFs: $('#btnFs'), btnAjustes: $('#btnAjustes'), menuTarj: $('#menuTarj'),
+     globo: $('#globo'), globoTxt: $('#globoTxt'), globoBtn: $('#globoBtn'), saltar: $('#btnSaltarTut'), vuelo: $('#vuelo'), vivo: $('#sondaVivo'),
+-    zSonda: $('#zSonda'), cvResAstro: $('#cvResAstro')
++    zSonda: $('#zSonda'), cvResAstro: $('#cvResAstro'), btnAtajos: $('#btnAtajos'), ayudaBand: $('#ayudaBand'), hudLbl: $('#hudLbl'), hudTotal: $('#hudTotal'), hudR: $('#hudR'),
++    back: $('#back'), barraDer: $('#barraDer')
+   };
+ 
+   let pantalla = 'inicio', ocupado = false, panelAbierto = false;
+@@ -237,16 +243,20 @@
+       pal = clamp(Math.floor((disp - 5 * gp) / 6), 40, Math.min(66, Math.floor(H * 0.085)));
+       slot = clamp(Math.floor((disp - 4 * gp - 14) / 5), 44, Math.min(68, Math.floor(H * 0.09)));
+       mini = clamp(Math.floor((W / 2 - 58) / 5.4), 15, 28);
+-      hS = panelAbierto ? 58 : clamp(Math.round(H * 0.16), 64, 170);
++      // PLAY-SENAL-01: la Sonda decorativa cede altura a las tarjetas de muestras (antes 16 % / máx. 170 px)
++      hS = panelAbierto ? 58 : clamp(Math.round(H * 0.14), 64, 140);
+     } else {
+       const hAv = H - 72;
+       pal = clamp(Math.floor(Math.min((hAv - 5 * gp) / 6, (W * 0.3 - 2 * gp) / 3)), 38, W > 1200 ? 84 : 72);
+       slot = clamp(Math.floor((W * 0.32 - 4 * gp - 16) / 5), 40, 72);
+       mini = clamp(Math.floor((W * 0.38 / 2 - 58) / 5.4), 15, W >= 1200 && H >= 700 ? 34 : 28);
+-      hS = panelAbierto ? 52 : clamp(Math.round(H * 0.16), 56, 120);
++      hS = panelAbierto ? 52 : clamp(Math.round(H * 0.13), 56, 100);
+     }
+     root.setProperty('--pal', pal + 'px'); root.setProperty('--slot', slot + 'px'); root.setProperty('--mini', mini + 'px');
+     root.setProperty('--gp', gp + 'px'); root.setProperty('--hSonda', hS + 'px');
++    // VIS-SENAL-01: con miniaturas de hasta 28 px se usa la variante de detalle de los símbolos
++    const chico = mini <= 28;
++    if (chico !== miniChico) { miniChico = chico; if (partida && el.listaA.children.length) renderRegistro(); }
+     // paleta: vertical 6×3 (filas = color), horizontal 3×6 (columnas = color)
+     for (const b of el.paleta.children) {
+       const id = +b.dataset.id, f = R.PF[id], c = R.PC[id], tm = R.PT[id], k = f * 2 + tm;
+@@ -257,7 +267,7 @@
+     cajaIni = null;
+     if (pantalla === 'inicio') dibujarFondo(true);
+   }
+-  let rafLayout = 0;
++  let rafLayout = 0, miniChico = true;
+   const pedirLayout = () => { cancelAnimationFrame(rafLayout); rafLayout = requestAnimationFrame(layout); };
+ 
+   // ---------- paleta ----------
+@@ -280,10 +290,13 @@
+     let h = '';
+     for (let i = 0; i < 5; i++) {
+       const id = b[i];
+-      const lleno = id != null;
+-      h += '<button class="ranura' + (lleno ? ' llena' : '') + (partida.sel === i && lleno ? ' sel' : '') + '" type="button" data-i="' + i + '" aria-label="' + (i + 1) + ': ' + (lleno ? esc(P.nombre(id, lang(), TT[lang()])) : t('vacia')) + '">' + (lleno ? P.svg(id) : '<span class="idx">' + (i + 1) + '</span>') + '</button>';
++      const lleno = id != null, sel = partida.sel === i && lleno;
++      // PLAY-SENAL-05 / VIS-SENAL-03: nombre accesible de acción por casilla; número de posición siempre visible en cápsula
++      const d = lleno ? P.nombre(id, lang(), TT[lang()]) : '';
++      const aria = lleno ? t(sel ? 'ranuraSel' : 'ranuraLlena', { i: i + 1, d }) : t('ranuraVacia', { i: i + 1 });
++      h += '<button class="ranura' + (lleno ? ' llena' : '') + (sel ? ' sel' : '') + '" type="button" data-i="' + i + '" aria-label="' + esc(aria) + '"' + (lleno ? ' aria-pressed="' + sel + '"' : '') + '>' + (lleno ? P.svg(id) : '') + '<span class="idx" aria-hidden="true">' + (i + 1) + '</span></button>';
+     }
+-    if (!b.length) h += '<div class="band-hint">' + esc(t('bandejaVacia')) + '</div>';
++    if (!b.length) h += '<div class="band-hint">' + esc(t('armaMuestra')) + '</div>';
+     el.bandeja.innerHTML = h;
+     el.btnEnviar.classList.toggle('off', !b.length);
+     el.btnEnviar.setAttribute('aria-disabled', b.length ? 'false' : 'true');
+@@ -345,6 +358,8 @@
+     partida.bandeja = []; partida.sel = -1; A.sfx('quitar'); cambioBandeja(null);
+   }
+   const jugable = () => partida && partida.estado === 'jugando' && pantalla === 'juego' && !ocupado && el.velo.hidden;
++  // VIS-SENAL-02/04: el contraejemplo recién recibido queda resaltado de forma estática hasta la siguiente acción
++  const limpiarContra = () => $$('.tarj.nuevo-contra').forEach(n => n.classList.remove('nuevo-contra'));
+ 
+   // vuelo de una pieza (180 ms)
+   function volar(origen, destino, id) {
+@@ -431,15 +446,19 @@
+   }, true);
+ 
+   // ---------- registro ----------
+-  function filaHTML(ids) { return ids.map(id => P.svg(id)).join(''); }
++  // filaHTML(ids, mini): la variante mini (VIS-SENAL-01) se usa en registro, ejemplos y resultado, donde el render es <= 28 px
++  function filaHTML(ids, mini) { return ids.map(id => (mini ? P.svgMini(id) : P.svg(id))).join(''); }
+   function tarjHTML(e, i, marcas) {
+-    let cls = 'tarj' + (e.t === 'r' ? ' regalo' : '');
+-    let marca = '';
++    let cls = 'tarj' + (e.t === 'r' ? ' regalo' : '') + (e.t === 'c' ? ' contra' : '');
++    // VIS-SENAL-02: tres columnas estables (índice · secuencia · veredicto); la caja del veredicto existe siempre
++    let marca = '<span class="marca" aria-hidden="true"></span>';
+     if (marcas) { const ok = marcas[i]; marca = '<span class="marca ' + (ok ? 'si' : 'no') + '">' + (ok ? '✓' : '✗') + '</span>'; if (!ok) cls += ' contra-d'; }
+-    const lbl = (e.t === 'r' ? t('regalo') : e.t === 'c' ? t('contraejemplo') : t('enviada', { i: i + 1 })) + ': ' + e.p.map(id => P.nombre(id, lang(), TT[lang()])).join(', ');
+-    return '<div class="' + cls + '" data-i="' + i + '" role="button" tabindex="-1" aria-label="' + esc(lbl) + '"><span class="num">#' + (i + 1) + '</span><span class="fila">' + filaHTML(e.p) + '</span>' + (e.t === 'c' ? '<span class="rombo" aria-hidden="true">◆</span>' : '') + marca + '</div>';
++    // PLAY-SENAL-03: los ejemplos de regalo se rotulan «Ejemplo inicial» (visible y accesible) y conservan su número único
++    const tipo = e.t === 'r' ? t('ejemploInicial') : e.t === 'c' ? t('contraejemplo') : t('enviada', { i: i + 1 });
++    const lbl = '#' + (i + 1) + ' · ' + tipo + ': ' + e.p.map(id => P.nombre(id, lang(), TT[lang()])).join(', ');
++    return '<div class="' + cls + '" data-i="' + i + '" role="button" tabindex="-1" aria-label="' + esc(lbl) + '"><span class="num">#' + (i + 1) + '</span><span class="fila">' + filaHTML(e.p, miniChico) + (e.t === 'r' ? '<span class="etq" aria-hidden="true">' + esc(t('ejemploInicial')) + '</span>' : '') + '</span>' + (e.t === 'c' ? '<span class="rombo" aria-hidden="true">◆</span>' : '') + marca + '</div>';
+   }
+-  let marcasCoh = null;
++  let marcasCoh = null, tNueva = 0;
+   function renderRegistro(nuevo) {
+     if (!partida) return;
+     const reg = partida.registro;
+@@ -451,7 +470,8 @@
+     el.listaA.innerHTML = ha; el.listaR.innerHTML = hr;
+     el.cntA.textContent = na; el.cntR.textContent = nr;
+     if (nuevo != null) {
+-      const n = tarjetaDe(nuevo); if (n) { n.classList.add('entra'); const lista = n.parentElement; if (lista) lista.scrollTop = 0; }
++      // VIS-SENAL-02/04: inserción de 220 ms (<= 6 px) y marca lateral de 2 px durante 700 ms
++      const n = tarjetaDe(nuevo); if (n) { n.classList.add('entra', 'nueva'); const lista = n.parentElement; if (lista) lista.scrollTop = 0; clearTimeout(tNueva); tNueva = setTimeout(() => n.classList.remove('nueva'), 700); }
+     }
+     actualizarHud();
+   }
+@@ -463,6 +483,10 @@
+       el.hudN.textContent = n;
+       if (animar !== false) { el.hudN.classList.remove('gira'); void el.hudN.offsetWidth; el.hudN.classList.add('gira'); }
+     }
++    // PLAY-SENAL-03: «Pruebas enviadas: {n}» (sin contar ejemplos iniciales ni contraejemplos) y «Muestras analizadas: {n}» (todo el registro)
++    el.hudLbl.textContent = t('pruebasEnviadas', { n: '' }).replace(/\s+$/, '');
++    el.hudTotal.textContent = t('muestrasAnalizadas', { n: partida.registro.length });
++    el.hudR.setAttribute('aria-label', t('pruebasEnviadas', { n }) + ' · ' + t('muestrasAnalizadas', { n: partida.registro.length }));
+     let tit;
+     if (partida.modo === 'tutorial') tit = t('tutorialN', { i: (partida.tut || 0) + 1 });
+     else if (partida.modo === 'practica') tit = t('practicaR', { r: partida.rangoAntes || rango() });
+@@ -531,7 +555,7 @@
+     const e = partida.registro[i]; if (!e) return;
+     const est = e.a ? '<span style="color:var(--cyan)">✓ ' + esc(t('aceptadas')) + '</span>' : '<span style="color:#ff8fa3">✗ ' + esc(t('rechazadas')) + '</span>';
+     abrirModal('<div class="m-top"><h2>#' + (i + 1) + (e.t === 'c' ? ' ◆' : '') + '</h2><button class="x" type="button" data-cerrar aria-label="' + esc(t('cerrar')) + '">✕</button></div>' +
+-      '<p class="kick" style="text-align:center">' + est + (e.t === 'r' ? ' · ' + esc(t('regalo')) : e.t === 'c' ? ' · ' + esc(t('contraejemplo')) : '') + '</p>' +
++      '<p class="kick" style="text-align:center">' + est + (e.t === 'r' ? ' · ' + esc(t('ejemploInicial')) : e.t === 'c' ? ' · ' + esc(t('contraejemplo')) : '') + '</p>' +
+       '<div class="grande-fila">' + filaHTML(e.p) + '</div><p class="grande-nombres">' + e.p.map(id => esc(P.nombre(id, lang(), TT[lang()]))).join(' · ') + '</p>' +
+       '<div class="m-btns" style="margin-top:14px">' + (partida.estado === 'jugando' && !panelAbierto ? '<button class="btn-pri" type="button" data-copiar="' + i + '">' + esc(partida.bandeja.length ? t('reemplazar') : t('copiar')) + '</button>' : '') + '</div>', { volver: 'juego' });
+     const b = el.modal.querySelector('[data-copiar]');
+@@ -549,6 +573,7 @@
+       const n = tarjetaDe(dup); if (n) { n.scrollIntoView({ block: 'nearest' }); n.classList.remove('parpadea'); void n.offsetWidth; n.classList.add('parpadea'); }
+       A.sfx('lleno'); toast(t('yaConoces')); return;
+     }
++    limpiarContra();
+     ocupado = true; partida.sel = -1;
+     const acepta = fnSecreta(ids, ids.length);
+     if (!el.globo.hidden && !horiz) el.globo.classList.add('transparente');
+@@ -652,7 +677,7 @@
+     if (!jugable() || panelAbierto) return;
+     if (!Tut.permite('formular')) return Tut.rechazo();
+     if (!partida.borrador) partida.borrador = nuevoBorrador();
+-    panelAbierto = true; cerrarMenuTarj();
++    panelAbierto = true; cerrarMenuTarj(); limpiarContra();
+     el.juego.classList.add('formulando'); el.panel.hidden = false;
+     A.sfx('panelAbre');
+     renderPanel(); layout();
+@@ -719,10 +744,13 @@
+   }
+   function moldesHTML(k) {
+     const b = partida.borrador, fams = familiasPanel();
+-    let s = '<div class="tabs" role="tablist">';
++    // PLAY-SENAL-02: lista de categorías con nombre, en dos filas si hace falta; las bloqueadas llevan aria-disabled y explican el requisito real
++    let s = '<div class="tabs" role="tablist" aria-label="' + esc(t('categoriasReglas')) + '">';
+     for (const f of FAM_PANEL) {
+       const ab = fams.includes(f);
+-      s += '<button type="button" role="tab" class="tab' + (b.fam === f ? ' on' : '') + (ab ? '' : ' bloq') + '" data-fam="' + f + '" aria-selected="' + (b.fam === f) + '">' + (ab ? '' : '🔒 ') + esc(t('familias')[f]) + '</button>';
++      const req = (f === 'simetria' || f === 'combinadas') ? t('reqComb') : t('reqBase');
++      const bloq = ab ? '' : t('catBloqueada', { 'categoría': t('familias')[f], requisito: req });
++      s += '<button type="button" role="tab" class="tab' + (b.fam === f ? ' on' : '') + (ab ? '' : ' bloq') + '" data-fam="' + f + '" aria-selected="' + (b.fam === f) + '"' + (ab ? '' : ' aria-disabled="true" title="' + esc(bloq) + '" aria-label="' + esc(bloq) + '"') + '>' + (ab ? '' : '<span aria-hidden="true">🔒 </span>') + esc(t('familias')[f]) + '</button>';
+     }
+     s += '</div><div class="moldes">';
+     const ab = fams.includes(b.fam);
+@@ -732,7 +760,7 @@
+       const lc = TT[lang()].letraChica[m];
+       s += '<div class="molde' + (ab ? '' : ' bloq') + '" role="button" tabindex="0" data-m="' + m + '" data-k="' + k + '"><span class="fr">' + esc(t('moldeGen')[m]) + '</span>' +
+         (lc && ab ? '<button type="button" class="info" data-info="' + m + '" aria-label="i">i</button>' : '<span></span>') +
+-        (ab ? '<span class="ej"><span>' + esc(t('ejemplo', { r: R.texto(EJEMPLO[m], lang()) })) + '</span><span class="ok">✓<span class="mini">' + filaHTML(ej.si) + '</span></span><span class="no">✗<span class="mini">' + filaHTML(ej.no) + '</span></span></span>' : '<span class="lck">' + esc(b.fam === 'simetria' ? t('candadoComb') : t('candado')) + '</span>') +
++        (ab ? '<span class="ej"><span>' + esc(t('ejemplo', { r: R.texto(EJEMPLO[m], lang()) })) + '</span><span class="ok">✓<span class="mini">' + filaHTML(ej.si, true) + '</span></span><span class="no">✗<span class="mini">' + filaHTML(ej.no, true) + '</span></span></span>' : '<span class="lck">' + esc(b.fam === 'simetria' ? t('candadoComb') : t('candado')) + '</span>') +
+         (b.info === m ? '<p class="letra-chica">' + esc(lc) + '</p>' : '') + '</div>';
+     }
+     return s + '</div>';
+@@ -770,9 +798,10 @@
+       if (!malos.length) { estado = partida.registro.length === 1 ? t('coherente1') : t('coherente', { m: partida.registro.length }); cls = 'ok'; puede = true; }
+       else { estado = malos.length === 1 ? t('contradiceN', { i: malos[0] + 1 }) : t('contradice', { k: malos.length }) + ': ' + malos.slice(0, 4).map(i => '#' + (i + 1)).join(', ') + (malos.length > 4 ? '…' : ''); cls = 'mal'; }
+     }
++    // SRC-SE01: la comprobación de la regla anuncia su costo real antes de actuar (COSTO_FALLO pulsos sólo si la Sonda la rechaza)
+     el.panel.innerHTML = '<div class="pn-cab"><h3>' + esc(t('formular')) + '</h3><button class="x" type="button" data-cerrarpanel aria-label="' + esc(t('cerrar')) + '">✕</button></div>' +
+       '<div class="pn-cuerpo">' + cuerpo + '</div>' +
+-      '<div class="pn-pie"><p class="pn-estado ' + cls + '" aria-live="polite">' + esc(estado) + '</p><button type="button" class="btn-pri' + (puede ? '' : ' off') + '" data-transmitir aria-disabled="' + (!puede) + '">' + esc(t('transmitir')) + '</button></div>';
++      '<div class="pn-pie"><p class="pn-estado ' + cls + '" aria-live="polite">' + esc(estado) + (puede ? '<br><span class="pn-costo">' + esc(t('costoComprobar', { c: COSTO_FALLO })) + '</span>' : '') + '</p><button type="button" class="btn-pri' + (puede ? '' : ' off') + '" data-transmitir aria-disabled="' + (!puede) + '">' + esc(t('transmitir')) + '</button></div>';
+     const antes = panelEstadoPrevio;
+     panelEstadoPrevio = cls;
+     if (cls === 'ok' && antes !== 'ok') A.sfx('coherente');
+@@ -780,8 +809,9 @@
+     if (cls === 'mal') {
+       const i = coh.findIndex(ok => !ok); const n = tarjetaDe(i); if (n) n.scrollIntoView({ block: 'nearest', behavior: aj.movReducido ? 'auto' : 'smooth' });
+     }
++    // PLAY-SENAL-02: desplazar lo mínimo para que la categoría activa quede completa (nearest), nunca llevarla a un extremo
+     const tab = el.panel.querySelector('.tab.on');
+-    if (tab) { const tabs = tab.parentElement; tabs.scrollLeft = Math.max(0, tab.offsetLeft - (tabs.clientWidth - tab.offsetWidth) / 2); }
++    if (tab) tab.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+     Tut.foco();
+   }
+   let panelEstadoPrevio = '';
+@@ -796,7 +826,11 @@
+       transmitir(); return;
+     }
+     if ((x = tg.closest('[data-info]'))) { e.stopPropagation(); b.info = b.info === x.dataset.info ? null : x.dataset.info; A.sfx('ui'); renderPanel(); return; }
+-    if ((x = tg.closest('[data-fam]'))) { if (!Tut.permite('tab', x.dataset.fam)) return Tut.rechazo(); b.fam = x.dataset.fam; b.info = null; A.sfx('ui'); renderPanel(); return; }
++    if ((x = tg.closest('[data-fam]'))) {
++      if (!Tut.permite('tab', x.dataset.fam)) return Tut.rechazo();
++      if (x.getAttribute('aria-disabled') === 'true') { A.sfx('lleno'); toast(x.getAttribute('aria-label'), null, 2600); return; }
++      b.fam = x.dataset.fam; b.info = null; A.sfx('ui'); renderPanel(); return;
++    }
+     if ((x = tg.closest('.molde'))) {
+       if (x.classList.contains('bloq')) { A.sfx('lleno'); return; }
+       const m = x.dataset.m, k = +x.dataset.k;
+@@ -878,7 +912,7 @@
+     if (!partida || ocupado || !borradorCompleto()) return;
+     const coh = coherencia(); if (!coh || coh.some(ok => !ok)) return;
+     const code = R.codificar(borradorAST());
+-    ocupado = true;
++    ocupado = true; limpiarContra();
+     const notas = [];
+     partida.borrador.c.forEach(cl => { if (cl.p) notas.push(66 + Math.max(0, cl.p.f) * 2, 70 + Math.max(0, cl.p.c) * 2); if (cl.neg) notas.push(72); });
+     A.sfx('transmitir', notas);
+@@ -936,8 +970,9 @@
+     A.sfx('contra'); vibrar([40, 30, 40]);
+     toast(t('contra'), 'rojo', 2600);
+     el.vivo.textContent = t('contra');
+-    el.hudDelta.textContent = '+2'; el.hudDelta.classList.remove('ve'); void el.hudDelta.offsetWidth; el.hudDelta.classList.add('ve');
++    el.hudDelta.textContent = '+' + COSTO_FALLO; el.hudDelta.classList.remove('ve'); void el.hudDelta.offsetWidth; el.hudDelta.classList.add('ve');
+     renderRegistro(partida.registro.length - 1);
++    // VIS-SENAL-02/04: marco discontinuo estático (sin halo de 3 s) hasta la siguiente acción
+     const n = tarjetaDe(partida.registro.length - 1); if (n) { n.classList.add('nuevo-contra'); n.scrollIntoView({ block: 'nearest' }); }
+     guardar();
+     ocupado = false;
+@@ -978,36 +1013,64 @@
+   }
+ 
+   // ---------- modales ----------
+-  let modalVolver = null, onCerrarModal = null;
+-  // el anillo de foco solo aparece si se viene usando el teclado
+-  let viaTeclado = false;
+-  document.addEventListener('keydown', e => { if (e.key === 'Tab' || e.key.startsWith('Arrow') || e.key === 'Enter' || e.key === 'Escape') viaTeclado = true; }, true);
+-  document.addEventListener('pointerdown', () => { viaTeclado = false; }, true);
++  // RSP-MODALS-01: una sola superposición (#velo/#modal). Al abrir se guarda el activador, el resto de la página queda
++  // inerte, el diálogo recibe nombre (aria-labelledby) y foco inicial, Tab/Shift+Tab circulan dentro y al cerrar el foco
++  // vuelve al activador si sigue visible (o al primer control lógico de la pantalla revelada).
++  let modalVolver = null, onCerrarModal = null, modalActivador = null, reabriendo = false;
++  const FOCUSABLE = 'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
++  const visibleEl = n => !!n && n.isConnected && !n.closest('[hidden]') && n.getClientRects().length > 0;
++  const focusables = raiz => Array.from(raiz.querySelectorAll(FOCUSABLE)).filter(n => visibleEl(n) && n.getAttribute('aria-hidden') !== 'true');
++  const capasFondo = () => [el.inicio, el.juego, el.back, el.barraDer, el.globo, el.menuTarj].filter(Boolean);
+   function abrirModal(html, o) {
+     o = o || {};
+     cerrarMenuTarj();
++    if (el.velo.hidden && !reabriendo) modalActivador = (document.activeElement && document.activeElement !== document.body) ? document.activeElement : null;
+     el.modal.className = 'card' + (o.ancha ? ' ancha' : '') + (o.clase ? ' ' + o.clase : '');
+     el.modal.innerHTML = html;
++    el.modal.setAttribute('role', o.alerta ? 'alertdialog' : 'dialog');
++    const tit = el.modal.querySelector('h2,h3');
++    if (tit) { if (!tit.id) tit.id = 'modalTitulo'; el.modal.setAttribute('aria-labelledby', tit.id); } else el.modal.removeAttribute('aria-labelledby');
++    capasFondo().forEach(n => { n.inert = true; });
+     el.velo.hidden = false;
+     modalVolver = o.volver || null; onCerrarModal = o.alCerrar || null;
+     el.modal.scrollTop = 0;
+-    const f = viaTeclado ? el.modal.querySelector('.btn-pri,[data-cerrar],button') : el.modal; if (f) f.focus({ preventScroll: true });
++    // foco inicial sin condicionarlo al tipo de puntero: en confirmaciones destructivas, el control de cancelar (o.foco)
++    const f = (o.foco && el.modal.querySelector(o.foco)) || el.modal.querySelector('.btn-pri,[data-cerrar],button,[href],textarea') || el.modal;
++    f.focus({ preventScroll: true });
+     if (pantalla === 'juego') cronometro(false);
+   }
++  function restaurarFoco(act) {
++    if (act && visibleEl(act) && !act.closest('[inert]')) { act.focus({ preventScroll: true }); return; }
++    // el activador desapareció: primer control lógico de la pantalla revelada
++    const dest = pantalla === 'juego' ? (panelAbierto ? el.panel.querySelector('button') : el.btnPausa) : $('#btnPrincipal');
++    if (dest && visibleEl(dest)) dest.focus({ preventScroll: true });
++  }
+   function cerrarModal() {
+     if (el.velo.hidden) return;
++    const act = modalActivador;
+     el.velo.hidden = true; el.modal.innerHTML = '';
++    capasFondo().forEach(n => { n.inert = false; });
+     A.amortiguar(false);
+     el.cvResAstro.hidden = true; resAstroOn = false;
+     clearInterval(tCuenta); detenerComo();
+     const cb = onCerrarModal; onCerrarModal = null;
+     if (pantalla === 'juego' && partida && partida.estado === 'jugando') cronometro(true);
+-    if (cb) cb();
++    if (cb) { reabriendo = true; try { cb(); } finally { reabriendo = false; } }
++    if (el.velo.hidden) { modalActivador = null; restaurarFoco(act); }
+   }
+   el.velo.addEventListener('click', e => {
+     if (e.target === el.velo) { if (modalVolver !== 'bloquear') cerrarModal(); return; }
+     if (e.target.closest('[data-cerrar]')) { A.sfx('ui'); cerrarModal(); }
+   });
++  // ciclo de Tab dentro del diálogo (aria-modal no sustituye el control de foco)
++  el.velo.addEventListener('keydown', e => {
++    if (e.key !== 'Tab' || el.velo.hidden) return;
++    const f = focusables(el.modal);
++    if (!f.length) { e.preventDefault(); el.modal.focus(); return; }
++    const first = f[0], last = f[f.length - 1], act = document.activeElement;
++    if (e.shiftKey && (act === first || act === el.modal || !el.modal.contains(act))) { e.preventDefault(); last.focus(); }
++    else if (!e.shiftKey && (act === last || !el.modal.contains(act))) { e.preventDefault(); first.focus(); }
++  });
+ 
+   // pausa
+   function abrirPausa() {
+@@ -1017,7 +1080,7 @@
+     const jug = partida.estado === 'jugando';
+     A.amortiguar(true);
+     abrirModal('<div class="m-top"><h2>' + esc(t('pausa')) + '</h2></div>' +
+-      '<div class="m-btns"><button class="btn-pri" type="button" data-p="seguir">' + esc(t('continuar')) + '</button>' +
++      '<div class="m-btns"><button class="btn-pri" type="button" data-p="seguir">' + esc(t('reanudar')) + '</button>' +
+       '<div class="m-fila"><button class="btn-sec" type="button" data-p="como">' + esc(t('comoJugar')) + '</button><button class="btn-sec" type="button" data-p="ajustes">' + esc(t('ajustes')) + '</button></div>' +
+       (jug && partida.modo !== 'tutorial' ? '<button class="btn-sec peligro" type="button" data-p="rendirse">' + esc(t('rendirse')) + '</button>' : '') +
+       (partida.modo === 'tutorial' ? '<button class="btn-sec" type="button" data-p="saltar">' + esc(t('saltarTut')) + '</button>' : '') +
+@@ -1034,12 +1097,14 @@
+     };
+   }
+   function abrirRendirse() {
+-    const diaria = partida.modo !== 'practica' && partida.fecha === hoy();
+-    abrirModal('<div class="m-top"><h2>' + esc(t('rendirseQ')) + '</h2></div><p class="texto" style="margin-bottom:16px">' + esc(diaria ? t('rendirseD') : t('rendirseP')) + '</p>' +
+-      '<div class="m-btns"><button class="btn-pri" type="button" data-r="seguir">' + esc(t('seguir')) + '</button><button class="btn-sec peligro" type="button" data-r="ver">' + esc(t('verRegla')) + '</button></div>', { volver: 'juego' });
++    // SRC-SE02: aviso antes de revelar; el efecto sobre la racha sólo se menciona en el reto diario de hoy
++    const diaria = partida.modo !== 'practica' && partida.modo !== 'tutorial' && partida.fecha === hoy();
++    abrirModal('<div class="m-top"><h2>' + esc(t('rendirseQ')) + '</h2></div><p class="texto" style="margin-bottom:16px">' + esc(t('rendirseP')) + (diaria ? ' ' + esc(t('rendirseD')) : '') + '</p>' +
++      '<div class="m-btns"><button class="btn-pri" type="button" data-r="seguir">' + esc(t('seguir')) + '</button><button class="btn-sec peligro" type="button" data-r="ver">' + esc(t('verRegla')) + '</button></div>', { volver: 'juego', alerta: true, foco: '[data-r="seguir"]' });
+     el.modal.onclick = e => {
+       const b = e.target.closest('[data-r]'); if (!b) return;
+       if (b.dataset.r === 'seguir') { A.sfx('ui'); cerrarModal(); return; }
++      if (!partida || partida.estado !== 'jugando') return; // se revela una sola vez
+       cerrarModal();
+       if (panelAbierto) cerrarPanel(false);
+       partida.estado = 'rendida'; cronometro(false);
+@@ -1059,7 +1124,7 @@
+   function ejemplosRegistro() {
+     const reg = partida.registro;
+     const a = [...reg].reverse().find(e => e.a) || reg[0], r = [...reg].reverse().find(e => !e.a) || reg[1];
+-    return '<div class="res-ejs"><span class="ok">✓<span class="mini">' + filaHTML(a.p) + '</span></span><span class="no">✗<span class="mini">' + filaHTML(r.p) + '</span></span></div>';
++    return '<div class="res-ejs"><span class="ok">✓<span class="mini">' + filaHTML(a.p, true) + '</span></span><span class="no">✗<span class="mini">' + filaHTML(r.p, true) + '</span></span></div>';
+   }
+   function mostrarResultado(info) {
+     info = info || {};
+@@ -1072,15 +1137,19 @@
+     h += '</div></div><div class="res-der">';
+     if (ok && !tut) {
+       h += '<div class="ondas">' + ondasSVG(3 - cal, cal === 3) + '</div><p class="califica">' + esc(t('calif')[cal]) + '</p>';
+-      h += '<div class="lineas"><div><span>' + esc(t('pulsosLbl')) + '</span><b>' + esc(t('pulsos', { p: pul, par: p.par })) + '</b></div><div><span>' + esc(t('muestrasEnv')) + '</span><b>' + enviadas(p) + '</b></div>' + (p.fallos ? '<div><span>' + esc(t('fallos')) + '</span><b>' + p.fallos + '</b></div>' : '') + '<div><span>' + esc(t('tiempo')) + '</span><b>' + fmtTiempo(p.tiempo) + '</b></div></div>';
++      // SRC-SE01: pulsos y objetivo (par) como líneas separadas, con la unidad definida
++      h += '<div class="lineas"><div><span>' + esc(t('pulsosLbl')) + '</span><b>' + esc(t('pulsosDe', { p: pul })) + '</b></div><div><span>' + esc(t('objetivoPulsos', { par: p.par })) + '</span><b>' + (pul <= p.par ? '✓' : '+' + (pul - p.par)) + '</b></div><div><span>' + esc(t('muestrasEnv')) + '</span><b>' + enviadas(p) + '</b></div>' + (p.fallos ? '<div><span>' + esc(t('fallos')) + '</span><b>' + p.fallos + '</b></div>' : '') + '<div><span>' + esc(t('tiempo')) + '</span><b>' + fmtTiempo(p.tiempo) + '</b></div></div>';
++      h += '<p class="texto dim" style="font-size:12px;margin-top:-6px">' + esc(t('pulsoDef')) + '</p>';
+     }
+     if (info.racha) h += '<span class="sello">' + esc(info.racha === 1 ? t('rachaSube1') : t('rachaSube', { d: info.racha })) + '</span>';
+     if (info.rangoNuevo) h += '<span class="sello">' + esc(t('rangoNuevo', { r: nombreRango(info.rangoNuevo) })) + '</span>';
+     if (info.famNueva) h += '<span class="sello">' + esc(t('patronNuevo', { f: t('familias')[info.famNueva] })) + '</span>';
+     h += '<div class="m-btns">';
++    // SRC-SE02 / SRC-G03: «Nueva práctica» genera una regla nueva (jugarPractica(true)); «Volver al menú» es el menú del juego.
++    // No existe un manejador para repetir la misma señal, así que no se anuncia «Repetir esta señal».
+     if (tut) h += '<button class="btn-pri" type="button" data-z="tutSig">' + esc(t('siguiente')) + '</button>';
+-    else if (prac) h += '<button class="btn-pri" type="button" data-z="siguiente">' + esc(t('siguiente')) + '</button><div class="m-fila"><button class="btn-sec" type="button" data-z="compartir">' + esc(t('compartir')) + '</button><button class="btn-sec" type="button" data-z="inicio">' + esc(t('inicio')) + '</button></div>';
+-    else h += '<button class="btn-pri" type="button" data-z="compartir">' + esc(t('compartir')) + '</button><div class="m-fila"><button class="btn-sec" type="button" data-z="inicio">' + esc(t('inicio')) + '</button><button class="btn-sec" type="button" data-z="practica">' + esc(t('practicar')) + '</button></div>';
++    else if (prac) h += '<button class="btn-pri" type="button" data-z="siguiente">' + esc(t('nuevaPractica')) + '</button><div class="m-fila"><button class="btn-sec" type="button" data-z="compartir">' + esc(t('compartir')) + '</button><button class="btn-sec" type="button" data-z="inicio">' + esc(t('inicio')) + '</button></div>';
++    else h += '<button class="btn-pri" type="button" data-z="compartir">' + esc(t('compartir')) + '</button><div class="m-fila"><button class="btn-sec" type="button" data-z="inicio">' + esc(t('inicio')) + '</button><button class="btn-sec" type="button" data-z="practica">' + esc(t('nuevaPractica')) + '</button></div>';
+     if (diariaHoy || (!prac && !tut)) h += '<p class="cuenta" id="cuenta"></p>';
+     h += '</div></div>';
+     abrirModal(h, { volver: 'bloquear', clase: 'res' });
+@@ -1137,6 +1206,8 @@
+     const fin = ok ? '📡 ' + t('shareIntento', { o: t('ordinales')[Math.min(9, p.fallos)] }) : t('shareSin');
+     return cab + '\n' + (seq || '—') + '\n' + fin + '\njetgames.fun/senal';
+   }
++  // SRC-G06: compartir sólo por acción del jugador; cancelar el diálogo nativo no muestra nada; éxito sólo tras confirmar el copiado;
++  // si no se puede copiar, el texto íntegro queda seleccionable en un textarea (patrón de referencia) con «Copiar texto» y «Cerrar».
+   async function compartir(p) {
+     const txt = textoCompartir(p);
+     try {
+@@ -1145,8 +1216,18 @@
+     } catch (e) { if (e && e.name === 'AbortError') return; }
+     try { await navigator.clipboard.writeText(txt); A.sfx('copiado'); toast(t('copiado'), 'cian', 1600); return; } catch (e) { /* sigue */ }
+     const enRes = !el.velo.hidden && el.modal.classList.contains('res') && partida === p;
+-    abrirModal('<div class="m-top"><h2>' + esc(t('compartir')) + '</h2><button class="x" type="button" data-cerrar aria-label="' + esc(t('cerrar')) + '">✕</button></div><textarea readonly style="width:100%;min-height:140px;background:#0a0418;color:#fff;border:1px solid var(--line);border-radius:12px;padding:10px;font:14px JetBrains Mono,monospace;user-select:text;-webkit-user-select:text">' + esc(txt) + '</textarea>', { alCerrar: enRes ? () => mostrarResultado({}) : null });
+-    const ta = el.modal.querySelector('textarea'); ta.focus(); ta.select();
++    abrirModal('<div class="m-top"><h2>' + esc(t('compartir')) + '</h2><button class="x" type="button" data-cerrar aria-label="' + esc(t('cerrar')) + '">✕</button></div>' +
++      '<p class="texto dim" id="compartirAviso" style="margin-bottom:8px">' + esc(t('copiaFallo')) + '</p>' +
++      '<textarea readonly aria-labelledby="modalTitulo" style="width:100%;min-height:140px;background:#0a0418;color:#fff;border:1px solid var(--line);border-radius:12px;padding:10px;font:14px JetBrains Mono,monospace;user-select:text;-webkit-user-select:text">' + esc(txt) + '</textarea>' +
++      '<div class="m-fila" style="margin-top:12px"><button class="btn-pri" type="button" data-copiar-txt>' + esc(t('copiarTexto')) + '</button><button class="btn-sec" type="button" data-cerrar>' + esc(t('cerrar')) + '</button></div>', { alCerrar: enRes ? () => mostrarResultado({}) : null, foco: 'textarea' });
++    const ta = el.modal.querySelector('textarea'); ta.select();
++    el.modal.onclick = async e => {
++      if (!e.target.closest('[data-copiar-txt]')) return;
++      ta.focus(); ta.select();
++      let ok = false;
++      try { await navigator.clipboard.writeText(txt); ok = true; } catch (err) { try { ok = document.execCommand && document.execCommand('copy'); } catch (er) { ok = false; } }
++      if (ok) { A.sfx('copiado'); toast(t('copiado'), 'cian', 1600); } else { toast(t('copiaFallo'), 'rojo', 2600); }
++    };
+   }
+ 
+   // ajustes
+@@ -1167,7 +1248,6 @@
+     h += '<p class="set-grupo">' + esc(t('progreso')) + '</p><button type="button" class="btn-sec peligro" data-borrar style="width:100%">' + esc(t('borrarTodo')) + '</button>';
+     h += '<p class="texto dim atajos" style="font-size:12px;margin-top:14px">' + esc(t('atajos')) + '</p>';
+     abrirModal(h, { volver: pantalla, alCerrar: volverA || null });
+-    let armado = 0;
+     el.modal.onclick = e => {
+       const b = e.target.closest('button'); if (!b) return;
+       if (b.dataset.tog) {
+@@ -1183,11 +1263,7 @@
+         if (b.dataset.lang !== lang()) { JI.set(b.dataset.lang); abrirAjustes(volverA); }
+         return;
+       }
+-      if (b.dataset.borrar != null) {
+-        if (!armado) { armado = setTimeout(() => { armado = 0; b.textContent = t('borrarTodo'); b.classList.remove('armado'); }, 4000); b.textContent = t('borrarSeguro'); b.classList.add('armado'); A.sfx('lleno'); return; }
+-        clearTimeout(armado); armado = 0;
+-        borrarTodo(); toast(t('borrado'), 'cian'); cerrarModal(); return;
+-      }
++      if (b.dataset.borrar != null) { abrirConfirmarBorrado(volverA); return; }
+     };
+     el.modal.oninput = e => {
+       const r = e.target.closest('[data-vol]'); if (!r) return;
+@@ -1195,8 +1271,20 @@
+     };
+     el.modal.onchange = e => { const r = e.target.closest('[data-vol]'); if (r && r.dataset.vol === 'volEfectos') A.sfx('acepta'); };
+   }
++  // SRC-G04: confirmación explícita (sin doble toque), Cancelar con el foco inicial, botón peligro «Borrar progreso»,
++  // enumeración de lo que se borra. Los ajustes (audio, letras, movimiento) y el idioma del sitio se conservan.
++  function abrirConfirmarBorrado(volverA) {
++    abrirModal('<div class="m-top"><h2>' + esc(t('borrarQ', { juego: 'JET//' + t('titulo') })) + '</h2></div>' +
++      '<p class="texto" style="margin-bottom:16px">' + esc(t('borrarCuerpo', { datos: t('borrarDatos') })) + '</p>' +
++      '<div class="m-btns"><button class="btn-sec" type="button" data-cancelar>' + esc(t('cancelar')) + '</button><button class="btn-sec peligro" type="button" data-confirmar-borrado>' + esc(t('borrarTodo')) + '</button></div>',
++      { volver: pantalla, alerta: true, foco: '[data-cancelar]', alCerrar: () => abrirAjustes(volverA) });
++    el.modal.onclick = e => {
++      if (e.target.closest('[data-cancelar]')) { A.sfx('ui'); cerrarModal(); return; }
++      if (e.target.closest('[data-confirmar-borrado]')) { onCerrarModal = null; borrarTodo(); }
++    };
++  }
+   function borrarTodo() {
+-    for (const k of st.claves()) st.del(k);
++    for (const k of st.claves()) if (k !== 'ajustes') st.del(k);
+     location.reload();
+   }
+ 
+@@ -1234,7 +1322,7 @@
+       const filas = [[8, 1], [12, 17]], ok = [1, 0];
+       const ciclo = (k) => {
+         const v = $('#ceV'), s = $('#ceS'); if (!v) return;
+-        v.innerHTML = filaHTML(filas[k % 2]); v.style.transition = 'none'; v.style.left = '50%'; v.style.top = '140px'; v.style.transform = 'translateX(-50%)'; v.style.opacity = '1';
++        v.innerHTML = filaHTML(filas[k % 2], true); v.style.transition = 'none'; v.style.left = '50%'; v.style.top = '140px'; v.style.transform = 'translateX(-50%)'; v.style.opacity = '1';
+         s.className = 'ce-sonda';
+         T_(80, () => { v.style.transition = ''; v.style.top = '28px'; v.style.opacity = '.2'; });
+         T_(750, () => { s.className = 'ce-sonda ' + (ok[k % 2] ? 'si' : 'no'); A.sfx(ok[k % 2] ? 'acepta' : 'rechaza'); });
+@@ -1242,7 +1330,7 @@
+           v.style.opacity = '0';
+           const col = esc_.querySelector(ok[k % 2] ? '.ce-col.a' : '.ce-col.r');
+           if (col.querySelectorAll('.ce-fila').length > 2) col.querySelector('.ce-fila').remove();
+-          col.insertAdjacentHTML('beforeend', '<div class="ce-fila">' + filaHTML(filas[k % 2]) + '</div>');
++          col.insertAdjacentHTML('beforeend', '<div class="ce-fila">' + filaHTML(filas[k % 2], true) + '</div>');
+         });
+         T_(2300, () => ciclo(k + 1));
+       };
+@@ -1253,10 +1341,10 @@
+       const ciclo = () => {
+         const a = esc_.querySelector('.ce-col.a'), r = esc_.querySelector('.ce-col.r'), s = $('#ceS');
+         if (!a) return;
+-        a.innerHTML = '<h4>' + esc(t('aceptadas')) + '</h4>'; r.innerHTML = '<h4>' + esc(t('rechazadas')) + '</h4><div class="ce-fila" id="ceBase">' + filaHTML(base) + '</div>';
++        a.innerHTML = '<h4>' + esc(t('aceptadas')) + '</h4>'; r.innerHTML = '<h4>' + esc(t('rechazadas')) + '</h4><div class="ce-fila" id="ceBase">' + filaHTML(base, true) + '</div>';
+         s.className = 'ce-sonda';
+         T_(700, () => { const b = $('#ceBase'); if (b) b.children[1].classList.add('ce-cambio'); });
+-        T_(1500, () => { const b = $('#ceBase'); if (!b) return; const n = base.slice(); n[1] = 9; a.insertAdjacentHTML('beforeend', '<div class="ce-fila" style="opacity:.25" id="ceNueva">' + filaHTML(n) + '</div>'); const nn = $('#ceNueva'); nn.children[1].classList.add('ce-cambio'); });
++        T_(1500, () => { const b = $('#ceBase'); if (!b) return; const n = base.slice(); n[1] = 9; a.insertAdjacentHTML('beforeend', '<div class="ce-fila" style="opacity:.25" id="ceNueva">' + filaHTML(n, true) + '</div>'); const nn = $('#ceNueva'); nn.children[1].classList.add('ce-cambio'); });
+         T_(2100, () => { s.className = 'ce-sonda si'; A.sfx('acepta'); const nn = $('#ceNueva'); if (nn) nn.style.opacity = '1'; });
+         T_(4200, ciclo);
+       };
+@@ -1266,8 +1354,8 @@
+       const ciclo = () => {
+         const f = $('#ceF'), a = esc_.querySelector('.ce-col.a'), r = esc_.querySelector('.ce-col.r'), s = $('#ceS'); if (!f) return;
+         f.innerHTML = ''; s.className = 'ce-sonda';
+-        a.innerHTML = '<h4>' + esc(t('aceptadas')) + '</h4><div class="ce-fila">' + filaHTML([8, 1]) + '<span class="ce-marca">✓</span></div><div class="ce-fila">' + filaHTML([16, 9, 4]) + '<span class="ce-marca">✓</span></div>';
+-        r.innerHTML = '<h4>' + esc(t('rechazadas')) + '</h4><div class="ce-fila">' + filaHTML([12, 17]) + '<span class="ce-marca">✓</span></div>';
++        a.innerHTML = '<h4>' + esc(t('aceptadas')) + '</h4><div class="ce-fila">' + filaHTML([8, 1], true) + '<span class="ce-marca">✓</span></div><div class="ce-fila">' + filaHTML([16, 9, 4], true) + '<span class="ce-marca">✓</span></div>';
++        r.innerHTML = '<h4>' + esc(t('rechazadas')) + '</h4><div class="ce-fila">' + filaHTML([12, 17], true) + '<span class="ce-marca">✓</span></div>';
+         T_(400, () => { f.innerHTML = marcado(R.texto('HAY:c', lang(), true)); A.sfx('chip', { fila: 1, i: 2 }); });
+         T_(1300, () => { esc_.querySelectorAll('.ce-marca').forEach(m => m.classList.add('on')); A.sfx('coherente'); });
+         T_(2300, () => { s.className = 'ce-sonda si'; A.sfx('acepta'); f.innerHTML = '<b>' + esc(t('contacto')) + '</b>'; });
+@@ -1376,12 +1464,15 @@
+     else { detenerFondo(); A.tema('juego'); }
+     layout();
+   }
++  // RSP-MODALS-01: si el foco quedó en el cuerpo (el activador desapareció con el cambio de pantalla), va al primer control lógico
++  const focoPerdido = () => !document.activeElement || document.activeElement === document.body || !visibleEl(document.activeElement);
+   function irInicio() {
+     guardarYa();
+     if (panelAbierto) { panelAbierto = false; el.juego.classList.remove('formulando'); el.panel.hidden = true; marcasCoh = null; }
+     Tut.ocultar();
+     partida = null;
+     renderInicio(); mostrar('inicio');
++    if (focoPerdido()) { const b = $('#btnPrincipal'); if (b && visibleEl(b)) b.focus({ preventScroll: true }); }
+   }
+   function entrarJuego(p, pausar) {
+     activar(p);
+@@ -1389,6 +1480,7 @@
+     S.poner(sonda, 'reposo', ahora()); sonda.progreso = -1;
+     mostrar('juego');
+     renderBandeja(); renderRegistro(); actualizarHud(false);
++    if (focoPerdido()) el.juego.focus({ preventScroll: true });
+     guardar();
+     if (p.estado !== 'jugando') { mostrarResultado({}); return; }
+     if (pausar) abrirPausa(); else cronometro(true);
+@@ -1453,6 +1545,7 @@
+     const nuevo = perfil.tutorial == null;
+     const h0 = hoy(), s = numDe(h0), g = leerPartida('diario:' + h0);
+     const racha = rachaEfectiva();
++    btn.hidden = false;
+     $('#rachaIni').hidden = nuevo || racha < 1;
+     $('#rachaIni b').textContent = racha === 1 ? t('racha1') : t('racha', { d: racha });
+     $('#rangoIni').textContent = nombreRango(rango()).replace(' · ', '\n');
+@@ -1461,7 +1554,8 @@
+     $$('.ini-sec .btn-sec').forEach(b => { b.hidden = nuevo && b.dataset.acc !== 'como'; });
+     if (nuevo) {
+       const tp = tutPendiente();
+-      bt.textContent = tp ? t('continuar') : t('empezar');
++      // SRC-G03: «Continuar partida» sólo cuando hay un tutorial guardado que se recupera; si sólo falta avanzar, «Continuar»
++      bt.textContent = tp ? (tp.p ? t('continuarPartida') : t('continuar')) : t('empezar');
+       bs.textContent = tp ? t('tutorialN', { i: tp.r + 1 }) : t('empezarSub');
+       btn.dataset.acc = 'tutorial';
+     }
+@@ -1589,8 +1683,11 @@
+   el.btnAjustes.addEventListener('click', () => {
+     A.sfx('ui');
+     if (!el.velo.hidden) { if (modalVolver === 'bloquear') return; cerrarModal(); }
+-    abrirAjustes(pantalla === 'juego' && partida && partida.estado === 'jugando' ? null : null);
++    abrirAjustes(null);
++    modalActivador = el.btnAjustes;
+   });
++  // PLAY-SENAL-05: ayuda compacta junto a la bandeja (cómo agregar, reemplazar y quitar) y teclas sobre las piezas
++  el.btnAtajos.addEventListener('click', () => { A.sfx('ui'); aj.atajos = !aj.atajos; guardarAjustes(); aplicarAjustes(); pedirLayout(); });
+ 
+   // ---------- tutorial ----------
+   const Tut = {
+@@ -1620,11 +1717,19 @@
+     },
+     ir(paso) {
+       this.paso = paso;
+-      const txt = { 0: 'tut1', 1: 'tut2', 2: 'tut3', 3: 'tut4', 4: 'tut5', 5: 'tut6', 6: 'tut7', 7: 'tut8', 8: 'tut9', 9: 'tut10' }[paso];
++      let txt = { 0: 'tut1', 1: 'tut2', 2: 'tut3', 3: 'tut4', 4: 'tut5', 5: 'tut6', 6: 'tut7', 7: 'tut8', 8: 'tut9', 9: 'tut10' }[paso];
++      // PLAY-SENAL-01: la frase «cambiaste una sola característica» sólo si la última muestra difiere del ejemplo rechazado en una pieza y cambió la respuesta
++      if (paso === 4) txt = this.unaCaracteristica() ? 'unaCaracteristica' : 'tut5b';
+       const conBoton = paso === 0 || paso === 4;
+       this.globo(t(txt), conBoton ? t('siguiente') : null, 0, paso === 0);
+       this.foco();
+     },
++    unaCaracteristica() {
++      if (!partida) return false;
++      const env = partida.registro.filter(e => e.t === 'e'); const u = env[env.length - 1], base = partida.registro[1];
++      if (!u || !base || u.p.length !== base.p.length || u.a === base.a) return false;
++      return u.p.filter((id, k) => id !== base.p[k]).length === 1;
++    },
+     globo(txt, boton, ms, conSaltar) {
+       el.globo.hidden = false; el.globoTxt.textContent = txt;
+       el.saltar.hidden = !conSaltar;
+@@ -1641,29 +1746,31 @@
+       else if (this.r > 0 && !el.globo.hidden) { el.globoTxt.textContent = t(this.r === 1 ? 'tut11' : 'tut13'); posicionarGlobo(); }
+     },
+     rechazo() { A.sfx('lleno'); const g = el.globo; if (!g.hidden) g.animate([{ transform: 'translateX(-5px)' }, { transform: 'translateX(5px)' }, { transform: 'none' }], { duration: 220 }); },
+-    limpiarFoco() { $$('.foco').forEach(n => n.classList.remove('foco')); $$('.zona.apagada').forEach(n => n.classList.remove('apagada')); },
++    limpiarFoco() { $$('.foco').forEach(n => { n.classList.remove('foco'); n.removeAttribute('data-guia'); }); $$('.zona.apagada').forEach(n => n.classList.remove('apagada')); },
+     foco() {
+       this.limpiarFoco();
+       if (!this.activo || this.r !== 0) { el.juego.classList.remove('tut'); return; }
+       el.juego.classList.add('tut');
+       const ap = (...ids) => ids.forEach(i => { const n = $(i); if (n) n.classList.add('apagada'); });
+-      const f = n => { if (!n) return; n.classList.add('foco'); if (n.closest('#panel')) n.scrollIntoView({ block: 'nearest', inline: 'nearest' }); };
++      // PLAY-SENAL-04: la guía es un contorno discontinuo ámbar con rótulo («Siguiente paso» / «Elegí esta opción»),
++      // distinto del borde sólido cian de la selección y del anillo de foco del teclado
++      const f = (n, guia) => { if (!n) return; n.classList.add('foco'); if (guia) n.setAttribute('data-guia', t(guia)); if (n.closest('#panel')) n.scrollIntoView({ block: 'nearest', inline: 'nearest' }); };
+       switch (this.paso) {
+         case 0: ap('#zBandeja', '#zPaleta', '#zAcciones'); break;
+-        case 1: ap('#zBandeja', '#zPaleta', '#zAcciones'); f(tarjetaDe(1)); break;
+-        case 2: ap('#zAcciones'); f(el.bandeja); $$('#paleta .pz').forEach(b => { if (R.PC[+b.dataset.id] === 1) f(b); }); break;
+-        case 3: f(el.btnEnviar); break;
++        case 1: ap('#zBandeja', '#zPaleta', '#zAcciones'); f(tarjetaDe(1), 'siguientePaso'); break;
++        case 2: ap('#zAcciones'); f(el.bandeja, 'siguientePaso'); $$('#paleta .pz').forEach(b => { if (R.PC[+b.dataset.id] === 1) f(b); }); break;
++        case 3: f(el.btnEnviar, 'siguientePaso'); break;
+         case 4: ap('#zBandeja', '#zPaleta', '#zAcciones'); break;
+-        case 6: ap('#zBandeja', '#zPaleta'); f(el.btnFormular); break;
+-        case 7: f(el.panel.querySelector('.molde[data-m="HAY"]')); break;
++        case 6: ap('#zBandeja', '#zPaleta'); f(el.btnFormular, 'siguientePaso'); break;
++        case 7: f(el.panel.querySelector('.molde[data-m="HAY"]'), 'elegiOpcion'); break;
+         case 8: {
+           const cl = partida.borrador && partida.borrador.c[0];
+           const ch = el.panel.querySelector('[data-ch="c"][data-v="1"]');
+-          if (ch) f(ch); else f(el.panel.querySelector('.hueco'));
+-          if (cl && cl.p.c === 1) f(el.panel.querySelector('[data-transmitir]'));
++          if (ch) f(ch, 'elegiOpcion'); else f(el.panel.querySelector('.hueco'), 'siguientePaso');
++          if (cl && cl.p.c === 1) f(el.panel.querySelector('[data-transmitir]'), 'siguientePaso');
+           break;
+         }
+-        case 9: f(el.panel.querySelector('[data-transmitir]')); break;
++        case 9: f(el.panel.querySelector('[data-transmitir]'), 'siguientePaso'); break;
+       }
+     },
+     permite(acc, d) {
+@@ -1729,10 +1836,14 @@
+   el.saltar.addEventListener('click', () => { A.sfx('ui'); Tut.saltar(); });
+   function posicionarGlobo() {
+     if (el.globo.hidden) return;
+-    const abajo = horiz;
++    const abajo = horiz && panelAbierto;
+     el.globo.classList.toggle('abajo', abajo);
+-    if (abajo) {
+-      // en horizontal, abajo de la columna del registro: nunca tapa bandeja, paleta ni botones
++    if (horiz && !panelAbierto) {
++      // PLAY-SENAL-01: en horizontal la guía va sobre la bandeja (columna central), junto al control que explica
++      const r = $('#zBandeja').getBoundingClientRect(), h = el.globo.offsetHeight || 80;
++      el.globo.style.top = Math.max(56, Math.round(r.top - h - 6)) + 'px'; el.globo.style.left = Math.round(r.left) + 'px'; el.globo.style.width = Math.round(r.width) + 'px';
++    } else if (abajo) {
++      // formulando en horizontal: abajo de la columna del registro, sin tapar el panel
+       const r = $('#zRegistro').getBoundingClientRect();
+       el.globo.style.top = ''; el.globo.style.left = Math.round(r.left) + 'px'; el.globo.style.width = Math.round(r.width) + 'px';
+     } else if (panelAbierto) {
+@@ -1876,4 +1987,6 @@
+   };
+   arrancar();
+   setTimeout(() => { el.btnFs.hidden = !puedeFs() || pantalla !== 'inicio'; }, 0);
++  // SRC-G05: el juego quedó listo; el estado de carga del HTML pasa a «listo» (loading/error/ready excluyentes)
++  if (window.JETCarga) window.JETCarga.listo();
+ })();
+diff --git a/site/senal/src/i18n.js b/site/senal/src/i18n.js
+index 91c3367..f34c41d 100644
+--- a/site/senal/src/i18n.js
++++ b/site/senal/src/i18n.js
+@@ -1,11 +1,11 @@
+-/* JET//Señal — textos. Español neutro de tú e inglés neutro. Todo texto visible pasa por aquí. */
++/* JET//Señal — textos. Español (base de tú; las cadenas de la auditoría 2026-10-22 llegan en es-AR con voseo) e inglés neutro. Todo texto visible pasa por aquí. */
+ (function (G) {
+   'use strict';
+   const T = {
+     es: {
+       docTitulo: 'JET//Señal · Descifra la regla secreta',
+       titulo: 'Señal', lema: 'Descifra la regla secreta de la Sonda.',
+-      volver: 'Volver a JET//Games', ajustes: 'Ajustes', pausa: 'Pausa', pantallaCompleta: 'Pantalla completa', salirPantalla: 'Salir de pantalla completa',
++      volver: 'Volver a los juegos', ajustes: 'Ajustes', pausa: 'Pausa', pantallaCompleta: 'Pantalla completa', salirPantalla: 'Salir de pantalla completa',
+       empezar: 'Empezar', empezarSub: 'Aprende jugando · 3 min',
+       diaria: 'Señal del día #{n}', nueva: 'Nueva', enCurso: 'En curso · {m} muestras', enCurso1: 'En curso · 1 muestra',
+       resuelta: 'Resuelta · {p} {pw}', pulsoS: 'pulso', pulsoP: 'pulsos', resueltaCorta: 'Resuelta', rendidaCorta: 'Sin contacto',
+@@ -16,14 +16,25 @@
+       rangos: ['Escucha', 'Analista', 'Criptografía', 'Contacto', 'Xenolingüística', 'Primera voz'],
+       senalN: 'Señal #{n}', practicaR: 'Práctica · R{r}', tutorialN: 'Tutorial {i}/3', archivoN: 'Archivo #{n}',
+       aceptadas: 'ACEPTADAS', rechazadas: 'RECHAZADAS', muestras: 'MUESTRAS', pulsosHud: 'PULSOS', pulsosLbl: 'Pulsos',
+-      enviar: 'Enviar', formular: 'Formular regla', vaciar: 'Vaciar', vaciarAria: 'Vaciar la bandeja',
++      enviar: 'Enviar muestra', formular: 'Formular regla', vaciar: 'Vaciar', vaciarAria: 'Vaciar la bandeja',
+       copiar: 'Copiar a la bandeja', reemplazar: 'Reemplazar bandeja', verGrande: 'Ver grande', cerrar: 'Cerrar',
+       yaConoces: 'Ya conoces esa respuesta.', aceptada: 'Muestra aceptada.', rechazada: 'Muestra rechazada.',
+       bandejaVacia: 'Toca piezas para armar una muestra', bandejaLlena: 'La bandeja admite 5 piezas.',
++      // PLAY-SENAL-01/03/04/05 · SRC-SE01: guía junto a la bandeja, contadores y estados
++      armaMuestra: 'Armá una muestra', unaCaracteristica: 'Cambiaste una sola característica. Compará la respuesta con la muestra anterior.',
++      tut5b: 'Compará esta muestra con la rechazada: ¿qué cambió y qué respondió la Sonda?',
++      pruebasEnviadas: 'Pruebas enviadas: {n}', muestrasAnalizadas: 'Muestras analizadas: {n}', ejemploInicial: 'Ejemplo inicial',
++      categoriasReglas: 'Categorías de reglas', catBloqueada: '{categoría} bloqueada · completá {requisito} para desbloquearla.',
++      reqBase: '2 prácticas resueltas o 1 señal del día', reqComb: 'el rango 4 o 3 señales del día',
++      elegiOpcion: 'Elegí esta opción', seleccionado: 'Seleccionado', siguientePaso: 'Siguiente paso',
++      reemplazarRanura: 'Tocá una casilla ocupada para reemplazar su pieza.', quitarRanura: 'Tocá otra vez la casilla seleccionada para quitar su pieza.',
++      mostrarAtajos: 'Mostrar atajos', atajoEnviar: 'Enviar muestra · Enter', atajoFormular: 'Formular regla · L', atajoPausa: 'Pausar · Esc',
++      ranuraLlena: 'Casilla {i}: {d}. Seleccionar para reemplazar.', ranuraSel: 'Casilla {i}: {d}. Seleccionado. Activar otra vez quita la pieza.', ranuraVacia: 'Casilla {i}: vacía',
++      pulsoDef: 'Los pulsos indican el costo de tus acciones.', objetivoPulsos: 'Objetivo: {par} pulsos', costoComprobar: 'Si la Sonda la rechaza: +{c} pulsos y un contraejemplo.',
+       regalo: 'Regalo', contraejemplo: 'Contraejemplo', enviada: 'Muestra #{i}',
+       coherente: 'Coherente con las {m} muestras', coherente1: 'Coherente con la muestra', contradice: 'Contradice {k} muestras', contradice1: 'Contradice 1 muestra',
+       completa: 'Completa los huecos', eligeMolde: 'Elige una frase', contradiceN: 'Contradice la muestra #{i}',
+-      transmitir: 'Transmitir', transmitiendo: 'Transmitiendo…', noChip: 'NO', masCond: '+ Condición', quitarCond: 'Quitar condición',
++      transmitir: 'Comprobar regla', transmitiendo: 'Transmitiendo…', noChip: 'NO', masCond: '+ Condición', quitarCond: 'Quitar condición',
+       cambiarMolde: 'Cambiar frase', y: 'Y', o: 'O', forma: 'Forma', color: 'Color', tamano: 'Tamaño', cualquiera: '—', cualq: 'cualquiera',
+       atr: { forma: 'forma', color: 'color', tam: 'tamaño' }, cmp: { '=': 'exactamente', '>=': 'al menos', '<=': 'como máximo' },
+       par: { even: 'par', odd: 'impar' }, cantidad: 'Cantidad', paridad: 'Paridad', atributo: 'Atributo',
+@@ -35,9 +46,12 @@
+       pulsos: '{p} {pw} · par {par}', pulsosDe: '{p} {pw}', parDe: 'par {par}',
+       calif: ['Brillante', 'Precisa', 'Contacto', 'Contacto lento'],
+       tiempo: 'Tiempo', muestrasEnv: 'Muestras', fallos: 'Transmisiones fallidas',
+-      rendirse: 'Rendirse', rendirseQ: '¿Ver la regla?', rendirseD: 'En la señal del día, esto corta tu racha.', rendirseP: 'Se revela la regla y la partida termina sin contacto.',
+-      verRegla: 'Ver la regla', seguir: 'Seguir intentando',
+-      continuar: 'Continuar', inicio: 'Inicio', otraVez: 'Otra vez', siguiente: 'Siguiente', compartir: 'Compartir', copiado: 'Copiado',
++      rendirse: 'Rendirse', rendirseQ: '¿Ver la solución y terminar el intento?', rendirseD: 'En el reto diario se cortará tu racha.', rendirseP: 'Se revelará la regla y este intento quedará sin resolver.',
++      verRegla: 'Ver solución', seguir: 'Seguir investigando',
++      continuar: 'Continuar', continuarPartida: 'Continuar partida', reanudar: 'Reanudar partida', inicio: 'Volver al menú', otraVez: 'Otra vez', siguiente: 'Siguiente', nuevaPractica: 'Nueva práctica',
++      compartir: 'Compartir resultado', copiado: 'Texto copiado', copiarTexto: 'Copiar texto', copiaFallo: 'No pudimos copiarlo automáticamente. Seleccioná y copiá este texto.',
++      cancelar: 'Cancelar', borrarQ: '¿Borrar todo el progreso de {juego}?', borrarCuerpo: 'Se borrarán {datos}. Esta acción no se puede deshacer.',
++      borrarDatos: 'las partidas guardadas, el archivo de señales del día, las estadísticas, la racha y el progreso de práctica y tutorial',
+       practicar: 'Practicar', proxima: 'Próxima señal en {t}', rachaSube: '¡Racha de {d} días!', rachaSube1: '¡Primer día de racha!',
+       archivoNota: 'Las señales del archivo no cuentan para la racha.', archivoVacio: 'Aquí se guardarán las señales de los días anteriores. Vuelve mañana.',
+       sinJugar: 'Sin jugar', jugar: 'Jugar', hoy: 'Hoy',
+@@ -74,7 +88,7 @@
+       como2: 'Arma muestras y mira qué acepta.', como2b: 'Copia una muestra y cambia una sola pieza: si la respuesta cambia, aprendiste algo.',
+       como3: 'Cuando creas saberla, transmítela con fichas.', como3b: 'Menos muestras, mejor puntaje. Si fallas, recibes un contraejemplo.',
+       tutOtra: 'Jugar el tutorial otra vez', listo: 'Listo', anterior: 'Anterior',
+-      atajos: 'Teclado: Q-Y, A-H y Z-N agregan piezas · Intro envía · L formula · Esc pausa',
++      atajos: 'Teclado: Q-Y, A-H y Z-N agregan piezas · Enter envía la muestra · L formula la regla · Esc pausa',
+       // tutorial
+       tut1: 'Esta Sonda acepta unas muestras y rechaza otras. Hay una regla detrás.',
+       tut2: 'Copia la muestra rechazada: tócala y elige «Copiar a la bandeja».',
+@@ -109,7 +123,7 @@
+     en: {
+       docTitulo: 'JET//Signal · Crack the secret rule',
+       titulo: 'Signal', lema: "Crack the probe's secret rule.",
+-      volver: 'Back to JET//Games', ajustes: 'Settings', pausa: 'Pause', pantallaCompleta: 'Full screen', salirPantalla: 'Exit full screen',
++      volver: 'Back to games', ajustes: 'Settings', pausa: 'Pause', pantallaCompleta: 'Full screen', salirPantalla: 'Exit full screen',
+       empezar: 'Start', empezarSub: 'Learn by playing · 3 min',
+       diaria: 'Daily Signal #{n}', nueva: 'New', enCurso: 'In progress · {m} samples', enCurso1: 'In progress · 1 sample',
+       resuelta: 'Solved · {p} {pw}', pulsoS: 'pulse', pulsoP: 'pulses', resueltaCorta: 'Solved', rendidaCorta: 'No contact',
+@@ -120,14 +134,24 @@
+       rangos: ['Listener', 'Analyst', 'Cryptographer', 'Contact', 'Xenolinguist', 'First voice'],
+       senalN: 'Signal #{n}', practicaR: 'Practice · R{r}', tutorialN: 'Tutorial {i}/3', archivoN: 'Archive #{n}',
+       aceptadas: 'ACCEPTED', rechazadas: 'REJECTED', muestras: 'SAMPLES', pulsosHud: 'PULSES', pulsosLbl: 'Pulses',
+-      enviar: 'Send', formular: 'State the rule', vaciar: 'Clear', vaciarAria: 'Clear the tray',
++      enviar: 'Send sample', formular: 'Formulate rule', vaciar: 'Clear', vaciarAria: 'Clear the tray',
+       copiar: 'Copy to tray', reemplazar: 'Replace tray', verGrande: 'View large', cerrar: 'Close',
+       yaConoces: 'You already know that answer.', aceptada: 'Sample accepted.', rechazada: 'Sample rejected.',
+       bandejaVacia: 'Tap pieces to build a sample', bandejaLlena: 'The tray holds 5 pieces.',
++      armaMuestra: 'Build a sample', unaCaracteristica: 'You changed just one feature. Compare the response with the previous sample.',
++      tut5b: 'Compare this sample with the rejected one: what changed, and how did the probe answer?',
++      pruebasEnviadas: 'Tests submitted: {n}', muestrasAnalizadas: 'Samples analyzed: {n}', ejemploInicial: 'Initial example',
++      categoriasReglas: 'Rule categories', catBloqueada: '{categoría} locked · complete {requisito} to unlock it.',
++      reqBase: '2 solved practice rounds or 1 daily signal', reqComb: 'rank 4 or 3 daily signals',
++      elegiOpcion: 'Choose this option', seleccionado: 'Selected', siguientePaso: 'Next step',
++      reemplazarRanura: 'Select an occupied slot to replace its piece.', quitarRanura: 'Select the highlighted slot again to remove its piece.',
++      mostrarAtajos: 'Show keyboard shortcuts', atajoEnviar: 'Send sample · Enter', atajoFormular: 'Formulate rule · L', atajoPausa: 'Pause · Esc',
++      ranuraLlena: 'Slot {i}: {d}. Select to replace.', ranuraSel: 'Slot {i}: {d}. Selected. Activate again to remove the piece.', ranuraVacia: 'Slot {i}: empty',
++      pulsoDef: 'Pulses measure the cost of your actions.', objetivoPulsos: 'Target: {par} pulses', costoComprobar: 'If the probe rejects it: +{c} pulses and a counterexample.',
+       regalo: 'Gift', contraejemplo: 'Counterexample', enviada: 'Sample #{i}',
+       coherente: 'Consistent with all {m} samples', coherente1: 'Consistent with the sample', contradice: 'Contradicts {k} samples', contradice1: 'Contradicts 1 sample',
+       completa: 'Fill in the blanks', eligeMolde: 'Pick a sentence', contradiceN: 'Contradicts sample #{i}',
+-      transmitir: 'Transmit', transmitiendo: 'Transmitting…', noChip: 'NOT', masCond: '+ Condition', quitarCond: 'Remove condition',
++      transmitir: 'Check rule', transmitiendo: 'Transmitting…', noChip: 'NOT', masCond: '+ Condition', quitarCond: 'Remove condition',
+       cambiarMolde: 'Change sentence', y: 'AND', o: 'OR', forma: 'Shape', color: 'Color', tamano: 'Size', cualquiera: '—', cualq: 'any',
+       atr: { forma: 'shape', color: 'color', tam: 'size' }, cmp: { '=': 'exactly', '>=': 'at least', '<=': 'at most' },
+       par: { even: 'even', odd: 'odd' }, cantidad: 'Count', paridad: 'Parity', atributo: 'Attribute',
+@@ -139,9 +163,12 @@
+       pulsos: '{p} {pw} · par {par}', pulsosDe: '{p} {pw}', parDe: 'par {par}',
+       calif: ['Brilliant', 'Precise', 'Contact', 'Slow contact'],
+       tiempo: 'Time', muestrasEnv: 'Samples', fallos: 'Failed transmissions',
+-      rendirse: 'Give up', rendirseQ: 'Reveal the rule?', rendirseD: 'On the daily signal, this ends your streak.', rendirseP: 'The rule is revealed and the game ends with no contact.',
+-      verRegla: 'Reveal rule', seguir: 'Keep trying',
+-      continuar: 'Resume', inicio: 'Home', otraVez: 'Again', siguiente: 'Next', compartir: 'Share', copiado: 'Copied',
++      rendirse: 'Give up', rendirseQ: 'View the solution and end this attempt?', rendirseD: 'In the daily challenge, your streak will end.', rendirseP: 'The rule will be revealed and this attempt will remain unsolved.',
++      verRegla: 'View solution', seguir: 'Keep investigating',
++      continuar: 'Continue', continuarPartida: 'Continue game', reanudar: 'Resume game', inicio: 'Back to menu', otraVez: 'Again', siguiente: 'Next', nuevaPractica: 'New practice',
++      compartir: 'Share result', copiado: 'Text copied', copiarTexto: 'Copy text', copiaFallo: 'We couldn’t copy it automatically. Select and copy this text.',
++      cancelar: 'Cancel', borrarQ: 'Delete all progress in {juego}?', borrarCuerpo: '{datos} will be deleted. This cannot be undone.',
++      borrarDatos: 'Saved games, the daily-signal archive, statistics, streak, and practice and tutorial progress',
+       practicar: 'Practice', proxima: 'Next signal in {t}', rachaSube: '{d}-day streak!', rachaSube1: 'First day of your streak!',
+       archivoNota: "Archive signals don't count toward your streak.", archivoVacio: 'Past signals will be kept here. Come back tomorrow.',
+       sinJugar: 'Not played', jugar: 'Play', hoy: 'Today',
+@@ -149,7 +176,7 @@
+       sJugadas: 'Played', sResueltas: 'Solved', sRacha: 'Streak', sRachaMax: 'Best streak', sPromedio: 'Pulses vs. par',
+       sDistrib: 'Ratings', sPracticaR: 'Practice solved by rank', sCatalogo: 'Pattern catalog', sCatalogoD: 'Each family lights up the first time you solve a rule of that kind.',
+       sinGuardado: "Your browser can't save progress in this mode.",
+-      borrarTodo: 'Erase progress', borrarSeguro: 'Tap again to erase everything', borrado: 'Progress erased',
++      borrarTodo: 'Delete progress', borrarSeguro: 'Tap again to erase everything', borrado: 'Progress deleted',
+       patronNuevo: 'New pattern: {f}', rangoNuevo: 'New rank: {r}',
+       saltarTut: 'Skip tutorial',
+       musica: 'Music', efectos: 'Sound effects', volumen: 'Volume', vibracion: 'Vibration', idioma: 'Language', letras: 'Show letters on pieces',
+@@ -177,7 +204,7 @@
+       como2: 'Build samples and see what it accepts.', como2b: 'Copy a sample and change a single piece: if the answer flips, you learned something.',
+       como3: 'When you think you know it, transmit it with tiles.', como3b: 'Fewer samples, better score. If you miss, you get a counterexample.',
+       tutOtra: 'Play the tutorial again', listo: 'Done', anterior: 'Back',
+-      atajos: 'Keyboard: Q-Y, A-H and Z-N add pieces · Enter sends · L states the rule · Esc pauses',
++      atajos: 'Keyboard: Q-Y, A-H and Z-N add pieces · Enter sends the sample · L formulates the rule · Esc pauses',
+       tut1: 'This probe accepts some samples and rejects others. There is a rule behind it.',
+       tut2: 'Copy the rejected sample: tap it and choose "Copy to tray".',
+       tut3: 'Swap one piece for a cyan one: tap a piece in the tray, then a cyan piece in the palette.',
+diff --git a/site/senal/src/piezas.js b/site/senal/src/piezas.js
+index 394df58..cf705d2 100644
+--- a/site/senal/src/piezas.js
++++ b/site/senal/src/piezas.js
+@@ -35,6 +35,21 @@
+       if (conLetras) s += '<text class="pz-letra" x="50" y="' + (f === 1 ? 74 : 64) + '" text-anchor="middle" font-family="JetBrains Mono,monospace" font-weight="800" font-size="' + (f === 1 ? 30 : 34) + '" fill="#fff" stroke="#0a0418" stroke-width="6" paint-order="stroke">' + LETRA[c] + '</text>';
+       s += '</g></symbol>';
+     }
++    // VIS-SENAL-01 — variante de detalle para renders <= 28 px CSS: misma silueta, misma escala .58 para la pieza pequeña,
++    // sin brillo ovalado, un solo contorno y patrón proporcional (>= 3 rayas / 3 puntos dentro de la pieza pequeña).
++    s += '<pattern id="pzRayasM" patternUnits="userSpaceOnUse" width="14" height="14" patternTransform="rotate(45)"><rect width="14" height="14" fill="none"/><rect width="5.5" height="14" fill="rgba(0,60,52,.5)"/></pattern>';
++    s += '<pattern id="pzPuntosM" patternUnits="userSpaceOnUse" width="14" height="14"><circle cx="7" cy="7" r="3.6" fill="rgba(110,52,0,.55)"/></pattern>';
++    for (let id = 0; id < 18; id++) {
++      const f = R.PF[id], c = R.PC[id], t = R.PT[id];
++      const tr = t ? ' transform="translate(50 92) scale(.58) translate(-50 -92)"' : '';
++      s += '<symbol id="pzs' + id + '" viewBox="0 0 100 100"><g' + tr + '>';
++      s += '<path d="' + FORMA[f] + '" fill="' + COL[c] + '"/>';
++      if (c === 1) s += '<path d="' + FORMA[f] + '" fill="url(#pzRayasM)"/>';
++      if (c === 2) s += '<path d="' + FORMA[f] + '" fill="url(#pzPuntosM)"/>';
++      s += '<path d="' + FORMA[f] + '" fill="none" stroke="rgba(8,3,20,.75)" stroke-width="' + (t ? 6 : 4) + '"/>';
++      if (conLetras) s += '<text class="pz-letra" x="50" y="' + (f === 1 ? 76 : 66) + '" text-anchor="middle" font-family="JetBrains Mono,monospace" font-weight="800" font-size="' + (f === 1 ? 36 : 42) + '" fill="#fff" stroke="#0a0418" stroke-width="8" paint-order="stroke">' + LETRA[c] + '</text>';
++      s += '</g></symbol>';
++    }
+     // íconos de los chips
+     s += '<symbol id="icF0" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2.4"/></symbol>';
+     s += '<symbol id="icF1" viewBox="0 0 24 24"><path d="M12 3.5L21 19.5H3Z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/></symbol>';
+@@ -46,6 +61,8 @@
+     return s;
+   }
+   const svg = (id, cls) => '<svg class="pz-svg' + (cls ? ' ' + cls : '') + '" viewBox="0 0 100 100" aria-hidden="true" focusable="false"><use href="#pz' + id + '"/></svg>';
++  // misma pieza lógica (mismo id, mismo nombre accesible) en su variante de detalle para tamaños pequeños
++  const svgMini = (id, cls) => '<svg class="pz-svg pz-mini' + (cls ? ' ' + cls : '') + '" viewBox="0 0 100 100" aria-hidden="true" focusable="false"><use href="#pzs' + id + '"/></svg>';
+   const icono = (ref) => '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#' + ref + '"/></svg>';
+   function nombre(id, lang, T) {
+     const f = R.PF[id], c = R.PC[id], t = R.PT[id];
+@@ -53,5 +70,5 @@
+     const tam = t ? 'pequeño' : 'grande';
+     return T.formasN[f] + ' ' + T.coloresN[c] + ' ' + tam;
+   }
+-  G.Piezas = { defs, svg, icono, nombre, COL, COL_CLARO };
++  G.Piezas = { defs, svg, svgMini, icono, nombre, COL, COL_CLARO };
+ })(typeof globalThis !== 'undefined' ? globalThis : this);
+diff --git a/site/senal/src/style.css b/site/senal/src/style.css
+index 41aeaa5..2a02e5e 100644
+--- a/site/senal/src/style.css
++++ b/site/senal/src/style.css
+@@ -15,7 +15,18 @@ button{cursor:pointer}
+ h1,h2,h3,p{margin:0}
+ [hidden]{display:none!important}
+ .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+-:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
++/* PLAY-SENAL-04: el anillo de foco del teclado es blanco (distinto del cian de selección y del ámbar de la guía) */
++:focus-visible{outline:2px solid #fff;outline-offset:2px;box-shadow:0 0 0 4px rgba(5,1,8,.9)}
++
++/* SRC-G05: estados de carga (loading / error / ready son excluyentes; los gobierna html[data-carga]) */
++.carga{display:grid;gap:12px;justify-items:center;text-align:center;padding:8px 0}
++.carga-txt{font:600 14px 'JetBrains Mono',monospace;color:var(--dim);letter-spacing:.04em}
++html[data-carga="cargando"] .carga-txt::after{content:'';display:block;width:120px;height:3px;margin:10px auto 0;border-radius:99px;background:linear-gradient(90deg,transparent,var(--cyan),transparent);animation:cargaBarra 1.4s linear infinite}
++@keyframes cargaBarra{from{background-position:-120px 0}to{background-position:120px 0}}
++.carga-acc{display:grid;gap:10px;width:100%;max-width:300px}
++.carga-acc .btn-pri,.carga-acc .btn-sec{min-height:48px;text-decoration:none;font-size:15px}
++html[data-carga="cargando"] .ini-acc>:not(#carga),html[data-carga="error"] .ini-acc>:not(#carga),html[data-carga="red"] .ini-acc>:not(#carga){display:none!important}
++html[data-carga="listo"] #carga{display:none!important}
+ 
+ /* ---------- barra superior común ---------- */
+ #back{position:fixed;top:calc(10px + var(--sat));left:calc(10px + var(--sal));z-index:40;display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 14px 0 11px;border-radius:99px;background:rgba(10,5,18,.72);border:1px solid rgba(119,0,244,.45);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);color:#d9d3ee;font:700 12px 'JetBrains Mono',monospace;letter-spacing:.06em;text-decoration:none;transition:border-color .15s,box-shadow .15s,color .15s}
+@@ -33,7 +44,7 @@ h1,h2,h3,p{margin:0}
+ 
+ /* ---------- inicio ---------- */
+ #cvFondo{position:absolute;inset:0;width:100%;height:100%;display:block}
+-.ini-col{position:relative;z-index:2;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:calc(76px + var(--sat)) calc(18px + var(--sar)) calc(18px + var(--sab)) calc(18px + var(--sal));max-width:560px;margin:0 auto;overflow-y:auto;touch-action:pan-y}
++.ini-col{position:relative;z-index:2;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:calc(76px + var(--sat)) calc(18px + var(--sar)) calc(18px + var(--sab)) calc(18px + var(--sal));max-width:560px;margin:0 auto;overflow-y:auto;touch-action:pan-y pinch-zoom}
+ .ini-cab{text-align:center;padding-top:2vh}
+ .logo{font-weight:900;font-size:clamp(44px,13vw,76px);letter-spacing:-.04em;line-height:1;text-shadow:0 6px 40px rgba(119,0,244,.45)}
+ .logo i{font-style:normal;color:var(--cyan)}
+@@ -86,15 +97,16 @@ h1,h2,h3,p{margin:0}
+ #zRegistro{grid-area:reg;min-height:0;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+ #zBandeja{grid-area:band}
+ #zPaleta{grid-area:pal}
+-#zAcciones{grid-area:acc;display:grid;grid-template-columns:auto 1fr 1fr;gap:8px}
++#zAcciones{grid-area:acc;display:grid;grid-template-columns:auto 1fr 1fr auto;gap:8px}
+ #panel{grid-area:panel}
+ #cvSonda{position:absolute;inset:0;width:100%;height:100%;display:block}
+ .hud{position:absolute;top:2px;font:700 11px 'JetBrains Mono',monospace;letter-spacing:.14em;color:var(--dim);text-transform:uppercase;pointer-events:none;white-space:nowrap}
+ .hud-l{left:2px}.hud-r{right:2px;text-align:right}
+ .hud b{color:var(--ink);font-size:15px;letter-spacing:.04em;display:inline-block;min-width:1.2em}
++.hud-sub{display:block;font-size:9.5px;letter-spacing:.08em;color:var(--dim2);margin-top:1px}
+ .odo.gira{animation:odo .3s var(--ease)}
+ @keyframes odo{0%{transform:translateY(60%);opacity:0}100%{transform:none;opacity:1}}
+-.delta{position:absolute;right:0;top:20px;color:var(--red);font-size:14px;opacity:0}
++.delta{position:absolute;right:0;top:34px;color:var(--red);font-size:14px;opacity:0}
+ .delta.ve{animation:delta 1.6s ease forwards}
+ @keyframes delta{0%{opacity:0;transform:translateY(4px)}15%{opacity:1;transform:none}75%{opacity:1}100%{opacity:0;transform:translateY(-8px)}}
+ 
+@@ -105,45 +117,71 @@ h1,h2,h3,p{margin:0}
+ .col h2{display:flex;justify-content:space-between;align-items:center;font:700 11px 'JetBrains Mono',monospace;letter-spacing:.16em;padding:8px 10px 6px;color:var(--cyan)}
+ .col.rej h2{color:#ff8fa3}
+ .col h2 .cnt{font-size:11px;opacity:.75}
+-.lista{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;padding:2px 6px 8px;display:flex;flex-direction:column;gap:5px;touch-action:pan-y;scrollbar-width:thin;scrollbar-color:rgba(181,168,216,.3) transparent;outline:none}
+-.lista:focus-visible{box-shadow:inset 0 0 0 2px var(--cyan)}
+-.tarj{position:relative;display:flex;align-items:center;gap:6px;min-height:calc(var(--mini) + 14px);padding:4px 6px;border-radius:10px;background:rgba(255,255,255,.04);border:1px solid transparent;cursor:pointer;transition:background .15s,border-color .15s,transform .12s,opacity .2s}
++.lista{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;padding:2px 6px 8px;display:flex;flex-direction:column;gap:5px;touch-action:pan-y pinch-zoom;scrollbar-width:thin;scrollbar-color:rgba(181,168,216,.3) transparent;outline:none}
++.lista:focus-visible{box-shadow:inset 0 0 0 2px #fff}
++/* VIS-SENAL-02: tres columnas estables (índice · secuencia · veredicto); símbolos sobre una línea base común */
++.tarj{position:relative;display:grid;grid-template-columns:26px minmax(0,1fr) 20px;align-items:center;column-gap:4px;min-height:calc(var(--mini) + 14px);padding:4px 4px 4px 6px;border-radius:10px;background:rgba(255,255,255,.04);border:1px solid transparent;cursor:pointer;transition:background .15s,border-color .15s,transform .12s,opacity .2s,box-shadow .2s}
+ .tarj:hover{background:rgba(255,255,255,.08)}
+ .tarj:active{transform:scale(.98)}
+-.tarj.foco-k{border-color:var(--cyan)}
+-.tarj .num{font:700 10px 'JetBrains Mono',monospace;color:var(--dim2);min-width:22px;flex:none}
++.tarj.foco-k{border-color:#fff}
++.tarj .num{font:700 11px 'JetBrains Mono',monospace;font-variant-numeric:tabular-nums;color:var(--dim2);min-width:26px}
+ .tarj.regalo .num{color:var(--amber)}
+-.tarj .fila{display:flex;gap:2px;flex:1;min-width:0}
+-.tarj .fila{overflow:hidden}
++.tarj .fila{display:flex;align-items:flex-end;gap:2px;min-width:0;overflow:hidden}
+ .tarj .fila .pz-svg{flex:0 1 var(--mini);width:var(--mini);min-width:0;height:auto;aspect-ratio:1/1;max-height:var(--mini)}
+-.tarj .rombo{color:#f5f0ff;font-size:12px;flex:none;text-shadow:0 0 8px rgba(255,255,255,.6)}
+-.tarj .marca{flex:none;width:18px;text-align:center;font:800 13px 'JetBrains Mono',monospace}
++/* PLAY-SENAL-03: rótulo «Ejemplo inicial» visible en los regalos */
++.tarj.regalo{padding-bottom:15px}
++.tarj .etq{position:absolute;right:6px;bottom:2px;padding:0 5px;border-radius:99px;border:1px solid rgba(255,181,71,.5);color:var(--amber);font:700 8px 'JetBrains Mono',monospace;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap;line-height:1.5}
++.tarj .rombo{position:absolute;right:21px;top:0;color:#f5f0ff;font-size:9px;line-height:1;text-shadow:0 0 6px rgba(255,255,255,.6)}
++.tarj .marca{width:20px;height:20px;line-height:20px;text-align:center;font:800 13px/20px 'JetBrains Mono',monospace;justify-self:end}
+ .tarj .marca.si{color:var(--cyan)}.tarj .marca.no{color:var(--red)}
+ .tarj.contra-d{border-color:var(--red);background:rgba(255,68,102,.12)}
+-.tarj.entra{animation:entra .32s var(--ease)}
+-@keyframes entra{from{opacity:0;transform:translateY(-12px) scale(.96)}to{opacity:1;transform:none}}
+-.tarj.parpadea{animation:parpadea .9s ease}
+-@keyframes parpadea{0%,100%{background:rgba(255,255,255,.04)}25%,75%{background:rgba(0,242,207,.28)}50%{background:rgba(255,255,255,.06)}}
+-.tarj.nuevo-contra{animation:nuevoContra 3s ease}
+-@keyframes nuevoContra{0%,60%{box-shadow:0 0 0 2px rgba(245,240,255,.85),0 0 22px rgba(245,240,255,.35)}100%{box-shadow:none}}
+-.tarj.ola{animation:ola .6s ease}
+-@keyframes ola{0%{background:rgba(255,255,255,.04)}40%{background:rgba(0,242,207,.32)}100%{background:rgba(255,255,255,.04)}}
++/* VIS-SENAL-04: inserción 220 ms (<= 6 px); prueba nueva: línea lateral 2 px + fondo blanco 6 % durante 700 ms (clase .nueva) */
++.tarj.entra{animation:entra .22s var(--ease)}
++@keyframes entra{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
++.tarj.nueva{box-shadow:inset 2px 0 0 var(--cyan);background:rgba(255,255,255,.06)}
++/* confirmación/error: un solo cambio de fondo de 450 ms que vuelve suavemente, sin alternar brillo */
++.tarj.parpadea{animation:parpadea .45s ease}
++@keyframes parpadea{0%{background:rgba(255,255,255,.04)}30%{background:rgba(0,242,207,.26)}100%{background:rgba(255,255,255,.04)}}
++/* contraejemplo nuevo: marco discontinuo estático hasta la siguiente acción (lo retira limpiarContra) */
++.tarj.nuevo-contra{border:1px dashed rgba(245,240,255,.85)}
++.tarj.ola{animation:ola .45s ease}
++@keyframes ola{0%{background:rgba(255,255,255,.04)}35%{background:rgba(0,242,207,.26)}100%{background:rgba(255,255,255,.04)}}
++@media (max-width:420px){.tarj .etq{font-size:7.5px;padding:0 3px;letter-spacing:0}}
++@media (max-width:360px){.hud{font-size:10px;letter-spacing:.1em}.hud-sub{font-size:8.5px;letter-spacing:.04em}}
+ .lista-vacia{font-size:12px;color:var(--dim2);text-align:center;padding:14px 6px;line-height:1.4}
+ 
+ /* bandeja */
+-#zBandeja{display:flex;justify-content:center}
++#zBandeja{display:flex;justify-content:center;position:relative}
+ #bandeja{display:flex;gap:var(--gp);justify-content:center;padding:6px;border-radius:16px;background:rgba(119,0,244,.08);border:1px solid rgba(119,0,244,.3);position:relative}
+-.ranura{width:var(--slot);height:var(--slot);border-radius:12px;border:1.5px dashed rgba(181,168,216,.35);background:rgba(5,1,8,.4);display:grid;place-items:center;padding:4px;position:relative;transition:border-color .15s,background .15s,transform .12s;touch-action:none;color:inherit}
++/* VIS-SENAL-03: vacío = discontinuo; llena = borde neutro; seleccionada = doble contorno cian 2 px + pestaña inferior (sin halo);
++   destino de arrastre = esquinas cian 3 px + fondo .12, sin pestaña. Ninguno usa el color de una pieza ni el rojo. */
++.ranura{width:var(--slot);height:var(--slot);border-radius:12px;border:1.5px dashed rgba(181,168,216,.35);background:rgba(5,1,8,.4);display:grid;place-items:center;padding:4px;position:relative;transition:border-color .15s,background .15s,box-shadow .15s;touch-action:none;color:inherit}
+ .ranura.llena{border-style:solid;border-color:rgba(181,168,216,.25);background:rgba(255,255,255,.05);cursor:grab}
+-.ranura.sel{border-color:var(--cyan);box-shadow:0 0 0 2px rgba(0,242,207,.35),0 0 18px rgba(0,242,207,.25);background:rgba(0,242,207,.08)}
+-.ranura.destino{border-color:var(--cyan);background:rgba(0,242,207,.12)}
++.ranura.sel{border:2px solid var(--cyan);box-shadow:inset 0 0 0 2px rgba(5,1,8,.95),inset 0 0 0 4px var(--cyan);background:rgba(0,242,207,.08)}
++.ranura.sel::after{content:'';position:absolute;left:50%;bottom:-7px;width:14px;height:5px;transform:translateX(-50%);background:var(--cyan);border-radius:0 0 4px 4px}
++.ranura.destino{border-color:transparent;background:
++  linear-gradient(var(--cyan),var(--cyan)) left top/14px 3px no-repeat,linear-gradient(var(--cyan),var(--cyan)) left top/3px 14px no-repeat,
++  linear-gradient(var(--cyan),var(--cyan)) right top/14px 3px no-repeat,linear-gradient(var(--cyan),var(--cyan)) right top/3px 14px no-repeat,
++  linear-gradient(var(--cyan),var(--cyan)) left bottom/14px 3px no-repeat,linear-gradient(var(--cyan),var(--cyan)) left bottom/3px 14px no-repeat,
++  linear-gradient(var(--cyan),var(--cyan)) right bottom/14px 3px no-repeat,linear-gradient(var(--cyan),var(--cyan)) right bottom/3px 14px no-repeat,
++  rgba(0,242,207,.12)}
++.ranura.destino::after{display:none}
+ .ranura .pz-svg{width:100%;height:100%}
++/* VIS-SENAL-04: colocación 160 ms con escala máxima 1.03; error = cambio de borde 450 ms sin desplazamiento */
+ .ranura.encaja .pz-svg{animation:encaja .16s var(--ease)}
+-@keyframes encaja{from{transform:scale(1.08)}to{transform:none}}
+-.ranura.tiembla{animation:tiembla .12s linear 2}
+-@keyframes tiembla{25%{transform:translateX(-3px)}75%{transform:translateX(3px)}}
+-.ranura .idx{position:absolute;left:4px;top:2px;font:700 9px 'JetBrains Mono',monospace;color:var(--dim2)}
++@keyframes encaja{from{transform:scale(1.03)}to{transform:none}}
++.ranura.tiembla{animation:bordeErr .45s ease}
++@keyframes bordeErr{0%,60%{border-color:var(--red);box-shadow:inset 0 0 0 2px rgba(255,68,102,.6)}100%{border-color:rgba(181,168,216,.35);box-shadow:none}}
++.ranura .idx{position:absolute;left:3px;top:3px;min-width:16px;height:16px;padding:0 4px;border-radius:99px;background:rgba(5,1,8,.82);color:var(--dim);font:700 11px/16px 'JetBrains Mono',monospace;text-align:center;pointer-events:none}
++.ranura.sel .idx{color:var(--cyan)}
+ .band-hint{position:absolute;inset:0;display:grid;place-items:center;font-size:12px;color:var(--dim2);pointer-events:none;text-align:center;padding:0 10px}
++/* PLAY-SENAL-05: ayuda compacta desplegable junto a la bandeja */
++.ayuda-band{position:absolute;left:50%;bottom:calc(100% + 6px);transform:translateX(-50%);width:min(520px,calc(100vw - 24px - var(--sal) - var(--sar)));z-index:6;background:rgba(16,9,34,.97);border:1px solid rgba(0,242,207,.45);border-radius:14px;padding:10px 12px;font-size:12.5px;line-height:1.45;color:#ddd5f3;box-shadow:0 14px 40px rgba(0,0,0,.55);display:grid;gap:4px}
++.ayuda-band .ab-t{font:700 11px 'JetBrains Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--cyan)}
++.ayuda-band ul{margin:4px 0 0;padding:0 0 0 16px;color:var(--dim)}
++.ayuda-band li{font:600 12px 'JetBrains Mono',monospace}
++#btnAtajos.on{color:var(--cyan);border-color:rgba(0,242,207,.5)}
++body.atajos-on .pz .kbd{opacity:1}
+ 
+ /* paleta */
+ #zPaleta{display:flex;justify-content:center}
+@@ -170,9 +208,9 @@ h1,h2,h3,p{margin:0}
+ /* horizontal */
+ #juego.horiz{grid-template-columns:minmax(0,38fr) minmax(0,32fr) minmax(0,30fr);grid-template-rows:minmax(0,1fr) auto auto;grid-template-areas:"reg sonda pal" "reg band pal" "reg acc pal";column-gap:14px;row-gap:10px}
+ #juego.horiz #zPaleta{align-items:center}
+-#juego.horiz #zAcciones{grid-template-columns:auto 1fr;grid-template-rows:auto auto;align-content:start}
++#juego.horiz #zAcciones{grid-template-columns:auto 1fr auto;grid-template-rows:auto auto;align-content:start}
+ #juego.horiz #btnEnviar{grid-column:2}
+-#juego.horiz #btnFormular{grid-column:1 / span 2}
++#juego.horiz #btnFormular{grid-column:1 / span 3}
+ #juego.horiz #zSonda{min-height:56px}
+ /* formular */
+ #juego.formulando{grid-template-rows:minmax(0,.8fr) minmax(0,1.6fr);grid-template-areas:"reg" "panel"}
+@@ -189,16 +227,18 @@ h1,h2,h3,p{margin:0}
+ .pn-cab h3{flex:1;font-size:15px;font-weight:700}
+ .x{width:44px;height:44px;flex:none;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--ink);display:grid;place-items:center;font-size:18px;padding:0}
+ .x:hover{background:rgba(255,255,255,.09)}
+-.pn-cuerpo{flex:1;min-height:0;overflow-y:auto;padding:10px 12px;touch-action:pan-y;scrollbar-width:thin}
++.pn-cuerpo{flex:1;min-height:0;overflow-y:auto;padding:10px 12px;touch-action:pan-y pinch-zoom;scrollbar-width:thin}
+ .pn-pie{border-top:1px solid var(--line);padding:8px 12px calc(8px);display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center}
+ .pn-estado{font:600 12px 'JetBrains Mono',monospace;line-height:1.35;color:var(--dim)}
+ .pn-estado.ok{color:var(--cyan)}.pn-estado.mal{color:#ff8fa3}
++.pn-costo{font-weight:500;color:var(--dim)}
+ .pn-pie .btn-pri{min-height:48px;min-width:140px;font-size:15px}
+-.tabs{display:flex;gap:6px;overflow-x:auto;padding:2px 0 10px;scrollbar-width:none;touch-action:pan-x;-webkit-mask-image:linear-gradient(90deg,#000 0,#000 calc(100% - 28px),transparent);mask-image:linear-gradient(90deg,#000 0,#000 calc(100% - 28px),transparent);scroll-behavior:smooth}
+-.tabs::-webkit-scrollbar{display:none}
++/* PLAY-SENAL-02: las categorías se reparten en filas (sin desborde horizontal); la activa siempre queda completa */
++.tabs{display:flex;flex-wrap:wrap;gap:6px;padding:2px 0 10px}
+ .tab{flex:none;min-height:44px;padding:0 13px;border-radius:99px;border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--dim);font:600 13px Poppins,sans-serif;display:inline-flex;align-items:center;gap:5px}
+ .tab.on{background:rgba(0,242,207,.14);border-color:var(--cyan);color:var(--ink)}
+-.tab.bloq{opacity:.55}
++.tab.on::before{content:'✓';font:800 11px 'JetBrains Mono',monospace;color:var(--cyan)}
++.tab.bloq{opacity:.85;color:var(--dim2);border-style:dashed;cursor:not-allowed}
+ .moldes{display:grid;gap:8px}
+ #panel{container-type:inline-size}
+ @container (min-width:640px){.moldes{grid-template-columns:1fr 1fr}}
+@@ -210,7 +250,7 @@ h1,h2,h3,p{margin:0}
+ .molde .ej .mini{display:inline-flex;gap:1px;align-items:center}
+ .molde .ej .mini .pz-svg{width:18px;height:18px}
+ .molde .ej .ok{color:var(--cyan)}.molde .ej .no{color:#ff8fa3}
+-.molde.bloq{opacity:.45;cursor:default}
++.molde.bloq{opacity:.7;cursor:default;border-style:dashed}
+ .molde .lck{font:600 11px 'JetBrains Mono',monospace;color:var(--dim2);grid-column:1 / -1}
+ .info{width:36px;height:36px;border-radius:50%;border:1px solid var(--line2);background:transparent;color:var(--dim);font:700 13px 'JetBrains Mono',monospace;display:grid;place-items:center;padding:0;position:relative}
+ .info::before{content:'';position:absolute;inset:-4px}
+@@ -237,7 +277,9 @@ h1,h2,h3,p{margin:0}
+ @media (min-width:560px){.chips-g .chip{flex-direction:row;gap:7px;min-height:46px;font-size:13.5px}}
+ .chip:hover{background:rgba(255,255,255,.08)}
+ .chip:active{transform:scale(.96)}
+-.chip.on{border-color:var(--cyan);background:rgba(0,242,207,.16)}
++/* PLAY-SENAL-04: la selección lleva borde sólido cian y marca de confirmación */
++.chip.on{border:1.5px solid var(--cyan);background:rgba(0,242,207,.16);position:relative}
++.chip.on::after{content:'✓';position:absolute;right:4px;top:2px;font:800 10px 'JetBrains Mono',monospace;color:var(--cyan)}
+ .chip .ic{width:18px;height:18px}
+ .conector{display:flex;justify-content:center;gap:8px;margin:2px 0 10px}
+ .conector .chip{min-width:84px;flex-direction:row;font-family:'JetBrains Mono',monospace;font-weight:800;letter-spacing:.1em;font-size:13px}
+@@ -247,7 +289,7 @@ h1,h2,h3,p{margin:0}
+ /* modales */
+ #velo{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;padding:calc(12px + var(--sat)) calc(12px + var(--sar)) calc(12px + var(--sab)) calc(12px + var(--sal));background:rgba(5,1,8,.62);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);animation:fade .2s ease}
+ @keyframes fade{from{opacity:0}to{opacity:1}}
+-.card{width:100%;max-width:460px;max-height:100%;overflow-y:auto;background:var(--card);border:1px solid var(--line);border-radius:22px;padding:20px 18px;box-shadow:0 30px 80px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.06);animation:pop .26s var(--ease);touch-action:pan-y;scrollbar-width:thin}
++.card{width:100%;max-width:460px;max-height:100%;overflow-y:auto;background:var(--card);border:1px solid var(--line);border-radius:22px;padding:20px 18px;box-shadow:0 30px 80px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.06);animation:pop .26s var(--ease);touch-action:pan-y pinch-zoom;scrollbar-width:thin}
+ .card.ancha{max-width:680px}
+ @keyframes pop{from{transform:translateY(12px) scale(.97);opacity:.3}to{transform:none;opacity:1}}
+ .m-top{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+@@ -407,21 +449,30 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
+ #globo.transparente{opacity:.1}
+ #juego.tut .zona{transition:opacity .25s}
+ #juego.tut .zona.apagada{opacity:.35}
+-.foco{box-shadow:0 0 0 2px var(--cyan),0 0 24px rgba(0,242,207,.45)!important;animation:focoPulso 1.6s ease-in-out infinite;position:relative;z-index:2}
+-@keyframes focoPulso{50%{box-shadow:0 0 0 3px rgba(0,242,207,.7),0 0 34px rgba(0,242,207,.6)}}
++/* PLAY-SENAL-04: guía del tutorial = contorno discontinuo ámbar + rótulo (data-guia); no es selección ni foco */
++.foco{outline:2px dashed var(--amber)!important;outline-offset:3px;position:relative;z-index:2}
++.foco[data-guia]::before{content:attr(data-guia);position:absolute;left:50%;bottom:calc(100% + 6px);transform:translateX(-50%);z-index:3;white-space:nowrap;padding:2px 8px;border-radius:99px;background:var(--amber);color:#2a1600;font:700 10px 'JetBrains Mono',monospace;letter-spacing:.06em;text-transform:uppercase;pointer-events:none}
++.foco[data-guia]::after{content:'';position:absolute;left:50%;bottom:calc(100% + 2px);transform:translateX(-50%);border:4px solid transparent;border-top-color:var(--amber);z-index:3;pointer-events:none}
++#bandeja.foco[data-guia]::before{bottom:auto;top:-10px}
++#bandeja.foco[data-guia]::after{display:none}
++/* dentro de una lista con desplazamiento el rótulo va dentro de la tarjeta, para que no lo recorte el overflow */
++.tarj.foco[data-guia]::before{left:auto;right:24px;bottom:-1px;transform:none}
++.tarj.foco[data-guia]::after{display:none}
++.tarj.regalo.foco[data-guia] .etq{display:none}
+ 
+ /* pantallas muy bajas */
+ @media (max-height:600px) and (orientation:portrait){#juego{gap:6px;padding-top:calc(58px + var(--sat))}}
+ /* movimiento reducido */
+ body.reducido *,body.reducido *::before,body.reducido *::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.12s!important}
+ @media (prefers-reduced-motion:reduce){.racha .pulso{animation:none}}
+-@media (max-width:360px){.btn-form{font-size:13px;line-height:1.15}#btnEnviar{font-size:16px}}
++@media (max-width:420px){.btn-form{font-size:13px;line-height:1.15}#btnEnviar{font-size:14px;line-height:1.15}}
++@media (max-width:360px){#btnEnviar{font-size:13px}#zAcciones{gap:6px}.btn-ic{width:46px}}
+ @media (max-width:360px){.chips-g .chip{padding:4px 2px;font-size:11px}.chips-g{gap:4px}}
+ 
+ /* escena de la portada (?demo): sin cromo de navegación */
+ body.demo #back,body.demo #barraDer{display:none!important}
+-body.demo #juego{padding-top:16px;padding-bottom:16px}
+-/* selector de idioma común de jetgames.fun (ES | EN) en el inicio */
+-.ini-idioma{align-self:center;margin-top:2px}
+-.ini-idioma button{min-width:56px;font-family:'JetBrains Mono',monospace;font-weight:700;letter-spacing:.08em}
+-.seg-idioma button{font-family:'JetBrains Mono',monospace;font-weight:700;letter-spacing:.08em}
++body.demo #juego{padding-top:16px;padding-bottom:16px}
++/* selector de idioma común de jetgames.fun (ES | EN) en el inicio */
++.ini-idioma{align-self:center;margin-top:2px}
++.ini-idioma button{min-width:56px;font-family:'JetBrains Mono',monospace;font-weight:700;letter-spacing:.08em}
++.seg-idioma button{font-family:'JetBrains Mono',monospace;font-weight:700;letter-spacing:.08em}

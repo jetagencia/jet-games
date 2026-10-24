@@ -1,0 +1,852 @@
+diff --git a/site/crater/index.html b/site/crater/index.html
+index 7966ccc..aa870a9 100644
+--- a/site/crater/index.html
++++ b/site/crater/index.html
+@@ -2,7 +2,7 @@
+ <html lang="es">
+ <head>
+ <meta charset="utf-8">
+-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
++<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+ <title>JET//Cráter · Coincide con el mundo</title>
+ <meta name="description" content="Siete aterrizajes al día: elige dónde aterrizará la mayoría, sin poder hablar con nadie. A medianoche se levanta el polvo y ves el mapa del mundo.">
+ <meta name="theme-color" content="#050108">
+@@ -21,11 +21,36 @@
+ <link rel="apple-touch-icon" href="icon-192.png">
+ <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+ <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+-<link rel="stylesheet" href="src/estilo.css?v=6">
++<link rel="stylesheet" href="src/estilo.css?v=7">
++<style>
++/* Estado de carga (SRC-G05): título y estado visibles antes del JS; error recuperable con acciones reales. */
++#sCarga .cargaMsg{margin:0;font:500 15px Poppins,system-ui,sans-serif;color:#b5a8d8;text-align:center;max-width:420px;line-height:1.5;padding:0 16px}
++#sCarga .cargaAcc{display:flex;flex-direction:column;align-items:center;gap:12px;margin-top:8px;width:min(100% - 32px,260px)}
++#sCarga .cargaAcc[hidden]{display:none}
++#sCarga .cargaAcc button,#sCarga .cargaAcc a{width:100%;min-height:48px;display:inline-flex;align-items:center;justify-content:center;border-radius:14px;font:600 16px Poppins,system-ui,sans-serif;color:#fff;text-decoration:none;cursor:pointer}
++#sCarga .cargaAcc button{border:0;background:linear-gradient(135deg,#7700f4,#00f2cf)}
++#sCarga .cargaAcc a{border:1px solid rgba(245,240,255,.3);background:rgba(255,255,255,.05)}
++#sCarga.err .pulso{display:none}
++</style>
+ </head>
+ <body>
+-<div id="sCarga" aria-hidden="true"><h1 class="logo">JET<i>//</i><span data-t="name">Cráter</span></h1><div class="pulso"></div></div>
+-<script>if(window.JETIdioma&&JETIdioma.get()==='en'){document.title='JET//Crater · Sync with the world';document.querySelector('#sCarga span').textContent='Crater';}</script>
++<div id="sCarga" role="status" aria-live="polite"><h1 class="logo">JET<i>//</i><span data-t="name">Cráter</span></h1><div class="pulso"></div><p class="cargaMsg" id="cargaMsg">Cargando JET//Cráter…</p><div class="cargaAcc" id="cargaAcc" hidden><button type="button" id="cargaReint">Volver a cargar</button><a id="cargaVolver" href="https://jetgames.fun/">Volver a los juegos</a></div></div>
++<script>
++(function () {
++  var en = !!(window.JETIdioma && JETIdioma.get() === 'en');
++  if (en) { document.title = 'JET//Crater · Sync with the world'; document.querySelector('#sCarga span').textContent = 'Crater'; }
++  var T = en ? { c: 'Loading JET//Crater…', e: 'Loading was interrupted. You can try again.', n: 'We couldn’t download all resources.', r: 'Reload game', v: 'Back to games' }
++             : { c: 'Cargando JET//Cráter…', e: 'La carga se interrumpió. Puedes volver a intentarlo.', n: 'No pudimos descargar todos los recursos.', r: 'Volver a cargar', v: 'Volver a los juegos' };
++  var m = document.getElementById('cargaMsg'), a = document.getElementById('cargaAcc'), b = document.getElementById('cargaReint'), v = document.getElementById('cargaVolver');
++  m.textContent = T.c; b.textContent = T.r; v.textContent = T.v; v.href = 'https://jetgames.fun/?lang=' + (en ? 'en' : 'es');
++  var listo = false, fallo = false;
++  function error(red) { if (listo || fallo) return; fallo = true; m.textContent = red ? T.n : T.e; a.hidden = false; document.getElementById('sCarga').classList.add('err'); b.focus(); }
++  b.onclick = function () { location.reload(); };
++  window.addEventListener('error', function (e) { if (listo) return; var t = e && e.target; if (t && t !== window && t.tagName !== 'SCRIPT') return; error(!!(t && t.tagName === 'SCRIPT')); }, true);
++  var tm = setTimeout(function () { error(false); }, 12000);
++  window.__crCargaLista = function () { listo = true; clearTimeout(tm); };
++})();
++</script>
+ <canvas id="fondo" aria-hidden="true"></canvas>
+ <a id="back" href="https://jetgames.fun/" target="_top" rel="noopener" data-ta="back">‹ JET<i>//</i>Games</a>
+ <div id="tr">
+@@ -64,6 +89,7 @@
+    <div class="r1"><span class="kick" id="rKick"></span><span class="lunas" id="rLunas" aria-hidden="true"></span></div>
+    <h2 data-t="prompt" id="rPrompt"></h2>
+    <p id="rCtx"></p>
++   <div class="leyenda" id="rLey" hidden></div>
+    <button class="saltar" id="bSaltar" hidden data-t="skipTut"></button>
+   </div>
+   <div class="area" id="area">
+@@ -73,7 +99,9 @@
+   </div>
+   <div class="accion" id="accion">
+    <div class="res" id="rRes" hidden><span class="dot">✓</span><span id="rResT"></span></div>
++   <p class="avisoSel" id="rAviso" hidden></p>
+    <button class="btn pri" id="bAterrizar" disabled></button>
++   <div class="fila" id="rExtra" hidden><button class="btn" id="bRepetir" data-t="replayRehearsal"></button><button class="btn" id="bMenu" data-t="home"></button></div>
+   </div>
+  </div>
+ </section>
+@@ -106,6 +134,7 @@
+     <div class="veredicto" id="rvVer"></div>
+     <div class="linea" id="rvLinea"></div>
+     <div class="linea" id="rvPocos" style="font-size:13.5px;color:var(--dim)"></div>
++    <div class="linea" id="rvTiempo" style="font-size:13.5px;color:var(--dim)"></div>
+     <div class="leyenda" id="rvLey"></div>
+     <div class="set" id="rvSolo" style="border:0;padding:0"><span class="et" data-t="onlyReal" style="font-size:14px"></span><button class="tog" id="tSoloR" data-ta="onlyReal"></button></div>
+     <div class="nav3"><button class="btn" id="bRvAnt" data-t="prevR"></button><button class="btn" id="bRvTodo" data-t="seeAll"></button><button class="btn pri" id="bRvSig" data-t="nextR"></button></div>
+@@ -135,7 +164,7 @@
+ </section>
+ 
+ <!-- CÓMO JUGAR -->
+-<section class="scr modal" id="sComo" aria-labelledby="cTit">
++<section class="scr modal" id="sComo" role="dialog" aria-modal="true" aria-labelledby="cTit">
+  <div class="card">
+   <div class="top"><h2 id="cTit" data-t="howTitle"></h2><button class="x" data-volver data-ta="done">✕</button></div>
+   <div class="laminas" id="cLam">
+@@ -145,14 +174,14 @@
+   </div>
+   <div class="puntos" id="cPuntos"></div>
+   <div class="pie">
+-   <button class="btn pri" id="bComoSig"></button>
++   <button class="btn pri" id="bComoSig" data-t="next2"></button>
+    <div class="fila"><button class="btn" id="bComoPorque" data-t="howWhy"></button><button class="btn" id="bComoEnsayo" data-t="howWarmup"></button></div>
+   </div>
+  </div>
+ </section>
+ 
+ <!-- ¿POR QUÉ COINCIDIMOS? -->
+-<section class="scr modal" id="sPorque" aria-labelledby="wTit">
++<section class="scr modal" id="sPorque" role="dialog" aria-modal="true" aria-labelledby="wTit">
+  <div class="card">
+   <div class="top"><h2 id="wTit" data-t="whyTitle"></h2><button class="x" data-volver data-ta="done">✕</button></div>
+   <div class="pasos" id="wPasos"></div>
+@@ -161,7 +190,7 @@
+ </section>
+ 
+ <!-- AJUSTES -->
+-<section class="scr modal" id="sAjustes" aria-labelledby="sTit">
++<section class="scr modal" id="sAjustes" role="dialog" aria-modal="true" aria-labelledby="sTit">
+  <div class="card">
+   <div class="top"><h2 id="sTit" data-t="setTitle"></h2><button class="x" data-volver data-ta="done">✕</button></div>
+   <div class="set"><label for="rMus" data-t="music"></label><input type="range" id="rMus" min="0" max="100"><button class="tog" id="tMus" data-ta="music"></button></div>
+@@ -173,14 +202,14 @@
+   <div class="set"><span class="et" data-t="language"></span><div class="seg segLang" id="segLang" role="group" data-ta="language"><button data-l="es" lang="es">ES</button><button data-l="en" lang="en">EN</button></div></div>
+   <div class="pie">
+    <button class="btn" id="bPantalla2"></button>
+-   <button class="btn peligro" id="bBorrar"></button>
++   <button class="btn peligro" id="bBorrar" data-t="erase"></button>
+    <button class="btn pri" data-volver data-t="done"></button>
+   </div>
+  </div>
+ </section>
+ 
+ <!-- PAUSA -->
+-<section class="scr modal" id="sPausa" aria-labelledby="zTit">
++<section class="scr modal" id="sPausa" role="dialog" aria-modal="true" aria-labelledby="zTit">
+  <div class="card" style="display:flex;flex-direction:column;gap:10px">
+   <div class="kick" id="zKick"></div>
+   <h2 id="zTit" style="font-size:28px;font-weight:800" data-t="paused"></h2>
+@@ -191,14 +220,33 @@
+  </div>
+ </section>
+ 
++<!-- COMPARTIR: texto íntegro seleccionable cuando falla el copiado -->
++<section class="scr modal" id="sCompartir" role="dialog" aria-modal="true" aria-labelledby="shTit">
++ <div class="card">
++  <div class="top"><h2 id="shTit" data-t="share"></h2><button class="x" data-volver data-ta="close">✕</button></div>
++  <p class="sub" style="text-align:left;margin-bottom:10px" data-t="copyFailed"></p>
++  <textarea class="copiaMano" id="shTxt" readonly rows="5"></textarea>
++  <div class="fila" style="margin-top:12px"><button class="btn pri" id="bShCopiar" data-t="copyText"></button><button class="btn" data-volver data-t="close"></button></div>
++ </div>
++</section>
++
++<!-- BORRAR PROGRESO: confirmación explícita -->
++<section class="scr modal" id="sBorrar" role="alertdialog" aria-modal="true" aria-labelledby="bTit">
++ <div class="card">
++  <h2 id="bTit" style="font-size:21px;font-weight:800;line-height:1.3"></h2>
++  <p class="sub" id="bTxt" style="text-align:left;margin:10px 0 16px"></p>
++  <div class="fila"><button class="btn" id="bBorrarNo" data-t="cancel"></button><button class="btn peligro" id="bBorrarSi" data-t="erase"></button></div>
++ </div>
++</section>
++
+ <script src="src/bancos.js?v=1"></script>
+ <script src="src/horno.js?v=1"></script>
+ <script src="src/gen.js?v=1"></script>
+-<script src="src/textos.js?v=3"></script>
++<script src="src/textos.js?v=4"></script>
+ <script src="src/audio.js?v=3"></script>
+-<script src="src/mapa.js?v=1"></script>
++<script src="src/mapa.js?v=2"></script>
+ <script src="src/estado.js?v=1"></script>
+ <script src="src/red.js?v=2"></script>
+-<script src="src/ui.js?v=6"></script>
++<script src="src/ui.js?v=7"></script>
+ </body>
+ </html>
+diff --git a/site/crater/src/estilo.css b/site/crater/src/estilo.css
+index 2fe0a25..9b8132b 100644
+--- a/site/crater/src/estilo.css
++++ b/site/crater/src/estilo.css
+@@ -86,7 +86,7 @@ body.pill .scr{padding-top:calc(var(--barra) + 40px + var(--sat))}
+ .sec4 .btn{min-height:50px;font-size:15px}
+ 
+ /* ---------- ronda ---------- */
+-#sRonda{padding:0;overflow:hidden;touch-action:none}
++#sRonda{padding:0;overflow:hidden;touch-action:pan-y pinch-zoom}
+ .juego{position:absolute;left:calc(14px + var(--sal));right:calc(14px + var(--sar));top:calc(var(--barra) + 6px + var(--sat));bottom:calc(12px + var(--sab));display:flex;flex-direction:column;gap:10px}
+ body.pill .juego{top:calc(var(--barra) + 36px + var(--sat))}
+ .consigna{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:11px 14px 12px;flex:none}
+@@ -299,3 +299,34 @@ body.quieto .scr.on,body.quieto .lamina.on,body.quieto .res{animation:none}
+ .pie .fila .btn,.fila .btn{font-size:15px}
+ button:focus-visible,a:focus-visible,summary:focus-visible,[tabindex]:not(#cv):focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+ body.quieto .plat,body.quieto .plat>*{transition:none!important}
++
++/* ══ Auditoría 2026-10-22 · Cráter ══ */
++/* RSP-MODALS-01: lo inerte no se ve interactivo */
++[inert]{pointer-events:none}
++/* En la ronda el aviso va arriba, bajo la barra, para no tapar el resultado ni el botón de confirmación */
++body.enRonda #toast{bottom:auto;top:calc(var(--barra) + 14px + var(--sat));transform:translate(-50%,-14px)}
++body.enRonda.pill #toast{top:calc(var(--barra) + 44px + var(--sat))}
++body.enRonda #toast.on{transform:translate(-50%,0)}
++/* Aviso con acción (tarjeta nueva) */
++#toast.accion{pointer-events:auto;display:flex;align-items:center;gap:12px;padding:8px 8px 8px 16px;text-align:left}
++#toast .tAcc{min-height:40px;padding:0 12px;border-radius:9px;border:0;background:var(--violet);color:#fff;font:600 13.5px var(--sans);white-space:nowrap}
++/* PLAY-CRATER-02: la opción elegida y su consecuencia, antes del botón de confirmación */
++.accion .avisoSel{font-size:13.5px;line-height:1.4;color:#B4C3CE;text-align:center;margin:0;padding:0 4px}
++#rExtra .btn{min-height:48px;font-size:15px}
++/* Texto compartible íntegro y seleccionable (SRC-CR02) */
++.copiaMano{width:100%;min-height:120px;padding:10px;border-radius:12px;background:#0b0620;color:var(--ink);border:1px solid var(--line);font:500 13px var(--mono);line-height:1.5;-webkit-user-select:text;user-select:text;resize:vertical}
++/* Panel de consigna y plataformas (VIS-CRATER-07): material sobrio, sin halos en reposo; números, palabras y colores intactos */
++.consigna{background:#132130;border:1px solid #304454;border-radius:14px;padding:14px 16px}
++.consigna h2{font-size:18px;line-height:1.3;font-weight:600}
++.consigna p{font-size:14px;line-height:1.5;color:#B4C3CE}
++.consigna .leyenda{margin-top:8px}
++.consigna .leyenda i{border-radius:50%}
++.plat{background:linear-gradient(180deg,#172838,#101D2B);border:1px solid #3C5366;border-radius:12px;box-shadow:0 4px 10px rgba(0,0,0,.18)}
++.plat::after{background:transparent;box-shadow:none}
++.plat.sel::after{background:rgba(0,242,207,.55)}
++.plat .baliza{box-shadow:0 0 8px color-mix(in srgb,var(--c) 25%,transparent),0 0 3px rgba(255,255,255,.6) inset;border:1px solid rgba(255,255,255,.35)}
++.res .cifra{font:700 24px/1 var(--mono);color:var(--cyan);margin:0 2px}
++.res{font-size:15px;gap:12px}
++.rev .leyenda i{border-radius:50%}
++@media (orientation:landscape) and (max-height:500px){.consigna{padding:10px 12px}.consigna h2{font-size:16px}}
++@media (orientation:landscape) and (min-width:1000px) and (min-height:600px){.consigna{padding:16px 18px}}
+diff --git a/site/crater/src/mapa.js b/site/crater/src/mapa.js
+index a3ab05c..afcdec2 100644
+--- a/site/crater/src/mapa.js
++++ b/site/crater/src/mapa.js
+@@ -117,7 +117,7 @@ function terreno(ronda,lado){
+  const k=ronda.tipo==='gran'?380:ronda.tipo==='planeta'?240:180;
+  for(let i=0;i<k;i++){const x=r(),y=r(),rad=(.002+Math.pow(r(),3)*.01)*s;
+   if(ronda.op.some(o=>Math.hypot(o.x-x,o.y-y)<o.r*1.25))continue;
+-  c.globalAlpha=.18+r()*.25;c.fillStyle='rgba(0,0,0,.6)';c.beginPath();c.arc(x*s,y*s,rad,0,7);c.fill();
++  c.globalAlpha=.10+r()*.10;c.fillStyle='rgba(0,0,0,.6)';c.beginPath();c.arc(x*s,y*s,rad,0,7);c.fill();
+   c.fillStyle='rgba(255,255,255,.35)';c.beginPath();c.arc(x*s+rad*.25,y*s+rad*.25,rad*.75,0,7);c.fill();
+   c.fillStyle=P.crater;c.beginPath();c.arc(x*s,y*s,rad*.72,0,7);c.fill();}
+  c.globalAlpha=1;
+@@ -160,44 +160,74 @@ function dibCrater(c,o,s,P,r){
+ }
+ 
+ /* ---------- plano de la base (ronda 6) ---------- */
++/* MAP_ART (VIS-CRATER-01..04): sólo pintura del plano. No toca ronda.op, ronda.pasillos, semilla, formas, puertas, textos ni RNG.
++   s/lado son píxeles del backing; px() convierte CSS px → backing; las coordenadas normalizadas se multiplican por s. */
++const MAP_ART={version:2,fondo:'#0B1220',vineta:.20,rejMenor:'rgba(143,169,189,.045)',rejMayor:'rgba(143,169,189,.085)',
++ pasilloExt:'#172638',pasilloInt:'#273C50',pasilloEje:'rgba(128,151,168,.32)',
++ modTop:'#26384A',modBot:'#162433',modBorde:'#7693A8',modBordePx:1.5,reflejo:'rgba(255,255,255,.14)',sombra:'rgba(0,0,0,.28)',sombraBlur:8,sombraY:3,
++ domoTrazo:'rgba(157,180,196,.35)',domoReflejo:.18,torreLinea:'#C7D7E2',torrePunto:'#ff4466',ventana:'rgba(0,242,207,.5)',division:'rgba(118,147,168,.5)',puerta:'#fdd835',
++ etqColor:'#E7EFF5',etqFondo:'rgba(11,18,32,.82)',etqSombra:'rgba(0,0,0,.35)'};
++function segCaja(x1,y1,x2,y2,bx,by,bw,bh){for(let i=0;i<=16;i++){const t=i/16,x=x1+(x2-x1)*t,y=y1+(y2-y1)*t;if(x>=bx&&x<=bx+bw&&y>=by&&y<=by+bh)return true;}return false;}
+ function plano(ronda,lado,lang,dpr){dpr=dpr||1;
+- const key='base:'+ronda.semilla+':'+lado+':'+lang+':'+dpr;if(CACHE.has(key))return CACHE.get(key);
+- const s=lado,cv=lienzo(s,s),c=cv.getContext('2d');
+- c.fillStyle='#0b0620';c.fillRect(0,0,s,s);
+- // rejilla de plano
+- c.strokeStyle='rgba(119,0,244,.13)';c.lineWidth=1;for(let i=0;i<=20;i++){const p=i/20*s;c.beginPath();c.moveTo(p,0);c.lineTo(p,s);c.stroke();c.beginPath();c.moveTo(0,p);c.lineTo(s,p);c.stroke();}
+- c.strokeStyle='rgba(119,0,244,.26)';for(let i=0;i<=4;i++){const p=i/4*s;c.beginPath();c.moveTo(p,0);c.lineTo(p,s);c.stroke();c.beginPath();c.moveTo(0,p);c.lineTo(s,p);c.stroke();}
+- // regolito fuera de la base
+- const vg=c.createRadialGradient(s/2,s/2,s*.25,s/2,s/2,s*.75);vg.addColorStop(0,'rgba(0,0,0,0)');vg.addColorStop(1,'rgba(0,0,0,.5)');c.fillStyle=vg;c.fillRect(0,0,s,s);
+- // pasillos
++ const key='base:v'+MAP_ART.version+':'+ronda.semilla+':'+lado+':'+lang+':'+dpr;if(CACHE.has(key))return CACHE.get(key);
++ const s=lado,cv=lienzo(s,s),c=cv.getContext('2d'),px=v=>v*dpr,A=MAP_ART;
++ // (1) fondo  (2) viñeta sin textura
++ c.fillStyle=A.fondo;c.fillRect(0,0,s,s);
++ const vg=c.createRadialGradient(s/2,s/2,s*.25,s/2,s/2,s*.75);vg.addColorStop(0,'rgba(0,0,0,0)');vg.addColorStop(1,'rgba(0,0,0,'+A.vineta+')');c.fillStyle=vg;c.fillRect(0,0,s,s);
++ // (3) rejilla: mismas 20 y 4 divisiones, 1 CSS px
++ c.lineWidth=px(1);
++ const rej=(n,col)=>{c.strokeStyle=col;for(let i=0;i<=n;i++){const p=i/n*s;c.beginPath();c.moveTo(p,0);c.lineTo(p,s);c.stroke();c.beginPath();c.moveTo(0,p);c.lineTo(s,p);c.stroke();}};
++ rej(20,A.rejMenor);rej(4,A.rejMayor);
++ // (4) pasillos: mismo trazado A→B, mismos anchos .05s/.03s; eje continuo 1 CSS px
+  const P=ronda.op;
+- ronda.pasillos.forEach(([a,b])=>{const A=P[a],B=P[b];
+-  c.lineCap='round';c.strokeStyle='#2a1f4a';c.lineWidth=s*.05;c.beginPath();c.moveTo(A.x*s,A.y*s);c.lineTo(B.x*s,B.y*s);c.stroke();
+-  c.strokeStyle='#3d2f6b';c.lineWidth=s*.03;c.stroke();
+-  c.setLineDash([s*.012,s*.014]);c.strokeStyle='rgba(0,242,207,.35)';c.lineWidth=Math.max(1,s*.004);c.stroke();c.setLineDash([]);});
+- // módulos
+- P.forEach((o,i)=>{const x=o.x*s,y=o.y*s,w=o.w*s,h=o.h*s;
+-  c.save();c.shadowColor='rgba(0,0,0,.6)';c.shadowBlur=s*.02;c.shadowOffsetY=s*.006;
+-  const g=c.createLinearGradient(x-w/2,y-h/2,x+w/2,y+h/2);g.addColorStop(0,'#2e2356');g.addColorStop(1,'#171030');c.fillStyle=g;
+-  if(o.forma==='domo'||o.forma==='torre'){c.beginPath();c.arc(x,y,w/2,0,7);c.fill();}else{rr(c,x-w/2,y-h/2,w,h,s*.016);c.fill();}
+-  c.restore();
+-  c.lineWidth=Math.max(1.2,s*.005);c.strokeStyle='#8a78c9';
+-  if(o.forma==='domo'){c.beginPath();c.arc(x,y,w/2,0,7);c.stroke();const dg=c.createRadialGradient(x-w*.18,y-w*.2,0,x,y,w/2);dg.addColorStop(0,'rgba(200,230,255,.45)');dg.addColorStop(1,'rgba(200,230,255,0)');c.fillStyle=dg;c.beginPath();c.arc(x,y,w/2,0,7);c.fill();
+-   c.strokeStyle='rgba(180,200,255,.35)';for(let k=1;k<3;k++){c.beginPath();c.arc(x,y,w/2*k/3,0,7);c.stroke();}c.beginPath();c.moveTo(x-w/2,y);c.lineTo(x+w/2,y);c.moveTo(x,y-w/2);c.lineTo(x,y+w/2);c.stroke();}
+-  else if(o.forma==='torre'){c.beginPath();c.arc(x,y,w/2,0,7);c.stroke();c.strokeStyle='#c8bff0';c.lineWidth=Math.max(1.5,s*.006);c.beginPath();c.moveTo(x,y);c.lineTo(x+w*.42,y-w*.62);c.stroke();
+-   c.fillStyle='#ff4466';c.beginPath();c.arc(x+w*.42,y-w*.62,Math.max(2,s*.008),0,7);c.fill();}
+-  else{rr(c,x-w/2,y-h/2,w,h,s*.016);c.stroke();c.fillStyle='rgba(0,242,207,.5)';for(let k=0;k<3;k++){rr(c,x-w*.32+k*w*.24,y-h*.36,w*.14,h*.1,2);c.fill();}
+-   if(o.forma==='grande'){c.strokeStyle='rgba(138,120,201,.5)';c.beginPath();c.moveTo(x-w/2+4,y+h*.18);c.lineTo(x+w/2-4,y+h*.18);c.stroke();}}
+-  // puerta de la esclusa
+-  if(o.puerta){const d={n:[0,-1],s:[0,1],e:[1,0],o:[-1,0]}[o.puerta];const px=x+d[0]*(w/2+s*.035),py=y+d[1]*(h/2+s*.035);
+-   c.strokeStyle='#fdd835';c.fillStyle='#fdd835';c.lineWidth=Math.max(1.5,s*.006);c.beginPath();c.moveTo(px+d[0]*s*.04,py+d[1]*s*.04);c.lineTo(px,py);c.stroke();
+-   c.beginPath();const a=Math.atan2(-d[1],-d[0]);c.moveTo(px,py);c.lineTo(px+Math.cos(a+2.6)*s*.016,py+Math.sin(a+2.6)*s*.016);c.lineTo(px+Math.cos(a-2.6)*s*.016,py+Math.sin(a-2.6)*s*.016);c.closePath();c.fill();}
++ c.lineCap='round';c.lineJoin='round';
++ ronda.pasillos.forEach(([a,b])=>{const Ax=P[a].x*s,Ay=P[a].y*s,Bx=P[b].x*s,By=P[b].y*s;
++  c.strokeStyle=A.pasilloExt;c.lineWidth=s*.05;c.beginPath();c.moveTo(Ax,Ay);c.lineTo(Bx,By);c.stroke();
++  c.strokeStyle=A.pasilloInt;c.lineWidth=s*.03;c.stroke();
++  c.strokeStyle=A.pasilloEje;c.lineWidth=px(1);c.stroke();});
++ // (5) sombra y cuerpos  (6) detalles existentes
++ const silueta=(o,x,y,w,h)=>{c.beginPath();if(o.forma==='domo'||o.forma==='torre')c.arc(x,y,w/2,0,7);else rr(c,x-w/2,y-h/2,w,h,s*.016);};
++ P.forEach((o,i)=>{const x=o.x*s,y=o.y*s,w=o.w*s,h=o.h*s,redondo=o.forma==='domo'||o.forma==='torre';
++  c.save();c.shadowColor=A.sombra;c.shadowBlur=px(A.sombraBlur);c.shadowOffsetY=px(A.sombraY);
++  const g=c.createLinearGradient(0,y-(redondo?w:h)/2,0,y+(redondo?w:h)/2);g.addColorStop(0,A.modTop);g.addColorStop(1,A.modBot);c.fillStyle=g;silueta(o,x,y,w,h);c.fill();c.restore();
++  // reflejo interior superior (.75 CSS px, recortado a la silueta)
++  c.save();silueta(o,x,y,w,h);c.clip();c.strokeStyle=A.reflejo;c.lineWidth=px(.75);c.beginPath();
++  if(redondo)c.arc(x,y,w/2-px(.75),Math.PI*1.12,Math.PI*1.88);else{c.moveTo(x-w/2+s*.016,y-h/2+px(.75)/2);c.lineTo(x+w/2-s*.016,y-h/2+px(.75)/2);}
++  c.stroke();c.restore();
++  c.lineWidth=px(A.modBordePx);c.strokeStyle=A.modBorde;
++  if(o.forma==='domo'){c.beginPath();c.arc(x,y,w/2,0,7);c.stroke();const dg=c.createRadialGradient(x-w*.18,y-w*.2,0,x,y,w/2);dg.addColorStop(0,'rgba(200,230,255,'+A.domoReflejo+')');dg.addColorStop(1,'rgba(200,230,255,0)');c.fillStyle=dg;c.beginPath();c.arc(x,y,w/2,0,7);c.fill();
++   c.strokeStyle=A.domoTrazo;c.lineWidth=px(1);for(let k=1;k<3;k++){c.beginPath();c.arc(x,y,w/2*k/3,0,7);c.stroke();}c.beginPath();c.moveTo(x-w/2,y);c.lineTo(x+w/2,y);c.moveTo(x,y-w/2);c.lineTo(x,y+w/2);c.stroke();}
++  else if(o.forma==='torre'){c.beginPath();c.arc(x,y,w/2,0,7);c.stroke();c.strokeStyle=A.torreLinea;c.lineWidth=px(1.5);c.beginPath();c.moveTo(x,y);c.lineTo(x+w*.42,y-w*.62);c.stroke();
++   c.fillStyle=A.torrePunto;c.beginPath();c.arc(x+w*.42,y-w*.62,Math.max(2,s*.008),0,7);c.fill();}
++  else{rr(c,x-w/2,y-h/2,w,h,s*.016);c.stroke();c.fillStyle=A.ventana;for(let k=0;k<3;k++){rr(c,x-w*.32+k*w*.24,y-h*.36,w*.14,h*.1,2);c.fill();}
++   if(o.forma==='grande'){c.strokeStyle=A.division;c.lineWidth=px(1);c.beginPath();c.moveTo(x-w/2+4,y+h*.18);c.lineTo(x+w/2-4,y+h*.18);c.stroke();}}
++  // puerta de la esclusa (dirección, tamaño y color originales)
++  if(o.puerta){const d={n:[0,-1],s:[0,1],e:[1,0],o:[-1,0]}[o.puerta];const qx=x+d[0]*(w/2+s*.035),qy=y+d[1]*(h/2+s*.035);
++   c.strokeStyle=A.puerta;c.fillStyle=A.puerta;c.lineWidth=Math.max(1.5,s*.006);c.beginPath();c.moveTo(qx+d[0]*s*.04,qy+d[1]*s*.04);c.lineTo(qx,qy);c.stroke();
++   c.beginPath();const an=Math.atan2(-d[1],-d[0]);c.moveTo(qx,qy);c.lineTo(qx+Math.cos(an+2.6)*s*.016,qy+Math.sin(an+2.6)*s*.016);c.lineTo(qx+Math.cos(an-2.6)*s*.016,qy+Math.sin(an-2.6)*s*.016);c.closePath();c.fill();}
+  });
+- // nombres
+- const fz=clamp(s/dpr*.038,11,15)*dpr;if(s/dpr<170){CACHE.set(key,cv);return cv;}c.font='600 '+fz+'px Poppins, system-ui, sans-serif';c.textAlign='center';c.textBaseline='top';
+- P.forEach(o=>{const m=BAN.MOD.find(q=>q.id===o.mod),txt=m[lang]||m.es;const x=o.x*s,y=o.y*s+(o.forma==='domo'||o.forma==='torre'?o.w:o.h)*s/2+s*.012;
++ // (7) etiquetas: Poppins 600 clamp(CSSW*.038,12,15) CSS px, interlínea 1.25, a 8 CSS px del edificio, centradas en su x.
++ //     Fondo único por etiqueta sólo si pisa un pasillo o un módulo; sobre fondo limpio, texto con sombra. Sin ocultar nombres.
++ const CSSW=s/dpr;if(CSSW<170){CACHE.set(key,cv);return cv;}
++ const fz=clamp(CSSW*.038,12,15)*dpr,lh=fz*1.25;c.font='600 '+fz+'px Poppins, system-ui, sans-serif';c.textAlign='center';c.textBaseline='top';
++ const cajas=[];
++ const pisaEstructura=(bx,by,bw,bh)=>{
++  for(const o of P){const w=o.w*s,h=(o.forma==='domo'||o.forma==='torre'?o.w:o.h)*s;if(bx<o.x*s+w/2&&bx+bw>o.x*s-w/2&&by<o.y*s+h/2&&by+bh>o.y*s-h/2)return true;}
++  for(const [a,b] of ronda.pasillos){if(segCaja(P[a].x*s,P[a].y*s,P[b].x*s,P[b].y*s,bx-s*.025,by-s*.025,bw+s*.05,bh+s*.05))return true;}
++  return false;};
++ P.forEach(o=>{const m=BAN.MOD.find(q=>q.id===o.mod),txt=m[lang]||m.es;const x=o.x*s;let y=o.y*s+(o.forma==='domo'||o.forma==='torre'?o.w:o.h)*s/2+px(8);
+   const palabras=txt.split(' ');let lineas=[txt];if(c.measureText(txt).width>s*.27&&palabras.length>1){const mid=Math.ceil(palabras.length/2);lineas=[palabras.slice(0,mid).join(' '),palabras.slice(mid).join(' ')];}
+-  lineas.forEach((l,k)=>{const w=c.measureText(l).width;c.fillStyle='rgba(5,1,8,.78)';rr(c,x-w/2-5*dpr,y+k*(fz+3*dpr)-2*dpr,w+10*dpr,fz+4*dpr,4*dpr);c.fill();c.fillStyle='#e9e3ff';c.fillText(l,x,y+k*(fz+3*dpr));});});
++  const tw=Math.max.apply(null,lineas.map(l=>c.measureText(l).width)),bw=tw+px(12),bh=lineas.length*lh+px(6);
++  let bx=Math.max(px(2),Math.min(s-bw-px(2),x-bw/2));
++  // colisión etiqueta–etiqueta: la etiqueta posterior baja lo justo (nunca se oculta ni se abrevia)
++  for(let it=0;it<6;it++){const ch=cajas.find(q=>bx<q.x+q.w&&bx+bw>q.x&&y-px(3)<q.y+q.h&&y-px(3)+bh>q.y);if(!ch)break;y=ch.y+ch.h+px(5);}
++  if(y+bh-px(3)>s)y=s-bh+px(3);
++  const by=y-px(3);cajas.push({x:bx,y:by,w:bw,h:bh});
++  const tx=bx+bw/2;
++  if(pisaEstructura(bx,by,bw,bh)){c.fillStyle=A.etqFondo;rr(c,bx,by,bw,bh,px(4));c.fill();}
++  else{c.shadowColor=A.etqSombra;c.shadowBlur=px(2);c.shadowOffsetY=px(1);}
++  c.fillStyle=A.etqColor;lineas.forEach((l,k)=>c.fillText(l,tx,y+k*lh+(lh-fz)/2));
++  c.shadowColor='transparent';c.shadowBlur=0;c.shadowOffsetY=0;});
+  CACHE.set(key,cv);return cv;
+ }
+ 
+@@ -288,14 +318,17 @@ function dibujar(c,box,ronda,st){
+  ronda.op.forEach((o,i)=>{const g=geom(ronda,i,box);
+   const anillo=(col,w,rad,dash)=>{c.save();c.strokeStyle=col;c.lineWidth=w;if(dash)c.setLineDash(dash);c.beginPath();
+    if(g.w&&g.forma!=='domo'&&g.forma!=='torre')rr(c,g.x-g.w/2-rad,g.y-g.h/2-rad,g.w+rad*2,g.h+rad*2,8);else c.arc(g.x,g.y,g.r+rad,0,7);c.stroke();c.restore();};
+-  if(st.ganadores&&st.ganadores.includes(i)&&st.coronaA>0){c.save();c.globalAlpha=st.coronaA;c.shadowColor='#00f2cf';c.shadowBlur=18;anillo('rgba(160,255,240,.95)',3,6);c.restore();
+-   coronita(c,g.x,g.y-g.r-(g.h?0:0)-16,st.coronaA);}
+-  if(st.hover===i&&st.sel!==i)anillo('rgba(160,110,255,.75)',2,5);
+-  if(st.foco===i)anillo('rgba(0,242,207,.95)',2,9,[5,4]);
+-  if(st.sel===i){const k=.5+.5*Math.sin(t*3.9);c.save();c.shadowColor='#00f2cf';c.shadowBlur=10+k*10;anillo('rgba(0,242,207,'+(.75+k*.25)+')',2.5+k,4+k*2);c.restore();}
++  const esBase=ronda.tipo==='base',gana=!!(st.ganadores&&st.ganadores.includes(i)&&st.coronaA>0),selAqui=st.sel===i,focoAqui=st.foco===i;
++  if(gana){c.save();c.globalAlpha=st.coronaA;c.shadowColor='#00f2cf';c.shadowBlur=6;anillo('rgba(160,255,240,.95)',3,6);c.restore();
++   coronita(c,g.x,g.y-(g.h?g.h/2:g.r)-16-(esBase?22:0),st.coronaA);}
++  // prioridad visual: foco de teclado > selección > hover (el marcador propio y el ganador nunca se ocultan)
++  if(st.hover===i&&!selAqui&&!focoAqui)anillo('rgba(159,181,198,.9)',1.5,4);
++  if(selAqui){c.save();c.fillStyle='rgba(0,242,207,.06)';c.beginPath();if(g.w&&g.forma!=='domo'&&g.forma!=='torre')rr(c,g.x-g.w/2-4,g.y-g.h/2-4,g.w+8,g.h+8,8);else c.arc(g.x,g.y,g.r+4,0,7);c.fill();c.restore();anillo('rgba(0,242,207,.95)',2.5,4);}
++  if(focoAqui)anillo('rgba(255,255,255,.95)',2,8,[4,3]);
+   if(st.mio===i&&st.marcarMio)anillo('rgba(253,216,53,.9)',2,12,[2,4]);
+   if(st.pct&&st.pct[i]!=null){const txt=st.pct[i]+' %';c.font='700 '+clamp(s*.04,12,16)+'px "JetBrains Mono", monospace';c.textAlign='center';c.textBaseline='middle';
+-   const w=c.measureText(txt).width+12,yy=g.y+(g.h?g.h/2:g.r)+14;c.fillStyle=st.ganadores&&st.ganadores.includes(i)?'rgba(0,242,207,.92)':'rgba(10,5,18,.82)';rr(c,g.x-w/2,yy-10,w,20,10);c.fill();
++   // en el plano de la base el porcentaje va arriba para no tapar el nombre del módulo
++   const w=c.measureText(txt).width+12,yy=esBase?g.y-(g.h?g.h/2:g.r)-14:g.y+(g.h?g.h/2:g.r)+14;c.fillStyle=st.ganadores&&st.ganadores.includes(i)?'rgba(0,242,207,.92)':'rgba(10,5,18,.82)';rr(c,g.x-w/2,yy-10,w,20,10);c.fill();
+    c.fillStyle=st.ganadores&&st.ganadores.includes(i)?'#062a24':'#f5f0ff';c.fillText(txt,g.x,yy+.5);}
+  });
+  // lluvia de puntos
+@@ -319,7 +352,7 @@ function dibujar(c,box,ronda,st){
+  }
+  c.restore();
+ }
+-function coronita(c,x,y,a){c.save();c.globalAlpha=a;c.fillStyle='#00f2cf';c.shadowColor='#00f2cf';c.shadowBlur=10;c.beginPath();
++function coronita(c,x,y,a){c.save();c.globalAlpha=a;c.fillStyle='#00f2cf';c.shadowColor='#00f2cf';c.shadowBlur=6;c.beginPath();
+  c.moveTo(x-11,y+5);c.lineTo(x-11,y-3);c.lineTo(x-5,y+1);c.lineTo(x,y-7);c.lineTo(x+5,y+1);c.lineTo(x+11,y-3);c.lineTo(x+11,y+5);c.closePath();c.fill();c.restore();}
+ 
+ /* ---------- fondo: estrellas, Luna gigante, estrellas fugaces ---------- */
+@@ -340,7 +373,8 @@ function fondo(c,w,h,t,dt,o){
+  const g=c.createLinearGradient(0,0,0,h);g.addColorStop(0,'#050108');g.addColorStop(.7,'#0a0418');g.addColorStop(1,'#120828');c.fillStyle=g;c.fillRect(0,0,w,h);
+  const px=o.px||0,py=o.py||0;
+  estrellas(Math.round(Math.min(420,w*h/2600))).forEach(s=>{const x=((s.x*w+px*s.z*14)%w+w)%w,y=((s.y*h+py*s.z*10)%h+h)%h;
+-  const a=.25+.55*s.z*(o.quieto?1:(.65+.35*Math.sin(t*1.3+s.f)));c.fillStyle='rgba(245,240,255,'+a.toFixed(3)+')';c.fillRect(x,y,s.z*1.6,s.z*1.6);});
++  // durante la elección y la revelación las estrellas no compiten con el mapa: alfa .18–.38 y tamaño máximo 1.2 px
++  const a=o.suave?.18+.20*s.z:.25+.55*s.z*(o.quieto?1:(.65+.35*Math.sin(t*1.3+s.f))),sz=o.suave?Math.min(1.2,s.z*1.6):s.z*1.6;c.fillStyle='rgba(245,240,255,'+a.toFixed(3)+')';c.fillRect(x,y,sz,sz);});
+  if(!o.quieto){proxFugaz-=dt;if(proxFugaz<=0){proxFugaz=12+Math.random()*8;FUGAZ.push({x:Math.random()*w*.8+w*.2,y:Math.random()*h*.35,t:0});}
+   for(let i=FUGAZ.length-1;i>=0;i--){const f=FUGAZ[i];f.t+=dt;if(f.t>1.1){FUGAZ.splice(i,1);continue;}const k=f.t/1.1,x=f.x-k*w*.35,y=f.y+k*h*.16;
+    const gr=c.createLinearGradient(x,y,x+90,y-40);gr.addColorStop(0,'rgba(255,255,255,'+(.8*(1-k))+')');gr.addColorStop(1,'rgba(255,255,255,0)');c.strokeStyle=gr;c.lineWidth=1.5;c.beginPath();c.moveTo(x,y);c.lineTo(x+90,y-40);c.stroke();}}
+@@ -354,5 +388,5 @@ function fondo(c,w,h,t,dt,o){
+  }
+ }
+ 
+-G.MAPA={dibujar,elegirEn,geom,capaCalor,rafaga,confeti,particulas,PART,fondo,astro,drawAstro,rr,terreno,plano,limpiarCache:()=>CACHE.clear(),hayParticulas:()=>PART.length>0};
++G.MAPA={dibujar,elegirEn,geom,capaCalor,rafaga,confeti,particulas,PART,fondo,astro,drawAstro,rr,terreno,plano,MAP_ART,limpiarCache:()=>CACHE.clear(),hayParticulas:()=>PART.length>0};
+ })(window);
+diff --git a/site/crater/src/textos.js b/site/crater/src/textos.js
+index f3242a4..1d16068 100644
+--- a/site/crater/src/textos.js
++++ b/site/crater/src/textos.js
+@@ -10,18 +10,26 @@ es:{
+  revealReady:'Revelación de ayer lista',revealReadySub:'El polvo ya se asentó. Mira dónde aterrizó el mundo.',
+  revealSpect:'Mira cómo aterrizó el mundo ayer',revealSpectSub:'No jugaste ayer: la verás como espectador.',
+  firstReveal:'Tu primera revelación llega a medianoche',firstRevealSub:'Juega hoy y vuelve mañana para ver el mapa del mundo.',
++ revealEnabled:'La revelación se habilita el {fecha} a las {hora} ({zona}).',revealAt:'Revelación: {fecha} a las {hora} ({zona horaria})',closesAt:'Cierra el {fecha} a las {hora} ({zona})',provisional2:'Resultado provisional',finalRes:'Resultado final',
++ realResponses:'Respuestas reales: {n}',practiceRivals:'Rivales de práctica: {n}',
++ choiceWarn:'Elegiste: {opción}. Una vez confirmada, no podrás cambiarla.',
++ rehearsalData:'Resultado del ensayo · datos simulados',rehearsalDone:'Ensayo completado',replayRehearsal:'Repetir ensayo',
++ ownChoice:'Tu elección: {opción} · coincidencia {porcentaje} %',majority:'La opción más elegida: {mayoría} · {porcentajeMayoría} %',mostChosen:'Más elegido',mostChosenTie:'Más elegidos · empate',keyboardFocus:'Foco de teclado',
++ copyFailed:'No pudimos copiarlo automáticamente. Selecciona y copia este texto.',copyText:'Copiar texto',close:'Cerrar',cancel:'Cancelar',
++ eraseTitle:'¿Borrar todo el progreso de {juego}?',eraseBody:'Se borrarán {datos concretos}. Esta acción no se puede deshacer.',eraseData:'tus aterrizajes, el historial de días, la racha, el perfil, la Brújula y el Cuaderno',
++ seeNotebook:'Ver en el cuaderno',
+  launchDay:'Archivo vacío por ahora: hoy empieza la historia',launchDaySub:'Mañana verás la primera revelación.',
+  streak:'Racha {n}',syncAvg:'Sincronía media {s}',playersToday:'{n} astronautas hoy',fewToday:'Aún somos pocos · rivales de práctica activos',
+  howTo:'Cómo jugar',archive:'Archivo',profile:'Perfil',settings:'Ajustes',fullscreen:'Pantalla completa',exitFullscreen:'Salir de pantalla completa',
+- pause:'Pausa',paused:'En pausa',continue:'Continuar',home:'Volver al inicio',pauseNote:'Tu partida está guardada. No hay reloj: tómate tu tiempo.',
++ pause:'Pausa',paused:'En pausa',continue:'Reanudar partida',home:'Volver al menú',pauseNote:'Tu partida está guardada. No hay reloj: tómate tu tiempo.',
+  rTypes:{luna:'Alunizaje',num:'Números',color:'Colores',planeta:'Planeta',palabra:'Palabras',base:'Lugares',gran:'Gran alunizaje'},
+  roundKick:'RONDA {r} · {tipo}',prompt:'Aterriza donde crees que aterrizará la mayoría.',
+- land:'Aterrizar',pick:'Elige un sitio',pickCrater:'Elige un cráter',pickModule:'Elige un módulo',pickNum:'Elige un número',pickColor:'Elige un color',pickWord:'Elige una palabra',tapAgain:'Toca otra vez para aterrizar',
++ land:'Confirmar aterrizaje',pick:'Elige un sitio',pickCrater:'Elige un cráter',pickModule:'Elige un módulo',pickNum:'Elige un número',pickColor:'Elige un color',pickWord:'Elige una palabra',tapAgain:'Toca otra vez para aterrizar',
+  registered:'Aterrizaje registrado',soFar:'Coinciden contigo: {p} % hasta ahora',soFarPractice:'Coinciden contigo: {p} % (con rivales de práctica)',
+  sending:'Enviando tu aterrizaje…',queued:'Se enviará al volver la conexión',lateLanding:'Fuera de tiempo: cuenta para tu racha, no para el mundo',
+  next:'Siguiente ronda',finish:'Ver mi lectura',rvFin:'Resumen',skipHint:'Toca para saltar',
+  early:'Sincronía {s}/7',earlyPts:'Provisional · {p} puntos',dust:'El polvo se asienta a medianoche',dustIn:'Revelación en',
+- share:'Compartir',myCompass:'Ver mi Brújula',copied:'Copiado',shared:'Compartido',
++ share:'Compartir resultado',myCompass:'Ver mi Brújula',copied:'Texto copiado',shared:'Compartido',
+  whyTitle:'¿Por qué coincidimos?',
+  why1:'En 1960 el economista Thomas Schelling preguntó a sus alumnos dónde se encontrarían con alguien en Nueva York sin poder avisarle. La mayoría eligió la estación Grand Central, a mediodía.',
+  why2:'Sin hablar, buscamos lo que destaca: lo único, lo central, lo más grande, lo típico. Se llaman puntos focales.',
+@@ -30,7 +38,7 @@ es:{
+  revealKick:'DÍA #{n} · REVELACIÓN',live:'En vivo: aún llegan aterrizajes de otras zonas horarias (cierra a las {h})',liveShort:'En vivo · cierra a las {h}',final:'Final',
+  inSync:'En sincronía',ownWay:'Ibas por tu cuenta · {p} %',notPlayed:'No aterrizaste en esta ronda',seeAll:'Ver todo',prevR:'Anterior',nextR:'Siguiente',
+  finalTitle:'Sincronía {s}/7 con el mundo',finalPts:'{p} puntos',avgChange:'Sincronía media: {a}',spectator:'No aterrizaste ayer. Así lo hizo el mundo.',
+- few:'Aún somos pocos: {n} personas reales + rivales de práctica simulados',fewSome:'Algunas rondas aún tienen pocos aterrizajes reales: se completan con rivales de práctica simulados',onlyPractice:'Comparas con rivales de práctica simulados',onlyReal:'Ver solo jugadores reales',
++ few:'Respuestas reales: {n} · Rivales de práctica: {m}',fewSome:'Algunas rondas aún tienen pocos aterrizajes reales: se completan con rivales de práctica simulados',onlyPractice:'Comparas con rivales de práctica simulados',onlyReal:'Ver solo jugadores reales',
+  realLegend:'Reales',practiceLegend:'Práctica',noReal:'Aún no hay jugadores reales en esta ronda',
+  offline:'Sin conexión · modo práctica',offlineLong:'Sin conexión: comparas con rivales de práctica. Tus aterrizajes se enviarán al volver la conexión.',
+  badClock:'La fecha de tu dispositivo parece incorrecta',noSave:'Tu progreso no se guardará en este navegador',
+@@ -53,13 +61,13 @@ es:{
+   ['El corazón de la base','El módulo al que llegan todos los pasillos es un punto de encuentro natural.'],
+   ['El lugar con nombre propio','La única cúpula, la esclusa o el comedor: lugares que todos sabemos nombrar.'],
+   ['La posición manda','Cuando nada destaca, la fila decide: el primero o el del medio.']],
+- cardNew:'Nueva tarjeta en tu Cuaderno: {c}',
++ cardNew:'Nueva tarjeta: {c}',
+  howTitle:'Cómo jugar',how1:'Toca un cráter',how1b:'Cada ronda te muestra un mapa o una fila de opciones. Elige la que crees que elegirá la mayoría.',
+- how2:'Aterriza',how2b:'Confirma con «Aterrizar» (o tocando otra vez). Tu elección queda registrada y no se cambia.',
+- how3:'A medianoche, la revelación',how3b:'El polvo se levanta y ves dónde aterrizó el mundo. Cuantos más coinciden contigo, más puntos.',
+- howReplay:'Toca la lámina para repetir',howWarmup:'Repetir el ensayo',howWhy:'¿Por qué coincidimos?',
++ how2:'Aterriza',how2b:'Elige en el mapa y confirma con «Confirmar aterrizaje». Tu elección queda registrada y no se cambia.',
++ how3:'A medianoche, la revelación',how3b:'A la medianoche de tu zona horaria el polvo se levanta y ves dónde aterrizó el mundo. Cuantos más coinciden contigo, más puntos.',
++ howReplay:'Toca la lámina para repetir',howWarmup:'Repetir ensayo',howWhy:'¿Por qué coincidimos?',
+  setTitle:'Ajustes',music:'Música',sfx:'Efectos',vibration:'Vibración',autoAdvance:'Avance automático',reducedMotion:'Movimiento reducido',language:'Idioma',
+- erase:'Borrar progreso',erase2:'¿Seguro? Toca otra vez',erased:'Progreso borrado',done:'Listo',on:'Sí',off:'No',
++ erase:'Borrar progreso',erased:'Progreso borrado',done:'Listo',on:'Sí',off:'No',
+  tutKick:'ENSAYO',tutTitle:'Ensayo con rivales de práctica: no hay reloj, elige con calma.',tutHint:'Toca el cráter donde crees que aterrizará la mayoría',
+  tutOk:'¡Eso es un punto focal!',tutNo:'La mayoría eligió el grande. Lo que destaca, atrae.',tutPct:'{p} % eligió el cráter grande',
+  skipTut:'Saltar ensayo',tutPlay:'Jugar el día #{n}',
+@@ -87,18 +95,26 @@ en:{
+  revealReady:'Yesterday\'s reveal is ready',revealReadySub:'The dust has settled. See where the world landed.',
+  revealSpect:'See how the world landed yesterday',revealSpectSub:'You didn\'t play yesterday: you\'ll watch as a spectator.',
+  firstReveal:'Your first reveal arrives at midnight',firstRevealSub:'Play today and come back tomorrow to see the world map.',
++ revealEnabled:'The reveal becomes available on {fecha} at {hora} ({zona}).',revealAt:'Reveal: {fecha} at {hora} ({zona horaria})',closesAt:'Closes on {fecha} at {hora} ({zona})',provisional2:'Provisional result',finalRes:'Final result',
++ realResponses:'Real responses: {n}',practiceRivals:'Practice opponents: {n}',
++ choiceWarn:'You chose: {opción}. Once confirmed, you won’t be able to change it.',
++ rehearsalData:'Rehearsal result · simulated data',rehearsalDone:'Rehearsal completed',replayRehearsal:'Replay rehearsal',
++ ownChoice:'Your choice: {opción} · match rate {porcentaje}%',majority:'Most chosen option: {mayoría} · {porcentajeMayoría}%',mostChosen:'Most chosen',mostChosenTie:'Most chosen · tie',keyboardFocus:'Keyboard focus',
++ copyFailed:'We couldn’t copy it automatically. Select and copy this text.',copyText:'Copy text',close:'Close',cancel:'Cancel',
++ eraseTitle:'Delete all progress in {juego}?',eraseBody:'{datos concretos} will be deleted. This cannot be undone.',eraseData:'Your landings, day history, streak, profile, Compass and Notebook',
++ seeNotebook:'View in notebook',
+  launchDay:'The archive is empty for now: history starts today',launchDaySub:'Tomorrow you\'ll see the first reveal.',
+  streak:'Streak {n}',syncAvg:'Average sync {s}',playersToday:'{n} astronauts today',fewToday:'Still a small crew · practice rivals active',
+  howTo:'How to play',archive:'Archive',profile:'Profile',settings:'Settings',fullscreen:'Full screen',exitFullscreen:'Exit full screen',
+- pause:'Pause',paused:'Paused',continue:'Continue',home:'Back to home',pauseNote:'Your game is saved. There is no clock: take your time.',
++ pause:'Pause',paused:'Paused',continue:'Resume game',home:'Back to menu',pauseNote:'Your game is saved. There is no clock: take your time.',
+  rTypes:{luna:'Landing',num:'Numbers',color:'Colors',planeta:'Planet',palabra:'Words',base:'Places',gran:'Great landing'},
+  roundKick:'ROUND {r} · {tipo}',prompt:'Land where you think most people will land.',
+- land:'Land',pick:'Pick a spot',pickCrater:'Pick a crater',pickModule:'Pick a module',pickNum:'Pick a number',pickColor:'Pick a color',pickWord:'Pick a word',tapAgain:'Tap again to land',
++ land:'Confirm landing',pick:'Pick a spot',pickCrater:'Pick a crater',pickModule:'Pick a module',pickNum:'Pick a number',pickColor:'Pick a color',pickWord:'Pick a word',tapAgain:'Tap again to land',
+  registered:'Landing logged',soFar:'{p}% landed with you so far',soFarPractice:'{p}% landed with you (with practice rivals)',
+  sending:'Sending your landing…',queued:'It will be sent when you\'re back online',lateLanding:'Too late: counts for your streak, not for the world',
+  next:'Next round',finish:'See my reading',rvFin:'Summary',skipHint:'Tap to skip',
+  early:'Sync {s}/7',earlyPts:'Provisional · {p} points',dust:'The dust settles at midnight',dustIn:'Reveal in',
+- share:'Share',myCompass:'See my Compass',copied:'Copied',shared:'Shared',
++ share:'Share result',myCompass:'See my Compass',copied:'Text copied',shared:'Shared',
+  whyTitle:'Why do we match?',
+  why1:'In 1960, economist Thomas Schelling asked his students where they would meet someone in New York without any way to tell them. Most chose Grand Central Station, at noon.',
+  why2:'Without talking, we look for what stands out: the unique, the central, the biggest, the typical. They\'re called focal points.',
+@@ -107,7 +123,7 @@ en:{
+  revealKick:'DAY #{n} · REVEAL',live:'Live: landings still arriving from other time zones (closes at {h})',liveShort:'Live · closes at {h}',final:'Final',
+  inSync:'In sync',ownWay:'You went your own way · {p}%',notPlayed:'You didn\'t land in this round',seeAll:'See all',prevR:'Previous',nextR:'Next',
+  finalTitle:'Sync {s}/7 with the world',finalPts:'{p} points',avgChange:'Average sync: {a}',spectator:'You didn\'t land yesterday. Here\'s how the world did.',
+- few:'Still a small crew: {n} real players + simulated practice rivals',fewSome:'Some rounds still have few real landings: they are topped up with simulated practice rivals',onlyPractice:'You\'re comparing with simulated practice rivals',onlyReal:'Show real players only',
++ few:'Real responses: {n} · Practice opponents: {m}',fewSome:'Some rounds still have few real landings: they are topped up with simulated practice rivals',onlyPractice:'You\'re comparing with simulated practice rivals',onlyReal:'Show real players only',
+  realLegend:'Real',practiceLegend:'Practice',noReal:'No real players in this round yet',
+  offline:'Offline · practice mode',offlineLong:'Offline: you\'re comparing with practice rivals. Your landings will be sent when you\'re back online.',
+  badClock:'Your device\'s date looks wrong',noSave:'Your progress won\'t be saved in this browser',
+@@ -130,13 +146,13 @@ en:{
+   ['The heart of the base','The module every corridor leads to is a natural meeting point.'],
+   ['The place with a name','The only dome, the airlock or the mess hall: places everyone can name.'],
+   ['Position rules','When nothing stands out, the row decides: the first one or the middle one.']],
+- cardNew:'New card in your Notebook: {c}',
++ cardNew:'New card: {c}',
+  howTitle:'How to play',how1:'Tap a crater',how1b:'Each round shows a map or a row of options. Pick the one you think most people will pick.',
+- how2:'Land',how2b:'Confirm with "Land" (or tap again). Your choice is logged and can\'t be changed.',
+- how3:'At midnight, the reveal',how3b:'The dust lifts and you see where the world landed. The more people match you, the more points.',
+- howReplay:'Tap the card to replay',howWarmup:'Replay the warm-up',howWhy:'Why do we match?',
++ how2:'Land',how2b:'Pick on the map and confirm with "Confirm landing". Your choice is logged and can\'t be changed.',
++ how3:'At midnight, the reveal',how3b:'At midnight in your time zone the dust lifts and you see where the world landed. The more people match you, the more points.',
++ howReplay:'Tap the card to replay',howWarmup:'Replay rehearsal',howWhy:'Why do we match?',
+  setTitle:'Settings',music:'Music',sfx:'Sound effects',vibration:'Vibration',autoAdvance:'Auto-advance',reducedMotion:'Reduced motion',language:'Language',
+- erase:'Erase progress',erase2:'Sure? Tap again',erased:'Progress erased',done:'Done',on:'On',off:'Off',
++ erase:'Erase progress',erased:'Progress erased',done:'Done',on:'On',off:'Off',
+  tutKick:'WARM-UP',tutTitle:'Warm-up with practice rivals: there is no clock, take your time.',tutHint:'Tap the crater where you think most people will land',
+  tutOk:'That\'s a focal point!',tutNo:'Most picked the big one. What stands out, pulls people in.',tutPct:'{p}% picked the big crater',
+  skipTut:'Skip warm-up',tutPlay:'Play day #{n}',
+diff --git a/site/crater/src/ui.js b/site/crater/src/ui.js
+index 679085d..fd91401 100644
+--- a/site/crater/src/ui.js
++++ b/site/crater/src/ui.js
+@@ -18,7 +18,13 @@ let L=JI.get();
+  let elegido=false;try{elegido=/(?:^|;\s*)jet_lang=(es|en)\b/.test(document.cookie)||!!localStorage.getItem('jet_lang');}catch(e){}
+  if(!elegido&&(v==='es'||v==='en')){JI.set(v);L=JI.get();}
+  EST.prefs.lang=null;EST.guardarPrefs();})();
+-function t(k,v){let s=TX[L][k];if(s==null)s=TX.es[k];if(typeof s==='string'&&v)s=s.replace(/\{(\w+)\}/g,(m,x)=>v[x]!=null?v[x]:m);return s;}
++function t(k,v){let s=TX[L][k];if(s==null)s=TX.es[k];if(typeof s==='string'&&v)s=s.replace(/\{([^}]+)\}/g,(m,x)=>v[x]!=null?v[x]:m);return s;}
++const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
++/* Fecha, hora y zona horaria locales de un instante (para revelación y cierre): nunca «medianoche» a secas. */
++function fhz(ms){const d=new Date(ms);let zona='';try{zona=Intl.DateTimeFormat().resolvedOptions().timeZone||'';}catch(e){}
++ if(!zona){const o=-d.getTimezoneOffset(),sg=o>=0?'+':'-';zona='UTC'+sg+String(Math.floor(Math.abs(o)/60)).padStart(2,'0')+':'+String(Math.abs(o)%60).padStart(2,'0');}
++ return {fecha:fechaCorta(GEN.fechaLocal(d))+' '+d.getFullYear(),hora:horaLocal(ms),zona};}
++function proximaMedianoche(){const n=new Date();return new Date(n.getFullYear(),n.getMonth(),n.getDate()+1).getTime();}
+ const fmtN=n=>Math.round(n).toLocaleString(L==='es'?'es-ES':'en-US');
+ const fmt1=n=>n.toLocaleString(L==='es'?'es-ES':'en-US',{minimumFractionDigits:1,maximumFractionDigits:1});
+ const fechaCorta=f=>{const [y,m,d]=f.split('-').map(Number);return L==='es'?d+' '+t('months')[m-1]:t('months')[m-1]+' '+d;};
+@@ -41,7 +47,10 @@ function aplicarTextos(){
+ 
+ /* ---------- toasts y pastilla ---------- */
+ let toastT=0;
+-function toast(msg,ms){const e=$('toast');e.textContent=msg;e.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>e.classList.remove('on'),ms||2200);}
++function toast(msg,ms){const e=$('toast');e.textContent=msg;e.classList.remove('accion');e.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>e.classList.remove('on'),ms||2200);}
++function toastAccion(msg,lab,fn,ms){const e=$('toast');e.innerHTML='<span>'+esc(msg)+'</span><button type="button" class="tAcc" id="tAcc">'+esc(lab)+'</button>';e.classList.add('on','accion');clearTimeout(toastT);
++ $('tAcc').onclick=()=>{limpiarToast();fn();};toastT=setTimeout(limpiarToast,ms||6000);}
++function limpiarToast(){const e=$('toast');clearTimeout(toastT);e.classList.remove('on','accion');setTimeout(()=>{if(!e.classList.contains('on'))e.textContent='';},250);}
+ function pastilla(){
+  const e=$('pill');let txt='',cls='';
+  if(EST.FECHA_PRUEBA){txt=t('testMode',{f:EST.FECHA_PRUEBA});cls='test';}
+@@ -52,11 +61,13 @@ function pastilla(){
+ }
+ 
+ /* ---------- pantallas ---------- */
+-const BASES=['inicio','ronda','lectura','revela','archivo','perfil'],MODALES=['como','porque','ajustes','pausa'];
+-const ID={inicio:'sInicio',ronda:'sRonda',lectura:'sLectura',revela:'sRevela',archivo:'sArchivo',perfil:'sPerfil',como:'sComo',porque:'sPorque',ajustes:'sAjustes',pausa:'sPausa'};
+-let base='inicio';const modales=[];
++const BASES=['inicio','ronda','lectura','revela','archivo','perfil'],MODALES=['como','porque','ajustes','pausa','compartir','borrar'];
++const ID={inicio:'sInicio',ronda:'sRonda',lectura:'sLectura',revela:'sRevela',archivo:'sArchivo',perfil:'sPerfil',como:'sComo',porque:'sPorque',ajustes:'sAjustes',pausa:'sPausa',compartir:'sCompartir',borrar:'sBorrar'};
++let base='inicio';const modales=[];const ACTIVADOR={};
+ function mostrar(b){
+  base=b;BASES.forEach(x=>$(ID[x]).classList.toggle('on',x===b));
++ document.body.classList.toggle('enRonda',b==='ronda');
++ limpiarToast();
+  $('bPausa').hidden=b!=='ronda';
+  $('segLang2').hidden=b!=='inicio';
+  if(b!=='ronda')cancelarAuto();
+@@ -64,10 +75,28 @@ function mostrar(b){
+  guardarVista();medir();pintarPantalla();
+  const sc=$(ID[b]);if(sc)sc.scrollTop=0;
+ }
+-function abrir(m){if(modales[modales.length-1]===m)return;if(modales.includes(m)){modales.splice(modales.indexOf(m),1);}modales.push(m);$(ID[m]).style.zIndex=50+modales.length;$(ID[m]).classList.add('on');cancelarAuto();AU.sfx('ui');
++/* Sólo la capa superior es operable: el fondo y las capas inferiores quedan inert (Tab no entra, el lector no las lee). */
++function sincInerte(){const top=modales[modales.length-1]||null,hay=!!top;
++ BASES.forEach(x=>{$(ID[x]).inert=hay;});['back','tr','pill','toast'].forEach(id=>{const e=$(id);if(e)e.inert=hay;});
++ MODALES.forEach(m=>{$(ID[m]).inert=modales.includes(m)&&m!==top;});}
++const visibleFoco=n=>!!(n&&n.isConnected&&n!==document.body&&n.offsetParent!==null&&!n.closest('[inert]')&&!n.closest('[hidden]'));
++function enfocar(n){if(!n)return;if(!n.matches('button,a[href],input,select,textarea,[tabindex]'))n.tabIndex=-1;n.focus({preventScroll:true});}
++function abrir(m,opts){opts=opts||{};if(modales[modales.length-1]===m)return;
++ if(modales.includes(m)){modales.splice(modales.indexOf(m),1);}else ACTIVADOR[m]=opts.activador||document.activeElement;
++ modales.push(m);const el=$(ID[m]);el.style.zIndex=50+modales.length;el.classList.add('on');cancelarAuto();AU.sfx('ui');
+  if(m==='ajustes')pintarAjustes();if(m==='como')comoIr(0);if(m==='pausa')AU.velo(true);if(m==='pausa')pintarKickPausa();
+- const f=$(ID[m]).querySelector('button');if(f&&!('ontouchstart' in G))setTimeout(()=>f.focus({preventScroll:true}),30);}
+-function cerrar(){const m=modales.pop();if(m)$(ID[m]).classList.remove('on');AU.sfx('ui');AU.velo(modales.includes('pausa'));if(m==='ajustes')pintarPantalla();if(!modales.length&&base==='ronda')$('cv').focus({preventScroll:true});}
++ sincInerte();
++ // foco inicial: título (o el control indicado), sin condicionar a si hay pantalla táctil
++ const f=(opts.foco&&el.querySelector(opts.foco))||el.querySelector('h2')||el.querySelector('button');
++ if(f)setTimeout(()=>{if(modales.includes(m))enfocar(f);},30);}
++function cerrar(opts){opts=opts&&opts.sinFoco!=null?opts:{};const m=modales.pop();if(m){$(ID[m]).classList.remove('on');$(ID[m]).inert=false;}AU.sfx('ui');AU.velo(modales.includes('pausa'));if(m==='ajustes')pintarPantalla();
++ sincInerte();if(opts.sinFoco)return;
++ const a=m?ACTIVADOR[m]:null;if(m)delete ACTIVADOR[m];
++ if(visibleFoco(a)){enfocar(a);return;}
++ if(modales.length){const top=$(ID[modales[modales.length-1]]);enfocar(top.querySelector('h2')||top.querySelector('button'));return;}
++ if(base==='ronda'){$('cv').focus({preventScroll:true});return;}
++ const sc=$(ID[base]);enfocar(sc.querySelector('h1,h2')||sc.querySelector('button'));}
++function cerrarTodo(){while(modales.length)cerrar({sinFoco:true});}
+ function volver(){if(modales.length)cerrar();else mostrar('inicio');}
+ function pintarPantalla(){if(base==='inicio')pintarInicio();else if(base==='ronda'&&J.dia)pintarRonda();else if(base==='lectura')pintarLectura();else if(base==='revela')pintarRevela(true);else if(base==='archivo')pintarArchivo();else if(base==='perfil')pintarPerfil();pastilla();}
+ function guardarVista(){EST.guardar('vista',{p:base,modo:J.modo,fecha:J.fecha||RV.fecha,r:J.r,rv:RV.modo,f2:RV.fecha});}
+@@ -146,6 +175,7 @@ function pintarRonda(){
+  $('rCtx').textContent=textoCtx(R);$('rPrompt').textContent=t('prompt');
+  $('sRonda').setAttribute('aria-label',t('roundKick',{r:J.r+1,tipo:t('rTypes')[R.tipo]}));$('cv').setAttribute('aria-label',t('rTypes')[R.tipo]);
+  $('bSaltar').hidden=J.modo!=='ensayo'||J.fase!=='elegir';
++ pintarLeyendaRonda();
+  // lunas de progreso
+  const lu=$('rLunas');if(J.modo==='ensayo'){lu.innerHTML='';}else{let h='';for(let i=0;i<7;i++){const g=J.d.rondas[i];let c='';
+   if(g&&g.o!=null){const p=provRonda(i);c=p&&p.sync?'llena':p&&p.cuota>=.2?'media':'jugada';}
+@@ -178,20 +208,22 @@ function aplicarRejilla(l,g,gap){l.style.setProperty('--cw',Math.floor(g.cw)+'px
+ function maquetarLista(){const l=$('lista');if(l.hidden)return;const a=$('area');if(!a.clientWidth)return;const R=ronda(),gap=W<420?8:10;
+  aplicarRejilla(l,rejillaPara(R.op.length,a.clientWidth-2,a.clientHeight-2,gap),gap);}
+ $('lista').addEventListener('click',e=>{const b=e.target.closest('.plat');if(!b)return;const i=+b.dataset.i;
+- const tactil=e.pointerType==='touch'||J.ultimoTipo==='touch';
+- if(J.fase==='elegir'&&J.sel===i&&tactil&&performance.now()-J.tSel>250){aterrizar();return;}
+  if(J.fase==='elegir')elegir(i,'toque');else if(J.fase==='bajando')saltarAnim();});
+-$('lista').addEventListener('dblclick',e=>{if(J.fase==='elegir'&&J.sel!=null&&J.ultimoTipo!=='touch')aterrizar();});
+ $('lista').addEventListener('pointerover',e=>{const b=e.target.closest('.plat');if(b&&e.pointerType==='mouse'&&J.fase==='elegir'){const i=+b.dataset.i;if(J.hover!==i){J.hover=i;AU.sfx('tic',i);}}});
+ addEventListener('pointerdown',e=>{J.ultimoTipo=e.pointerType;document.body.classList.remove('teclado');},{capture:true});
+ addEventListener('keydown',e=>{if(e.key==='Tab'||e.key.startsWith('Arrow'))document.body.classList.add('teclado');},{capture:true});
+ 
+ function pintarBoton(){
+  const b=$('bAterrizar'),R=ronda();cancelarAuto();
+- if(J.fase==='elegir'){b.disabled=J.sel==null;b.innerHTML=J.sel==null?(R.tipo==='base'?t('pickModule'):esMapa(R)?t('pickCrater'):R.tipo==='num'?t('pickNum'):R.tipo==='color'?t('pickColor'):R.tipo==='palabra'?t('pickWord'):t('pick')):t('land')+(('ontouchstart' in G)?'':' <small>Enter</small>');}
+- else if(J.fase==='bajando'){b.disabled=true;b.textContent=t('land');}
+- else{b.disabled=false;b.innerHTML=(J.modo==='ensayo'?t('tutPlay',{n:GEN.diaN(EST.hoy())}):J.r>=6?t('finish'):t('next'))+'<i class="bar" id="barAuto"></i>';}
+-}
++ const av=$('rAviso'),ex=$('rExtra');
++ if(J.fase==='elegir'){b.disabled=J.sel==null;b.textContent=J.sel==null?(R.tipo==='base'?t('pickModule'):esMapa(R)?t('pickCrater'):R.tipo==='num'?t('pickNum'):R.tipo==='color'?t('pickColor'):R.tipo==='palabra'?t('pickWord'):t('pick')):t('land');
++  av.hidden=J.sel==null;av.textContent=J.sel==null?'':t('choiceWarn',{'opción':etiquetaOp(R,J.sel)});ex.hidden=true;}
++ else if(J.fase==='bajando'){b.disabled=true;b.textContent=t('land');av.hidden=true;ex.hidden=true;}
++ else{b.disabled=false;b.innerHTML=(J.modo==='ensayo'?t('tutPlay',{n:GEN.diaN(EST.hoy())}):J.r>=6?t('finish'):t('next'))+'<i class="bar" id="barAuto"></i>';av.hidden=true;ex.hidden=J.modo!=='ensayo';}
++ pintarLeyendaRonda();
++}
++function pintarLeyendaRonda(){const l=$('rLey');if(!l||!J.dia)return;const hay=J.fase==='elegir'&&J.sel!=null;l.hidden=!hay;
++ l.innerHTML=hay?'<span><i style="background:transparent;border:2px solid var(--cyan)"></i>'+t('yourPick')+'</span>':'';}
+ 
+ /* ---------- elegir y aterrizar ---------- */
+ function elegir(i,via,px,py){
+@@ -247,13 +279,14 @@ function mostrarResultado(sonar){
+  const g=J.d.rondas[J.r],R=ronda();if(!g||g.o==null)return;
+  const el=$('rRes'),tx=$('rResT');el.hidden=false;
+  if(J.modo==='ensayo'){
+-  const big=2,ok=g.o===big,p=Math.round(R.practica[big]/2);
+-  tx.innerHTML='<b>'+(ok?t('tutOk'):t('tutNo'))+'</b><br>'+t('tutPct',{p});
+-  J.tut={t0:performance.now()};if(sonar){setTimeout(()=>AU.sfx(ok?'sincronia':'cuenta'),900);if(ok){const p2=EST.perfil();if(!p2.cuaderno[0]){p2.cuaderno[0]=1;EST.guardarPerfil(p2);setTimeout(()=>toast(t('cardNew',{c:t('cards')[0][0]})),1700);}}}
++  const big=2,ok=g.o===big,p=Math.round(R.practica[big]/2),pm=Math.round(R.practica[g.o]/2);
++  EST.guardar('tut',1);
++  tx.innerHTML='<b>'+esc(t('rehearsalDone'))+'</b> · '+esc(t('rehearsalData'))+'<br>'+esc(t('ownChoice',{'opción':etiquetaOp(R,g.o),porcentaje:pm}))+'<br>'+esc(t('majority',{'mayoría':etiquetaOp(R,big),'porcentajeMayoría':p}))+'<br>'+esc(ok?t('tutOk'):t('tutNo'))+' · '+esc(t('practiceRivals',{n:R.practica.reduce((a,b)=>a+b,0)}));
++  J.tut={t0:performance.now()};if(sonar){setTimeout(()=>AU.sfx(ok?'sincronia':'cuenta'),900);if(ok){const p2=EST.perfil();if(!p2.cuaderno[0]){p2.cuaderno[0]=1;EST.guardarPerfil(p2);setTimeout(()=>{if(base==='ronda')toastAccion(t('cardNew',{c:t('cards')[0][0]}),t('seeNotebook'),()=>mostrar('perfil'));},1700);}}}
+   pintarBoton();return;
+  }
+  const pr=provRonda(J.r);const pc=Math.round(pr.cuota*100);
+- let linea=t('registered')+' · '+(pr.mezcla?t('soFarPractice',{p:pc}):t('soFar',{p:pc}));
++ let linea=esc(t('registered'))+' · '+esc(pr.mezcla?t('soFarPractice',{p:'\u0001'}):t('soFar',{p:'\u0001'})).replace('\u0001','<b class="cifra">'+pc+'</b>');
+  if(J.modo==='archivo')linea=t('registered');
+  if(g.env===0&&J.modo==='hoy'&&RED.ok===false)linea+='<br><span style="color:var(--dim)">'+t('queued')+'</span>';
+  if(g.env===-1)linea+='<br><span style="color:var(--dim)">'+t('lateLanding')+'</span>';
+@@ -273,7 +306,9 @@ function siguiente(){
+  entrarRonda(J.r+1);
+ }
+ $('bAterrizar').addEventListener('click',()=>{if(J.fase==='elegir')aterrizar();else if(J.fase==='posado')siguiente();});
+-$('bSaltar').addEventListener('click',()=>{EST.guardar('tut',1);empezarDia('hoy',EST.hoy());});
++$('bSaltar').addEventListener('click',()=>{EST.guardar('tut',1);mostrar('inicio');});
++$('bRepetir').addEventListener('click',()=>{EST.guardar('tut',1);empezarDia('ensayo',EST.hoy());});
++$('bMenu').addEventListener('click',()=>{EST.guardar('tut',1);mostrar('inicio');});
+ 
+ function finDia(){
+  if(J.modo==='hoy'){RED.metrica('dia_fin');AU.sfx('dia');mostrarLectura(J.fecha);}
+@@ -290,28 +325,33 @@ cv.addEventListener('pointerup',e=>{
+  if(J.fase!=='elegir')return;
+  const [px,py]=posEn(e,cv);const i=MAPA.elegirEn(ronda(),J.box,px,py);
+  if(i<0){J.onda={x:px,y:py,t:performance.now()};AU.sfx('tic',0);return;}
+- if(J.sel===i&&ti.tipo!=='mouse'&&performance.now()-J.tSel>250){aterrizar();return;}
+  elegir(i,'toque',px,py);
+ });
+ cv.addEventListener('pointermove',e=>{if(e.pointerType!=='mouse'||!J.box||J.fase!=='elegir'||!esMapa(ronda()))return;const [px,py]=posEn(e,cv);const i=MAPA.elegirEn(ronda(),J.box,px,py);
+  if(i!==J.hover){J.hover=i<0?null:i;if(i>=0)AU.sfx('tic',i);}cv.style.cursor=i>=0?'pointer':'default';});
+ cv.addEventListener('pointerleave',()=>{J.hover=null;});
+-cv.addEventListener('dblclick',e=>{if(J.fase==='elegir'&&J.sel!=null&&J.ultimoTipo==='mouse')aterrizar();});
+ cv.addEventListener('contextmenu',e=>e.preventDefault());
+ 
+ /* ---------- teclado ---------- */
+ addEventListener('keydown',e=>{
+  if(e.repeat&&(e.key==='Enter'||e.key===' '))return;
+- const k=e.key;
++ const k=e.key,tg=e.target&&e.target.closest?e.target:null;
++ // campos de texto, sliders y selects conservan sus teclas
++ if(tg&&tg.closest('input,textarea,select,[contenteditable="true"]')&&k!=='Escape')return;
+  if(k==='Escape'){if(modales.length){e.preventDefault();cerrar();return;}if(base==='ronda'){e.preventDefault();abrir('pausa');return;}if(base!=='inicio'){e.preventDefault();mostrar('inicio');}return;}
+  if(modales.length)return;
++ // RSP-NATIVE-KEYS-01: Enter/Espacio sobre un botón o control enfocado activan ese control, no una orden del juego.
++ // Las .plat son radios: Enter las selecciona (su click nativo), nunca confirma el aterrizaje.
++ const enBoton=tg&&tg.closest('button,a[href],summary,[role="button"],[role="radio"],[role="switch"],.tog');
++ if((k==='Enter'||k===' ')&&enBoton)return;
+  if(base==='ronda'&&J.dia){
+   const R=ronda(),n=R.op.length;
+   if(k==='p'||k==='P'){e.preventDefault();abrir('pausa');return;}
+   if(J.fase==='elegir'){
+    if(['ArrowRight','ArrowDown','ArrowLeft','ArrowUp'].includes(k)){e.preventDefault();const d=(k==='ArrowRight'||k==='ArrowDown')?1:-1;elegir(J.sel==null?(d>0?0:n-1):(J.sel+d+n)%n,'tecla');return;}
+    if(/^[1-9]$/.test(k)&&+k<=n){e.preventDefault();elegir(+k-1,'tecla');return;}
+-   if((k==='Enter'||k===' ')&&J.sel!=null){if(document.activeElement&&document.activeElement.classList.contains('plat')&&+document.activeElement.dataset.i!==J.sel)return;e.preventDefault();aterrizar();return;}
++   // Enter confirma sólo con el mapa enfocado de verdad (no foco heredado) y no en el mismo gesto que la selección
++   if((k==='Enter'||k===' ')&&J.sel!=null&&document.activeElement===cv&&performance.now()-J.tSel>300){e.preventDefault();aterrizar();return;}
+   }else if(J.fase==='bajando'&&(k==='Enter'||k===' ')){e.preventDefault();saltarAnim();}
+   else if(J.fase==='posado'&&(k==='Enter'||k===' ')){e.preventDefault();siguiente();}
+  }
+@@ -335,8 +375,8 @@ function pintarLectura(){
+  $('lKick').textContent=t('dayKick',{n:dia.n,f:fechaCorta(f)});
+  $('lTit').innerHTML=t('early',{s:'<b>'+s+'</b>'});$('lPts').textContent=t('earlyPts',{p});
+  $('lMinis').innerHTML=dia.rondas.map((R,i)=>{const r=res[i];return '<div class="mini'+(r&&r.sync?' si':'')+'"><canvas data-i="'+i+'"></canvas><b>'+(r?Math.round(r.cuota*100)+' %':'–')+'</b><span>'+t('rTypes')[R.tipo]+'</span></div>';}).join('');
+- const nota=$('lNota');nota.hidden=!mezcla;const nr=Math.max(0,...res.map(r=>r?r.N:0));nota.textContent=mezcla?(RED.ok===false?t('offlineLong'):nr>=30?t('fewSome'):nr>0?t('few',{n:fmtN(nr)}):t('onlyPractice')):'';
+- $('lDust').textContent=t('dust');
++ const nota=$('lNota');nota.hidden=!mezcla;const nr=Math.max(0,...res.map(r=>r?r.N:0));nota.textContent=mezcla?(RED.ok===false?t('offlineLong'):nr>=30?t('fewSome'):nr>0?t('few',{n:fmtN(nr),m:30-nr}):t('onlyPractice')+' · '+t('practiceRivals',{n:30})):'';
++ {const z=fhz(proximaMedianoche());$('lDust').textContent=t('dust')+' · '+t('revealEnabled',{fecha:z.fecha,hora:z.hora,zona:z.zona});}
+  EST.guardarHist(f,{j:1,s,p,prov:1,m:mezcla?1:0});
+  const per=EST.perfil();if(p>per.record){per.record=p;EST.guardarPerfil(per);}
+  const det=$('lPorque');if(!EST.leer('porque',0)){det.open=true;EST.guardar('porque',1);}
+@@ -370,9 +410,14 @@ async function compartir(fecha,final,res){
+  const txt=textoCompartir(fecha,final,res);RED.metrica('compartir');
+  if(navigator.share&&('ontouchstart' in G)){try{await navigator.share({text:txt});AU.sfx('copiado');return;}catch(e){if(e&&e.name==='AbortError')return;}}
+  let ok=false;try{await navigator.clipboard.writeText(txt);ok=true;}catch(e){}
+- if(!ok){try{const ta=document.createElement('textarea');ta.value=txt;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();ok=document.execCommand('copy');ta.remove();}catch(e){}}
+- AU.sfx('copiado');toast(ok?t('copied'):txt,ok?1800:5000);
+-}
++ if(ok){AU.sfx('copiado');toast(t('copied'),1800);return;}
++ // Sin portapapeles: el texto completo queda visible y seleccionable hasta que el jugador cierre.
++ $('shTxt').value=txt;abrir('compartir',{foco:'#shTxt'});setTimeout(()=>{try{$('shTxt').select();}catch(e){}},60);
++}
++$('bShCopiar').addEventListener('click',async()=>{const ta=$('shTxt');ta.focus();ta.select();let ok=false;
++ try{ok=document.execCommand('copy');}catch(e){}
++ if(!ok){try{await navigator.clipboard.writeText(ta.value);ok=true;}catch(e){}}
++ if(ok){AU.sfx('copiado');toast(t('copied'),1800);}});
+ 
+ /* =====================================================================
+    REVELACIÓN
+@@ -391,7 +436,8 @@ function calcularRV(){
+   const real=es&&es.conteos?es:null,mi=g&&g.o!=null?g.o:null;const contado=!!(g&&g.env===2&&real);
+   const r=EST.puntuar(R,mi,real,contado,RV.solo);r.jugada=mi!=null;r.mi=mi;r.calor=es&&es.calor?es.calor:null;return r;});
+ }
+-function estadoRV(){const fin=Date.now()>=GEN.cierreUTC(RV.fecha);return fin?t('final'):t('liveShort',{h:horaLocal(GEN.cierreUTC(RV.fecha))});}
++function estadoRV(){const fin=Date.now()>=GEN.cierreUTC(RV.fecha);return fin?t('finalRes'):t('provisional2');}
++function tiempoRV(){const fin=Date.now()>=GEN.cierreUTC(RV.fecha);if(fin)return '';const z=fhz(GEN.cierreUTC(RV.fecha));return t('closesAt',{fecha:z.fecha,hora:z.hora,zona:z.zona});}
+ function rvIr(i,forzar){
+  i=clamp(i,0,7);if(i===RV.r&&!forzar&&!(i===7&&!RV.final))return;
+  RV.r=i;RV.final=i===7;
+@@ -437,17 +483,29 @@ function pintarRevela(soloTexto){
+  $('rvKick').textContent=t('revealKick',{n:RV.dia.n});$('rvEstado').textContent=estadoRV();
+  $('rvRonda').textContent=t('roundKick',{r:RV.r+1,tipo:t('rTypes')[R.tipo]});
+  const v=$('rvVer');v.className='veredicto';v.textContent='';$('rvLinea').textContent='';
+- $('rvPocos').textContent=res.N>=30?'':res.N>0?t('few',{n:fmtN(res.N)}):(RV.est?t('noReal'):(RED.ok===false?t('offlineLong'):t('onlyPractice')));
+- const ley=$('rvLey');ley.innerHTML=esMapa(R)?('<span><i style="background:#00f2cf"></i>'+t('realLegend')+'</span>'+(res.N<30?'<span><i style="background:#9a6bff;opacity:.7"></i>'+t('practiceLegend')+'</span>':'')):'';
++ // Respuestas registradas y rivales simulados son unidades distintas; cada una se muestra sólo si existe.
++ $('rvPocos').textContent=res.N>=30?t('realResponses',{n:fmtN(res.N)}):res.N>0?t('few',{n:fmtN(res.N),m:30-res.N}):(RV.est?t('noReal')+' · '+t('practiceRivals',{n:30}):(RED.ok===false?t('offlineLong'):t('onlyPractice')+' · '+t('practiceRivals',{n:30})));
++ $('rvTiempo').textContent=tiempoRV();
++ const ley=$('rvLey');const gan=ganadoresVista(res);
++ ley.innerHTML=(esMapa(R)?('<span><i style="background:#00f2cf"></i>'+t('realLegend')+'</span>'+(res.N<30?'<span><i style="background:#9a6bff;opacity:.7"></i>'+t('practiceLegend')+'</span>':'')):'')+
++  (res.jugada?'<span><i style="background:transparent;border:2px dotted var(--yellow)"></i>'+esc(t('yourPick'))+'</span>':'')+
++  (gan.length?'<span><i style="background:transparent;border:2px solid var(--cyan)"></i>'+esc(gan.length>1?t('mostChosenTie'):t('mostChosen'))+'</span>':'');
+  $('rvSolo').hidden=!(res.N>0&&res.N<30);$('tSoloR').classList.toggle('on',RV.solo);
+  $('bRvAnt').disabled=RV.r===0;$('bRvSig').textContent=RV.r>=6?t('rvFin'):t('nextR');
+  if(soloTexto)rvTextos(true);
+ }
++/* Más elegidos según los porcentajes que se muestran (filtro «solo reales» incluido); con el filtro vacío no hay mayoría. */
++function ganadoresVista(res){if(RV.solo&&res.N===0)return [];const pv=RV.solo&&res.N>0?res.pv:res.p;const mx=Math.max.apply(null,pv);return pv.map((v,i)=>v>=mx-1e-9?i:-1).filter(i=>i>=0);}
+ function rvTextos(ya){
+- const R=RV.dia.rondas[RV.r],res=RV.res[RV.r],v=$('rvVer');
+- if(res.jugada){v.textContent=res.sync?t('inSync'):t('ownWay',{p:Math.round((RV.solo&&res.N>0?res.pv[res.mi]:res.p[res.mi])*100)});v.classList.toggle('si',res.sync);}
++ const R=RV.dia.rondas[RV.r],res=RV.res[RV.r],v=$('rvVer'),pv=RV.solo&&res.N>0?res.pv:res.p;
++ if(res.jugada){v.textContent=res.sync?t('inSync'):t('ownWay',{p:Math.round(pv[res.mi]*100)});v.classList.toggle('si',res.sync);}
+  else v.textContent=RV.modo==='espectador'?t('spectator'):t('notPlayed');
+- $('rvLinea').textContent=lineaGanador(R,res);
++ const lin=[];const gan=ganadoresVista(res);
++ if(res.jugada)lin.push(t('ownChoice',{'opción':etiquetaOp(R,res.mi),porcentaje:Math.round(pv[res.mi]*100)}));
++ if(gan.length===1)lin.push(t('majority',{'mayoría':etiquetaOp(R,gan[0]),'porcentajeMayoría':Math.round(pv[gan[0]]*100)}));
++ else if(gan.length>1)lin.push(t('mostChosenTie')+': '+gan.map(i=>etiquetaOp(R,i)).join(' · ')+' · '+Math.round(pv[gan[0]]*100)+' %');
++ lin.push(lineaGanador(R,res));
++ $('rvLinea').innerHTML=lin.map(x=>'<div>'+esc(x)+'</div>').join('');
+ }
+ function pintarFinalRV(){
+  const res=RV.res,s=res.filter(r=>r.jugada&&r.sync).length,p=res.reduce((a,r)=>a+(r.jugada?r.pts:0),0),jug=res.some(r=>r.jugada);
+@@ -480,7 +538,7 @@ function actualizarBarras(k){const res=RV.res[RV.r],pv=RV.solo&&res.N>0?res.pv:r
+ function desbloquear(){
+  if(RV.modo==='espectador')return;const res=RV.res[RV.r];if(!res.jugada||!res.sync)return;
+  const c=EST.tarjeta(RV.dia.rondas[RV.r],res.mi);if(c==null)return;const p=EST.perfil();if(p.cuaderno[c])return;
+- p.cuaderno[c]=1;EST.guardarPerfil(p);RV.nuevas.push(c);setTimeout(()=>{AU.sfx('tarjeta');toast(t('cardNew',{c:t('cards')[c][0]}),2600);},500);
++ p.cuaderno[c]=1;EST.guardarPerfil(p);RV.nuevas.push(c);setTimeout(()=>{if(base!=='revela')return;AU.sfx('tarjeta');toastAccion(t('cardNew',{c:t('cards')[c][0]}),t('seeNotebook'),()=>mostrar('perfil'));},500);
+ }
+ /* línea de tiempo de una lámina de revelación */
+ function animRV(c,now){
+@@ -520,7 +578,7 @@ function pintarInicio(){
+  else{$('bJugarT').textContent=t('play',{n});$('bJugarS').textContent=t('playSub');}
+  // tarjeta de revelación
+  const ay=GEN.sumar(f,-1),h=EST.hist(),tR=$('tRevela'),ic=$('tRevelaIc');let tit,sub,accion=null,vivo=false;
+- if(GEN.dias(ay)<GEN.dias(GEN.EPOCH)){if(k>0){tit=t('firstReveal');sub=t('firstRevealSub')+' · '+hms(aMedianoche());}else{tit=t('launchDay');sub=t('launchDaySub');}}
++ if(GEN.dias(ay)<GEN.dias(GEN.EPOCH)){if(k>0){const z=fhz(proximaMedianoche());tit=t('firstReveal');sub=t('revealEnabled',{fecha:z.fecha,hora:z.hora,zona:z.zona})+' · '+hms(aMedianoche());}else{tit=t('launchDay');sub=t('launchDaySub');}}
+  else if(h[ay]&&h[ay].j){tit=t('revealReady');sub=t('revealReadySub');accion=()=>mostrarRevela(ay,'hoy');vivo=!EST.dia(ay).visto;}
+  else{tit=t('revealSpect');sub=t('revealSpectSub');accion=()=>mostrarRevela(ay,'espectador');}
+  $('tRevelaT').textContent=tit;$('tRevelaS').textContent=sub;ic.classList.toggle('vivo',vivo);tR.classList.toggle('quieta',!accion);tR.onclick=accion;tR.disabled=!accion;
+@@ -540,10 +598,10 @@ $('bAjustes').addEventListener('click',()=>abrir('ajustes'));
+ $('bPausa').addEventListener('click',()=>abrir('pausa'));
+ $('bPantalla').addEventListener('click',pantallaCompleta);$('bPantalla2').addEventListener('click',pantallaCompleta);
+ document.querySelectorAll('[data-volver]').forEach(b=>b.addEventListener('click',volver));
+-$('bSeguir').addEventListener('click',cerrar);
++$('bSeguir').addEventListener('click',()=>cerrar());
+ $('bPComo').addEventListener('click',()=>abrir('como'));
+ $('bPAjustes').addEventListener('click',()=>abrir('ajustes'));
+-$('bPInicio').addEventListener('click',()=>{while(modales.length)cerrar();mostrar('inicio');});
++$('bPInicio').addEventListener('click',()=>{cerrarTodo();mostrar('inicio');});
+ 
+ /* ---------- archivo ---------- */
+ function pintarArchivo(){
+@@ -610,7 +668,7 @@ $('cPuntos').addEventListener('click',e=>{const b=e.target.closest('button');if(
+ $('bComoSig').addEventListener('click',()=>{if(CJ.i<2)comoIr(CJ.i+1);else cerrar();});
+ $('cLam').addEventListener('click',e=>{if(e.target.tagName==='CANVAS')CJ.t0=performance.now();});
+ $('bComoPorque').addEventListener('click',()=>abrir('porque'));
+-$('bComoEnsayo').addEventListener('click',()=>{while(modales.length)cerrar();empezarDia('ensayo',EST.hoy());});
++$('bComoEnsayo').addEventListener('click',()=>{cerrarTodo();empezarDia('ensayo',EST.hoy());});
+ let sx0=null;$('cLam').addEventListener('pointerdown',e=>{sx0=e.clientX;});$('cLam').addEventListener('pointerup',e=>{if(sx0!=null&&Math.abs(e.clientX-sx0)>50)comoIr(CJ.i+(e.clientX<sx0?1:-1));sx0=null;});
+ function dibComo(now){
+  const c=$('cLam').querySelectorAll('canvas')[CJ.i];if(!c)return;const r=c.getBoundingClientRect(),w=r.width,h=r.height;if(!w)return;
+@@ -642,11 +700,13 @@ document.querySelectorAll('.segLang').forEach(g=>g.addEventListener('click',e=>{
+ /* Cambio en vivo (desde este juego o desde otra pestaña del sitio que use JETIdioma): repinta sin recargar ni tocar la partida. */
+ addEventListener('jet-idioma',e=>{const l=e.detail;if((l!=='es'&&l!=='en')||l===L)return;L=l;MAPA.limpiarCache();aplicarTextos();pintarAjustes();
+  if(base==='ronda'&&J.dia&&J.fase==='posado'&&!$('rRes').hidden){const tu=J.tut;mostrarResultado(false);if(tu)J.tut=tu;}});
+-let borrarT=0;
+-$('bBorrar').addEventListener('click',()=>{const b=$('bBorrar');
+- if(!b.classList.contains('armado')){b.classList.add('armado');b.textContent=t('erase2');clearTimeout(borrarT);borrarT=setTimeout(()=>{b.classList.remove('armado');b.textContent=t('erase');},4000);return;}
+- clearTimeout(borrarT);EST.borrarTodo();Object.assign(EST.prefs,{mOn:true,mVol:.6,sOn:true,sVol:.85,vib:true,auto:true,mov:null,lang:null,soloReales:false});EST.guardarPrefs();EST.guardar('uid',EST.uid);
+- AU.sfx('borrar');b.classList.remove('armado');b.textContent=t('erase');toast(t('erasedAll'));while(modales.length)cerrar();J.dia=null;mostrar('inicio');});
++$('bBorrar').addEventListener('click',()=>{
++ $('bTit').textContent=t('eraseTitle',{juego:'JET//'+t('name')});$('bTxt').textContent=t('eraseBody',{'datos concretos':t('eraseData')});
++ abrir('borrar',{foco:'#bBorrarNo'});});
++$('bBorrarNo').addEventListener('click',()=>cerrar());
++$('bBorrarSi').addEventListener('click',()=>{
++ const prefs=Object.assign({},EST.prefs);EST.borrarTodo();Object.assign(EST.prefs,prefs);EST.guardarPrefs();EST.guardar('uid',EST.uid);
++ AU.sfx('borrar');cerrarTodo();J.dia=null;mostrar('inicio');toast(t('erasedAll'));});
+ 
+ /* =====================================================================
+    BUCLE DE DIBUJO
+@@ -658,7 +718,7 @@ function cuadro(now){
+  // fondo
+  const fc=$('fondo'),fx=fc.getContext('2d');
+  const animarFondo=base==='inicio'||base==='lectura'||base==='archivo'||base==='perfil';
+- if(animarFondo||fondoQuieto){fx.setTransform(DPR,0,0,DPR,0,0);MAPA.fondo(fx,W,H,now/1000,dt,{luna:base==='inicio',puntos:puntosLuna,quieto:quieto()||!animarFondo,px,py,lunaY:0});fondoQuieto=false;}
++ if(animarFondo||fondoQuieto){fx.setTransform(DPR,0,0,DPR,0,0);MAPA.fondo(fx,W,H,now/1000,dt,{luna:base==='inicio',puntos:puntosLuna,quieto:quieto()||!animarFondo,px,py,lunaY:0,suave:base==='ronda'||base==='revela'});fondoQuieto=false;}
+  // ronda
+  if(base==='ronda'&&J.dia&&J.box){
+   const c=$('cv').getContext('2d');c.setTransform(DPR,0,0,DPR,0,0);c.clearRect(0,0,J.W,J.H);
+@@ -726,6 +786,7 @@ function arrancar(){
+  }
+  if(!hecho)mostrar('inicio');
+  pastilla();
++ if(G.__crCargaLista)G.__crCargaLista();
+  setTimeout(()=>$('sCarga').classList.add('fuera'),120);setTimeout(()=>$('sCarga').remove(),600);
+  RED.procesar();
+  if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
+@@ -748,6 +809,7 @@ G.CRATER={
+  centro:i=>{const R=ronda();if(!J.box)return null;const g=esMapa(R)?MAPA.geom(R,i,J.box):(()=>{const b=$('lista').querySelectorAll('.plat')[i],r=b.getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2};})();
+   if(esMapa(R)){const a=$('cv').getBoundingClientRect();return {x:a.left+g.x,y:a.top+g.y};}return g;},
+  idioma:l=>{JI.set(l);},
++ cerrar:()=>cerrar(),
+  errores:[]
+ };
+ addEventListener('error',e=>G.CRATER.errores.push(String(e.message||e)));

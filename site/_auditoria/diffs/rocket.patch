@@ -1,0 +1,790 @@
+diff --git a/site/rocket/index.html b/site/rocket/index.html
+index 136d783..5c95ef8 100644
+--- a/site/rocket/index.html
++++ b/site/rocket/index.html
+@@ -2,7 +2,7 @@
+ <html lang="es">
+ <head>
+ <meta charset="UTF-8">
+-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
++<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+ <meta name="mobile-web-app-capable" content="yes">
+ <meta name="apple-mobile-web-app-capable" content="yes">
+ <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+@@ -46,12 +46,15 @@
+   * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; -webkit-user-select:none; user-select:none; }
+   html, body { width:100%; height:100%; overflow:hidden; background:var(--bg-0); color:var(--ink);
+     font-family:'Poppins', system-ui, sans-serif; overscroll-behavior:none; -webkit-font-smoothing:antialiased; }
+-  body { display:flex; flex-direction:column; align-items:center; padding: var(--st) var(--sr) var(--sb) var(--sl); touch-action:none; }
++  body { display:flex; flex-direction:column; align-items:center; padding: var(--st) var(--sr) var(--sb) var(--sl); }
++  /* RSP-GLOBAL-01: el control de puntero sólo mientras se juega; menús y paneles admiten pinch-zoom */
++  body.playing { touch-action:none; }
++  body.no-motion *, body.no-motion *::before, body.no-motion *::after { animation:none !important; }
+   body::before { content:''; position:fixed; inset:0; z-index:-2; pointer-events:none;
+     background: radial-gradient(ellipse at 20% 10%, rgba(119,0,244,0.20), transparent 50%),
+       radial-gradient(ellipse at 80% 90%, rgba(0,242,207,0.15), transparent 55%),
+       radial-gradient(ellipse at 50% 50%, rgba(20,5,40,0.6), var(--bg-0) 80%); }
+-  button { font:inherit; color:inherit; }
++  button { font:inherit; color:inherit; touch-action:manipulation; }
+   button:focus-visible, a:focus-visible, input:focus-visible { outline:2px solid var(--cyan); outline-offset:2px; }
+ 
+   #back-portfolio { position:fixed; top:calc(8px + var(--st)); left:calc(8px + var(--sl)); z-index:150;
+@@ -102,7 +105,9 @@
+     body { flex-direction:row; align-items:stretch; }
+     #top { width:172px; max-width:172px; flex:none; padding:48px 8px 8px; justify-content:center; gap:5px; }
+     #tier-strip { padding:0; flex-direction:column; min-height:0; }
+-    #btn-pause { position:static; width:100%; height:34px; order:10; margin-top:4px; }
++    /* RSP-ROCKET-01: el botón vuelve a ser el contexto del ::before; su zona activa es el propio botón */
++    #btn-pause { position:relative; top:auto; right:auto; width:100%; height:44px; min-height:44px; order:10; margin-top:4px; }
++    #btn-pause::before { inset:0; }
+     #btn-pause::after { content:attr(data-label); margin-left:6px; font-family:'JetBrains Mono', monospace; font-size:10px; letter-spacing:.15em; text-transform:uppercase; }
+     #hud { flex-direction:column; gap:4px; }
+     .pill { flex:none; flex-direction:row; justify-content:space-between; border-radius:10px; padding:6px 10px; }
+@@ -126,7 +131,7 @@
+   .ov { position:fixed; inset:0; background:rgba(5,1,8,0.95); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+     display:none; flex-direction:column; align-items:center; text-align:center;
+     padding:calc(3.2rem + var(--st)) calc(1rem + var(--sr)) calc(1.5rem + var(--sb)) calc(1rem + var(--sl));
+-    z-index:100; overflow-y:auto; -webkit-overflow-scrolling:touch; touch-action:pan-y; }
++    z-index:100; overflow-y:auto; -webkit-overflow-scrolling:touch; touch-action:pan-y pinch-zoom; }
+   .ov.show { display:flex; }
+   .ov > * { flex:none; }
+   .ov .spacer { flex:1 1 auto; }
+@@ -159,6 +164,7 @@
+     display:flex; flex-direction:column; align-items:center; gap:3px; transition:all .18s; }
+   .mode-btn small { font-family:'JetBrains Mono', monospace; font-size:11px; letter-spacing:.05em; text-transform:none; opacity:.75; font-weight:500; }
+   .mode-btn.active { background:rgba(0,242,207,0.16); border-color:var(--cyan); color:var(--cyan); box-shadow:0 0 16px rgba(0,242,207,0.4); }
++  .mode-desc { font-family:'Inter', sans-serif; font-size:.8rem; color:var(--ink-2); line-height:1.45; min-height:2.9em; }
+   .btn { background:rgba(15,5,40,0.6); border:1px solid var(--card-border); color:var(--ink); padding:12px 18px; border-radius:11px;
+     font-size:.78rem; font-weight:600; letter-spacing:.1em; text-transform:uppercase; cursor:pointer; transition:all .18s; min-height:46px; }
+   .btn:hover { border-color:rgba(0,242,207,.6); }
+@@ -167,6 +173,10 @@
+     background:linear-gradient(90deg, #7700f4 0%, #00f2cf 100%); border:none; color:#050108; border-radius:16px;
+     box-shadow:0 0 30px rgba(0,242,207,0.40), 0 0 60px rgba(119,0,244,0.35), 0 6px 18px rgba(0,0,0,0.5); }
+   .btn.small-primary { background:linear-gradient(90deg, #7700f4 0%, #00f2cf 100%); color:#050108; border:none; font-weight:800; }
++  .btn.danger { border-color:rgba(255,68,102,.6); color:var(--danger); }
++  .btn.danger:hover { border-color:var(--danger); background:rgba(255,68,102,.08); }
++  .ov-score-lbl { font-family:'JetBrains Mono', monospace; font-size:.66rem; letter-spacing:.3em; color:var(--ink-2); text-transform:uppercase; font-weight:700; margin-top:.2rem; }
++  .ov-status { font-family:'Inter', sans-serif; font-size:.82rem; color:var(--grn); min-height:1.2em; }
+   .btn-row { display:flex; gap:10px; flex-wrap:wrap; justify-content:center; width:100%; max-width:420px; }
+   .btn-row .btn { flex:1 1 120px; }
+   .btn-col { display:flex; flex-direction:column; gap:10px; width:100%; max-width:420px; }
+@@ -182,8 +192,11 @@
+   .sector .st { font-size:.8rem; letter-spacing:.1em; color:rgba(181,168,216,.25); }
+   .sector .st b { color:var(--yel); font-weight:400; }
+   .sector.next { border-color:var(--cyan); box-shadow:0 0 0 1px rgba(0,242,207,.4), 0 0 22px rgba(0,242,207,.25); }
+-  .sector.locked { opacity:.38; cursor:default; }
+-  .sector.locked .n { color:var(--dim); }
++  .sector.locked { opacity:.8; cursor:default; border-style:dashed; background:rgba(15,5,40,.45); }
++  .sector.locked .n { color:var(--ink-2); }
++  .sector.locked .nm { color:var(--ink-2); }
++  .sector .lock-msg { font-family:'Inter', sans-serif; font-size:9.5px; line-height:1.2; letter-spacing:0; color:var(--ink-2); text-align:center; }
++  @media (max-width:340px) { .sector .lock-msg { font-size:8.5px; } }
+   .sector.final .n { color:var(--mag); }
+   @media (min-width:600px) and (min-height:600px) { .sectors { grid-template-columns:repeat(4, 1fr); max-width:560px; } }
+ 
+@@ -214,6 +227,16 @@
+   .menu-lang { margin-top:.9rem; }
+   /* cómo jugar */
+   .help-list { list-style:none; display:flex; flex-direction:column; gap:.6rem; }
++  .help-sec { font-size:.78rem; letter-spacing:.26em; color:var(--cyan); text-transform:uppercase; font-weight:700; margin-bottom:.5rem; }
++  .help-adv { width:100%; max-width:420px; margin-bottom:.8rem; }
++  .help-adv summary { list-style:none; cursor:pointer; display:flex; justify-content:space-between; align-items:center; gap:8px; padding:.85rem 1.1rem; min-height:46px;
++    border:1px solid var(--card-border); background:var(--card-bg); border-radius:14px; font-size:.78rem; letter-spacing:.2em; text-transform:uppercase; font-weight:700; color:var(--ink); }
++  .help-adv summary::-webkit-details-marker { display:none; }
++  .help-adv summary::after { content:'+'; font-family:'JetBrains Mono', monospace; font-size:1rem; color:var(--cyan); }
++  .help-adv[open] summary::after { content:'–'; }
++  .help-adv[open] summary { border-radius:14px 14px 0 0; border-bottom-color:transparent; }
++  .help-adv .card { border-radius:0 0 14px 14px; margin-bottom:0; }
++  .help-adv summary:focus-visible { outline:2px solid var(--cyan); outline-offset:2px; }
+   .help-list li { display:flex; gap:.7rem; align-items:flex-start; font-family:'Inter', sans-serif; font-size:.84rem; color:var(--ink-2); line-height:1.45; }
+   .help-list li b { color:var(--ink); font-weight:600; }
+   .help-list svg { flex:none; width:26px; height:26px; margin-top:1px; }
+@@ -254,7 +277,7 @@
+   <div id="powerups"></div>
+ </div>
+ 
+-<div id="stage"><canvas id="grid" aria-label="Tablero de JET//Rocket" data-i18n-aria="board"></canvas></div>
++<div id="stage"><canvas id="grid" tabindex="-1" aria-label="Tablero de JET//Rocket" data-i18n-aria="board"></canvas></div>
+ 
+ <!-- MENÚ -->
+ <div class="ov show" id="ov-menu">
+@@ -270,11 +293,12 @@
+ 
+   <div class="card">
+     <div class="card-head"><div class="card-label">Arcade</div><div class="card-sub"><span data-i18n="maxRank">Rango máximo</span>: <span id="max-rank"></span></div></div>
+-    <div class="mode-choose">
+-      <button class="mode-btn" data-mode="classic"><span data-i18n="mode.classic">Clásico</span><small id="best-classic">0</small></button>
+-      <button class="mode-btn" data-mode="timer"><span data-i18n="mode.timer">Tiempo</span><small id="best-timer">0</small></button>
+-      <button class="mode-btn" data-mode="survive"><span data-i18n="mode.survive">Sobrevivir</span><small id="best-survive">0</small></button>
++    <div class="mode-choose" role="group" aria-label="Modo arcade" data-i18n-aria="arcadeMode">
++      <button type="button" class="mode-btn" data-mode="classic" aria-pressed="false"><span data-i18n="mode.classic">Clásico</span><small id="best-classic">0</small></button>
++      <button type="button" class="mode-btn" data-mode="timer" aria-pressed="false"><span data-i18n="mode.timer">Contrarreloj</span><small id="best-timer">0</small></button>
++      <button type="button" class="mode-btn" data-mode="survive" aria-pressed="false"><span data-i18n="mode.survive">Supervivencia</span><small id="best-survive">0</small></button>
+     </div>
++    <p class="mode-desc" id="mode-desc" aria-live="polite"></p>
+     <button class="btn small-primary" id="btn-arcade" data-i18n="playArcade">Jugar arcade</button>
+   </div>
+ 
+@@ -292,7 +316,7 @@
+   <div class="ov-title" data-i18n="chooseSector">Elige sector</div>
+   <div class="ov-msg" id="sectors-msg" style="margin-bottom:.8rem"></div>
+   <div class="sectors" id="sectors"></div>
+-  <div class="btn-row"><button class="btn" data-back="ov-menu" data-i18n="back2">Volver</button></div>
++  <div class="btn-row"><button class="btn" data-back="ov-menu" data-i18n="menu">Volver al menú</button></div>
+ </div>
+ 
+ <!-- BRIEFING DE SECTOR -->
+@@ -307,40 +331,53 @@
+   </div>
+   <div class="btn-col">
+     <button class="btn primary" id="btn-brief-go" data-primary data-i18n="launch">Despegar</button>
+-    <button class="btn" data-back="ov-sectors" data-i18n="sectors">Sectores</button>
++    <button class="btn" data-back="ov-sectors" data-i18n="backSectors">Volver a sectores</button>
+   </div>
+   <div class="spacer"></div>
+ </div>
+ 
+ <!-- PAUSA -->
+-<div class="ov dim" id="ov-pause">
++<div class="ov dim" id="ov-pause" role="dialog" aria-modal="true" aria-labelledby="pause-title">
+   <div class="spacer"></div>
+   <div class="ov-eyebrow" data-i18n="pauseLow">pausa</div>
+-  <div class="ov-title" id="pause-title" data-i18n="pauseTitle">Nave en espera</div>
++  <div class="ov-title" id="pause-title" tabindex="-1" data-i18n="pauseTitle">Nave en espera</div>
+   <div class="ov-msg" id="pause-msg"></div>
+   <div class="btn-col">
+-    <button class="btn primary" id="btn-resume" data-primary data-i18n="resume">Continuar</button>
++    <button class="btn primary" id="btn-resume" data-primary data-i18n="resume">Reanudar partida</button>
+     <div class="btn-row">
+-      <button class="btn" id="btn-restart" data-i18n="restart">Reiniciar</button>
++      <button class="btn" id="btn-restart" data-i18n="restart">Reiniciar recorrido</button>
+       <button class="btn" id="btn-pause-settings" data-i18n="settings">Ajustes</button>
+-      <button class="btn" id="btn-pause-menu" data-i18n="menu">Menú</button>
++      <button class="btn" id="btn-pause-menu" data-i18n="menu">Volver al menú</button>
+     </div>
+   </div>
+   <div class="spacer"></div>
+ </div>
+ 
++<!-- CONFIRMACIÓN (salir/reiniciar desde pausa, borrar progreso) -->
++<div class="ov dim" id="ov-confirm" role="dialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-msg">
++  <div class="spacer"></div>
++  <div class="ov-title" id="confirm-title" tabindex="-1"></div>
++  <div class="ov-msg" id="confirm-msg"></div>
++  <div class="btn-col">
++    <button class="btn primary" id="btn-confirm-cancel" data-primary data-i18n="cancel">Cancelar</button>
++    <button class="btn" id="btn-confirm-ok" data-i18n="reset">Borrar progreso</button>
++  </div>
++  <div class="spacer"></div>
++</div>
++
+ <!-- FIN DE PARTIDA -->
+ <div class="ov" id="ov-lose">
+   <div class="spacer"></div>
+   <div class="ov-eyebrow" id="lose-eyebrow"></div>
+-  <div class="ov-title" id="lose-title"></div>
++  <div class="ov-title" id="lose-title" tabindex="-1"></div>
++  <div class="ov-score-lbl" data-i18n="pointsCaps">Puntos</div>
+   <div class="ov-score" id="lose-score">0</div>
+   <div class="ov-msg" id="lose-msg"></div>
+   <div class="btn-col">
+-    <button class="btn primary" id="btn-retry" data-primary data-i18n="retry">Reintentar</button>
++    <button class="btn primary" id="btn-retry" data-primary>Reintentar recorrido</button>
+     <div class="btn-row">
+-      <button class="btn" id="btn-lose-alt" data-i18n="sectors">Sectores</button>
+-      <button class="btn" id="btn-lose-menu" data-i18n="menu">Menú</button>
++      <button class="btn" id="btn-lose-alt" data-i18n="otherSector">Elegir otro sector</button>
++      <button class="btn" id="btn-lose-menu" data-i18n="menu">Volver al menú</button>
+     </div>
+   </div>
+   <div class="spacer"></div>
+@@ -350,15 +387,16 @@
+ <div class="ov" id="ov-win">
+   <div class="spacer"></div>
+   <div class="ov-eyebrow" id="win-eyebrow"></div>
+-  <div class="ov-title" id="win-title"></div>
++  <div class="ov-title" id="win-title" tabindex="-1"></div>
+   <div class="stars" id="win-stars"></div>
++  <div class="ov-score-lbl" data-i18n="pointsCaps">Puntos</div>
+   <div class="ov-score" id="win-score">0</div>
+   <div class="ov-msg" id="win-msg"></div>
+   <div class="btn-col">
+     <button class="btn primary" id="btn-next" data-primary data-i18n="nextSector">Siguiente sector</button>
+     <div class="btn-row">
+-      <button class="btn" id="btn-win-retry" data-i18n="replay">Repetir</button>
+-      <button class="btn" data-back="ov-sectors" data-i18n="sectors">Sectores</button>
++      <button class="btn" id="btn-win-retry" data-i18n="replay">Repetir sector</button>
++      <button class="btn" data-back="ov-sectors" data-i18n="otherSector">Elegir otro sector</button>
+     </div>
+   </div>
+   <div class="spacer"></div>
+@@ -373,16 +411,16 @@
+   <div class="stars" id="end-stars"></div>
+   <div class="ov-msg" id="end-msg"></div>
+   <div class="btn-col">
+-    <button class="btn primary" data-back="ov-sectors" data-primary data-i18n="sectors">Sectores</button>
+-    <button class="btn" data-back="ov-menu" data-i18n="menu">Menú</button>
++    <button class="btn primary" data-back="ov-sectors" data-primary data-i18n="viewSectors">Ver sectores</button>
++    <button class="btn" data-back="ov-menu" data-i18n="menu">Volver al menú</button>
+   </div>
+   <div class="spacer"></div>
+ </div>
+ 
+ <!-- AJUSTES -->
+-<div class="ov" id="ov-settings">
++<div class="ov" id="ov-settings" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+   <div class="ov-eyebrow" data-i18n="settingsLow">ajustes</div>
+-  <div class="ov-title" data-i18n="cockpit">Cabina</div>
++  <div class="ov-title" id="settings-title" tabindex="-1" data-i18n="cockpit">Cabina</div>
+   <div class="card">
+     <div class="set-row"><label for="s-music" data-i18n="music">Música</label><div class="ctl"><input type="range" id="s-musicvol" min="0" max="100" aria-label="Volumen de música" data-i18n-aria="musicVol"><button class="toggle" id="s-music" role="switch" aria-label="Música" data-i18n-aria="music"></button></div></div>
+     <div class="set-row"><label for="s-sfx" data-i18n="sfx">Efectos</label><div class="ctl"><input type="range" id="s-sfxvol" min="0" max="100" aria-label="Volumen de efectos" data-i18n-aria="sfxVol"><button class="toggle" id="s-sfx" role="switch" aria-label="Efectos" data-i18n-aria="sfx"></button></div></div>
+@@ -392,26 +430,35 @@
+   </div>
+   <div class="btn-col">
+     <button class="btn primary" id="btn-settings-back" data-primary data-i18n="done">Listo</button>
+-    <button class="btn" id="btn-reset">Borrar progreso</button>
++    <button class="btn danger" id="btn-reset" data-i18n="reset">Borrar progreso</button>
++    <div class="ov-status" id="reset-status" role="status" aria-live="polite"></div>
+   </div>
+ </div>
+ 
+ <!-- CÓMO JUGAR -->
+-<div class="ov" id="ov-help">
++<div class="ov" id="ov-help" role="dialog" aria-modal="true" aria-labelledby="help-title">
+   <div class="ov-eyebrow" data-i18n="howToLow">cómo jugar</div>
+-  <div class="ov-title" data-i18n="manual">Manual de vuelo</div>
++  <div class="ov-title" id="help-title" tabindex="-1" data-i18n="manual">Manual de vuelo</div>
+   <div class="card">
++    <div class="help-sec" data-i18n="controls">Controles</div>
+     <ul class="help-list">
+       <li><svg viewBox="0 0 26 26"><path d="M5 13h16M15 7l6 6-6 6" stroke="#00f2cf" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n-html="help1"><b>Pilota.</b> Desliza el dedo en cualquier parte de la pantalla, o toca a un lado de la nave para girar hacia ese lado. En teclado: <kbd>←</kbd><kbd>↑</kbd><kbd>→</kbd><kbd>↓</kbd> o <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>. Con el puntero: haz clic o arrastra.</span></li>
++      <li><svg viewBox="0 0 26 26"><path d="M7 18l6-12 6 12z" fill="none" stroke="#ffe14a" stroke-width="2"/></svg><span data-i18n-html="help8"><b>Campaña:</b> reúne la carga de cristales del sector. Las estrellas premian los puntos. <b>Pausa:</b> botón arriba a la derecha, <kbd>P</kbd> o <kbd>Esc</kbd>.</span></li>
++      <li><svg viewBox="0 0 26 26"><rect x="4" y="4" width="18" height="18" rx="3" fill="#15082a" stroke="#9a3eff" stroke-width="2"/></svg><span data-i18n-html="help7"><b>Muros y bordes:</b> chocar termina la partida, igual que morderte la cola.</span></li>
++    </ul>
++  </div>
++  <details class="help-adv" id="help-adv">
++    <summary data-i18n="advancedRules">Reglas avanzadas</summary>
++    <div class="card">
++    <ul class="help-list">
+       <li><svg viewBox="0 0 26 26"><path d="M13 3l7 10-7 10-7-10z" fill="#00f2cf"/></svg><span data-i18n-html="help2"><b>Cristal cian:</b> +10 y la nave crece. <b style="color:#ff2bd6">Núcleo magenta:</b> +30 y crece el doble.</span></li>
+       <li><svg viewBox="0 0 26 26"><text x="13" y="18" text-anchor="middle" font-family="JetBrains Mono" font-weight="700" font-size="12" fill="#ffe14a">×3</text></svg><span data-i18n-html="help3"><b>Combo:</b> encadena cristales en menos de 2,5 s para multiplicar los puntos hasta ×3.</span></li>
+       <li><svg viewBox="0 0 26 26"><polygon points="13,3 22,8 22,18 13,23 4,18 4,8" fill="#00ff9c"/></svg><span data-i18n-html="help4"><b>Mejoras:</b> <b style="color:#00ff9c">escudo</b> (absorbe un golpe y te desvía de un muro), <b style="color:#ffe14a">cámara lenta</b> y <b style="color:#b07bff">puntos ×2</b>.</span></li>
+       <li><svg viewBox="0 0 26 26"><circle cx="13" cy="13" r="9" stroke="#7700f4" stroke-width="2.5" fill="none"/><circle cx="13" cy="13" r="3" fill="#fff"/></svg><span data-i18n-html="help5"><b>Portales:</b> entra por uno y sales por su pareja. Se cierran tras cuatro usos.</span></li>
+-      <li><svg viewBox="0 0 26 26"><polygon points="13,4 21,9 20,19 12,22 5,16 6,8" fill="#1f0612" stroke="#ff4466" stroke-width="2"/></svg><span data-i18n-html="help6"><b>Asteroides:</b> te arrancan dos segmentos; en Sobrevivir y en Tormenta destruyen la nave.</span></li>
+-      <li><svg viewBox="0 0 26 26"><rect x="4" y="4" width="18" height="18" rx="3" fill="#15082a" stroke="#9a3eff" stroke-width="2"/></svg><span data-i18n-html="help7"><b>Muros y bordes:</b> chocar termina la partida, igual que morderte la cola.</span></li>
+-      <li><svg viewBox="0 0 26 26"><path d="M7 18l6-12 6 12z" fill="none" stroke="#ffe14a" stroke-width="2"/></svg><span data-i18n-html="help8"><b>Campaña:</b> reúne la carga de cristales del sector. Las estrellas premian los puntos. <b>Pausa:</b> botón arriba a la derecha, <kbd>P</kbd> o <kbd>Esc</kbd>.</span></li>
++      <li><svg viewBox="0 0 26 26"><polygon points="13,4 21,9 20,19 12,22 5,16 6,8" fill="#1f0612" stroke="#ff4466" stroke-width="2"/></svg><span data-i18n-html="help6"><b>Asteroides:</b> te arrancan dos segmentos; en Supervivencia y en Tormenta destruyen la nave.</span></li>
+     </ul>
+-  </div>
++    </div>
++  </details>
+   <div class="btn-col"><button class="btn primary" id="btn-help-back" data-primary data-i18n="gotIt">Entendido</button></div>
+ </div>
+ 
+@@ -447,26 +494,36 @@ const T = {
+     metaDesc: 'JET//Rocket: una nave serpiente neón que caza cristales. Campaña de 12 sectores y tres modos arcade.',
+     tagline: 'caza · crece · sobrevive', campaign: 'Campaña', campaignLow: 'campaña',
+     campText: 'Doce sectores con muros, meteoros, portales y eclipses. Cumple la carga de cristales de cada uno para abrir el siguiente.',
+-    maxRank: 'Rango máximo', 'mode.classic': 'Clásico', 'mode.timer': 'Tiempo', 'mode.survive': 'Sobrevivir',
++    maxRank: 'Rango máximo', 'mode.classic': 'Clásico', 'mode.timer': 'Contrarreloj', 'mode.survive': 'Supervivencia', arcadeMode: 'Modo arcade',
++    'desc.classic': 'Clásico: sin reloj. La nave acelera a medida que crece; chocar termina la partida.',
++    'desc.timer': 'Contrarreloj: conseguí tantos puntos como puedas en {s} segundos. Chocar termina la partida.',
++    'desc.survive': 'Supervivencia: asteroides letales y sin eventos cósmicos. Un solo impacto destruye la nave.',
+     playArcade: 'Jugar arcade', howTo: 'Cómo jugar', howToLow: 'cómo jugar', settings: 'Ajustes', settingsLow: 'ajustes',
+     language: 'Idioma', footer: 'JetCompany OÜ · Tallin · 2026',
+     chooseSector: 'Elige sector', back2: 'Volver', launch: 'Despegar', sectors: 'Sectores',
+-    pauseLow: 'pausa', pauseTitle: 'Nave en espera', resume: 'Continuar', restart: 'Reiniciar', menu: 'Menú',
+-    retry: 'Reintentar', nextSector: 'Siguiente sector', replay: 'Repetir',
++    pauseLow: 'pausa', pauseTitle: 'Nave en espera', resume: 'Reanudar partida', restart: 'Reiniciar recorrido', menu: 'Volver al menú',
++    retryRun: 'Reintentar recorrido', retrySector: 'Reintentar sector', nextSector: 'Siguiente sector', replay: 'Repetir sector',
++    backSectors: 'Volver a sectores', otherSector: 'Elegir otro sector', viewSectors: 'Ver sectores',
++    cancel: 'Cancelar', quitTitle: '¿Volver al menú?', quitBody: 'Se perderá el recorrido actual.',
++    restartTitle: '¿Reiniciar el recorrido?', restartBody: 'Se perderá el recorrido actual.',
++    pointsCaps: 'Puntos', pointsLabel: 'Puntos: {n}', timeLeft: 'Tiempo restante: {s} s', duration: 'Duración de la partida: {s} s',
++    unlockCond: 'Completá el sector {n} para desbloquear.', controls: 'Controles', advancedRules: 'Reglas avanzadas',
+     campaignDone: 'campaña completa', coreReached: 'Núcleo alcanzado', cockpit: 'Cabina',
+     music: 'Música', musicVol: 'Volumen de música', sfx: 'Efectos', sfxVol: 'Volumen de efectos',
+     vibra: 'Vibración', motion: 'Efectos de pantalla', done: 'Listo',
+-    reset: 'Borrar progreso', resetConfirm: 'Toca otra vez para borrar todo', resetDone: 'Progreso borrado',
++    reset: 'Borrar progreso', resetDone: 'Progreso borrado', deleteTitle: '¿Borrar todo el progreso de {juego}?',
++    deleteBody: 'Se borrarán {datos}. Esta acción no se puede deshacer.',
++    deleteData: 'la campaña (sectores abiertos, estrellas y mejores puntajes), los récords de los tres modos arcade y el rango máximo',
+     manual: 'Manual de vuelo', gotIt: 'Entendido',
+     help1: '<b>Pilota.</b> Desliza el dedo en cualquier parte de la pantalla, o toca a un lado de la nave para girar hacia ese lado. En teclado: <kbd>←</kbd><kbd>↑</kbd><kbd>→</kbd><kbd>↓</kbd> o <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>. Con el puntero: haz clic o arrastra.',
+     help2: '<b>Cristal cian:</b> +10 y la nave crece. <b style="color:#ff2bd6">Núcleo magenta:</b> +30 y crece el doble.',
+     help3: '<b>Combo:</b> encadena cristales en menos de 2,5 s para multiplicar los puntos hasta ×3.',
+     help4: '<b>Mejoras:</b> <b style="color:#00ff9c">escudo</b> (absorbe un golpe y te desvía de un muro), <b style="color:#ffe14a">cámara lenta</b> y <b style="color:#b07bff">puntos ×2</b>.',
+     help5: '<b>Portales:</b> entra por uno y sales por su pareja. Se cierran tras cuatro usos.',
+-    help6: '<b>Asteroides:</b> te arrancan dos segmentos; en Sobrevivir y en Tormenta destruyen la nave.',
++    help6: '<b>Asteroides:</b> te arrancan dos segmentos; en Supervivencia y en Tormenta destruyen la nave.',
+     help7: '<b>Muros y bordes:</b> chocar termina la partida, igual que morderte la cola.',
+     help8: '<b>Campaña:</b> reúne la carga de cristales del sector. Las estrellas premian los puntos. <b>Pausa:</b> botón arriba a la derecha, <kbd>P</kbd> o <kbd>Esc</kbd>.',
+-    campDone: 'Completa', campAt: 'Sector {n} de 12', campContinue: 'Continuar campaña', campStart: 'Empezar campaña',
++    campDone: 'Completa', campAt: 'Sector {n} de 12', campContinue: 'Continuar campaña', campStart: 'Jugar campaña',
+     bestN: 'récord {n}', sectorsMsg: '★ {t} de 36 · cada estrella exige más puntos',
+     secAriaLocked: 'Sector {n} {name}, bloqueado', secAriaStars: 'Sector {n} {name}, {s} estrellas',
+     briefEyebrow: 'sector {n} de 12', goal: 'Objetivo: {g} cristales', goalTime: ' en {s} segundos', yourBest: ' · tu mejor: {b}',
+@@ -506,16 +563,26 @@ const T = {
+     metaDesc: 'JET//Rocket: a neon serpent ship that hunts crystals. A 12-sector campaign and three arcade modes.',
+     tagline: 'hunt · grow · survive', campaign: 'Campaign', campaignLow: 'campaign',
+     campText: 'Twelve sectors of walls, meteors, portals and eclipses. Collect each sector’s crystal quota to unlock the next one.',
+-    maxRank: 'Top rank', 'mode.classic': 'Classic', 'mode.timer': 'Time attack', 'mode.survive': 'Survival',
++    maxRank: 'Top rank', 'mode.classic': 'Classic', 'mode.timer': 'Time Trial', 'mode.survive': 'Survival', arcadeMode: 'Arcade mode',
++    'desc.classic': 'Classic: no clock. The ship speeds up as it grows; a collision ends the game.',
++    'desc.timer': 'Time Trial: score as many points as you can in {s} seconds. A collision ends the game.',
++    'desc.survive': 'Survival: lethal asteroids and no cosmic events. A single impact destroys the ship.',
+     playArcade: 'Play arcade', howTo: 'How to play', howToLow: 'how to play', settings: 'Settings', settingsLow: 'settings',
+     language: 'Language', footer: 'JetCompany OÜ · Tallinn · 2026',
+     chooseSector: 'Choose a sector', back2: 'Back', launch: 'Launch', sectors: 'Sectors',
+-    pauseLow: 'paused', pauseTitle: 'Ship on standby', resume: 'Resume', restart: 'Restart', menu: 'Menu',
+-    retry: 'Try again', nextSector: 'Next sector', replay: 'Replay',
++    pauseLow: 'paused', pauseTitle: 'Ship on standby', resume: 'Resume game', restart: 'Restart run', menu: 'Back to menu',
++    retryRun: 'Retry run', retrySector: 'Retry sector', nextSector: 'Next sector', replay: 'Replay sector',
++    backSectors: 'Back to sectors', otherSector: 'Choose another sector', viewSectors: 'View sectors',
++    cancel: 'Cancel', quitTitle: 'Back to menu?', quitBody: 'The current run will be lost.',
++    restartTitle: 'Restart the run?', restartBody: 'The current run will be lost.',
++    pointsCaps: 'Points', pointsLabel: 'Points: {n}', timeLeft: 'Time remaining: {s} s', duration: 'Game duration: {s} s',
++    unlockCond: 'Complete sector {n} to unlock.', controls: 'Controls', advancedRules: 'Advanced rules',
+     campaignDone: 'campaign complete', coreReached: 'Core reached', cockpit: 'Cockpit',
+     music: 'Music', musicVol: 'Music volume', sfx: 'Sound effects', sfxVol: 'Effects volume',
+     vibra: 'Vibration', motion: 'Screen effects', done: 'Done',
+-    reset: 'Erase progress', resetConfirm: 'Tap again to erase everything', resetDone: 'Progress erased',
++    reset: 'Delete progress', resetDone: 'Progress deleted', deleteTitle: 'Delete all progress in {juego}?',
++    deleteBody: '{datos} will be deleted. This cannot be undone.',
++    deleteData: 'The campaign (unlocked sectors, stars and best scores), the records of the three arcade modes and the top rank',
+     manual: 'Flight manual', gotIt: 'Got it',
+     help1: '<b>Steer.</b> Swipe anywhere on the screen, or tap to one side of the ship to turn that way. Keyboard: <kbd>←</kbd><kbd>↑</kbd><kbd>→</kbd><kbd>↓</kbd> or <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>. Mouse: click or drag.',
+     help2: '<b>Cyan crystal:</b> +10 and the ship grows. <b style="color:#ff2bd6">Magenta core:</b> +30 and it grows twice as much.',
+@@ -525,7 +592,7 @@ const T = {
+     help6: '<b>Asteroids:</b> they knock off two segments; in Survival and in Storm they destroy the ship.',
+     help7: '<b>Walls and edges:</b> crashing ends the run, and so does biting your own tail.',
+     help8: '<b>Campaign:</b> collect the sector’s crystal quota. Stars reward your score. <b>Pause:</b> button at the top right, <kbd>P</kbd> or <kbd>Esc</kbd>.',
+-    campDone: 'Complete', campAt: 'Sector {n} of 12', campContinue: 'Continue campaign', campStart: 'Start campaign',
++    campDone: 'Complete', campAt: 'Sector {n} of 12', campContinue: 'Continue campaign', campStart: 'Play campaign',
+     bestN: 'best {n}', sectorsMsg: '★ {t} of 36 · each star takes more points',
+     secAriaLocked: 'Sector {n} {name}, locked', secAriaStars: 'Sector {n} {name}, {s} stars',
+     briefEyebrow: 'sector {n} of 12', goal: 'Goal: {g} crystals', goalTime: ' in {s} seconds', yourBest: ' · your best: {b}',
+@@ -995,7 +1062,7 @@ const STATE = {
+   run: { kind: 'arcade', mode: 'classic' }, cfg: ARCADE.classic,
+   snake: [], dir: { x: 0, y: -1 }, queue: [], growth: 0, lastTail: null,
+   food: [], asteroids: [], asteroidT: 0, walls: [], wallSet: new Set(),
+-  score: 0, crystals: 0, speed: 0.16, tickT: 0, timeLeft: 0, waiting: true, countdown: 0,
++  score: 0, crystals: 0, speed: 0.16, tickT: 0, timeLeft: 0, played: 0, waiting: true, countdown: 0,
+   shieldT: 0, slowmoT: 0, x2T: 0,
+   portals: null, portalT: 0, combo: 0, comboT: 0,
+   eventActive: null, eventT: 0, eventSpawnT: 0, eventBannerT: 0, cristalT: 0,
+@@ -1007,6 +1074,9 @@ let gw = 0, gh = 0, gx = 0, gy = 0, cw = 0, ch = 0, dpr = 1;
+ const RM = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+ const COARSE = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+ function motionOK() { return SETTINGS.motion && !RM; }
++// VIS-ROCKET-04: todo efecto decorativo lee este reloj; no avanza en pausa ni con movimiento reducido
++let animClock = 0;
++function animNow() { return animClock; }
+ 
+ // =====================================================================
+ // PARTIDA
+@@ -1027,7 +1097,7 @@ function setupBoard(run) {
+   STATE.dir = { x: d.x, y: d.y }; STATE.queue = []; STATE.growth = 0; STATE.lastTail = null;
+   STATE.food = []; STATE.asteroids = []; STATE.asteroidT = 0;
+   STATE.score = 0; STATE.crystals = 0; STATE.speed = STATE.cfg.speedBase; STATE.tickT = 0;
+-  STATE.timeLeft = STATE.cfg.timeLimit || 0; STATE.waiting = true; STATE.countdown = 0;
++  STATE.timeLeft = STATE.cfg.timeLimit || 0; STATE.played = 0; STATE.waiting = true; STATE.countdown = 0;
+   STATE.shieldT = STATE.slowmoT = STATE.x2T = 0;
+   STATE.portals = null; STATE.portalT = STATE.cfg.portals === 'always' ? PORTAL_INTERVAL : 0;
+   STATE.combo = 0; STATE.comboT = 0;
+@@ -1159,6 +1229,7 @@ function bindInput() {
+     if (k === 'Escape') {
+       e.preventDefault();
+       if (ov.id === 'ov-pause') resumeGame();
++      else if (ov.id === 'ov-confirm') closeConfirm(false);
+       else { const back = ov.querySelector('[data-back]') || (ov.id === 'ov-settings' || ov.id === 'ov-help' ? ov.querySelector('[data-primary]') : null); if (back) back.click(); }
+     } else if ((k === 'Enter' || k === ' ') && (!document.activeElement || document.activeElement === document.body)) {
+       const pb = ov.querySelector('[data-primary]'); if (pb) { e.preventDefault(); pb.click(); }
+@@ -1304,10 +1375,14 @@ function gameOver(reason) {
+     paintResult = () => {
+       document.getElementById('lose-eyebrow').textContent = tr('reason.' + reason);
+       document.getElementById('lose-title').textContent = camp ? tr('loseSector', { n: STATE.run.sector + 1 }) : (isRecord ? tr('newRecord') : tr('destroyed'));
+-      document.getElementById('lose-score').textContent = STATE.score;
+-      document.getElementById('lose-msg').textContent = camp
++      const sc = document.getElementById('lose-score'); sc.textContent = STATE.score; sc.setAttribute('aria-label', tr('pointsLabel', { n: STATE.score }));
++      let msg = camp
+         ? tr('loseCamp', { c: STATE.crystals, g: STATE.cfg.goal, name: secName(STATE.run.sector) })
+         : tr('loseArcade', { l: STATE.snake.length, mode: modeLabel(STATE.run.mode), b: best, r: cap(tierName(STATE.tierIdx)) });
++      // PLAY-ROCKET-04: en modos con reloj, duración real jugada y tiempo que quedaba (choque ≠ fin del reloj)
++      if (STATE.cfg.timeLimit) msg += ' · ' + tr('duration', { s: Math.round(STATE.played) }) + ' · ' + tr('timeLeft', { s: Math.ceil(STATE.timeLeft) });
++      document.getElementById('lose-msg').textContent = msg;
++      document.getElementById('btn-retry').textContent = tr(camp ? 'retrySector' : 'retryRun');
+     };
+     paintResult();
+     document.getElementById('btn-lose-alt').style.display = camp ? '' : 'none';
+@@ -1347,7 +1422,7 @@ function sectorClear() {
+     };
+     paintResult();
+     document.getElementById('win-stars').innerHTML = starsHTML(stars);
+-    document.getElementById('win-score').textContent = STATE.score;
++    const ws = document.getElementById('win-score'); ws.textContent = STATE.score; ws.setAttribute('aria-label', tr('pointsLabel', { n: STATE.score }));
+     const nb = document.getElementById('btn-next');
+     nb.style.display = s.final ? 'none' : '';
+     showOv('ov-win');
+@@ -1433,12 +1508,13 @@ function loop(ts) {
+   STATE.lastTs = ts;
+   try {
+     if (STATE.scene === 'play') simulate(dt);
+-    for (let i = STATE.fx.length - 1; i >= 0; i--) {
++    if (STATE.scene !== 'pause' && motionOK()) animClock += dt * 1000;
++    if (STATE.scene !== 'pause') for (let i = STATE.fx.length - 1; i >= 0; i--) {
+       const f = STATE.fx[i];
+       if (f.kind === 'spark') { f.x += f.vx * dt * 60; f.y += f.vy * dt * 60; const k = Math.pow(0.94, dt * 60); f.vx *= k; f.vy *= k; if (f.g) f.vy += f.g * dt * 60; }
+       f.life -= dt; if (f.life <= 0) STATE.fx.splice(i, 1);
+     }
+-    for (let i = STATE.popups.length - 1; i >= 0; i--) { const p = STATE.popups[i]; p.y -= dt * 40; p.life -= dt; if (p.life <= 0) STATE.popups.splice(i, 1); }
++    if (STATE.scene !== 'pause') for (let i = STATE.popups.length - 1; i >= 0; i--) { const p = STATE.popups[i]; p.y -= dt * 40; p.life -= dt; if (p.life <= 0) STATE.popups.splice(i, 1); }
+     if (STATE.shake > 0) STATE.shake = Math.max(0, STATE.shake - dt * 1.4);
+     if (STATE.scene !== 'menu') { updateHUD(); draw(); }
+   } catch (e) { console.error('[JETRocket] loop', e); }
+@@ -1447,6 +1523,7 @@ function loop(ts) {
+ function simulate(dt) {
+   if (STATE.countdown > 0) { const before = Math.ceil(STATE.countdown / 0.6); STATE.countdown = Math.max(0, STATE.countdown - dt); const after = Math.ceil(STATE.countdown / 0.6); if (after !== before && after > 0) SFX.tick(false); return; }
+   if (STATE.waiting) return;
++  STATE.played += dt; // segundos efectivamente jugados: no corre en pausa, espera ni cuenta atrás
+   const C = STATE.cfg;
+   if (C.timeLimit) {
+     STATE.timeLeft = Math.max(0, STATE.timeLeft - dt);
+@@ -1507,6 +1584,9 @@ function simulate(dt) {
+ // =====================================================================
+ const HUDC = {};
+ function setTxt(id, v) { if (HUDC[id] !== v) { HUDC[id] = v; document.getElementById(id).textContent = v; } }
++function setAria(id, v) { const k = 'aria:' + id; if (HUDC[k] !== v) { HUDC[k] = v; const el = document.getElementById(id); if (v) el.setAttribute('aria-label', v); else el.removeAttribute('aria-label'); } }
++// PLAY-ROCKET-04: tiempo restante legible (m:ss) y, en la pastilla, su nombre completo para el lector
++function fmtClock(sec) { const s = Math.max(0, Math.ceil(sec)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }
+ function hudLabels() {
+   const camp = STATE.run.kind === 'campaign';
+   setTxt('l1', tr('hudScore'));
+@@ -1522,15 +1602,16 @@ function updateHUD(force) {
+   let urgent = false, v4;
+   if (camp) {
+     setTxt('v2', STATE.crystals + '/' + STATE.cfg.goal);
+-    if (STATE.cfg.timeLimit) { v4 = String(Math.ceil(STATE.timeLeft)); urgent = STATE.timeLeft < 10; }
++    if (STATE.cfg.timeLimit) { v4 = fmtClock(STATE.timeLeft); urgent = STATE.timeLeft < 10; }
+     else v4 = String(Math.max(PROGRESS.best[STATE.run.sector], STATE.score));
+   } else {
+     setTxt('v2', String(Math.max(getBestCached(), STATE.score)));
+     if (STATE.run.mode === 'classic') { const lvl = Math.round((STATE.cfg.speedBase - STATE.speed) / (STATE.cfg.speedBase - STATE.cfg.speedMin) * 6) + 1; v4 = '×' + Math.max(1, Math.min(7, lvl)); }
+-    else if (STATE.run.mode === 'timer') { v4 = String(Math.ceil(STATE.timeLeft)); urgent = STATE.timeLeft < 10; }
++    else if (STATE.run.mode === 'timer') { v4 = fmtClock(STATE.timeLeft); urgent = STATE.timeLeft < 10; }
+     else { v4 = String(STATE.asteroids.length); urgent = STATE.asteroids.length >= 3; }
+   }
+   setTxt('v4', v4);
++  setAria('pill4', STATE.cfg.timeLimit ? tr('timeLeft', { s: Math.ceil(STATE.timeLeft) }) : '');
+   if (HUDC.urg !== urgent) { HUDC.urg = urgent; document.getElementById('pill4').classList.toggle('urgent', urgent); }
+ }
+ let bestCache = { mode: null, v: 0 };
+@@ -1601,19 +1682,23 @@ function buildBg() {
+   bg.width = canvas.width; bg.height = canvas.height;
+   const c = bgx; c.setTransform(dpr, 0, 0, dpr, 0, 0); c.clearRect(0, 0, cw, ch);
+   c.fillStyle = '#0a0418'; c.fillRect(gx, gy, gw, gh);
+-  c.strokeStyle = 'rgba(0,242,207,0.05)'; c.lineWidth = 1; c.beginPath();
++  c.strokeStyle = 'rgba(95,130,147,0.12)'; c.lineWidth = 1; c.beginPath(); // VIS-ROCKET-01: cuadrícula gris fría, contable
+   for (let y = 0; y <= STATE.rows; y++) { c.moveTo(gx, gy + y * STATE.cell + 0.5); c.lineTo(gx + gw, gy + y * STATE.cell + 0.5); }
+   for (let x = 0; x <= STATE.cols; x++) { c.moveTo(gx + x * STATE.cell + 0.5, gy); c.lineTo(gx + x * STATE.cell + 0.5, gy + gh); }
+   c.stroke();
+   // estrellas fijas
+   let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+-  for (let i = 0; i < 60; i++) { c.fillStyle = 'rgba(245,240,255,' + (0.08 + rnd() * 0.25) + ')'; c.fillRect(gx + rnd() * gw, gy + rnd() * gh, 1.2, 1.2); }
+-  // muros
+   const k = STATE.cell, r = Math.max(2, k * 0.18);
++  for (let i = 0; i < 60; i++) {
++    const a = 0.06 + rnd() * 0.14, sx = rnd() * gw, sy = rnd() * gh; // alfa máx. 0,2; nunca dentro de un muro (VIS-ROCKET-01)
++    if (isWall(Math.floor(sx / k), Math.floor(sy / k))) continue;
++    c.fillStyle = 'rgba(245,240,255,' + a + ')'; c.fillRect(gx + sx, gy + sy, 1.2, 1.2);
++  }
++  // muros
+   for (const w of STATE.walls) {
+     const x = gx + w.x * k + 1.5, y = gy + w.y * k + 1.5, s = k - 3;
+-    c.fillStyle = '#1a0838'; c.strokeStyle = '#9a3eff'; c.lineWidth = Math.max(1.2, k * 0.06);
+-    c.shadowColor = 'rgba(119,0,244,0.8)'; c.shadowBlur = k * 0.3;
++    c.fillStyle = '#1a0838'; c.strokeStyle = '#9a3eff'; c.lineWidth = Math.max(1.5, k * 0.06);
++    c.shadowColor = 'rgba(119,0,244,0.8)'; c.shadowBlur = k * 0.15; // halo ≤ 0,15 de celda, borde sólido reforzado
+     rrect(c, x, y, s, s, r); c.fill(); c.shadowBlur = 0; c.stroke();
+     c.fillStyle = 'rgba(154,62,255,0.25)'; rrect(c, x + s * 0.22, y + s * 0.22, s * 0.56, s * 0.12, 1); c.fill();
+   }
+@@ -1657,27 +1742,27 @@ function draw() {
+     const cx = gx + gw / 2, cy = gy + gh * 0.32;
+     const main = COARSE ? tr('waitTouch') : tr('waitKeys');
+     const sub = STATE.run.kind === 'campaign' ? tr('waitGoal', { g: STATE.cfg.goal }) + (STATE.cfg.timeLimit ? tr('waitGoalTime', { s: STATE.cfg.timeLimit }) : '') : '';
+-    const fMain = '700 ' + Math.max(11, Math.min(14, STATE.cell * 0.42)) + 'px "JetBrains Mono", monospace';
++    const fMain = '700 12px "JetBrains Mono", monospace'; // VIS-ROCKET-03: misma placa que los banners
+     // placa oscura detrás del texto: se lee aunque caiga encima de muros o cristales
+     ctx.font = fMain; let tw = ctx.measureText(main).width;
+-    if (sub) { ctx.font = '600 11px "JetBrains Mono", monospace'; tw = Math.max(tw, ctx.measureText(sub).width); }
++    if (sub) { ctx.font = '600 12px "JetBrains Mono", monospace'; tw = Math.max(tw, ctx.measureText(sub).width); }
+     const pw = Math.min(gw - 8, tw + 28), ph = sub ? 52 : 32;
+-    ctx.fillStyle = 'rgba(5,1,8,0.82)'; rrect(ctx, cx - pw / 2, cy - 17, pw, ph, 10); ctx.fill();
+-    ctx.strokeStyle = 'rgba(0,242,207,0.35)'; ctx.lineWidth = 1; ctx.stroke();
+-    ctx.globalAlpha = motionOK() ? 0.7 + 0.3 * Math.sin(performance.now() / 400) : 1;
++    ctx.fillStyle = PLATE_FILL; rrect(ctx, cx - pw / 2, cy - 17, pw, ph, 10); ctx.fill();
++    ctx.strokeStyle = PLATE_BORDER; ctx.lineWidth = 1; ctx.stroke();
++    ctx.globalAlpha = motionOK() ? 0.7 + 0.3 * Math.sin(animNow() / 400) : 1;
+     ctx.fillStyle = '#00f2cf'; ctx.font = fMain;
+     ctx.fillText(main, cx, cy);
+-    if (sub) { ctx.fillStyle = '#b5a8d8'; ctx.font = '600 11px "JetBrains Mono", monospace'; ctx.fillText(sub, cx, cy + 22); }
++    if (sub) { ctx.fillStyle = '#b5a8d8'; ctx.font = '600 12px "JetBrains Mono", monospace'; ctx.fillText(sub, cx, cy + 22); }
+     ctx.globalAlpha = 1;
+   }
+   if (STATE.countdown > 0) {
+     const n = Math.ceil(STATE.countdown / 0.6), fr = (STATE.countdown % 0.6) / 0.6;
+-    ctx.globalAlpha = 0.4 + 0.6 * fr; ctx.fillStyle = '#ffe14a';
+-    ctx.font = '800 ' + Math.round(STATE.cell * (2 + (1 - fr))) + 'px Poppins, sans-serif';
++    ctx.globalAlpha = motionOK() ? 0.4 + 0.6 * fr : 1; ctx.fillStyle = '#ffe14a';
++    ctx.font = '800 ' + Math.round(STATE.cell * 1.5) + 'px Poppins, sans-serif'; // numeral sólido, tamaño estable (VIS-ROCKET-03)
+     ctx.fillText(String(n), gx + gw / 2, gy + gh / 2); ctx.globalAlpha = 1;
+   }
+   if (STATE.eventBannerT > 0) drawBanner(STATE.eventActive ? tr('ev.' + STATE.eventActive) : '', STATE.eventBannerT, 2.4, gy + 24, '#ffe14a');
+-  if (STATE.tierBannerT > 0) drawBanner(tr('rankBanner', { r: tierName(STATE.tierIdx) }), STATE.tierBannerT, 2.8, STATE.eventBannerT > 0 ? gy + 68 : gy + 24, '#00f2cf');
++  if (STATE.tierBannerT > 0) drawBanner(tr('rankBanner', { r: tierName(STATE.tierIdx) }), STATE.tierBannerT, 2.8, STATE.eventBannerT > 0 ? gy + 24 + BANNER_H + 8 : gy + 24, '#00f2cf'); // apilados con 8 px
+   ctx.restore();
+ }
+ function drawEclipse() {
+@@ -1687,12 +1772,15 @@ function drawEclipse() {
+   g.addColorStop(0, 'rgba(5,1,8,0)'); g.addColorStop(0.6, 'rgba(5,1,8,0.6)'); g.addColorStop(1, 'rgba(5,1,8,0.94)');
+   ctx.fillStyle = g; ctx.fillRect(gx, gy, gw, gh);
+ }
++// VIS-ROCKET-03: una sola familia de placas dentro del tablero (espera, evento, rango)
++const PLATE_FILL = 'rgba(5,1,8,0.9)', PLATE_BORDER = 'rgba(95,130,147,0.5)', BANNER_H = 34;
+ function drawBanner(text, t, max, y, color) {
+   let a = t > max - 0.4 ? (max - t) / 0.4 : t < 0.5 ? t / 0.5 : 1; a = Math.max(0, Math.min(1, a));
+-  const cx = gx + gw / 2, w = Math.min(gw - 12, 280), h = 34;
+-  ctx.globalAlpha = a; ctx.fillStyle = 'rgba(8,4,18,0.92)'; ctx.fillRect(cx - w / 2, y - h / 2, w, h);
+-  ctx.strokeStyle = color; ctx.lineWidth = 1.2; ctx.strokeRect(cx - w / 2 + 0.5, y - h / 2 + 0.5, w - 1, h - 1);
+-  ctx.fillStyle = color; ctx.font = '700 11px "JetBrains Mono", monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(text, cx, y);
++  if (!motionOK()) a = a > 0 ? 1 : 0;
++  const cx = gx + gw / 2, w = Math.min(gw - 12, 280), h = BANNER_H;
++  ctx.globalAlpha = a; ctx.fillStyle = PLATE_FILL; rrect(ctx, cx - w / 2, y - h / 2, w, h, 10); ctx.fill();
++  ctx.strokeStyle = PLATE_BORDER; ctx.lineWidth = 1; ctx.stroke();
++  ctx.fillStyle = color; ctx.font = '700 12px "JetBrains Mono", monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(text, cx, y);
+   ctx.globalAlpha = 1;
+ }
+ 
+@@ -1718,13 +1806,17 @@ function drawSnake(t) {
+     const fx0 = gx + last.x * cell + cell / 2 + dx / len * cell * 0.4, fy0 = gy + last.y * cell + cell / 2 + dy / len * cell * 0.4;
+     const ang = Math.atan2(dy, dx) + (Math.random() - 0.5) * 0.6, sp = 0.6 + Math.random() * 1.2;
+     const cols = ['rgba(255,225,74,', 'rgba(255,149,51,', 'rgba(0,242,207,'];
+-    STATE.fx.push({ kind: 'spark', x: fx0, y: fy0, vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp, life: 0.4, max: 0.4, size: 1.2 + Math.random() * 1.8, color: cols[Math.floor(Math.random() * 3)], g: 0 });
++    STATE.fx.push({ kind: 'spark', x: fx0, y: fy0, vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp, life: 0.4, max: 0.4, size: 1 + Math.random() * 0.5, color: cols[Math.floor(Math.random() * 3)], g: 0 });
+   }
+   const bodyW = cell * 0.78, wallT = Math.max(2.5, bodyW * 0.14);
+   ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+   // halo sin shadowBlur (barato en teléfono): dos trazos anchos translúcidos
+-  ctx.strokeStyle = shield ? 'rgba(0,255,156,0.10)' : 'rgba(0,242,207,0.09)'; ctx.lineWidth = bodyW + cell * 0.55; ctx.stroke(path);
++  ctx.strokeStyle = shield ? 'rgba(0,255,156,0.10)' : 'rgba(0,242,207,0.07)'; ctx.lineWidth = bodyW + cell * 0.35; ctx.stroke(path); // VIS-ROCKET-02
+   ctx.strokeStyle = shield ? 'rgba(0,255,156,0.18)' : 'rgba(0,242,207,0.16)'; ctx.lineWidth = bodyW + cell * 0.25; ctx.stroke(path);
++  if (shield) { // anillo de escudo: pulsa sólo con movimiento; en reducido queda un anillo estático de 2 px
++    const pulse = motionOK() ? 0.45 + 0.3 * Math.sin(animNow() / 220) : 0.75;
++    ctx.strokeStyle = 'rgba(0,255,156,' + pulse + ')'; ctx.lineWidth = bodyW + 4; ctx.stroke(path);
++  }
+   ctx.strokeStyle = shield ? '#00ff9c' : '#00f2cf'; ctx.lineWidth = bodyW; ctx.stroke(path);
+   ctx.strokeStyle = '#0a0418'; ctx.lineWidth = bodyW - wallT * 2; ctx.stroke(path);
+   ctx.strokeStyle = shield ? 'rgba(0,255,156,0.45)' : 'rgba(0,242,207,0.45)'; ctx.lineWidth = Math.max(1.5, bodyW * 0.12); ctx.stroke(path);
+@@ -1733,17 +1825,13 @@ function drawSnake(t) {
+   const h = pts[0];
+   ctx.save(); ctx.translate(gx + h.x * cell + cell / 2, gy + h.y * cell + cell / 2); ctx.rotate(Math.atan2(h.dir.y, h.dir.x) + Math.PI / 2);
+   drawRocketShape(ctx, cell); ctx.restore();
+-  if (shield) {
+-    const pulse = 0.55 + 0.45 * Math.sin(performance.now() / 220);
+-    ctx.lineWidth = bodyW + 6; ctx.strokeStyle = 'rgba(0,255,156,' + (0.2 * pulse) + ')'; ctx.stroke(path);
+-  }
+ }
+ 
+ function drawRocketShape(c, cell, simple) {
+   const w = cell * 0.78, h = cell * 1.05;
+   const fl = c.createLinearGradient(0, h * 0.4, 0, h * 0.85);
+   fl.addColorStop(0, '#ffe14a'); fl.addColorStop(0.45, 'rgba(255,225,74,0.85)'); fl.addColorStop(0.85, 'rgba(255,149,51,0.35)'); fl.addColorStop(1, 'rgba(255,149,51,0)');
+-  const flick = simple ? 1 : 0.85 + Math.random() * 0.3;
++  const flick = (simple || !motionOK() || STATE.scene !== 'play') ? 1 : 0.85 + Math.random() * 0.3;
+   c.fillStyle = fl; c.beginPath(); c.moveTo(-w * 0.16, h * 0.4); c.quadraticCurveTo(-w * 0.06, h * 0.62 * flick, 0, h * 0.85 * flick); c.quadraticCurveTo(w * 0.06, h * 0.62 * flick, w * 0.16, h * 0.4); c.closePath(); c.fill();
+   c.shadowColor = 'rgba(255,43,214,0.65)'; c.shadowBlur = Math.max(4, cell * 0.14); c.fillStyle = '#ff2bd6';
+   for (const s of [1, -1]) { c.beginPath(); c.moveTo(s * w * 0.30, h * 0.08); c.bezierCurveTo(s * w * 0.78, h * 0.10, s * w * 0.95, h * 0.38, s * w * 0.72, h * 0.46); c.bezierCurveTo(s * w * 0.55, h * 0.50, s * w * 0.42, h * 0.46, s * w * 0.35, h * 0.42); c.closePath(); c.fill(); }
+@@ -1762,7 +1850,7 @@ function drawRocketShape(c, cell, simple) {
+ 
+ function drawFood(f) {
+   const [cx, cy] = cellPx(f.x, f.y);
+-  const pulse = 0.85 + 0.15 * Math.sin(performance.now() / 150 + f.x + f.y);
++  const pulse = motionOK() ? 0.85 + 0.15 * Math.sin(animNow() / 150 + f.x + f.y) : 1;
+   const k = STATE.cell;
+   if (f.kind === 'cyan') drawCrystal(cx, cy, k * 0.32 * pulse, '#00f2cf', 'rgba(0,242,207,');
+   else if (f.kind === 'magenta') drawCrystal(cx, cy, k * 0.38 * pulse, '#ff2bd6', 'rgba(255,43,214,');
+@@ -1782,7 +1870,7 @@ function drawPowerUp(cx, cy, r, color, glow, label) {
+   ctx.fillStyle = color; ctx.font = '700 ' + Math.round(r * 0.75) + 'px "JetBrains Mono", monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(label, cx, cy + 0.5);
+ }
+ function drawPortal(px, py, color, glow, ttl) {
+-  const [cx, cy] = cellPx(px, py), r = STATE.cell * 0.42, t = performance.now() / 380;
++  const [cx, cy] = cellPx(px, py), r = STATE.cell * 0.42, t = animNow() / 380;
+   ctx.save(); ctx.globalAlpha = ttl < 2 ? Math.max(0.2, ttl / 2) : 1; ctx.translate(cx, cy);
+   ctx.shadowColor = glow + '0.8)'; ctx.shadowBlur = 14; ctx.strokeStyle = color; ctx.lineWidth = 2.5;
+   ctx.beginPath(); ctx.arc(0, 0, r * (0.85 + 0.15 * Math.sin(t * 3)), 0, 6.283); ctx.stroke(); ctx.shadowBlur = 0;
+@@ -1859,8 +1947,67 @@ function heroDraw() {
+ // INTERFAZ
+ // =====================================================================
+ function blurFocus() { const a = document.activeElement; if (a && a !== document.body && a.blur) a.blur(); }
+-function showOv(id) { blurFocus(); document.querySelectorAll('.ov.show').forEach(o => o.classList.remove('show')); const el = document.getElementById(id); el.classList.add('show'); el.scrollTop = 0; }
+-function hideAll() { blurFocus(); document.querySelectorAll('.ov.show').forEach(o => o.classList.remove('show')); }
++// RSP-ROCKET-02: pausa, ajustes, ayuda y confirmación son diálogos (foco inicial, Tab encerrado, retorno al disparador).
++// El resto (menú, sectores, briefing, resultados) son pantallas principales: reciben el foco en su título y no atrapan Tab.
++const DIALOGS = { 'ov-pause': 1, 'ov-settings': 1, 'ov-help': 1, 'ov-confirm': 1 };
++let focusReturn = null; // control que abrió el diálogo vigente
++function isVisible(el) { return !!(el && document.contains(el) && el.getClientRects().length); }
++function safeFocus(el) { if (!el) return false; try { el.focus({ preventScroll: true }); } catch (e) { try { el.focus(); } catch (e2) {} } return document.activeElement === el; }
++function setInert(on) { ['top', 'stage'].forEach(id => { const el = document.getElementById(id); if (!el) return; if (on) el.setAttribute('inert', ''); else el.removeAttribute('inert'); }); }
++function showOv(id) {
++  const prev = document.querySelector('.ov.show');
++  const isDialog = !!DIALOGS[id];
++  if (isDialog && !(prev && DIALOGS[prev.id])) focusReturn = (document.activeElement && document.activeElement !== document.body) ? document.activeElement : null;
++  document.querySelectorAll('.ov.show').forEach(o => o.classList.remove('show'));
++  const el = document.getElementById(id); el.classList.add('show'); el.scrollTop = 0;
++  setInert(true);
++  if (isDialog) { if (!safeFocus(el.querySelector('[data-primary]'))) safeFocus(el.querySelector('[tabindex="-1"]')); }
++  else if (focusReturn && el.contains(focusReturn) && isVisible(focusReturn)) { safeFocus(focusReturn); focusReturn = null; }
++  else { focusReturn = null; if (!safeFocus(el.querySelector('[tabindex="-1"]'))) blurFocus(); }
++}
++function hideAll() {
++  document.querySelectorAll('.ov.show').forEach(o => o.classList.remove('show'));
++  setInert(false);
++  const r = focusReturn; focusReturn = null;
++  // de vuelta al juego: al disparador si sigue visible (botón Pausa) o a la superficie de juego
++  if (!(r && isVisible(r) && !r.closest('.ov') && safeFocus(r))) safeFocus(canvas);
++}
++function trapTab(e) {
++  const ov = document.querySelector('.ov.show'); if (!ov || !DIALOGS[ov.id]) return;
++  const back = document.getElementById('back-portfolio');
++  const list = [...(isVisible(back) ? [back] : []), ...ov.querySelectorAll('button:not([disabled]), input:not([disabled]), summary, a[href], [tabindex="0"]')].filter(isVisible);
++  if (!list.length) return;
++  const idx = list.indexOf(document.activeElement);
++  let next = null;
++  if (idx === -1) next = e.shiftKey ? list[list.length - 1] : list[0];
++  else if (e.shiftKey && idx === 0) next = list[list.length - 1];
++  else if (!e.shiftKey && idx === list.length - 1) next = list[0];
++  if (next) { e.preventDefault(); safeFocus(next); }
++}
++// ---------- confirmación explícita (SRC-G04 / SRC-R02 / PLAY-ROCKET-06) ----------
++let confirmFn = null, confirmReturn = 'ov-menu', confirmTrigger = null, confirmStay = false;
++function askConfirm(kind, fn, opts) {
++  const cur = document.querySelector('.ov.show');
++  confirmReturn = cur ? cur.id : 'ov-menu'; confirmTrigger = document.activeElement; confirmFn = fn; confirmStay = !!(opts && opts.stay);
++  const ok = document.getElementById('btn-confirm-ok');
++  let title, body, okLabel;
++  if (kind === 'delete') { title = tr('deleteTitle', { juego: 'JET//Rocket' }); body = tr('deleteBody', { datos: tr('deleteData') }); okLabel = tr('reset'); }
++  else if (kind === 'restart') { title = tr('restartTitle'); body = tr('restartBody'); okLabel = tr('restart'); }
++  else { title = tr('quitTitle'); body = tr('quitBody'); okLabel = tr('menu'); }
++  document.getElementById('confirm-title').textContent = title;
++  document.getElementById('confirm-msg').textContent = body;
++  ok.textContent = okLabel; ok.classList.toggle('danger', kind === 'delete');
++  document.getElementById('ov-confirm').dataset.kind = kind;
++  showOv('ov-confirm'); // Cancelar lleva data-primary: recibe el foco y responde a Enter/Escape
++}
++function closeConfirm(accepted) {
++  const fn = confirmFn, ret = confirmReturn, trig = confirmTrigger, stay = confirmStay;
++  confirmFn = null; confirmTrigger = null;
++  if (accepted && fn && !stay) { fn(); return; }
++  if (accepted && fn) fn();
++  showOv(ret);
++  if (isVisible(trig)) safeFocus(trig);
++}
+ let arcadeMode = Store.get('jetrocket-mode-pref', 'classic'); if (!ARCADE[arcadeMode]) arcadeMode = 'classic';
+ let returnTo = 'ov-menu';
+ 
+@@ -1870,7 +2017,8 @@ function renderMenu() {
+   document.getElementById('camp-sub').textContent = (PROGRESS.finished ? tr('campDone') : tr('campAt', { n: nextS })) + ' · ★ ' + tot + '/36';
+   document.getElementById('btn-campaign').textContent = PROGRESS.unlocked > 1 || PROGRESS.stars[0] ? tr('campContinue') : tr('campStart');
+   for (const m of ['classic', 'timer', 'survive']) document.getElementById('best-' + m).textContent = tr('bestN', { n: getBest(m) });
+-  document.querySelectorAll('#ov-menu .mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === arcadeMode));
++  document.querySelectorAll('#ov-menu .mode-btn').forEach(b => { const on = b.dataset.mode === arcadeMode; b.classList.toggle('active', on); b.setAttribute('aria-pressed', on ? 'true' : 'false'); });
++  document.getElementById('mode-desc').textContent = tr('desc.' + arcadeMode, { s: ARCADE[arcadeMode].timeLimit }); // regla real del modo
+   document.getElementById('max-rank').textContent = cap(tierName(Store.get('jetrocket-maxrank', 0)));
+ }
+ function renderSectors() {
+@@ -1881,9 +2029,15 @@ function renderSectors() {
+     const locked = i + 1 > PROGRESS.unlocked;
+     const b = document.createElement('button');
+     b.className = 'sector' + (locked ? ' locked' : '') + (i + 1 === PROGRESS.unlocked && !PROGRESS.stars[i] ? ' next' : '') + (s.final ? ' final' : '');
+-    b.innerHTML = '<span class="n">' + (locked ? '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="2"/></svg>' : String(i + 1).padStart(2, '0')) + '</span><span class="nm">' + secName(i) + '</span><span class="st">' + starsHTML(PROGRESS.stars[i]) + '</span>';
+-    b.setAttribute('aria-label', tr(locked ? 'secAriaLocked' : 'secAriaStars', { n: i + 1, name: secName(i), s: PROGRESS.stars[i] }));
+-    if (locked) b.disabled = true; else b.addEventListener('click', () => { SFX.click(); openBrief(i); });
++    b.type = 'button';
++    // PLAY-ROCKET-05: la condición real de desbloqueo (completar el sector anterior) se muestra en la tarjeta y en su nombre accesible
++    const cond = locked ? tr('unlockCond', { n: i }) : '';
++    b.innerHTML = '<span class="n">' + (locked ? '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="2"/></svg>' : String(i + 1).padStart(2, '0')) + '</span><span class="nm">' + secName(i) + '</span>'
++      + (locked ? '<span class="lock-msg"></span>' : '<span class="st">' + starsHTML(PROGRESS.stars[i]) + '</span>');
++    if (locked) b.querySelector('.lock-msg').textContent = cond;
++    b.setAttribute('aria-label', tr(locked ? 'secAriaLocked' : 'secAriaStars', { n: i + 1, name: secName(i), s: PROGRESS.stars[i] }) + (locked ? '. ' + cond : ''));
++    if (locked) { b.setAttribute('aria-disabled', 'true'); b.addEventListener('click', e => e.preventDefault()); } // consultable con teclado, pero no inicia
++    else b.addEventListener('click', () => { SFX.click(); openBrief(i); });
+     root.appendChild(b);
+   });
+ }
+@@ -1908,10 +2062,14 @@ function syncSettingsUI() {
+   set('s-music', SETTINGS.music); set('s-sfx', SETTINGS.sfx); set('s-vibra', SETTINGS.vibra); set('s-motion', SETTINGS.motion);
+   document.getElementById('s-musicvol').value = SETTINGS.musicVol; document.getElementById('s-sfxvol').value = SETTINGS.sfxVol;
+   document.getElementById('s-vibra').closest('.set-row').style.display = navigator.vibrate ? '' : 'none';
++  document.body.classList.toggle('no-motion', !motionOK()); // VIS-ROCKET-04: motionOK gobierna también las animaciones CSS
++}
++function openSettings(from) { returnTo = from; syncSettingsUI(); document.getElementById('reset-status').textContent = ''; showOv('ov-settings'); }
++function eraseProgress() {
++  PROGRESS = blankProgress(); saveProgress(); for (const m in BEST_KEYS) Store.del(BEST_KEYS[m]); Store.del('jetrocket-maxrank');
++  bestCache = { mode: null, v: 0 }; renderMenu();
++  document.getElementById('reset-status').textContent = tr('resetDone');
+ }
+-function openSettings(from) { returnTo = from; syncSettingsUI(); resetState = 0; paintReset(); showOv('ov-settings'); }
+-let resetState = 0; // 0 normal · 1 esperando confirmación · 2 borrado
+-function paintReset() { document.getElementById('btn-reset').textContent = tr(['reset', 'resetConfirm', 'resetDone'][resetState]); }
+ 
+ function bindUI() {
+   const on = (id, fn) => document.getElementById(id).addEventListener('click', e => { Audio.unlock(); SFX.click(); fn(e); });
+@@ -1928,8 +2086,11 @@ function bindUI() {
+   // el navegador puede tragarse el «click» y la pausa no respondería
+   document.getElementById('btn-pause').addEventListener('pointerup', e => { if (e.pointerType !== 'mouse') { Audio.unlock(); if (STATE.scene === 'play') { SFX.click(); pauseGame(); } } });
+   on('btn-resume', () => resumeGame());
+-  on('btn-restart', () => restartRun());
+-  on('btn-pause-menu', () => toMenu());
++  // desde pausa, reiniciar o salir descarta el recorrido: se confirma (PLAY-ROCKET-06 / SRC-R01); tras derrota no hace falta
++  on('btn-restart', () => askConfirm('restart', () => restartRun()));
++  on('btn-pause-menu', () => askConfirm('quit', () => toMenu()));
++  on('btn-confirm-cancel', () => closeConfirm(false));
++  on('btn-confirm-ok', () => closeConfirm(true));
+   on('btn-retry', () => restartRun());
+   on('btn-lose-alt', () => { STATE.scene = 'menu'; renderSectors(); showOv('ov-sectors'); });
+   on('btn-lose-menu', () => toMenu());
+@@ -1946,11 +2107,9 @@ function bindUI() {
+   tog('s-music', 'music'); tog('s-sfx', 'sfx'); tog('s-vibra', 'vibra', () => haptic(30)); tog('s-motion', 'motion');
+   const sl = (id, key, onKey) => { const el = document.getElementById(id); el.addEventListener('input', () => { SETTINGS[key] = +el.value; if (!SETTINGS[onKey] && +el.value > 0) SETTINGS[onKey] = true; Audio.applyVolumes(); syncSettingsUI(); }); el.addEventListener('change', () => { saveSettings(); SFX.click(); }); };
+   sl('s-musicvol', 'musicVol', 'music'); sl('s-sfxvol', 'sfxVol', 'sfx');
+-  on('btn-reset', () => {
+-    if (resetState !== 1) { resetState = 1; paintReset(); return; }
+-    PROGRESS = blankProgress(); saveProgress(); for (const m in BEST_KEYS) Store.del(BEST_KEYS[m]); Store.del('jetrocket-maxrank');
+-    resetState = 2; paintReset();
+-  });
++  // SRC-R02 / SRC-G04: borrado sólo tras confirmación explícita; Cancelar enfocado; no toca idioma ni ajustes de audio
++  on('btn-reset', () => askConfirm('delete', eraseProgress, { stay: true }));
++  window.addEventListener('keydown', e => { if (e.key === 'Tab') trapTab(e); }, true);
+ }
+ 
+ // =====================================================================
+@@ -1967,8 +2126,9 @@ function applyLang() {
+   document.querySelectorAll('[data-i18n-label]').forEach(el => el.setAttribute('data-label', tr(el.dataset.i18nLabel)));
+   const md = document.querySelector('meta[name="description"]'); if (md) md.setAttribute('content', tr('metaDesc'));
+   document.querySelectorAll('.lang-seg [data-lang]').forEach(b => b.setAttribute('aria-pressed', b.dataset.lang === LANG() ? 'true' : 'false'));
+-  renderMenu(); paintReset();
++  renderMenu();
+   if (document.getElementById('ov-sectors').classList.contains('show')) renderSectors();
++  const cf = document.getElementById('ov-confirm'); if (cf.classList.contains('show') && cf.dataset.kind) { const k = cf.dataset.kind; const fn = confirmFn, ret = confirmReturn, trig = confirmTrigger, stay = confirmStay; askConfirm(k, fn, { stay }); confirmReturn = ret; confirmTrigger = trig; }
+   if (document.getElementById('ov-brief').classList.contains('show')) paintBrief();
+   if (STATE.scene === 'pause') paintPauseMsg();
+   if (paintResult && (STATE.scene === 'over' || STATE.scene === 'won')) paintResult();
+@@ -1989,6 +2149,7 @@ function bindLang() {
+ function init() {
+   canvas = document.getElementById('grid'); ctx = canvas.getContext('2d');
+   bindInput(); bindUI(); bindLang();
++  setInert(true); // el menú ya está visible: HUD y tablero quedan fuera del orden de tabulación
+   STATE.landscape = (() => { const st = document.getElementById('stage'); return st.clientWidth - 20 > (st.clientHeight - 14) * 1.05; })();
+   setupBoard({ kind: 'arcade', mode: arcadeMode });
+   resize();

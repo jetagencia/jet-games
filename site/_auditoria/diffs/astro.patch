@@ -1,0 +1,666 @@
+diff --git a/site/astro/index.html b/site/astro/index.html
+index 4a62eab..5370896 100644
+--- a/site/astro/index.html
++++ b/site/astro/index.html
+@@ -2,7 +2,7 @@
+ <html lang="es">
+ <head>
+ <meta charset="UTF-8">
+-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
++<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+ <meta name="mobile-web-app-capable" content="yes">
+ <meta name="apple-mobile-web-app-capable" content="yes">
+ <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+@@ -72,7 +72,7 @@
+   html, body {
+     width:100%; height:100%; overflow:hidden; background:var(--bg-0); color:var(--ink);
+     font-family:'Poppins', system-ui, sans-serif; overscroll-behavior:none;
+-    -webkit-font-smoothing:antialiased; touch-action:none;
++    -webkit-font-smoothing:antialiased; touch-action:manipulation;
+   }
+   body::before {
+     content:''; position:fixed; inset:0; z-index:-1; pointer-events:none;
+@@ -89,7 +89,8 @@
+     font-size:11px; font-weight:500; letter-spacing:1.5px; text-transform:uppercase; text-decoration:none;
+   }
+   #back::after, .ja-b::after, #pause::after { content:''; position:absolute; inset:-4px; }
+-  #back:focus-visible, #play:focus-visible, .ja-b:focus-visible, #pause:focus-visible { outline:2px solid var(--cyan); outline-offset:3px; }
++  #back:focus-visible, #play:focus-visible, .ja-b:focus-visible, #pause:focus-visible, .ov-row button:focus-visible, #ov-catalog:focus-visible, .ja-mute:focus-visible { outline:2px solid var(--cyan); outline-offset:3px; }
++  #c:focus-visible { outline:2px solid var(--cyan); outline-offset:-3px; }
+   #back:hover, #back:active { color:var(--cyan); border-color:var(--cyan); box-shadow:0 0 14px rgba(0,242,207,0.3); }
+   #app {
+     position:fixed; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+@@ -100,33 +101,57 @@
+   .title h1 .slash { background:linear-gradient(135deg, var(--violet), var(--cyan)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+   .title p { color:var(--ink-2); font-size:13px; margin-top:2px; }
+   #stage {
+-    position:relative; border-radius:16px; overflow:hidden; cursor:pointer;
++    position:relative; border-radius:16px; overflow:hidden; cursor:pointer; touch-action:none;
+     border:1px solid rgba(119,0,244,0.35);
+     box-shadow:0 10px 40px rgba(119,0,244,0.22), 0 0 0 1px rgba(0,242,207,0.05) inset;
+   }
+   canvas { display:block; }
+-  #overlay {
+-    position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+-    gap:10px; padding:12px; text-align:center;
+-    background:rgba(2,2,8,0.7); backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px);
+-    transition:opacity .18s ease;
++  /* Paneles de inicio, pausa y fin de vuelo: una misma tarjeta sobre el escenario oscurecido (VIS-ASTRO-03).
++     Cerrados llevan hidden + inert: no reciben Tab ni clics (RSP-ASTRO-01). */
++  #overlay, #confirm {
++    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
++    padding:12px; text-align:center; overflow:auto; touch-action:pan-y pinch-zoom;
++    background:rgba(2,2,8,0.55); backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px);
+   }
+-  #overlay.hidden { opacity:0; pointer-events:none; }
++  #confirm { z-index:5; background:rgba(2,2,8,0.7); }
++  #overlay[hidden], #confirm[hidden], #overlay [hidden], .ja [hidden] { display:none !important; }
++  .ov-card {
++    position:relative; display:flex; flex-direction:column; align-items:center; gap:12px;
++    width:min(100%, 440px); padding:18px 16px 16px; border-radius:16px;
++    background:rgba(2,2,8,0.88); border:1px solid rgba(119,0,244,0.35);
++  }
++  .ov-card::before { content:''; position:absolute; top:-1px; left:24px; right:24px; height:2px; border-radius:2px;
++    background:linear-gradient(135deg, var(--violet), var(--cyan)); }
+   #overlay .big { font-size:clamp(26px, 6vw, 40px); line-height:1; }
+-  #overlay .kicker { font-family:'JetBrains Mono', monospace; font-size:12px; letter-spacing:2px; text-transform:uppercase; color:var(--cyan); }
++  #overlay .kicker { font-family:'JetBrains Mono', monospace; font-size:12px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--cyan); }
+   #overlay .kicker.bad { color:var(--danger); }
+-  #overlay .score { font-size:clamp(22px, 5vw, 34px); font-weight:800; }
++  #overlay .reason { font-size:14px; color:var(--ink); margin-top:-4px; }
++  #overlay .data { display:flex; align-items:baseline; justify-content:center; flex-wrap:wrap; gap:4px 12px; }
++  #overlay .score { font-size:32px; font-weight:800; line-height:1; font-variant-numeric:tabular-nums; }
+   #overlay .best { font-family:'JetBrains Mono', monospace; font-size:13px; color:var(--ink-2); }
+   #overlay .best b { color:#ffe14a; }
+   #play {
+-    margin-top:4px; min-height:46px; padding:12px 30px; border:none; border-radius:12px; cursor:pointer;
+-    background:linear-gradient(135deg, var(--violet), var(--cyan)); color:#fff;
+-    font:700 15px 'Poppins', system-ui, sans-serif; box-shadow:0 6px 20px rgba(119,0,244,0.45);
++    margin-top:8px; min-height:46px; padding:12px 30px; border:none; border-radius:12px; cursor:pointer;
++    background:#00F2CF; color:#06251F; touch-action:manipulation;
++    font:700 15px 'Poppins', system-ui, sans-serif; box-shadow:0 6px 20px rgba(0,242,207,0.25);
+   }
+   #play:active { transform:scale(0.97); }
+-  #overlay .hint { color:var(--ink-2); font-size:13px; opacity:.85; }
++  .ov-row { display:flex; flex-wrap:wrap; justify-content:center; gap:8px; }
++  .ov-row button {
++    min-height:44px; padding:0 14px; border-radius:12px; cursor:pointer; touch-action:manipulation;
++    border:1px solid rgba(119,0,244,0.5); background:rgba(119,0,244,0.14); color:var(--ink);
++    font:600 13px 'Poppins', system-ui, sans-serif;
++  }
++  .ov-row button:hover { border-color:var(--cyan); }
++  .ov-row button.danger { border-color:rgba(255,68,102,0.6); background:rgba(255,68,102,0.14); }
++  #ov-catalog { display:inline-flex; align-items:center; min-height:44px; padding:0 8px; color:var(--ink-2); font-size:12px;
++    font-family:'JetBrains Mono', monospace; letter-spacing:0.5px; text-decoration:underline; text-underline-offset:3px; }
++  #ov-catalog:hover { color:var(--cyan); }
++  #overlay .hint { color:var(--ink-2); font-size:13px; opacity:.85; line-height:1.45; max-width:38ch; }
++  #confirm h2 { font-size:18px; font-weight:800; }
++  #confirm p { color:var(--ink-2); font-size:14px; }
+   #hint { color:var(--ink-2); opacity:.8; font-size:12px; font-family:'JetBrains Mono', monospace; letter-spacing:0.3px; text-align:center;
+-    min-height:1.5em; max-width:100%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
++    min-height:3em; line-height:1.5; max-width:100%; }
+   /* HUD: puntos y récord sobre el lienzo (texto real, nítido a cualquier escala) */
+   #hud { position:absolute; top:10px; left:12px; display:flex; flex-direction:column; gap:1px; pointer-events:none;
+     font-family:'JetBrains Mono', monospace; text-shadow:0 1px 6px rgba(0,0,0,0.7); }
+@@ -144,8 +169,8 @@
+     background:rgba(5,1,8,0.7); border:1px solid rgba(119,0,244,0.35); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); touch-action:manipulation; }
+   #pause[hidden] { display:none; }
+   #pause:hover { color:var(--cyan); border-color:var(--cyan); }
+-  @media (prefers-reduced-motion: reduce) { #tip, #overlay { transition:none; } }
+-  #stage.compact #overlay { gap:5px; }
++  @media (prefers-reduced-motion: reduce) { #tip { transition:none; } }
++  #stage.compact .ov-card { gap:6px; padding:10px 12px; }
+   #stage.compact #overlay .big, #stage.compact #overlay .hint { display:none; }
+   #stage.compact #overlay .score { font-size:22px; }
+   #stage.compact #play { margin-top:2px; padding:9px 24px; }
+@@ -157,33 +182,40 @@
+   .ja-b:hover, .ja.open .ja-b { color:#00f2cf; border-color:#00f2cf; box-shadow:0 0 14px rgba(0,242,207,0.3); }
+   .ja .ja-off { display:none; } .ja.mute .ja-off { display:inline; } .ja.mute .ja-on { display:none; }
+   .ja.mute .ja-b { color:rgba(232,230,255,0.45); }
+-  .ja-p { position:absolute; top:50px; right:0; min-width:212px; padding:8px 10px; display:none; flex-direction:column; gap:4px;
++  .ja-p { position:absolute; top:50px; right:0; min-width:248px; padding:8px 10px; display:none; flex-direction:column; gap:4px;
+     background:rgba(10,4,20,0.94); border:1px solid rgba(119,0,244,0.45); border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,0.5);
+-    backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); }
++    backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); touch-action:pan-y pinch-zoom; }
+   .ja.open .ja-p { display:flex; }
+-  .ja-r { display:grid; grid-template-columns:20px 64px 1fr; align-items:center; gap:8px; min-height:36px; cursor:pointer;
++  .ja-r { display:grid; grid-template-columns:20px 64px 1fr 38px; align-items:center; gap:8px; min-height:44px;
+     font-size:10.5px; letter-spacing:1px; text-transform:uppercase; color:#e8e6ff; -webkit-user-select:none; user-select:none; }
++  .ja-r label { cursor:pointer; }
+   .ja-r input[type=checkbox] { width:18px; height:18px; accent-color:#7700f4; cursor:pointer; margin:0; }
+-  .ja-r input[type=range] { width:100%; accent-color:#00f2cf; cursor:pointer; margin:0; }
++  .ja-r input[type=range] { width:100%; min-height:44px; accent-color:#00f2cf; cursor:pointer; margin:0; }
+   .ja-r input[type=range]:disabled { opacity:0.35; }
++  .ja-r input:focus-visible { outline:2px solid #00f2cf; outline-offset:2px; }
++  .ja-o { font-variant-numeric:tabular-nums; text-align:right; color:#b5a8d8; letter-spacing:0; }
++  .ja-mute { min-height:44px; margin-top:2px; padding:0 12px; border-radius:10px; cursor:pointer; touch-action:manipulation;
++    border:1px solid rgba(119,0,244,0.5); background:rgba(119,0,244,0.14); color:#e8e6ff;
++    font:600 11px 'JetBrains Mono', monospace; letter-spacing:1px; text-transform:uppercase; }
++  .ja-mute:disabled { opacity:0.45; cursor:default; }
+   #snd { position:fixed; top:calc(8px + var(--st)); right:calc(8px + var(--sr)); z-index:20; }
+   #ov-astro { width:64px; height:64px; display:block; }
+   /* Selector de idioma común de JET//Games: ES | EN */
+-  .lang-seg { display:inline-flex; padding:3px; gap:2px; border-radius:100px; background:rgba(5,1,8,0.6);
++  /* Cada opción es un botón nativo de 44×44 px como mínimo, separadas 8 px, sin pseudoelementos que se solapen (RSP-LANGUAGE-TARGETS-01) */
++  .lang-seg { display:inline-flex; padding:3px; gap:8px; border-radius:100px; background:rgba(5,1,8,0.6);
+     border:1px solid rgba(119,0,244,0.4); font-family:'JetBrains Mono', monospace; }
+-  .lang-seg button { position:relative; min-width:44px; min-height:36px; padding:0 12px; border:none; border-radius:100px; cursor:pointer;
++  .lang-seg button { position:relative; flex:none; min-width:44px; min-height:44px; height:auto; padding:0 12px; border:none; border-radius:100px; cursor:pointer;
+     background:transparent; color:var(--ink-2); font:700 12px 'JetBrains Mono', monospace; letter-spacing:1.5px;
+     touch-action:manipulation; transition:background .15s ease, color .15s ease; }
+-  .lang-seg button::after { content:''; position:absolute; inset:-4px 0; }
+   .lang-seg button[aria-pressed="true"] { background:linear-gradient(135deg, var(--violet), var(--cyan)); color:#fff; }
+   .lang-seg button:hover:not([aria-pressed="true"]) { color:var(--cyan); }
+   .lang-seg button:focus-visible { outline:2px solid var(--cyan); outline-offset:2px; }
+   #overlay .lang-seg { margin-top:2px; }
+-  #stage.compact #overlay .lang-seg button { min-height:32px; }
+   .ja-lang { display:flex; align-items:center; justify-content:space-between; gap:8px; min-height:44px; padding-top:4px; margin-top:2px;
+     border-top:1px solid rgba(119,0,244,0.25); font-size:10.5px; letter-spacing:1px; text-transform:uppercase; color:#e8e6ff; }
+   @media (prefers-reduced-motion: reduce) { .lang-seg button { transition:none; } }
+   @media (max-height:460px) { .title { display:none; } #app { gap:8px; padding-top:calc(10px + var(--st)); }
++    #hint { min-height:1.5em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+     #hud { left:0; right:0; top:8px; flex-direction:row; justify-content:center; align-items:baseline; gap:12px; } }
+ </style>
+ </head>
+@@ -202,17 +234,28 @@
+     <p data-i="sub">Astronauta en Júpiter</p>
+   </div>
+   <div id="stage">
+-    <canvas id="c" aria-label="Astronauta en Júpiter"></canvas>
++    <canvas id="c" tabindex="0" aria-label="Astronauta en Júpiter" aria-describedby="hint"></canvas>
+     <div id="hud" aria-live="off"><span id="hud-s">0</span><span id="hud-b"></span></div>
+     <div id="tip" role="status"></div>
+     <div id="overlay">
+-      <div class="big" id="ov-ico"><canvas id="ov-astro" width="64" height="64" aria-hidden="true"></canvas></div>
+-      <div class="kicker" id="ov-kicker" data-i="dodge">Esquiva los asteroides</div>
+-      <div class="score" id="ov-score" style="display:none"></div>
+-      <div class="best" id="ov-best" style="display:none"></div>
+-      <button id="play" type="button" data-i="launch">▶ Despegar</button>
+-      <div class="hint" id="ov-hint"></div>
+-      <div class="lang-seg" role="group" aria-label="Idioma" data-i-aria="lang"><button type="button" data-lang="es" aria-pressed="false">ES</button><button type="button" data-lang="en" aria-pressed="false">EN</button></div>
++      <div class="ov-card">
++        <div class="big" id="ov-ico"><canvas id="ov-astro" width="64" height="64" aria-hidden="true"></canvas></div>
++        <h2 class="kicker" id="ov-kicker" data-i="dodge">Esquiva los asteroides</h2>
++        <p class="reason" id="ov-reason" hidden></p>
++        <div class="data" id="ov-data" hidden><span class="score" id="ov-score"></span><span class="best" id="ov-best"></span></div>
++        <button id="play" type="button" data-i="launch">▶ Despegar</button>
++        <div class="ov-row" id="ov-row" hidden><button type="button" id="ov-restart"></button><button type="button" id="ov-menu"></button></div>
++        <p class="hint" id="ov-hint"></p>
++        <a id="ov-catalog" href="https://jetgames.fun/" target="_top" rel="noopener" hidden></a>
++        <div class="lang-seg" role="group" aria-label="Idioma" data-i-aria="lang"><button type="button" data-lang="es" aria-pressed="false">ES</button><button type="button" data-lang="en" aria-pressed="false">EN</button></div>
++      </div>
++    </div>
++    <div id="confirm" role="dialog" aria-modal="true" aria-labelledby="cf-title" aria-describedby="cf-body" hidden>
++      <div class="ov-card">
++        <h2 id="cf-title"></h2>
++        <p id="cf-body"></p>
++        <div class="ov-row"><button type="button" id="cf-stay"></button><button type="button" id="cf-go" class="danger"></button></div>
++      </div>
+     </div>
+   </div>
+   <div id="hint"></div>
+@@ -315,27 +358,46 @@ function JetAudioUI(o){
+  const K=o.key,def={m:1,mv:.7,s:1,sv:.8};let P=Object.assign({},def,o.initial||{});
+  try{Object.assign(P,JSON.parse(localStorage.getItem(K)||'{}'));}catch(e){}
+  const save=()=>{try{localStorage.setItem(K,JSON.stringify(P));}catch(e){}};
+- const tx=o.tx||{music:'Música',sfx:'Efectos',label:'Sonido'};
++ const TXD={music:'Música',sfx:'Efectos',label:'Sonido',on:'Sonido activado',off:'Sonido desactivado',mute:'Silenciar todo',musicVol:'Volumen de música',sfxVol:'Volumen de efectos'};
++ let tx=Object.assign({},TXD,o.tx||{});
++ const uid='ja'+Math.random().toString(36).slice(2,7);
+  const wrap=document.createElement('div');wrap.className='ja';
+- wrap.innerHTML=`<button type="button" class="ja-b ${o.btnClass||''}" ${o.btnId?'id="'+o.btnId+'"':''} aria-label="${tx.label}" aria-expanded="false"><svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h3l4-3.5v11L6 12H3z" fill="currentColor" stroke="none"/><g class="ja-on"><path d="M13 7.5a3.5 3.5 0 0 1 0 5"/><path d="M15.5 5a7 7 0 0 1 0 10"/></g><g class="ja-off"><path d="M13.5 7.5l5 5M18.5 7.5l-5 5"/></g></svg></button>
+- <div class="ja-p" role="dialog" aria-label="${tx.label}"><label class="ja-r"><input type="checkbox" data-k="m"><span class="ja-tm">${tx.music}</span><input type="range" min="0" max="1" step="0.05" data-v="mv" aria-label="${tx.music}"></label><label class="ja-r"><input type="checkbox" data-k="s"><span class="ja-ts">${tx.sfx}</span><input type="range" min="0" max="1" step="0.05" data-v="sv" aria-label="${tx.sfx}"></label></div>`;
++ wrap.innerHTML=`<button type="button" class="ja-b ${o.btnClass||''}" ${o.btnId?'id="'+o.btnId+'"':''} aria-label="${tx.label}" aria-haspopup="dialog" aria-expanded="false"><svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h3l4-3.5v11L6 12H3z" fill="currentColor" stroke="none"/><g class="ja-on"><path d="M13 7.5a3.5 3.5 0 0 1 0 5"/><path d="M15.5 5a7 7 0 0 1 0 10"/></g><g class="ja-off"><path d="M13.5 7.5l5 5M18.5 7.5l-5 5"/></g></svg></button>
++ <div class="ja-p" role="dialog" aria-label="${tx.label}">
++  <div class="ja-r"><input type="checkbox" id="${uid}-m" data-k="m"><label for="${uid}-m" class="ja-tm">${tx.music}</label><input type="range" min="0" max="1" step="0.05" data-v="mv" aria-label="${tx.musicVol}"><output class="ja-o" data-o="mv" aria-hidden="true"></output></div>
++  <div class="ja-r"><input type="checkbox" id="${uid}-s" data-k="s"><label for="${uid}-s" class="ja-ts">${tx.sfx}</label><input type="range" min="0" max="1" step="0.05" data-v="sv" aria-label="${tx.sfxVol}"><output class="ja-o" data-o="sv" aria-hidden="true"></output></div>
++  <button type="button" class="ja-mute">${tx.mute}</button>
++ </div>`;
+  if(o.before)o.before.parentNode.insertBefore(wrap,o.before);else (o.parent||document.body).appendChild(wrap);
+- const btn=wrap.querySelector('.ja-b'),pop=wrap.querySelector('.ja-p');
++ const btn=wrap.querySelector('.ja-b'),pop=wrap.querySelector('.ja-p'),muteBtn=wrap.querySelector('.ja-mute');
+  let started=false;
+- const apply=()=>{wrap.classList.toggle('mute',!P.m&&!P.s);btn.classList.toggle('on',!!(P.m||P.s));wrap.querySelectorAll('[data-k]').forEach(i=>i.checked=!!P[i.dataset.k]);wrap.querySelectorAll('[data-v]').forEach(i=>{i.value=P[i.dataset.v];i.disabled=!P[i.dataset.v[0]];});
++ const pct=v=>Math.round(v*100)+'%';
++ const apply=()=>{const on=!!(P.m||P.s);wrap.classList.toggle('mute',!on);btn.classList.toggle('on',on);btn.setAttribute('aria-label',on?tx.on:tx.off);muteBtn.disabled=!on;
++  wrap.querySelectorAll('[data-k]').forEach(i=>i.checked=!!P[i.dataset.k]);
++  wrap.querySelectorAll('[data-v]').forEach(i=>{i.value=P[i.dataset.v];i.disabled=!P[i.dataset.v[0]];i.setAttribute('aria-valuetext',pct(P[i.dataset.v]));});
++  wrap.querySelectorAll('[data-o]').forEach(x=>x.textContent=pct(P[x.dataset.o]));
+   if(!JetSong.ctx)return;JetSong.setMusic(P.m?P.mv*(o.mlv||1):0);JetSong.setSfx(P.s?P.sv:0);
+   if(P.m&&!document.hidden){if(!JetSong.playing)JetSong.play(o.song);}else if(!P.m&&JetSong.playing)JetSong.stop();};
+  const start=()=>{if(started)return;started=true;JetSong.init();apply();if(o.onStart)o.onStart();};
+  ['pointerdown','keydown','touchend'].forEach(ev=>document.addEventListener(ev,start,{capture:true,passive:true}));
+- btn.addEventListener('click',e=>{e.stopPropagation();start();btn.blur();const op=!wrap.classList.contains('open');wrap.classList.toggle('open',op);btn.setAttribute('aria-expanded',op);if(op){pop.style.left='';pop.style.right='';const r=pop.getBoundingClientRect();if(r.left<6){pop.style.right='auto';pop.style.left=(6-wrap.getBoundingClientRect().left)+'px';}else if(r.right>innerWidth-6){pop.style.left='auto';pop.style.right=(wrap.getBoundingClientRect().right-innerWidth+6)+'px';}}});
++ /* Abrir/cerrar: clase y aria-expanded cambian juntos; al abrir por teclado el foco entra al panel; al cerrar con Escape vuelve al botón (RSP-AUDIO-01) */
++ const isOpen=()=>wrap.classList.contains('open');
++ function setAudioOpen(open,opt){opt=opt||{};wrap.classList.toggle('open',open);btn.setAttribute('aria-expanded',String(open));
++  if(open){pop.style.left='';pop.style.right='';const r=pop.getBoundingClientRect();if(r.left<6){pop.style.right='auto';pop.style.left=(6-wrap.getBoundingClientRect().left)+'px';}else if(r.right>innerWidth-6){pop.style.left='auto';pop.style.right=(wrap.getBoundingClientRect().right-innerWidth+6)+'px';}
++   if(opt.focusFirst){const f=pop.querySelector('input:not(:disabled),button');if(f)f.focus();}}
++  else if(opt.restoreFocus)btn.focus();}
++ let viaPointer=false;
++ btn.addEventListener('pointerdown',()=>{viaPointer=true;});
++ btn.addEventListener('click',e=>{e.stopPropagation();start();const op=!isOpen();setAudioOpen(op,{focusFirst:op&&!viaPointer});viaPointer=false;});
+  wrap.addEventListener('pointerdown',e=>e.stopPropagation());wrap.addEventListener('click',e=>e.stopPropagation());
+- document.addEventListener('pointerdown',e=>{if(!wrap.contains(e.target))wrap.classList.remove('open');});
+- document.addEventListener('keydown',e=>{if(e.key==='Escape')wrap.classList.remove('open');});
+- wrap.querySelectorAll('[data-k]').forEach(i=>i.addEventListener('change',()=>{P[i.dataset.k]=i.checked?1:0;save();apply();i.blur();if(i.dataset.k==='s'&&i.checked&&o.onTest)o.onTest();}));
+- wrap.querySelectorAll('[data-v]').forEach(i=>{i.addEventListener('input',()=>{P[i.dataset.v]=+i.value;save();apply();});i.addEventListener('change',()=>i.blur());});
++ document.addEventListener('pointerdown',e=>{if(isOpen()&&!wrap.contains(e.target))setAudioOpen(false);});
++ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&isOpen()){e.stopPropagation();e.preventDefault();setAudioOpen(false,{restoreFocus:true});}});
++ wrap.querySelectorAll('[data-k]').forEach(i=>i.addEventListener('change',()=>{P[i.dataset.k]=i.checked?1:0;save();apply();if(i.dataset.k==='s'&&i.checked&&o.onTest)o.onTest();}));
++ wrap.querySelectorAll('[data-v]').forEach(i=>i.addEventListener('input',()=>{P[i.dataset.v]=+i.value;save();apply();}));
++ muteBtn.addEventListener('click',()=>{P.m=0;P.s=0;save();apply();btn.focus();});
+  document.addEventListener('visibilitychange',()=>{const c=JetSong.ctx;if(!c)return;if(document.hidden){c.suspend&&c.suspend();}else{c.resume&&c.resume();apply();}});
+  apply();
+- return {setTx(t){wrap.querySelector('.ja-tm').textContent=t.music;wrap.querySelector('.ja-ts').textContent=t.sfx;btn.setAttribute('aria-label',t.label);pop.setAttribute('aria-label',t.label);wrap.querySelectorAll('[data-v=mv]').forEach(i=>i.setAttribute('aria-label',t.music));wrap.querySelectorAll('[data-v=sv]').forEach(i=>i.setAttribute('aria-label',t.sfx));},get prefs(){return P;},sfxOn:()=>!!(P.s&&started),apply,el:wrap,setSong(s){o.song=s;if(JetSong.playing)JetSong.play(s);}};
++ return {setTx(t){tx=Object.assign({},TXD,t||{});wrap.querySelector('.ja-tm').textContent=tx.music;wrap.querySelector('.ja-ts').textContent=tx.sfx;muteBtn.textContent=tx.mute;pop.setAttribute('aria-label',tx.label);wrap.querySelectorAll('[data-v=mv]').forEach(i=>i.setAttribute('aria-label',tx.musicVol));wrap.querySelectorAll('[data-v=sv]').forEach(i=>i.setAttribute('aria-label',tx.sfxVol));apply();},get prefs(){return P;},sfxOn:()=>!!(P.s&&started),apply,el:wrap,setOpen:setAudioOpen,setSong(s){o.song=s;if(JetSong.playing)JetSong.play(s);}};
+ }
+ /* fin JetSong */
+ 
+@@ -384,27 +446,35 @@ const SONG_ASTRO=(()=>{
+       title: 'JET//Astro · Astronauta en Júpiter',
+       desc: 'Astronauta en Júpiter: salta los asteroides con el jetpack. Un toque o la barra espaciadora.',
+       back: 'Volver a JET//Games', lang: 'Idioma', canvas: 'Astronauta en Júpiter',
+-      sub: 'Astronauta en Júpiter', dodge: 'Esquiva los asteroides', launch: '▶ Despegar', retry: '↻ Reintentar',
+-      impact: 'Impacto', pts: 'puntos', best: 'Récord', newBest: '¡Nuevo récord!',
+-      how: TOUCH ? 'Toca para saltar · mantén el dedo para llegar más alto' : 'Espacio o ↑ para saltar · mantén para llegar más alto',
+-      play: TOUCH ? 'Toca: salto corto · mantén: salto alto' : 'Espacio · ↑ · clic  —  mantén para saltar alto  ·  ↓ baja rápido  ·  P pausa',
+-      again: TOUCH ? 'Toca la pantalla para reintentar' : 'Espacio o Enter para reintentar',
+-      paused: 'En pausa', resume: '▶ Continuar', pauseHint: TOUCH ? 'Toca para seguir' : 'Esc o P para seguir',
+-      pause: 'Pausa', tipHold: 'Mantén para un salto más alto', tipMeteor: 'Meteoritos: a veces conviene no saltar',
+-      audio: { music: 'Música', sfx: 'Efectos', label: 'Sonido y ajustes' },
++      sub: 'Astronauta en Júpiter', dodge: 'Esquiva los asteroides', launch: '▶ Despegar', retry: '↻ Reintentar vuelo',
++      end: 'Fin del vuelo', pts: 'puntos', best: 'Récord', newBest: '¡Nuevo récord!',
++      reasonRock: 'Chocaste con un asteroide.', reasonMet: 'Chocaste con un meteorito.',
++      tipJump: TOUCH ? 'Mantené el dedo para saltar más alto.' : 'Mantené Espacio o ↑ para saltar más alto.',
++      how: TOUCH ? 'Tocá para saltar. Mantené el dedo para subir más.' : 'Saltar: Espacio, ↑ o clic. Mantené para subir más. Bajada rápida: ↓. Pausa: P.',
++      play: TOUCH ? 'Tocá: salto corto · Mantené: salto alto' : 'Saltar: Espacio, ↑ o clic. Mantené para subir más. Bajada rápida: ↓. Pausa: P.',
++      again: 'Activá «Reintentar vuelo» para empezar de nuevo.',
++      paused: 'En pausa', resume: '▶ Reanudar partida', pauseHint: TOUCH ? 'Tocá «Reanudar partida» para seguir.' : 'Esc o P para seguir',
++      restart: 'Reiniciar partida', menu: 'Volver al menú', catalog: 'Volver a los juegos',
++      exitTitle: '¿Volver al menú?', restartTitle: '¿Reiniciar la partida?', exitBody: 'Vas a perder este intento.', stay: 'Seguir jugando',
++      pause: 'Pausa', tipHold: 'Mantené para un salto más alto', tipMeteor: 'Meteoritos: a veces conviene no saltar',
++      audio: { music: 'Música', sfx: 'Efectos', label: 'Sonido y ajustes', on: 'Sonido activado', off: 'Sonido desactivado', mute: 'Silenciar todo', musicVol: 'Volumen de música', sfxVol: 'Volumen de efectos' },
+     },
+     en: {
+       title: 'JET//Astro · Astronaut on Jupiter',
+       desc: 'Astronaut on Jupiter: jump over the asteroids with your jetpack. One tap or the space bar.',
+       back: 'Back to JET//Games', lang: 'Language', canvas: 'Astronaut on Jupiter',
+-      sub: 'Astronaut on Jupiter', dodge: 'Dodge the asteroids', launch: '▶ Launch', retry: '↻ Try again',
+-      impact: 'Impact', pts: 'points', best: 'Best', newBest: 'New best!',
+-      how: TOUCH ? 'Tap to jump · hold for a higher jump' : 'Space or ↑ to jump · hold for a higher jump',
+-      play: TOUCH ? 'Tap: short hop · hold: high jump' : 'Space · ↑ · click  —  hold to jump higher  ·  ↓ drop fast  ·  P pause',
+-      again: TOUCH ? 'Tap the screen to try again' : 'Space or Enter to try again',
+-      paused: 'Paused', resume: '▶ Resume', pauseHint: TOUCH ? 'Tap to continue' : 'Esc or P to continue',
++      sub: 'Astronaut on Jupiter', dodge: 'Dodge the asteroids', launch: '▶ Take off', retry: '↻ Retry flight',
++      end: 'Flight over', pts: 'points', best: 'Best', newBest: 'New best!',
++      reasonRock: 'You hit an asteroid.', reasonMet: 'You hit a meteor.',
++      tipJump: TOUCH ? 'Hold your finger to jump higher.' : 'Hold Space or ↑ to jump higher.',
++      how: TOUCH ? 'Tap to jump. Hold your finger to go higher.' : 'Jump: Space, ↑ or click. Hold to go higher. Drop quickly: ↓. Pause: P.',
++      play: TOUCH ? 'Tap: short hop · Hold: high jump' : 'Jump: Space, ↑ or click. Hold to go higher. Drop quickly: ↓. Pause: P.',
++      again: 'Select “Retry flight” to start again.',
++      paused: 'Paused', resume: '▶ Resume game', pauseHint: TOUCH ? 'Tap “Resume game” to continue.' : 'Esc or P to continue',
++      restart: 'Restart game', menu: 'Back to menu', catalog: 'Back to games',
++      exitTitle: 'Return to the menu?', restartTitle: 'Restart the game?', exitBody: 'You’ll lose this attempt.', stay: 'Keep playing',
+       pause: 'Pause', tipHold: 'Hold for a higher jump', tipMeteor: 'Meteors: sometimes it pays not to jump',
+-      audio: { music: 'Music', sfx: 'Effects', label: 'Sound and settings' },
++      audio: { music: 'Music', sfx: 'Sound effects', label: 'Sound and settings', on: 'Sound on', off: 'Sound off', mute: 'Mute all', musicVol: 'Music volume', sfxVol: 'Sound effects volume' },
+     },
+   };
+   const curLang = () => (window.JETIdioma && DICT[JETIdioma.get()]) ? JETIdioma.get() : 'es';
+@@ -428,8 +498,9 @@ const SONG_ASTRO=(()=>{
+     pause() { if (!AUD.sfxOn()) return; JetSong.tone(660, 0.08, 'triangle', 0.05, 440); },
+   };
+   const canvas = $('c'), ctx = canvas.getContext('2d'), stage = $('stage');
+-  const overlay = $('overlay'), playBtn = $('play'), pauseBtn = $('pause');
++  const overlay = $('overlay'), playBtn = $('play'), pauseBtn = $('pause'), confirmEl = $('confirm');
+   const hudS = $('hud-s'), hudB = $('hud-b'), tipEl = $('tip');
++  const HOME = 'https://jetgames.fun/';
+ 
+   // Selector ES | EN también dentro del panel de sonido y ajustes (el mismo que en la pantalla de inicio)
+   {
+@@ -438,21 +509,32 @@ const SONG_ASTRO=(()=>{
+     AUD.el.querySelector('.ja-p').appendChild(row);
+   }
+   document.querySelectorAll('.lang-seg button').forEach(b => b.addEventListener('click', e => {
+-    e.stopPropagation(); if (window.JETIdioma) JETIdioma.set(b.dataset.lang); b.blur();
++    e.stopPropagation(); if (window.JETIdioma) JETIdioma.set(b.dataset.lang);   // el foco se queda en la opción elegida
+   }));
+ 
+   // Pinta todos los textos visibles en el idioma actual, según la pantalla en la que esté el juego
+   function paintOverlay() {
+     const kind = overlay.dataset.kind || 'start', k = $('ov-kicker');
+-    if (kind === 'pause') { k.textContent = TX.paused; playBtn.textContent = TX.resume; $('ov-hint').textContent = TX.pauseHint; }
+-    else if (kind === 'over') {
+-      k.textContent = TX.impact; playBtn.textContent = TX.retry; $('ov-hint').textContent = TX.again;
++    const reason = $('ov-reason'), data = $('ov-data'), row = $('ov-row'), cat = $('ov-catalog');
++    $('ov-restart').textContent = TX.restart; $('ov-menu').textContent = TX.menu; cat.textContent = TX.catalog;
++    reason.hidden = kind !== 'over'; row.hidden = kind !== 'pause'; cat.hidden = kind === 'start';
++    $('ov-score').hidden = kind !== 'over';
++    if (kind === 'pause') {
++      k.textContent = TX.paused; playBtn.textContent = TX.resume; $('ov-hint').textContent = TX.pauseHint; data.hidden = true;
++    } else if (kind === 'over') {
++      k.textContent = TX.end; playBtn.textContent = TX.retry;
++      // resultado, motivo y consejo acorde al choque real: roca → saltar más alto; meteorito → a veces conviene no saltar
++      reason.textContent = s.cause === 'met' ? TX.reasonMet : TX.reasonRock;
++      $('ov-hint').textContent = (s.cause === 'met' ? TX.tipMeteor + '.' : TX.tipJump) + ' ' + TX.again;
+       $('ov-score').textContent = `${s.score} ${TX.pts}`;
+       $('ov-best').innerHTML = s.lastRecord && best > 0 ? `<b>${TX.newBest}</b>` : `${TX.best}: <b>${best}</b>`;
++      data.hidden = false;
+     } else {
+       k.textContent = TX.dodge; playBtn.textContent = TX.launch; $('ov-hint').textContent = TX.how;
++      data.hidden = !(best > 0);
+       if (best > 0) $('ov-best').innerHTML = `${TX.best}: <b>${best}</b>`;
+     }
++    if (!confirmEl.hidden) paintConfirm(); else { $('cf-stay').textContent = TX.stay; $('cf-go').textContent = TX.menu; }
+   }
+   function applyLang() {
+     const lang = curLang(); TX = DICT[lang];
+@@ -464,9 +546,11 @@ const SONG_ASTRO=(()=>{
+     canvas.setAttribute('aria-label', TX.canvas);
+     pauseBtn.setAttribute('aria-label', TX.pause); pauseBtn.title = TX.pause + (TOUCH ? '' : ' (P)');
+     document.querySelectorAll('.lang-seg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.lang === lang)));
++    // el regreso al catálogo conserva el idioma elegido aunque la cookie no esté disponible
++    $('back').href = HOME + '?lang=' + lang; $('ov-catalog').href = HOME + '?lang=' + lang;
+     AUD.setTx(TX.audio);
+     paintOverlay();
+-    if (s.running) $('hint').textContent = TX.play;
++    $('hint').textContent = s.running ? TX.play : '';
+     if (tipEl.dataset.key) tipEl.textContent = TX[tipEl.dataset.key];   // también el aviso que se está desvaneciendo
+     hud();
+   }
+@@ -477,7 +561,7 @@ const SONG_ASTRO=(()=>{
+   //    pantalla; la física y el ancho visible no cambian, así el juego es igual de justo en todos lados. ──
+   const ASIZE = 30;
+   const STEP = 1000 / 60;            // física a 60 Hz fijos, igual en pantallas de 120 Hz
+-  let W = 460, H = 200, GROUND = 160, AX = 60, TALL = false;
++  let W = 460, H = 200, GROUND = 160, AX = 60, TALL = false, SCALE = 1;   // SCALE: unidades lógicas → px CSS
+ 
+   // Salto variable: un toque (hasta 4 cuadros) da siempre el mismo salto corto; mantener enciende el jetpack
+   // del cuadro 5 al 18 y casi duplica la altura. Soltar apaga el impulso de ese salto.
+@@ -517,6 +601,7 @@ const SONG_ASTRO=(()=>{
+       scale = Math.max(0.5, Math.min(availW / W, availH / H));
+     }
+     const cssW = Math.floor(W * scale), cssH = Math.floor(H * scale);
++    SCALE = scale;
+     const dpr = Math.min(window.devicePixelRatio || 1, 3);
+     canvas.style.width = cssW + 'px'; canvas.style.height = cssH + 'px';
+     stage.classList.toggle('compact', cssH < 250);
+@@ -564,22 +649,32 @@ const SONG_ASTRO=(()=>{
+   }
+   function drop() { if (s.running && !s.paused && !onGround()) { s.vy = Math.min(s.vy, DROP_V); s.hold = false; } }
+ 
++  // Un único interruptor del panel: hidden + inert + aria-hidden a la vez (nunca sólo opacity).
++  function setOverlayVisible(on) {
++    overlay.hidden = !on; overlay.inert = !on; overlay.setAttribute('aria-hidden', String(!on));
++    if (!on && !confirmEl.hidden) closeConfirm(false, true);
++  }
+   function showOverlay(kind) {
+-    const ico = $('ov-ico'), k = $('ov-kicker');
++    const k = $('ov-kicker');
+     overlay.dataset.kind = kind;
+-    ico.style.display = '';
++    $('ov-ico').style.display = '';
+     k.classList.toggle('bad', kind === 'over');
+-    $('ov-score').style.display = kind === 'over' ? '' : 'none';
+-    $('ov-best').style.display = kind === 'over' ? '' : 'none';
++    if (kind === 'start') { overlay.removeAttribute('role'); overlay.removeAttribute('aria-modal'); overlay.removeAttribute('aria-labelledby'); }
++    else { overlay.setAttribute('role', 'dialog'); overlay.setAttribute('aria-modal', 'true'); overlay.setAttribute('aria-labelledby', 'ov-kicker'); }
+     paintOverlay();
+-    overlay.classList.remove('hidden');
+-    if (!TOUCH) playBtn.focus({ preventScroll: true });
++    setOverlayVisible(true);
++    playBtn.focus({ preventScroll: true });
++  }
++  function hideOverlay() {
++    setOverlayVisible(false);
++    canvas.focus({ preventScroll: true });   // el foco sigue visible y dentro de la superficie de juego
+   }
+ 
++  // Nueva partida: siempre desde el estado inicial (la generación de obstáculos es la propia del juego)
+   function start() {
+     Object.assign(s, { alt: 0, vy: 0, hold: false, holdT: 0, canBoost: false, obs: [], particles: [], score: 0, dist: 0, speed: SPEED0,
+-      next: SPEED0 * 80, over: false, running: true, paused: false, frame: 0, buffer: 0, shake: 0, mile: 0, mileT: 0, tips: {} });
+-    overlay.classList.add('hidden'); playBtn.blur();
++      next: SPEED0 * 80, over: false, running: true, paused: false, frame: 0, buffer: 0, shake: 0, mile: 0, mileT: 0, tips: {}, cause: '' });
++    hideOverlay();
+     $('hint').textContent = TX.play;
+     stage.classList.add('live'); pauseBtn.hidden = false;
+     hud();
+@@ -588,11 +683,52 @@ const SONG_ASTRO=(()=>{
+     if (!best) tip('tipHold', 1);
+   }
+ 
++  // Volver al menú del juego (pantalla de inicio), descartando el intento en curso
++  function toMenu() {
++    Object.assign(s, { alt: 0, vy: 0, hold: false, holdT: 0, canBoost: false, obs: [], particles: [], score: 0, dist: 0, speed: SPEED0,
++      over: false, running: false, paused: false, buffer: 0, shake: 0, mile: 0, mileT: 0, cause: '' });
++    $('hint').textContent = '';
++    pauseBtn.hidden = true; stage.classList.remove('live');
++    JetSong.setIntensity(0); hud();
++    showOverlay('start');
++  }
++
+   function pause(on) {
+     if (!s.running || s.paused === on) return;
+     s.paused = on; s.hold = false;
+     if (on) { SFX.pause(); showOverlay('pause'); }
+-    else { overlay.classList.add('hidden'); playBtn.blur(); last = performance.now(); acc = 0; }
++    else { hideOverlay(); last = performance.now(); acc = 0; }
++  }
++
++  // Confirmación antes de descartar el intento desde la pausa (Reiniciar partida / Volver al menú)
++  let cfAction = null, cfTrigger = null;
++  function paintConfirm() {
++    $('cf-title').textContent = cfAction === 'restart' ? TX.restartTitle : TX.exitTitle;
++    $('cf-body').textContent = TX.exitBody;
++    $('cf-stay').textContent = TX.stay;
++    $('cf-go').textContent = cfAction === 'restart' ? TX.restart : TX.menu;
++  }
++  function openConfirm(action, trigger) {
++    cfAction = action; cfTrigger = trigger || document.activeElement;
++    paintConfirm();
++    confirmEl.hidden = false; confirmEl.inert = false; overlay.inert = true;
++    $('cf-stay').focus({ preventScroll: true });   // Cancelar enfocado al abrir
++  }
++  function closeConfirm(go, silent) {
++    const act = cfAction, trig = cfTrigger; cfAction = null; cfTrigger = null;
++    confirmEl.hidden = true; confirmEl.inert = true; overlay.inert = overlay.hidden;
++    if (silent) return;
++    if (go) { if (act === 'restart') start(); else toMenu(); }
++    else if (trig && trig.focus) trig.focus({ preventScroll: true });
++  }
++  // Tab y Shift+Tab se quedan dentro del diálogo activo
++  function trapTab(root, e) {
++    const f = [...root.querySelectorAll('button, a[href], input, select, textarea, [tabindex]:not([tabindex="-1"])')]
++      .filter(el => !el.disabled && !el.hidden && el.offsetParent !== null && !el.closest('[hidden]'));
++    if (!f.length) return;
++    const first = f[0], lastEl = f[f.length - 1], cur = document.activeElement;
++    if (e.shiftKey && (cur === first || !root.contains(cur))) { e.preventDefault(); lastEl.focus(); }
++    else if (!e.shiftKey && (cur === lastEl || !root.contains(cur))) { e.preventDefault(); first.focus(); }
+   }
+ 
+   function crash() {
+@@ -607,8 +743,6 @@ const SONG_ASTRO=(()=>{
+     const record = s.score > best;
+     s.lastRecord = record;
+     if (record) { best = s.score; try { localStorage.setItem(BEST_KEY, String(best)); } catch (e) {} }
+-    $('ov-score').textContent = `${s.score} ${TX.pts}`;
+-    $('ov-best').innerHTML = record && best > 0 ? `<b>${TX.newBest}</b>` : `${TX.best}: <b>${best}</b>`;
+     $('hint').textContent = '';
+     pauseBtn.hidden = true; stage.classList.remove('live');
+     hud();
+@@ -738,7 +872,7 @@ const SONG_ASTRO=(()=>{
+     for (const a of s.obs) {
+       const ins = a.kind === 'met' ? 3 : 5;
+       const ax1 = a.x - a.w / 2 + ins, ax2 = a.x + a.w / 2 - ins, ay1 = a.alt - a.h / 2 + ins, ay2 = a.alt + a.h / 2 - ins;
+-      if (px1 < ax2 && px2 > ax1 && py1 < ay2 && py2 > ay1) { crash(); return; }
++      if (px1 < ax2 && px2 > ax1 && py1 < ay2 && py2 > ay1) { s.cause = a.kind; crash(); return; }
+     }
+   }
+ 
+@@ -770,13 +904,18 @@ const SONG_ASTRO=(()=>{
+     ctx.fillStyle = neb2; ctx.fillRect(0, 0, W, GROUND);
+     ctx.restore();
+ 
++    // Estrellas decorativas: junto al corredor del astronauta no pasan de 0,45 de opacidad; arriba conservan su brillo (VIS-ASTRO-01)
++    const corridorTop = GROUND - 125;
+     for (const st of s.starsBack) {
+       const tw = RM.matches ? 0.5 : (Math.sin(s.frame * 0.04 + st.phase) + 1) / 2;
+-      ctx.fillStyle = `rgba(255,255,255,${0.25 + tw * 0.5})`;
++      const a = st.y > corridorTop ? Math.min(0.45, 0.25 + tw * 0.5) : 0.25 + tw * 0.5;
++      ctx.fillStyle = `rgba(255,255,255,${a})`;
++      ctx.beginPath(); ctx.arc(st.x, st.y, st.r, 0, Math.PI * 2); ctx.fill();
++    }
++    for (const st of s.starsFront) {
++      ctx.fillStyle = st.y > corridorTop ? 'rgba(220,230,255,0.45)' : 'rgba(220,230,255,0.85)';
+       ctx.beginPath(); ctx.arc(st.x, st.y, st.r, 0, Math.PI * 2); ctx.fill();
+     }
+-    ctx.fillStyle = 'rgba(220,230,255,0.85)';
+-    for (const st of s.starsFront) { ctx.beginPath(); ctx.arc(st.x, st.y, st.r, 0, Math.PI * 2); ctx.fill(); }
+ 
+     // Júpiter con bandas y gran mancha roja
+     ctx.save();
+@@ -806,8 +945,9 @@ const SONG_ASTRO=(()=>{
+     const gg = ctx.createLinearGradient(0, GROUND, 0, H);
+     gg.addColorStop(0, 'rgba(40,30,60,0.97)'); gg.addColorStop(1, 'rgba(12,8,22,0.97)');
+     ctx.fillStyle = gg; ctx.fillRect(-10, GROUND, W + 20, H - GROUND + 10);
+-    ctx.fillStyle = 'rgba(119,0,244,0.6)'; ctx.fillRect(0, GROUND - 1, W, 1);
+-    ctx.fillStyle = 'rgba(0,242,207,0.15)'; ctx.fillRect(0, GROUND, W, 1);
++    // borde del suelo real: trazo continuo y nítido de 1,5 px CSS (ajustado a la escala), sin halo (VIS-ASTRO-01)
++    const edge = 1.5 / SCALE;
++    ctx.fillStyle = '#71608F'; ctx.fillRect(-10, GROUND - edge, W + 20, edge);
+     ctx.lineWidth = 0.5;
+     for (const cr of s.craters) {
+       if (cr.x < -8 || cr.x > W + 8) continue;
+@@ -838,7 +978,8 @@ const SONG_ASTRO=(()=>{
+       ctx.fillStyle = rg; ctx.beginPath();
+       a.shape.forEach((v, i) => i ? ctx.lineTo(v[0], v[1]) : ctx.moveTo(v[0], v[1]));
+       ctx.closePath(); ctx.fill();
+-      ctx.strokeStyle = a.kind === 'met' ? 'rgba(251,146,60,0.7)' : 'rgba(119,0,244,0.5)'; ctx.lineWidth = 1; ctx.stroke();
++      // borde mineral gris claro en las rocas comunes; cálido en meteoritos; 1,25 px CSS (VIS-ASTRO-02; la geometría a.shape no cambia)
++      ctx.strokeStyle = a.kind === 'met' ? 'rgba(251,146,60,0.7)' : 'rgba(148,163,184,0.75)'; ctx.lineWidth = 1.25 / SCALE; ctx.stroke();
+       ctx.fillStyle = 'rgba(0,0,0,0.55)';
+       for (const cr of a.craters) { ctx.beginPath(); ctx.arc(cr.cx, cr.cy, cr.r, 0, Math.PI * 2); ctx.fill(); }
+       ctx.restore();
+@@ -850,13 +991,13 @@ const SONG_ASTRO=(()=>{
+     }
+     ctx.globalAlpha = 1;
+ 
+-    // hito cada 50 puntos
+-    if (s.mileT > 0) {
+-      const t = s.mileT / 90;
+-      ctx.globalAlpha = Math.min(1, t * 3);
++    // hito cada 50 puntos: aviso breve (≈500 ms) en el cielo alto, fuera del corredor y sin tapar peligros (VIS-ASTRO-04)
++    if (s.mileT > 60) {
++      const t = (s.mileT - 60) / 30;
++      ctx.globalAlpha = Math.min(1, t * 4);
+       ctx.textAlign = 'center'; ctx.fillStyle = '#00f2cf';
+-      ctx.font = `800 ${TALL ? 44 : 30}px Poppins, system-ui, sans-serif`;
+-      ctx.fillText(String(s.mile), W / 2, GROUND * (TALL ? 0.56 : 0.5) - (RM.matches ? 0 : (1 - t) * 10));
++      ctx.font = `800 24px Poppins, system-ui, sans-serif`;
++      ctx.fillText(String(s.mile), W / 2, (TALL ? GROUND * 0.34 : 30) - (RM.matches ? 0 : (1 - t) * 6));
+       ctx.globalAlpha = 1; ctx.textAlign = 'left';
+     }
+     ctx.restore();
+@@ -944,7 +1085,8 @@ const SONG_ASTRO=(()=>{
+     ctx.beginPath(); ctx.ellipse(cx, GROUND + 1, 22 * A_U * (0.6 + 0.4 * k), 6 * A_U, 0, 0, Math.PI * 2); ctx.fill();
+     // llama del jetpack (sale de la mochila, detrás del cuerpo) al subir; más larga mientras se mantiene
+     if (s.vy > 1 && !s.over) {
+-      const fx = cx - 21.5 * A_U, fy = cy + 22 * A_U, len = (s.hold && s.canBoost && s.holdT <= HOLD_MAX ? 17 : 10) + Math.random() * 6;
++      // con movimiento reducido la llama es estable (sin ruido aleatorio) pero sigue indicando el ascenso
++      const fx = cx - 21.5 * A_U, fy = cy + 22 * A_U, len = (s.hold && s.canBoost && s.holdT <= HOLD_MAX ? 17 : 10) + (RM.matches ? 3 : Math.random() * 6);
+       const f1 = ctx.createLinearGradient(0, fy, 0, fy + len);
+       f1.addColorStop(0, '#22d3ee'); f1.addColorStop(0.5, '#7c3aed'); f1.addColorStop(1, 'transparent');
+       ctx.fillStyle = f1; ctx.beginPath(); ctx.moveTo(fx - 4, fy); ctx.quadraticCurveTo(fx, fy + len + 4, fx + 4, fy); ctx.fill();
+@@ -962,7 +1104,7 @@ const SONG_ASTRO=(()=>{
+   const ovc = $('ov-astro'), ovx = ovc.getContext('2d');
+   { const d = Math.min(window.devicePixelRatio || 1, 3); ovc.width = ovc.height = Math.round(64 * d); }
+   function drawOv() {
+-    if (overlay.classList.contains('hidden') || !ovc.offsetParent) return;
++    if (overlay.hidden || !ovc.offsetParent) return;
+     const w = ovc.width, t = performance.now() / 1000;
+     ovx.setTransform(1, 0, 0, 1, 0, 0); ovx.clearRect(0, 0, w, w);
+     if (s.over) {
+@@ -990,18 +1132,20 @@ const SONG_ASTRO=(()=>{
+     requestAnimationFrame(loop);
+   }
+ 
+-  // ── Entrada: toda la pantalla es botón (en vertical el pulgar queda lejos de la franja de juego) ──
++  // ── Entrada: durante la partida toda la pantalla es botón de salto (en vertical el pulgar queda lejos de la franja).
++  //    Reintentar tras un impacto y reanudar la pausa exigen activar su botón: ningún toque suelto reinicia por accidente (SRC-A01). ──
+   const canRestart = () => s.over && performance.now() - s.overAt > 600;
+-  function primary() {
++  function primary() {   // teclado sobre la superficie de juego (canvas/body)
+     if (s.paused) { pause(false); return; }
+     if (s.running) { press(); return; }
+-    if (!s.over || canRestart()) start();
++    if (!s.over) start();
+   }
+-  const UI_SEL = '#back, #play, #snd, #pause, .lang-seg';
++  const UI_SEL = '#back, #play, #snd, #pause, .lang-seg, .ov-row, #ov-catalog, #confirm';
+   document.addEventListener('pointerdown', e => {
+     if (e.button > 0 || e.target.closest(UI_SEL)) return;
+     e.preventDefault();
+-    primary();
++    if (s.running && !s.paused) press();
++    else if (!s.running && !s.over && overlay.dataset.kind !== 'pause') start();   // pantalla de inicio: un toque despega
+   });
+   const up = () => { if (s.hold) release(); };
+   document.addEventListener('pointerup', up);
+@@ -1010,17 +1154,33 @@ const SONG_ASTRO=(()=>{
+     e.stopPropagation();
+     if (s.paused) pause(false); else if (!s.over || canRestart()) start();
+   });
+-  pauseBtn.addEventListener('click', e => { e.stopPropagation(); pause(!s.paused); pauseBtn.blur(); });
++  $('ov-restart').addEventListener('click', e => { e.stopPropagation(); openConfirm('restart', e.currentTarget); });
++  $('ov-menu').addEventListener('click', e => { e.stopPropagation(); openConfirm('menu', e.currentTarget); });
++  $('cf-stay').addEventListener('click', e => { e.stopPropagation(); closeConfirm(false); });
++  $('cf-go').addEventListener('click', e => { e.stopPropagation(); closeConfirm(true); });
++  pauseBtn.addEventListener('click', e => { e.stopPropagation(); pause(!s.paused); });
+   const JUMP_KEYS = ['Space', 'ArrowUp', 'KeyW'];
++  const EDITABLE = 'input, select, textarea, [contenteditable="true"]';
++  const CONTROL = 'button, a, input, select, textarea, [contenteditable="true"], [role="button"]';
+   window.addEventListener('keydown', e => {
+-    if (e.target.closest && e.target.closest('.ja, .lang-seg')) return;   // teclas dentro del panel de sonido o del selector de idioma
+-    if (e.code === 'Escape' || e.code === 'KeyP') {
++    if (e.defaultPrevented) return;
++    const t = e.target && e.target.closest ? e.target : document.body;
++    if (t.closest('.ja, .lang-seg')) return;   // teclas dentro del panel de sonido o del selector de idioma
++    if (!confirmEl.hidden) {   // diálogo de confirmación: Escape cancela, Tab se queda dentro
++      if (e.code === 'Escape') { e.preventDefault(); closeConfirm(false); }
++      else if (e.key === 'Tab') trapTab(confirmEl, e);
++      return;
++    }
++    if (e.ctrlKey || e.metaKey || e.altKey) return;
++    if (e.code === 'Escape' || e.code === 'KeyP') {   // atajos de pausa, salvo en campos editables
++      if (t.closest(EDITABLE)) return;
+       if (s.running) { e.preventDefault(); pause(!s.paused); }
+       return;
+     }
++    if (e.key === 'Tab') { if (s.paused && !overlay.hidden) trapTab(overlay, e); return; }
++    if (t.closest(CONTROL)) return;   // Enter/Espacio activan el botón o enlace enfocado, nunca saltan
+     if (e.code === 'ArrowDown' || e.code === 'KeyS') { e.preventDefault(); drop(); return; }
+     if (JUMP_KEYS.includes(e.code) || e.code === 'Enter') {
+-      if (e.target === playBtn && (e.code === 'Space' || e.code === 'Enter')) return;   // el botón ya hace su clic
+       e.preventDefault();
+       if (e.repeat) return;
+       primary();
+@@ -1038,14 +1198,14 @@ const SONG_ASTRO=(()=>{
+   if (document.fonts && document.fonts.ready) document.fonts.ready.then(relayout);
+ 
+   // gancho de pruebas, como window.RAID
+-  window.ASTRO = { state: s, start, press, release, drop, pause, step, get dims() { return { W, H, GROUND, AX, TALL }; } };
++  window.ASTRO = { state: s, start, press, release, drop, pause, step, toMenu, crash, get dims() { return { W, H, GROUND, AX, TALL }; } };
+ 
+   // Vista de muestra para la tarjeta de la home: ?demo
+-  if (best > 0) $('ov-best').style.display = '';
++  overlay.dataset.kind = 'start';
+   applyLang();
+   seedScenery(); layout(); hud();
+   if (/[?&]demo/.test(location.search)) {
+-    overlay.classList.add('hidden'); $('back').style.display = 'none'; $('snd').style.display = 'none';
++    setOverlayVisible(false); $('back').style.display = 'none'; $('snd').style.display = 'none';
+     s.score = 27; s.alt = 38; s.vy = 4; s.frame = 40; hud();
+     for (const [x, h, w] of [[W * 0.42, 40, 26], [W * 0.68, 30, 22], [W * 0.92, 46, 30]]) {
+       const shape = []; for (let i = 0; i < 8; i++) { const ang = i / 8 * Math.PI * 2, r = 0.88 + ((i * 37) % 10) / 40; shape.push([Math.cos(ang) * w / 2 * r, Math.sin(ang) * h / 2 * r]); }

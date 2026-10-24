@@ -1,0 +1,686 @@
+diff --git a/site/box/index.html b/site/box/index.html
+index 4ffe5f4..bfccadf 100644
+--- a/site/box/index.html
++++ b/site/box/index.html
+@@ -2,7 +2,7 @@
+ <html lang="es">
+ <head>
+ <meta charset="utf-8">
+-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
++<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+ <script>
+ /* JET//Games — idioma único para todo el sitio (2026-10-22).
+    Copiar tal cual al principio de cada juego (antes de pintar textos).
+@@ -63,7 +63,9 @@
+ :root{--bg:#0a0512;--bg2:#120a22;--card:#1a1030;--card2:#22163d;--line:rgba(245,240,255,.12);--ink:#f5f2ff;--dim:#9a90b8;--cyan:#00f2cf;--violet:#7700f4;--yellow:#fdd835;--green:#3ddc84;
+ --sat:env(safe-area-inset-top,0px);--sab:env(safe-area-inset-bottom,0px);--sal:env(safe-area-inset-left,0px);--sar:env(safe-area-inset-right,0px);--pad:164px;--side:200px}
+ *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+-html,body{margin:0;height:100%;overflow:hidden;overscroll-behavior:none;touch-action:none;color:var(--ink);font-family:Poppins,system-ui,sans-serif;background:var(--bg)}
++html,body{margin:0;height:100%;overflow:hidden;overscroll-behavior:none;color:var(--ink);font-family:Poppins,system-ui,sans-serif;background:var(--bg)}
++[hidden]{display:none!important}
++.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+ body{background:radial-gradient(120% 80% at 50% -10%,#241145 0%,var(--bg) 60%) fixed,var(--bg)}
+ body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.55;
+  background-image:radial-gradient(circle at 17px 23px,rgba(255,255,255,.7) 0 .7px,transparent 1.3px),radial-gradient(circle at 81px 61px,rgba(200,190,255,.6) 0 .6px,transparent 1.2px),radial-gradient(circle at 43px 117px,rgba(0,242,207,.5) 0 .8px,transparent 1.4px),radial-gradient(circle at 130px 140px,rgba(255,255,255,.45) 0 .9px,transparent 1.5px);
+@@ -79,44 +81,53 @@ header{display:flex;align-items:center;gap:7px;padding:4px 2px 6px}
+ .back:hover,.back:active,.back:focus-visible{color:var(--cyan)}
+ .back:focus{outline:none}.back:focus-visible{outline:2px solid var(--cyan);outline-offset:1px}
+ .ib{position:relative}.ib::after{content:"";position:absolute;inset:-4px -3px}
+-.seg{display:flex;align-items:center;height:40px;padding:3px;border-radius:11px;background:var(--card);border:1px solid var(--line);flex:none}
+-.seg button{position:relative;height:100%;min-width:29px;padding:0 5px;border-radius:8px;font:800 12px 'JetBrains Mono',monospace;letter-spacing:.04em;color:var(--dim);transition:color .15s,background .15s}
+-.seg button::after{content:"";position:absolute;inset:-6px -1px}
+-.seg i{width:1px;height:14px;background:var(--line);flex:none}
++/* ES / EN: cada opción es un botón nativo de 44×44 px como mínimo, separadas 8 px, sin separador ni pseudoelementos (RSP-LANGUAGE-TARGETS-01) */
++.seg{display:flex;align-items:center;gap:8px;min-height:52px;height:auto;padding:3px;border-radius:14px;background:var(--card);border:1px solid var(--line);flex:none}
++.seg button{position:relative;flex:none;min-width:44px;min-height:44px;height:auto;padding:0 6px;border-radius:10px;font:800 12px 'JetBrains Mono',monospace;letter-spacing:.04em;color:var(--dim);transition:color .15s,background .15s}
++.seg i{display:none}
+ .seg button.on{color:var(--cyan);background:rgba(0,242,207,.13)}
+ .seg button:active{transform:scale(.94)}
+-.ja-p .seg{height:32px;padding:2px;justify-self:start}.ja-p .seg button{min-width:34px}
++.ja-p .seg{justify-self:start}
+ .ja-lg{cursor:default}.ja-lg svg{width:18px;height:18px;color:#b5a8d8}
+-@media (max-width:359px){header{gap:5px}.ib{width:36px}.seg button{min-width:25px;padding:0 4px}.brand{font-size:19px}}
+ .spacer{flex:1}
++/* teléfonos compactos: cabecera en dos filas (marca + sonido / idioma + ayuda + niveles) */
++@media (max-width:419px){
++ header{display:grid;grid-template-columns:minmax(0,1fr) 44px 44px;gap:8px;align-items:center}
++ .bblock{grid-row:1;grid-column:1/3}.ja{grid-row:1;grid-column:3}#segLang{grid-row:2;grid-column:1;justify-self:start}#btnHelp{grid-row:2;grid-column:2}#btnLevels{grid-row:2;grid-column:3}
++ .spacer{display:none}.ib{width:44px;height:44px}
++}
++@media (max-width:359px){.brand{font-size:19px}}
+ .ib{width:40px;height:40px;border-radius:11px;background:var(--card);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--dim);transition:color .15s,border-color .15s,transform .1s;flex:none}
+ .ib:active{transform:scale(.92)}
+ .ib svg{width:17px;height:17px;display:block}
+ .ib.on{color:var(--cyan);border-color:rgba(0,242,207,.5)}
+ #hud{display:flex;align-items:stretch;gap:6px;padding:0 0 6px}
++/* selector de nivel: flechas y nombre son botones de 44 px como mínimo (RSP-BOX-03) */
+ .lnav{display:flex;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:2px;flex:1.35;min-width:0}
+-.lnav button{width:34px;height:100%;min-height:36px;display:flex;align-items:center;justify-content:center;color:var(--cyan);border-radius:9px;flex:none}
+-.lnav button:disabled{color:#3d3358;cursor:default}
+-.lnav button svg{width:14px;height:14px}
+-.lname{flex:1;text-align:center;line-height:1.05;min-width:0;cursor:pointer;border-radius:8px;padding:2px 0}.lname:active{background:rgba(255,255,255,.05)}
++.lnav .arr{width:44px;min-width:44px;height:100%;min-height:44px;display:flex;align-items:center;justify-content:center;color:var(--cyan);border-radius:9px;flex:none}
++.lnav .arr:disabled{color:#3d3358;cursor:default}
++.lnav .arr svg{width:14px;height:14px}
++.lname{flex:1;min-height:44px;text-align:center;line-height:1.05;min-width:0;cursor:pointer;border-radius:8px;padding:2px 0;display:flex;flex-direction:column;align-items:center;justify-content:center}.lname:active{background:rgba(255,255,255,.05)}
+ .lname small{display:block;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);font-weight:600}
+ .lname b{font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:800}
+ .lname b i{font-style:normal;color:var(--dim);font-size:11px;font-weight:600}
+ .stat{flex:1;background:var(--card);border:1px solid var(--line);border-radius:12px;text-align:center;padding:4px 2px;line-height:1.05;min-width:0}
+ .stat small{display:block;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+-.stat b{font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:800;display:block;transition:color .2s}
++.stat b{font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:800;display:block;transition:color .2s;font-variant-numeric:tabular-nums}
+ .stat.par b{color:var(--yellow)}
+ .stat.over b{color:#ff8a7a}
+-@media (max-width:359px){.lnav{flex:2}.lnav button{width:28px}}
+-#stage{flex:1;position:relative;min-height:0;min-width:0;touch-action:none}
++@media (max-width:419px){#hud{flex-wrap:wrap;gap:8px 6px}.lnav{flex:1 1 100%}.stat{flex:1 1 0}}
++#stage{flex:1;position:relative;min-height:0;min-width:0;touch-action:none;outline:none}
++#stage:focus-visible{box-shadow:0 0 0 2px var(--cyan) inset;border-radius:12px}
+ #cv{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:block;touch-action:none}
+ #ctrl{display:flex;align-items:center;justify-content:center;gap:clamp(14px,6vw,40px);padding:8px 0 2px}
+ .rb{display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--dim);font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
++.rb .lbl{max-width:88px;text-align:center;line-height:1.2}
+ .rb .circ{width:56px;height:56px;border-radius:50%;background:var(--card);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--ink);transition:transform .1s,background .15s,border-color .15s;box-shadow:0 4px 14px rgba(0,0,0,.35)}
+ .rb .circ svg{width:22px;height:22px}
+ .rb:active .circ{transform:scale(.9);background:var(--card2);border-color:rgba(0,242,207,.5)}
+ .rb:disabled{opacity:.4}
+-#dpad{position:relative;width:var(--pad);height:var(--pad);flex:none;display:none}
++#dpad{position:relative;width:var(--pad);height:var(--pad);flex:none;display:none;touch-action:none}
+ body.touch #dpad{display:block}
+ #dpad::before{content:"";position:absolute;inset:4%;border-radius:50%;background:radial-gradient(circle,rgba(119,0,244,.16),rgba(26,16,48,.6) 70%);border:1px solid var(--line)}
+ .dp{position:absolute;width:35%;height:35%;border-radius:14px;background:var(--card2);border:1px solid rgba(245,240,255,.16);display:flex;align-items:center;justify-content:center;color:var(--cyan);box-shadow:0 3px 0 rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.06);transition:transform .08s,background .12s,box-shadow .12s;touch-action:none}
+@@ -130,21 +141,22 @@ body:not(.touch) #keys{display:block}
+ .kc{display:inline-block;min-width:22px;padding:0 6px;height:22px;line-height:20px;border-radius:6px;border:1px solid var(--line);background:var(--card);font:700 11px 'JetBrains Mono',monospace;color:var(--ink);margin:0 1px}
+ footer{font-size:10px;color:var(--dim);text-align:center;padding-top:4px}footer a{color:var(--cyan);text-decoration:none}
+ 
+-/* landscape layout */
+-body.land #app{display:grid;max-width:none;column-gap:14px;grid-template-columns:var(--side) minmax(0,1fr) var(--side);grid-template-rows:auto auto minmax(0,1fr) auto auto;grid-template-areas:"top stage pad" "hud stage pad" ". stage pad" "acts stage pad" "foot stage pad"}
++/* landscape layout (PLAY-BOX-02): franja compacta a la izquierda (nivel, objetivo, contadores) y acciones Deshacer/Reiniciar
++   alineadas debajo del tablero; la cruceta o las teclas quedan en la columna derecha. El tablero se escala desde #stage. */
++body.land #app{display:grid;max-width:none;column-gap:14px;grid-template-columns:var(--side) minmax(0,1fr) var(--side);grid-template-rows:auto auto minmax(0,1fr) auto;grid-template-areas:"top stage pad" "hud stage pad" ". stage pad" "foot acts pad"}
+ body.land header{grid-area:top;flex-wrap:wrap;row-gap:8px;padding:2px 0 8px}
+ body.land .bblock{width:100%}
+ body.land header{gap:5px}body.land .ib{width:36px;height:36px;border-radius:10px}body.land .ib svg{width:15px;height:15px}
+ @media (min-width:1000px){body.land header{gap:7px}body.land .ib{width:40px;height:40px}}
+ body.land #hud{grid-area:hud;flex-wrap:wrap;gap:6px}
+-body.land .lnav{flex:1 1 100%;min-height:42px}
++body.land .stat small{font-size:8.5px;letter-spacing:.03em}
++body.land .lnav{flex:1 1 100%;min-height:44px}
+ body.land #stage{grid-area:stage}
+ body.land #ctrl{display:contents}
+-body.land #bUndo{grid-area:acts;justify-self:start;align-self:end}
+-#bRestart.arm .circ{border-color:#fdd835!important;color:#fdd835!important;box-shadow:0 0 18px rgba(253,216,53,.45)}
+-body.land #bRestart{grid-area:acts;justify-self:end;align-self:end}
++body.land #bUndo{grid-area:acts;justify-self:center;align-self:start;transform:translateX(-64px);padding-top:8px}
++body.land #bRestart{grid-area:acts;justify-self:center;align-self:start;transform:translateX(64px);padding-top:8px}
+ body.land #dpad,body.land #keys{grid-area:pad;align-self:center;justify-self:center}
+-body.land footer{grid-area:foot;text-align:left;padding-top:8px}
++body.land footer{grid-area:foot;text-align:left;padding-top:8px;align-self:end}
+ body.land .rb .circ{width:60px;height:60px}
+ 
+ @media (max-height:520px){
+@@ -157,9 +169,11 @@ body.land .rb .circ{width:60px;height:60px}
+ @media (max-height:400px){ body.land footer{display:none} }
+ 
+ /* modals */
+-.modal-bg{position:fixed;inset:0;background:rgba(5,2,12,.72);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:calc(14px + var(--sat)) calc(14px + var(--sar)) calc(14px + var(--sab)) calc(14px + var(--sal));z-index:20;opacity:0;pointer-events:none;transition:opacity .2s}
+-.modal-bg.show{opacity:1;pointer-events:auto}
+-.modal{background:linear-gradient(180deg,#1a0f33,var(--bg2));border:1px solid var(--line);border-radius:22px;padding:20px;width:min(440px,100%);max-height:100%;overflow:auto;touch-action:pan-y;box-shadow:0 20px 60px rgba(0,0,0,.6),0 0 0 1px rgba(119,0,244,.15);transform:translateY(14px) scale(.97);transition:transform .25s cubic-bezier(.2,.9,.3,1.2)}
++/* Modales (RSP-BOX-01): cerrados llevan hidden + inert (display:none), abiertos .show; el fondo #app queda inert mientras hay uno abierto */
++.modal-bg{position:fixed;inset:0;background:rgba(5,2,12,.72);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:calc(14px + var(--sat)) calc(14px + var(--sar)) calc(14px + var(--sab)) calc(14px + var(--sal));z-index:20;opacity:0;transition:opacity .2s}
++.modal-bg.show{opacity:1}
++.modal{background:linear-gradient(180deg,#1a0f33,var(--bg2));border:1px solid var(--line);border-radius:22px;padding:20px;width:min(440px,100%);max-height:100%;overflow:auto;touch-action:pan-y pinch-zoom;box-shadow:0 20px 60px rgba(0,0,0,.6),0 0 0 1px rgba(119,0,244,.15);transform:translateY(14px) scale(.97);transition:transform .25s cubic-bezier(.2,.9,.3,1.2)}
++@media (prefers-reduced-motion:reduce){.modal-bg,.modal{transition:none}.modal-bg.show .wstars svg{animation:none;transform:none;opacity:1}}
+ .modal-bg.show .modal{transform:none}
+ .modal h2{margin:0 0 6px;font-size:22px;letter-spacing:-.01em}
+ .modal p{color:var(--dim);margin:6px 0;font-size:14px;line-height:1.5}
+@@ -201,7 +215,7 @@ body.land .rb .circ{width:60px;height:60px}
+ .lhead h2{margin:0;flex:1}
+ .stot{font:800 14px 'JetBrains Mono',monospace;color:var(--yellow);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:6px 10px}
+ .lvls{display:flex;flex-direction:column;overflow:hidden}
+-.lgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(58px,1fr));gap:8px;grid-auto-rows:max-content;align-content:start;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;min-height:0;flex:1 1 auto;padding:2px 4px 2px 2px;margin:0 -4px 0 -2px}
++.lgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(58px,1fr));gap:8px;grid-auto-rows:max-content;align-content:start;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y pinch-zoom;min-height:0;flex:1 1 auto;padding:2px 4px 2px 2px;margin:0 -4px 0 -2px}
+ @media (min-width:520px){.lgrid{grid-template-columns:repeat(auto-fill,minmax(68px,1fr))}}
+ @media (orientation:landscape) and (min-width:700px){.lvls{width:min(860px,100%)}}
+ .lt{position:relative;aspect-ratio:1;border-radius:14px;background:var(--card);border:1px solid var(--line);overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:transform .1s,border-color .15s}
+@@ -212,18 +226,26 @@ body.land .rb .circ{width:60px;height:60px}
+ .lt .st i{font-style:normal}.lt .st i.on{color:var(--yellow)}
+ .lt.cur{border-color:var(--cyan);box-shadow:0 0 0 1px var(--cyan),0 0 16px rgba(0,242,207,.25)}
+ .lt.done{background:linear-gradient(180deg,#1d1438,#17102c)}
+-.lt.lock{background:#120b22;color:#4a4066;cursor:default}
+-.lt.lock canvas{opacity:.12}
+-.lt.lock .n{color:#4a4066}
+-.lt .lk{position:absolute;bottom:9%;width:13px;height:13px;color:#4a4066}
++/* niveles bloqueados: número, mapa y candado siguen legibles (PLAY-BOX-04) */
++.lt.lock{background:#120b22;color:#8a7fa8;cursor:default;border-style:dashed}
++.lt.lock canvas{opacity:.3}
++.lt.lock .n{color:#a99ec4}
++.lt .lk{position:absolute;bottom:9%;width:14px;height:14px;color:#a99ec4}
++.lt.avail{border-color:rgba(0,242,207,.35)}
+ .toast{position:fixed;left:50%;top:calc(64px + var(--sat));transform:translate(-50%,-8px);background:#fff;color:#111;font-weight:700;padding:9px 16px;border-radius:12px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:30;font-size:14px;white-space:nowrap}
+ .toast.show{opacity:1;transform:translate(-50%,0)}
+ /* panel de sonido (música propia «Estación Kepler» + efectos) */
+ .ja{position:relative;flex:none}.ja .ja-off{display:none}.ja.mute .ja-off{display:inline}.ja.mute .ja-on{display:none}
+-.ja-p{position:absolute;top:calc(100% + 8px);right:0;z-index:40;min-width:212px;padding:8px 10px;display:none;flex-direction:column;gap:4px;background:rgba(14,8,28,.96);border:1px solid rgba(119,0,244,.45);border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.5)}
++.ja-p{position:absolute;top:calc(100% + 8px);right:0;z-index:40;min-width:262px;padding:8px 10px;display:none;flex-direction:column;gap:4px;background:rgba(14,8,28,.96);border:1px solid rgba(119,0,244,.45);border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.5);touch-action:pan-y pinch-zoom}
+ .ja.open .ja-p{display:flex}
+-.ja-r{display:grid;grid-template-columns:20px 64px 1fr;align-items:center;gap:8px;min-height:36px;cursor:pointer;font:600 10.5px 'JetBrains Mono',ui-monospace,monospace;letter-spacing:1px;text-transform:uppercase;color:#e8e6ff;user-select:none;-webkit-user-select:none}
+-.ja-r input[type=checkbox]{width:18px;height:18px;accent-color:#7700f4;margin:0;cursor:pointer}.ja-r input[type=range]{width:100%;accent-color:#00f2cf;margin:0;cursor:pointer}.ja-r input[type=range]:disabled{opacity:.35}
++.ja-r{display:grid;grid-template-columns:20px 64px 1fr 38px;align-items:center;gap:8px;min-height:44px;font:600 10.5px 'JetBrains Mono',ui-monospace,monospace;letter-spacing:1px;text-transform:uppercase;color:#e8e6ff;user-select:none;-webkit-user-select:none}
++.ja-r label{cursor:pointer}
++.ja-r input[type=checkbox]{width:18px;height:18px;accent-color:#7700f4;margin:0;cursor:pointer}.ja-r input[type=range]{width:100%;min-height:44px;accent-color:#00f2cf;margin:0;cursor:pointer}.ja-r input[type=range]:disabled{opacity:.35}
++.ja-r input:focus-visible{outline:2px solid #00f2cf;outline-offset:2px}
++.ja-o{font-variant-numeric:tabular-nums;text-align:right;color:#b5a8d8;letter-spacing:0}
++.ja-mute{min-height:44px;margin-top:2px;padding:0 12px;border-radius:10px;border:1px solid rgba(119,0,244,.5);background:rgba(119,0,244,.14);color:#e8e6ff;font:600 11px 'JetBrains Mono',monospace;letter-spacing:1px;text-transform:uppercase}
++.ja-mute:disabled{opacity:.45;cursor:default}
++.ja-lg{grid-template-columns:20px 64px 1fr}
+ </style>
+ </head>
+ <body>
+@@ -231,19 +253,20 @@ body.land .rb .circ{width:60px;height:60px}
+   <header>
+     <div class="bblock"><a class="back" href="https://jetgames.fun/" data-ia="back" aria-label="Volver a JET//Games"><svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>JET//Games</a><div class="brand">JET<span class="sl">//</span>Box</div></div>
+     <div class="spacer"></div>
+-    <div class="seg" id="segLang" role="group" data-ia="lang" aria-label="Idioma"><button type="button" data-l="es" lang="es">ES</button><i aria-hidden="true"></i><button type="button" data-l="en" lang="en">EN</button></div>
++    <div class="seg" id="segLang" role="group" data-ia="lang" aria-label="Idioma"><button type="button" data-l="es" lang="es">ES</button><button type="button" data-l="en" lang="en">EN</button></div>
+     <button class="ib" id="btnHelp" aria-label="Cómo jugar"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7.2 7.4a2.9 2.9 0 1 1 4.2 2.6c-.9.5-1.4 1.1-1.4 2.1v.6"/><circle cx="10" cy="15.6" r=".6" fill="currentColor"/></svg></button>
+     <button class="ib" id="btnLevels" aria-label="Niveles"><svg viewBox="0 0 20 20" fill="currentColor"><rect x="2.5" y="2.5" width="6" height="6" rx="1.6"/><rect x="11.5" y="2.5" width="6" height="6" rx="1.6"/><rect x="2.5" y="11.5" width="6" height="6" rx="1.6"/><rect x="11.5" y="11.5" width="6" height="6" rx="1.6" opacity=".45"/></svg></button>
+   </header>
+   <div id="hud">
+-    <div class="lnav"><button id="lPrev" aria-label="Nivel anterior"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2.5L4.5 7 9 11.5"/></svg></button><div class="lname"><small data-i="level">Nivel</small><b id="lNum">01</b></div><button id="lNext" aria-label="Nivel siguiente"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 2.5L9.5 7 5 11.5"/></svg></button></div>
+-    <div class="stat" id="stMoves"><small data-i="moves">Mov.</small><b id="sMoves">0</b></div>
++    <div class="lnav"><button class="arr" id="lPrev" aria-label="Nivel anterior"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2.5L4.5 7 9 11.5"/></svg></button><button type="button" class="lname" id="lName" aria-label="Elegir nivel"><small data-i="level">Nivel</small><b id="lNum">01</b></button><button class="arr" id="lNext" aria-label="Nivel siguiente"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 2.5L9.5 7 5 11.5"/></svg></button></div>
++    <div class="stat" id="stMoves"><small data-i="moves">Movimientos</small><b id="sMoves">0</b></div>
+     <div class="stat" id="stPush"><small data-i="pushes">Empujes</small><b id="sPush">0</b></div>
+-    <div class="stat par"><small data-i="par">Par</small><b id="sPar">0</b></div>
++    <div class="stat par" id="stPar"><small data-i="par">Objetivo</small><b id="sPar">0</b></div>
+   </div>
+-  <div id="stage"><canvas id="cv"></canvas></div>
++  <div id="stage" tabindex="0" role="application" aria-label="Tablero" data-ia="board"><canvas id="cv"></canvas></div>
++  <div id="a11y" class="sr" aria-live="polite" aria-atomic="true"></div>
+   <div id="ctrl">
+-    <button class="rb" id="bUndo"><span class="circ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></span><span data-i="undo">Deshacer</span></button>
++    <button class="rb" id="bUndo"><span class="circ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></span><span class="lbl" data-i="undo">Deshacer movimiento</span></button>
+     <div id="dpad" data-ia="pad" aria-label="Controles de dirección">
+       <button class="dp u" data-d="u" data-ia="u" aria-label="Arriba"><svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 4l7 9H3z"/></svg></button>
+       <button class="dp l" data-d="l" data-ia="l" aria-label="Izquierda"><svg viewBox="0 0 20 20" fill="currentColor"><path d="M4 10l9-7v14z"/></svg></button>
+@@ -252,23 +275,23 @@ body.land .rb .circ{width:60px;height:60px}
+       <div class="hub">//</div>
+     </div>
+     <div id="keys"></div>
+-    <button class="rb" id="bRestart"><span class="circ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v5h5"/></svg></span><span data-i="restart">Reiniciar</span></button>
++    <button class="rb" id="bRestart"><span class="circ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v5h5"/></svg></span><span class="lbl" data-i="restart">Reiniciar nivel</span></button>
+   </div>
+   <footer>© 2026 JETCompany OÜ</footer>
+ </div>
+ 
+-<div class="modal-bg" id="mHelp"><div class="modal"><h2 data-i="howto">Cómo jugar</h2><div id="hBody"></div><div class="acts"><button class="btn primary" data-close data-i="go">¡Vamos!</button></div></div></div>
++<div class="modal-bg" id="mHelp" hidden><div class="modal" role="dialog" aria-modal="true" aria-labelledby="hTitle"><h2 id="hTitle" data-i="howto">Cómo jugar</h2><div id="hBody"></div><div class="acts"><button class="btn primary" data-close data-i="go">Comenzar nivel</button></div></div></div>
+ 
+-<div class="modal-bg" id="mWin"><div class="modal win">
+-  <div class="wstars"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.5l2.9 6 6.6.8-4.9 4.5 1.3 6.5L12 17l-5.9 3.3 1.3-6.5L2.5 9.3l6.6-.8z"/></svg><svg class="mid" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.5l2.9 6 6.6.8-4.9 4.5 1.3 6.5L12 17l-5.9 3.3 1.3-6.5L2.5 9.3l6.6-.8z"/></svg><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.5l2.9 6 6.6.8-4.9 4.5 1.3 6.5L12 17l-5.9 3.3 1.3-6.5L2.5 9.3l6.6-.8z"/></svg></div>
++<div class="modal-bg" id="mWin" hidden><div class="modal win" role="dialog" aria-modal="true" aria-labelledby="wTitle" aria-describedby="wSub">
++  <div class="wstars" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.5l2.9 6 6.6.8-4.9 4.5 1.3 6.5L12 17l-5.9 3.3 1.3-6.5L2.5 9.3l6.6-.8z"/></svg><svg class="mid" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.5l2.9 6 6.6.8-4.9 4.5 1.3 6.5L12 17l-5.9 3.3 1.3-6.5L2.5 9.3l6.6-.8z"/></svg><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.5l2.9 6 6.6.8-4.9 4.5 1.3 6.5L12 17l-5.9 3.3 1.3-6.5L2.5 9.3l6.6-.8z"/></svg></div>
+   <h2 id="wTitle"></h2><p id="wSub"></p>
+-  <div class="wstats"><div><span data-i="moves2">Movimientos</span><b id="wMoves"></b></div><div><span data-i="par">Par</span><b id="wPar" style="color:var(--yellow)"></b></div><div><span data-i="pushes">Empujes</span><b id="wPush"></b></div></div>
++  <div class="wstats"><div><span data-i="moves2">Movimientos</span><b id="wMoves"></b></div><div><span data-i="par">Objetivo</span><b id="wPar" style="color:var(--yellow)"></b></div><div><span data-i="pushes">Empujes</span><b id="wPush"></b></div></div>
+   <p class="wbest" id="wBest"></p>
+-  <div class="acts"><button class="btn" id="wLevels" data-i="levels">Niveles</button><button class="btn" id="wReplay" data-i="replay">Repetir</button><button class="btn primary" id="wNext" data-i="next">Siguiente</button></div>
++  <div class="acts"><button class="btn" id="wLevels" data-i="levels">Ver niveles</button><button class="btn" id="wReplay" data-i="replay">Repetir nivel</button><button class="btn primary" id="wNext" data-i="next">Siguiente nivel</button></div>
+ </div></div>
+ 
+-<div class="modal-bg" id="mLevels"><div class="modal lvls">
+-  <div class="lhead"><h2 data-i="levels">Niveles</h2><span class="stot" id="sTot">★ 0/180</span><button class="ib" data-close data-ia="close" aria-label="Cerrar"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 5l10 10M15 5L5 15"/></svg></button></div>
++<div class="modal-bg" id="mLevels" hidden><div class="modal lvls" role="dialog" aria-modal="true" aria-labelledby="lTitle">
++  <div class="lhead"><h2 id="lTitle" data-i="levels">Ver niveles</h2><span class="stot" id="sTot">★ 0/180</span><button class="ib" data-close data-ia="close" aria-label="Cerrar"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 5l10 10M15 5L5 15"/></svg></button></div>
+   <div class="lgrid" id="lGrid"></div>
+   <p id="lTip" style="text-align:center;font-size:12px;margin-top:12px"></p>
+ </div></div>
+@@ -371,27 +394,46 @@ function JetAudioUI(o){
+  const K=o.key,def={m:1,mv:.7,s:1,sv:.8};let P=Object.assign({},def,o.initial||{});
+  try{Object.assign(P,JSON.parse(localStorage.getItem(K)||'{}'));}catch(e){}
+  const save=()=>{try{localStorage.setItem(K,JSON.stringify(P));}catch(e){}};
+- const tx=o.tx||{music:'Música',sfx:'Efectos',label:'Sonido'};
++ const TXD={music:'Música',sfx:'Efectos',label:'Sonido',on:'Sonido activado',off:'Sonido desactivado',mute:'Silenciar todo',musicVol:'Volumen de música',sfxVol:'Volumen de efectos'};
++ let tx=Object.assign({},TXD,o.tx||{});
++ const uid='ja'+Math.random().toString(36).slice(2,7);
+  const wrap=document.createElement('div');wrap.className='ja';
+- wrap.innerHTML=`<button type="button" class="ja-b ${o.btnClass||''}" ${o.btnId?'id="'+o.btnId+'"':''} aria-label="${tx.label}" aria-expanded="false"><svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h3l4-3.5v11L6 12H3z" fill="currentColor" stroke="none"/><g class="ja-on"><path d="M13 7.5a3.5 3.5 0 0 1 0 5"/><path d="M15.5 5a7 7 0 0 1 0 10"/></g><g class="ja-off"><path d="M13.5 7.5l5 5M18.5 7.5l-5 5"/></g></svg></button>
+- <div class="ja-p" role="dialog" aria-label="${tx.label}"><label class="ja-r"><input type="checkbox" data-k="m"><span class="ja-tm">${tx.music}</span><input type="range" min="0" max="1" step="0.05" data-v="mv" aria-label="${tx.music}"></label><label class="ja-r"><input type="checkbox" data-k="s"><span class="ja-ts">${tx.sfx}</span><input type="range" min="0" max="1" step="0.05" data-v="sv" aria-label="${tx.sfx}"></label></div>`;
++ wrap.innerHTML=`<button type="button" class="ja-b ${o.btnClass||''}" ${o.btnId?'id="'+o.btnId+'"':''} aria-label="${tx.label}" aria-haspopup="dialog" aria-expanded="false"><svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h3l4-3.5v11L6 12H3z" fill="currentColor" stroke="none"/><g class="ja-on"><path d="M13 7.5a3.5 3.5 0 0 1 0 5"/><path d="M15.5 5a7 7 0 0 1 0 10"/></g><g class="ja-off"><path d="M13.5 7.5l5 5M18.5 7.5l-5 5"/></g></svg></button>
++ <div class="ja-p" role="dialog" aria-label="${tx.label}">
++  <div class="ja-r"><input type="checkbox" id="${uid}-m" data-k="m"><label for="${uid}-m" class="ja-tm">${tx.music}</label><input type="range" min="0" max="1" step="0.05" data-v="mv" aria-label="${tx.musicVol}"><output class="ja-o" data-o="mv" aria-hidden="true"></output></div>
++  <div class="ja-r"><input type="checkbox" id="${uid}-s" data-k="s"><label for="${uid}-s" class="ja-ts">${tx.sfx}</label><input type="range" min="0" max="1" step="0.05" data-v="sv" aria-label="${tx.sfxVol}"><output class="ja-o" data-o="sv" aria-hidden="true"></output></div>
++  <button type="button" class="ja-mute">${tx.mute}</button>
++ </div>`;
+  if(o.before)o.before.parentNode.insertBefore(wrap,o.before);else (o.parent||document.body).appendChild(wrap);
+- const btn=wrap.querySelector('.ja-b'),pop=wrap.querySelector('.ja-p');
++ const btn=wrap.querySelector('.ja-b'),pop=wrap.querySelector('.ja-p'),muteBtn=wrap.querySelector('.ja-mute');
+  let started=false;
+- const apply=()=>{wrap.classList.toggle('mute',!P.m&&!P.s);btn.classList.toggle('on',!!(P.m||P.s));wrap.querySelectorAll('[data-k]').forEach(i=>i.checked=!!P[i.dataset.k]);wrap.querySelectorAll('[data-v]').forEach(i=>{i.value=P[i.dataset.v];i.disabled=!P[i.dataset.v[0]];});
++ const pct=v=>Math.round(v*100)+'%';
++ const apply=()=>{const on=!!(P.m||P.s);wrap.classList.toggle('mute',!on);btn.classList.toggle('on',on);btn.setAttribute('aria-label',on?tx.on:tx.off);muteBtn.disabled=!on;
++  wrap.querySelectorAll('[data-k]').forEach(i=>i.checked=!!P[i.dataset.k]);
++  wrap.querySelectorAll('[data-v]').forEach(i=>{i.value=P[i.dataset.v];i.disabled=!P[i.dataset.v[0]];i.setAttribute('aria-valuetext',pct(P[i.dataset.v]));});
++  wrap.querySelectorAll('[data-o]').forEach(x=>x.textContent=pct(P[x.dataset.o]));
+   if(!JetSong.ctx)return;JetSong.setMusic(P.m?P.mv*(o.mlv||1):0);JetSong.setSfx(P.s?P.sv:0);
+   if(P.m&&!document.hidden){if(!JetSong.playing)JetSong.play(o.song);}else if(!P.m&&JetSong.playing)JetSong.stop();};
+  const start=()=>{if(started)return;started=true;JetSong.init();apply();if(o.onStart)o.onStart();};
+  ['pointerdown','keydown','touchend'].forEach(ev=>document.addEventListener(ev,start,{capture:true,passive:true}));
+- btn.addEventListener('click',e=>{e.stopPropagation();start();btn.blur();const op=!wrap.classList.contains('open');wrap.classList.toggle('open',op);btn.setAttribute('aria-expanded',op);if(op){pop.style.left='';pop.style.right='';const r=pop.getBoundingClientRect();if(r.left<6){pop.style.right='auto';pop.style.left=(6-wrap.getBoundingClientRect().left)+'px';}else if(r.right>innerWidth-6){pop.style.left='auto';pop.style.right=(wrap.getBoundingClientRect().right-innerWidth+6)+'px';}}});
++ /* Abrir/cerrar: clase y aria-expanded cambian juntos; al abrir por teclado el foco entra al panel; Escape devuelve el foco al botón (RSP-AUDIO-01) */
++ const isOpen=()=>wrap.classList.contains('open');
++ function setAudioOpen(open,opt){opt=opt||{};wrap.classList.toggle('open',open);btn.setAttribute('aria-expanded',String(open));
++  if(open){pop.style.left='';pop.style.right='';const r=pop.getBoundingClientRect();if(r.left<6){pop.style.right='auto';pop.style.left=(6-wrap.getBoundingClientRect().left)+'px';}else if(r.right>innerWidth-6){pop.style.left='auto';pop.style.right=(wrap.getBoundingClientRect().right-innerWidth+6)+'px';}
++   if(opt.focusFirst){const f=pop.querySelector('input:not(:disabled),button');if(f)f.focus();}}
++  else if(opt.restoreFocus)btn.focus();}
++ let viaPointer=false;
++ btn.addEventListener('pointerdown',()=>{viaPointer=true;});
++ btn.addEventListener('click',e=>{e.stopPropagation();start();const op=!isOpen();setAudioOpen(op,{focusFirst:op&&!viaPointer});viaPointer=false;});
+  wrap.addEventListener('pointerdown',e=>e.stopPropagation());wrap.addEventListener('click',e=>e.stopPropagation());
+- document.addEventListener('pointerdown',e=>{if(!wrap.contains(e.target))wrap.classList.remove('open');});
+- document.addEventListener('keydown',e=>{if(e.key==='Escape')wrap.classList.remove('open');});
+- wrap.querySelectorAll('[data-k]').forEach(i=>i.addEventListener('change',()=>{P[i.dataset.k]=i.checked?1:0;save();apply();i.blur();if(i.dataset.k==='s'&&i.checked&&o.onTest)o.onTest();}));
+- wrap.querySelectorAll('[data-v]').forEach(i=>{i.addEventListener('input',()=>{P[i.dataset.v]=+i.value;save();apply();});i.addEventListener('change',()=>i.blur());});
++ document.addEventListener('pointerdown',e=>{if(isOpen()&&!wrap.contains(e.target))setAudioOpen(false);});
++ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&isOpen()){e.stopPropagation();e.preventDefault();setAudioOpen(false,{restoreFocus:true});}});
++ wrap.querySelectorAll('[data-k]').forEach(i=>i.addEventListener('change',()=>{P[i.dataset.k]=i.checked?1:0;save();apply();if(i.dataset.k==='s'&&i.checked&&o.onTest)o.onTest();}));
++ wrap.querySelectorAll('[data-v]').forEach(i=>i.addEventListener('input',()=>{P[i.dataset.v]=+i.value;save();apply();}));
++ muteBtn.addEventListener('click',()=>{P.m=0;P.s=0;save();apply();btn.focus();});
+  document.addEventListener('visibilitychange',()=>{const c=JetSong.ctx;if(!c)return;if(document.hidden){c.suspend&&c.suspend();}else{c.resume&&c.resume();apply();}});
+  apply();
+- return {setTx(t){wrap.querySelector('.ja-tm').textContent=t.music;wrap.querySelector('.ja-ts').textContent=t.sfx;btn.setAttribute('aria-label',t.label);pop.setAttribute('aria-label',t.label);wrap.querySelectorAll('[data-v=mv]').forEach(i=>i.setAttribute('aria-label',t.music));wrap.querySelectorAll('[data-v=sv]').forEach(i=>i.setAttribute('aria-label',t.sfx));},get prefs(){return P;},sfxOn:()=>!!(P.s&&started),apply,el:wrap,setSong(s){o.song=s;if(JetSong.playing)JetSong.play(s);}};
++ return {setTx(t){tx=Object.assign({},TXD,t||{});wrap.querySelector('.ja-tm').textContent=tx.music;wrap.querySelector('.ja-ts').textContent=tx.sfx;muteBtn.textContent=tx.mute;pop.setAttribute('aria-label',tx.label);wrap.querySelectorAll('[data-v=mv]').forEach(i=>i.setAttribute('aria-label',tx.musicVol));wrap.querySelectorAll('[data-v=sv]').forEach(i=>i.setAttribute('aria-label',tx.sfxVol));apply();},get prefs(){return P;},sfxOn:()=>!!(P.s&&started),apply,el:wrap,setOpen:setAudioOpen,setSong(s){o.song=s;if(JetSong.playing)JetSong.play(s);}};
+ }
+ /* fin JetSong */
+ // «Estación Kepler» · JET//Box · fa lidio tranquilo, 84 BPM
+@@ -434,42 +476,59 @@ try{const old=localStorage.getItem('jetbox.lang');if(old!=null){let v=null;try{v
+  const elegido=/(?:^|;\s*)jet_lang=(es|en)\b/.test(document.cookie)||/^(es|en)$/.test(localStorage.getItem('jet_lang')||'')||/[?&]lang=(es|en)\b/.test(location.search);
+  if(!elegido&&(v==='es'||v==='en')){JETIdioma.set(v);lang=JETIdioma.get();}localStorage.removeItem('jetbox.lang');}}catch(e){}
+ // Sonido: música propia «Estación Kepler» (JetSong) + efectos. Hereda el viejo interruptor 'jetbox.sound' si estaba apagado.
+-const AUD_TX={es:{music:'Música',sfx:'Efectos',label:'Sonido'},en:{music:'Music',sfx:'Effects',label:'Sound'}};
++const AUD_TX={es:{music:'Música',sfx:'Efectos',label:'Sonido',on:'Sonido activado',off:'Sonido desactivado',mute:'Silenciar todo',musicVol:'Volumen de música',sfxVol:'Volumen de efectos'},
++ en:{music:'Music',sfx:'Sound effects',label:'Sound',on:'Sound on',off:'Sound off',mute:'Mute all',musicVol:'Music volume',sfxVol:'Sound effects volume'}};
+ const AUD=JetAudioUI({key:'jetbox.audio',before:$('btnHelp'),btnId:'btnSound',btnClass:'ib',song:SONG_BOX,initial:store.get('sound',null)===false?{m:0,s:0}:{},tx:AUD_TX[lang],onTest:()=>sfx.dock()});
+ (function(){const pp=document.querySelector('.ja-p');if(!pp)return;const r=document.createElement('div');r.className='ja-r ja-lg';
+- r.innerHTML='<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="10" r="7.5"/><path d="M2.5 10h15M10 2.5c2.2 2.3 2.2 12.7 0 15M10 2.5c-2.2 2.3-2.2 12.7 0 15"/></svg><span class="ja-tl"></span><div class="seg" role="group"><button type="button" data-l="es" lang="es">ES</button><i aria-hidden="true"></i><button type="button" data-l="en" lang="en">EN</button></div>';pp.appendChild(r);})();
++ r.innerHTML='<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="10" r="7.5"/><path d="M2.5 10h15M10 2.5c2.2 2.3 2.2 12.7 0 15M10 2.5c-2.2 2.3-2.2 12.7 0 15"/></svg><span class="ja-tl"></span><div class="seg" role="group"><button type="button" data-l="es" lang="es">ES</button><button type="button" data-l="en" lang="en">EN</button></div>';pp.appendChild(r);})();
+ const LV_VER='orig60-2';if(store.get('lv',null)!==LV_VER){try{localStorage.removeItem('jetbox.prog');localStorage.removeItem('jetbox.cur');}catch(e){}store.set('lv',LV_VER);}
+ let prog=store.get('prog',null);if(!prog||typeof prog!=='object')prog={u:1,best:{}};if(!prog.best)prog.best={};if(!(prog.u>=1))prog.u=1;
+ 
+ const STAR='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.5l2.9 6 6.6.8-4.9 4.5 1.3 6.5L12 17l-5.9 3.3 1.3-6.5L2.5 9.3l6.6-.8z"/></svg>';
+ const T={
+- es:{level:'Nivel',moves:'Mov.',moves2:'Movimientos',pushes:'Empujes',par:'Par',undo:'Deshacer',restart:'Reiniciar',levels:'Niveles',howto:'Cómo jugar',go:'¡Vamos!',next:'Siguiente',replay:'Repetir',
+-  win:'¡Carga asegurada!',perfect:'¡Perfecto, en el par!',all:'¡Estación completa!',newBest:'¡Nuevo récord personal!',best:'Tu mejor marca: {n}',sub:'Nivel {n} de {t}',
+-  tipStars:'3 ★ si terminas en el par de movimientos o menos · 2 ★ hasta un {p}% más',locked:'Completa el nivel anterior para desbloquearlo',lockedA:'bloqueado',stars:'{n} de 3 estrellas',restartT:'Reiniciado · deshaz para volver',restartQ:'Pulsa otra vez para reiniciar',sound:'Sonido',
+-  aria:{btnSound:'Sonido',btnHelp:'Cómo jugar',btnLevels:'Niveles',lPrev:'Nivel anterior',lNext:'Nivel siguiente'},
++ es:{level:'Nivel',moves:'Movimientos',moves2:'Movimientos',pushes:'Empujes',par:'Objetivo',parTip:'Par: objetivo de movimientos del nivel',undo:'Deshacer movimiento',restart:'Reiniciar nivel',levels:'Ver niveles',howto:'Cómo jugar',go:'Comenzar nivel',next:'Siguiente nivel',replay:'Repetir nivel',
++  win:'¡Carga asegurada!',perfect:'¡Objetivo perfecto!',all:'¡Estación completa!',newBest:'¡Nuevo récord personal!',best:'Tu mejor marca: {n}',sub:'Nivel {n} de {t}',
++  goalMoves:'Objetivo: {par} movimientos',goalMove1:'Objetivo: 1 movimiento',
++  goalHelp:'Completá el nivel en {par} movimientos o menos para conseguir 3 estrellas. Cada paso y cada empuje cuentan como un movimiento.',
++  goalHelp1:'Completá el nivel en 1 movimiento para conseguir 3 estrellas. Cada paso y cada empuje cuentan como un movimiento.',
++  tipStars:'3 ★ si terminás en el objetivo de movimientos o menos · 2 ★ hasta un {p}% más',locked:'Completá el nivel anterior para desbloquearlo.',lockedA:'bloqueado',stars:'{n} de 3 estrellas',
++  available:'Nivel {n} disponible',completed:'Nivel {n} completado',onTarget:'Contenedor en la plataforma',blocked:'Movimiento bloqueado',posA:'Fila {f}, columna {c}',pushA:'Empuje',
++  restartT:'Reiniciado. Podés deshacer para recuperar el intento.',sound:'Sonido',chooseLevel:'Elegir nivel; nivel {n} de {t}',board:'Tablero: {b} contenedores, {d} en plataforma',
++  aria:{btnHelp:'Cómo jugar',btnLevels:'Ver niveles',lPrev:'Nivel anterior',lNext:'Nivel siguiente'},
+   ia:{back:'Volver a JET//Games',lang:'Idioma',pad:'Cruceta de dirección',u:'Arriba',l:'Izquierda',r:'Derecha',d:'Abajo',close:'Cerrar'},langName:'Idioma',
+   desc:'Puzle de cajas estilo BoxWorld: un astronauta empuja la carga hasta las plataformas de la estación. 60 niveles originales, de la primera caja al último reto.',
+   keys:'<span class="kc">↑</span><span class="kc">←</span><span class="kc">↓</span><span class="kc">→</span> o <span class="kc">WASD</span> mover<br><span class="kc">Z</span> deshacer · <span class="kc">R</span> reiniciar<br>Clic en una casilla para caminar',
+   help:[
+    'Eres el astronauta de carga de la estación <b>JET//Box</b>. Lleva cada contenedor a una <b>plataforma</b> brillante.',
+    'Solo puedes <b>empujar</b>, nunca arrastrar, y solo <b>un contenedor</b> a la vez. Cuidado con las esquinas.',
+-   'Termina en el <b>par</b> de movimientos o menos y ganarás <b>3 estrellas</b>.'],
++   '{goal}'],
+   ctlTouch:'<b>Desliza</b> sobre el tablero (mantén pulsado para repetir) o usa la <b>cruceta</b>. <b>Toca</b> una casilla libre para caminar hasta allí, y toca un contenedor junto a ti para empujarlo. <b>Deshacer</b> no tiene límite.',
+-  ctlKeys:'<b>Flechas</b> o <b>WASD</b> para moverte, <b>Z</b> o <b>U</b> para deshacer y <b>R</b> para reiniciar. También puedes hacer clic en una casilla para caminar hasta allí.'},
+- en:{level:'Level',moves:'Moves',moves2:'Moves',pushes:'Pushes',par:'Par',undo:'Undo',restart:'Restart',levels:'Levels',howto:'How to play',go:'Let’s go!',next:'Next',replay:'Replay',
+-  win:'Cargo secured!',perfect:'Perfect, on par!',all:'Station complete!',newBest:'New personal best!',best:'Your best: {n}',sub:'Level {n} of {t}',
+-  tipStars:'3 ★ for finishing in par or fewer moves · 2 ★ for up to {p}% more',locked:'Finish the previous level to unlock it',lockedA:'locked',stars:'{n} of 3 stars',restartT:'Restarted · undo to go back',restartQ:'Press again to restart',sound:'Sound',
+-  aria:{btnSound:'Sound',btnHelp:'How to play',btnLevels:'Levels',lPrev:'Previous level',lNext:'Next level'},
++  ctlKeys:'<b>Flechas</b> o <b>WASD</b> para moverte, <b>Z</b> o <b>U</b> para deshacer y <b>R</b> para reiniciar (se puede deshacer). También puedes hacer clic en una casilla para caminar hasta allí.'},
++ en:{level:'Level',moves:'Moves',moves2:'Moves',pushes:'Pushes',par:'Target',parTip:'Par: the level’s target move count',undo:'Undo move',restart:'Restart level',levels:'View levels',howto:'How to play',go:'Start level',next:'Next level',replay:'Replay level',
++  win:'Cargo secured!',perfect:'Perfect result!',all:'Station complete!',newBest:'New personal best!',best:'Your best: {n}',sub:'Level {n} of {t}',
++  goalMoves:'Target: {par} moves',goalMove1:'Target: 1 move',
++  goalHelp:'Complete the level in {par} moves or fewer to earn 3 stars. Each step and each push count as one move.',
++  goalHelp1:'Complete the level in 1 move to earn 3 stars. Each step and each push count as one move.',
++  tipStars:'3 ★ for finishing within the target move count · 2 ★ for up to {p}% more',locked:'Complete the previous level to unlock this one.',lockedA:'locked',stars:'{n} of 3 stars',
++  available:'Level {n} available',completed:'Level {n} completed',onTarget:'Container on the platform',blocked:'Move blocked',posA:'Row {f}, column {c}',pushA:'Push',
++  restartT:'Restarted. You can undo to restore your attempt.',sound:'Sound',chooseLevel:'Choose level; level {n} of {t}',board:'Board: {b} containers, {d} on platforms',
++  aria:{btnHelp:'How to play',btnLevels:'View levels',lPrev:'Previous level',lNext:'Next level'},
+   ia:{back:'Back to JET//Games',lang:'Language',pad:'Direction pad',u:'Up',l:'Left',r:'Right',d:'Down',close:'Close'},langName:'Language',
+   desc:'A BoxWorld-style crate puzzle: an astronaut pushes cargo onto the station’s docking pads. 60 original levels, from the first crate to the final challenge.',
+   keys:'<span class="kc">↑</span><span class="kc">←</span><span class="kc">↓</span><span class="kc">→</span> or <span class="kc">WASD</span> move<br><span class="kc">Z</span> undo · <span class="kc">R</span> restart<br>Click a tile to walk there',
+   help:[
+    'You are the cargo astronaut of the <b>JET//Box</b> station. Bring every container onto a glowing <b>pad</b>.',
+    'You can only <b>push</b>, never pull, and just <b>one container</b> at a time. Mind the corners.',
+-   'Finish in <b>par</b> or fewer moves to earn <b>3 stars</b>.'],
++   '{goal}'],
+   ctlTouch:'<b>Swipe</b> on the board (hold to repeat) or use the <b>D-pad</b>. <b>Tap</b> a free tile to walk there, and tap a container next to you to push it. <b>Undo</b> is unlimited.',
+-  ctlKeys:'<b>Arrow keys</b> or <b>WASD</b> to move, <b>Z</b> or <b>U</b> to undo and <b>R</b> to restart. You can also click a tile to walk there.'}
++  ctlKeys:'<b>Arrow keys</b> or <b>WASD</b> to move, <b>Z</b> or <b>U</b> to undo and <b>R</b> to restart (undoable). You can also click a tile to walk there.'}
+ };
++// Paleta compartida entre miniaturas, ayuda y partida (VIS-BOX-04): muro violeta, suelo oscuro, módulo marfil con núcleo ámbar (libre) o cian (acoplado)
++const PAL={wall:'#54459a',floor:'#1a1230',crate:'#f4f1ff',crateEdge:'#2a1a4a',core:'#fdd835',coreOn:'#00f2cf',goal:'#00f2cf',player:'#ffffff',playerEdge:'#1a0f36'};
++const goalText=par=>par===1?t('goalMove1'):t('goalMoves').replace('{par}',par);
++const goalHelp=par=>par===1?t('goalHelp1'):t('goalHelp').replace('{par}',par);
++const RMQ=matchMedia('(prefers-reduced-motion:reduce)');
++let a11yTm=0;function announce(m){const el=$('a11y');if(!el)return;clearTimeout(a11yTm);a11yTm=setTimeout(()=>{el.textContent='';el.textContent=m;},60);}
+ const TWO_STAR=1.3;
+ const t=k=>T[lang][k];
+ 
+@@ -537,10 +596,11 @@ function doMove(d,animate,fast){
+   if(bi>=0){sfx.push();lastBi=bi;}else sfx.step();
+   if(bi>=0)puff(n,d);
+   save();updateHud();
++  if(!queue.length){const[cx,cy]=cellXY(p);announce(t('posA').replace('{f}',cy+1).replace('{c}',cx+1)+(bi>=0?'. '+t('pushA')+(L.goal[bTo]?'. '+t('onTarget'):''):''));}
+  }
+  return true;
+ }
+-function bump(d){anim={k:'b',t0:performance.now(),dur:150,d,pFrom:p,pTo:p,bi:-1};facing=d;queue.length=0;sfx.bump();}
++function bump(d){anim={k:'b',t0:performance.now(),dur:150,d,pFrom:p,pTo:p,bi:-1};facing=d;queue.length=0;sfx.bump();announce(t('blocked'));}
+ function undo(){
+  if(won||overlay())return;finish();queue.length=0;const h=hist.pop();if(!h)return;
+  if(h.k==='r'){const s=h.s;p=s.p;boxes=s.boxes.slice();facing=s.f;moves=s.moves;pushes=s.pushes;path=s.path;dock=boxes.map(b=>L.goal[b]?1:0);sfx.undo();save();updateHud();return;}
+@@ -549,19 +609,21 @@ function undo(){
+  anim={k:'u',t0:performance.now(),dur:95,pFrom,pTo:p,bi:h.bi,bFrom,bTo,d:h.d};
+  sfx.undo();save();updateHud();
+ }
++// Reiniciar nivel: misma acción desde el botón y desde la tecla R; es reversible con Deshacer y lo avisa (SRC-BX02)
+ function restart(){
+  if(overlay())return;finish();queue.length=0;if(moves===0&&!won)return;
+  hist.push({k:'r',s:{p,boxes:boxes.slice(),f:facing,moves,pushes,path}});
+  p=L.p;boxes=L.boxes.slice();facing='d';moves=0;pushes=0;path='';won=false;winT=0;
+- dock=boxes.map(b=>L.goal[b]?1:0);parts=[];sfx.restart();save();updateHud();toast(t('restartT'));
++ dock=boxes.map(b=>L.goal[b]?1:0);parts=[];dockT={};sfx.restart();save();updateHud();toast(t('restartT'));announce(t('restartT'));
+ }
+ function finish(){if(anim){const a=anim;anim=null;endAnim(a);}}
++let dockT={};   // instante de acople de cada módulo: confirmación visual única de 160 ms (VIS-BOX-02)
+ function endAnim(a){
+- if(a.k==='m'&&a.bi>=0){if(L.goal[a.bTo]&&!L.goal[a.bFrom]){sfx.dock();burst(a.bTo);}else if(!L.goal[a.bTo]&&L.goal[a.bFrom])sfx.undock();}
++ if(a.k==='m'&&a.bi>=0){if(L.goal[a.bTo]&&!L.goal[a.bFrom]){sfx.dock();burst(a.bTo);dockT[a.bi]=performance.now();}else if(!L.goal[a.bTo]&&L.goal[a.bFrom])sfx.undock();}
+  if(a.k==='m'&&boxes.every(b=>L.goal[b]))onWin();
+ }
+ function onWin(){
+- won=true;queue.length=0;winT=performance.now();
++ won=true;queue.length=0;winT=performance.now();announce(t('completed').replace('{n}',li+1));
+  const lv=LEVELS[li];const prev=prog.best[li];const nb=prev==null||moves<prev;if(nb)prog.best[li]=moves;
+  if(prog.u<li+2)prog.u=Math.min(LEVELS.length,li+2);store.set('prog',prog);store.set('cur',{l:Math.min(LEVELS.length-1,li+1),p:''});
+  setTimeout(sfx.win,180);boxes.forEach((b,i)=>setTimeout(()=>burst(b,true),120+i*70));
+@@ -613,11 +675,13 @@ function buildStatic(){
+  const c=sctx,S=TS,W=L.W,H=L.H;c.setTransform(DPR,0,0,DPR,0,0);c.clearRect(0,0,CW,CH);
+  const isIn=(x,y)=>x>=0&&y>=0&&x<W&&y<H&&L.inside[y*W+x];
+  const isW=(x,y)=>x>=0&&y>=0&&x<W&&y<H&&L.dw[y*W+x];
+- // floor
+- for(let y=0;y<H;y++)for(let x=0;x<W;x++){if(!isIn(x,y))continue;const X=x*S,Y=y*S;
++ // floor — dos niveles de detalle según el tamaño real de casilla (VIS-BOX-01): con TS<28 sólo relleno alternado y junta de 1 px;
++ // los remaches (alpha máx. .06) no se dibujan en las casillas objetivo. Las dimensiones y límites no cambian.
++ const LOD=S>=28;
++ for(let y=0;y<H;y++)for(let x=0;x<W;x++){if(!isIn(x,y))continue;const X=x*S,Y=y*S,i=y*W+x;
+   c.fillStyle=((x+y)&1)?'#1a1230':'#170f2b';c.fillRect(X,Y,S,S);
+-  c.strokeStyle='rgba(255,255,255,.045)';c.lineWidth=1;c.strokeRect(X+1.5,Y+1.5,S-3,S-3);
+-  c.fillStyle='rgba(255,255,255,.07)';const rv=Math.max(1,S*.035);[[.16,.16],[.84,.16],[.16,.84],[.84,.84]].forEach(([a,b])=>{c.beginPath();c.arc(X+a*S,Y+b*S,rv,0,7);c.fill();});
++  c.strokeStyle=LOD?'rgba(255,255,255,.045)':'rgba(255,255,255,.08)';c.lineWidth=1;c.strokeRect(X+.5,Y+.5,S-1,S-1);
++  if(LOD&&!L.goal[i]){c.fillStyle='rgba(255,255,255,.06)';const rv=Math.max(1,S*.035);[[.16,.16],[.84,.16],[.16,.84],[.84,.84]].forEach(([a,b])=>{c.beginPath();c.arc(X+a*S,Y+b*S,rv,0,7);c.fill();});}
+  }
+  // ambient occlusion from walls
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++){if(!isIn(x,y))continue;const X=x*S,Y=y*S;
+@@ -627,7 +691,8 @@ function buildStatic(){
+  // walls: smooth station hull plating (large plates, no bricks)
+  const bev=Math.max(2,S*.08);const hsh=(x,y)=>((x*73856093)^(y*19349663))>>>0;
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++){if(!isW(x,y))continue;const X=x*S,Y=y*S;
+-  const g=c.createLinearGradient(X,Y,X+S,Y+S);g.addColorStop(0,'#54459a');g.addColorStop(1,'#3a2f74');c.fillStyle=g;c.fillRect(X,Y,S,S);
++  const g=c.createLinearGradient(X,Y,X+S,Y+S);g.addColorStop(0,PAL.wall);g.addColorStop(1,'#3a2f74');c.fillStyle=g;c.fillRect(X,Y,S,S);
++  if(!LOD)continue;   // casilla chica: sin trama diagonal, costuras ni paneles (los biseles siguen abajo)
+   // fine carbon texture
+   c.strokeStyle='rgba(255,255,255,.05)';c.lineWidth=1;c.beginPath();for(let k=-1;k<4;k++){c.moveTo(X+k*S/3,Y+S);c.lineTo(X+k*S/3+S,Y);}c.stroke();
+   // plate seams only every 3 cells, so walls read as big hull plates
+@@ -658,34 +723,40 @@ function buildStatic(){
+  c.stroke();c.restore();
+ }
+ function cellXY(i){return[(i%L.W),((i/L.W)|0)];}
+-function drawPad(c,i,tm){const[x,y]=cellXY(i),S=TS,cx=(x+.5)*S,cy=(y+.5)*S;const occ=boxes.indexOf(i)>=0;const ph=.5+.5*Math.sin(tm*3+(x*1.7+y*2.3));
++/* Meta (VIS-BOX-02): cuatro flechas si está libre, anillo interior estable de 1,5 px mínimo, halo acotado a min(8, .16·S) */
++function drawPad(c,i,tm){const[x,y]=cellXY(i),S=TS,cx=(x+.5)*S,cy=(y+.5)*S;const occ=boxes.indexOf(i)>=0;const ph=RMQ.matches?.5:.5+.5*Math.sin(tm*3+(x*1.7+y*2.3));
+  const g=c.createRadialGradient(cx,cy,0,cx,cy,S*.5);g.addColorStop(0,'rgba(0,242,207,'+(.22+.12*ph)+')');g.addColorStop(1,'rgba(0,242,207,0)');c.fillStyle=g;c.fillRect(cx-S/2,cy-S/2,S,S);
+  c.save();c.translate(cx,cy);
+- c.strokeStyle='rgba(0,242,207,'+(.55+.35*ph)+')';c.lineWidth=Math.max(1.5,S*.05);c.shadowColor='#00f2cf';c.shadowBlur=S*.25;
++ c.strokeStyle='rgba(0,242,207,'+(.55+.35*ph)+')';c.lineWidth=Math.max(1.5,S*.05);c.shadowColor='#00f2cf';c.shadowBlur=Math.min(8,S*.16);
+  c.beginPath();c.arc(0,0,S*.31,0,7);c.stroke();c.shadowBlur=0;
+- c.strokeStyle='rgba(0,242,207,.35)';c.lineWidth=Math.max(1,S*.025);c.setLineDash([S*.06,S*.06]);c.lineDashOffset=-tm*S*.12;c.beginPath();c.arc(0,0,S*.2,0,7);c.stroke();c.setLineDash([]);
++ c.strokeStyle='rgba(0,242,207,.45)';c.lineWidth=Math.max(1.5,S*.03);c.beginPath();c.arc(0,0,S*.2,0,7);c.stroke();
+  if(!occ){c.fillStyle='rgba(0,242,207,'+(.5+.4*ph)+')';for(let k=0;k<4;k++){c.save();c.rotate(k*Math.PI/2);c.beginPath();const a=S*.41,b=S*.06;c.moveTo(0,-a+b*1.6);c.lineTo(-b,-a);c.lineTo(b,-a);c.closePath();c.fill();c.restore();}
+   c.beginPath();c.arc(0,0,S*.05,0,7);c.fill();}
+  c.restore();}
+ function lerpC(a,b,k){return 'rgb('+[0,1,2].map(j=>Math.round(a[j]+(b[j]-a[j])*k)).join(',')+')';}
+ const CR={fr:[176,112,8],fr2:[8,120,98],p1:[255,222,74],p1b:[96,240,170],p2:[245,160,30],p2b:[0,200,190]};
+-function drawCrate(c,cx,cy,k,tm,i){const S=TS,w=S*.8,h=S*.8,x=cx-w/2,y=cy-h/2,r=S*.2;
+- // cargo pod: rounded white-violet module with an energy core (yellow loose, cyan docked)
++/* Módulo de carga (VIS-BOX-03): caja de .8·S y radio .2·S intactos; contorno nítido max(1.25,.03·S), sombra de contacto sólo debajo,
++   un solo reflejo; con TS<28 sin abrazaderas. Núcleo ámbar = libre, cian = acoplado; variación del núcleo 3 % (0 con movimiento reducido).
++   `docked` (estado lógico, no la interpolación) pinta una marca de verificación oscura dentro del núcleo cian (VIS-BOX-02). */
++function drawCrate(c,cx,cy,k,tm,i,docked,now){const S=TS,w=S*.8,h=S*.8,x=cx-w/2,y=cy-h/2,r=S*.2,LOD=S>=28;
+  c.fillStyle='rgba(0,0,0,.38)';c.beginPath();c.ellipse(cx,cy+h*.5,w*.44,S*.07,0,0,7);c.fill();
+- c.save();if(k>.01){c.shadowColor='rgba(0,242,207,'+(.9*k)+')';c.shadowBlur=S*.5*k*(.8+.2*Math.sin(tm*4+i));}
+- const g=c.createLinearGradient(x,y,x,y+h);g.addColorStop(0,'#f4f1ff');g.addColorStop(1,'#b9b0dc');c.fillStyle=g;rr(c,x,y,w,h,r);c.fill();c.restore();
+- c.strokeStyle='rgba(20,8,48,.55)';c.lineWidth=Math.max(1,S*.025);rr(c,x,y,w,h,r);c.stroke();
++ c.save();if(k>.01){c.shadowColor='rgba(0,242,207,'+(.9*k)+')';c.shadowBlur=Math.min(10,S*.22)*k;}
++ const g=c.createLinearGradient(x,y,x,y+h);g.addColorStop(0,PAL.crate);g.addColorStop(1,'#b9b0dc');c.fillStyle=g;rr(c,x,y,w,h,r);c.fill();c.restore();
++ c.strokeStyle='rgba(20,8,48,.75)';c.lineWidth=Math.max(1.25,S*.03);rr(c,x,y,w,h,r);c.stroke();
+  // side bands
+  c.fillStyle=lerpC([119,0,244],[0,190,170],k);rr(c,x,cy-S*.07,w,S*.14,S*.05);c.fill();
+  // core socket + glowing core
+  const cr=S*.17;c.fillStyle='#1a0f36';c.beginPath();c.arc(cx,cy,cr*1.25,0,7);c.fill();
+- const pulse=.75+.25*Math.sin(tm*5+i*1.3);
++ const pulse=RMQ.matches?1:.85+.15*Math.sin(tm*5+i*1.3);
+  const cg=c.createRadialGradient(cx-cr*.3,cy-cr*.3,cr*.1,cx,cy,cr);cg.addColorStop(0,'#ffffff');cg.addColorStop(.35,lerpC([255,224,90],[95,255,240],k));cg.addColorStop(1,lerpC([240,150,20],[0,190,200],k));
+- c.save();c.shadowColor=k>.5?'#00f2cf':'#fdd835';c.shadowBlur=S*.22*pulse;c.fillStyle=cg;c.beginPath();c.arc(cx,cy,cr*(.92+.08*pulse),0,7);c.fill();c.restore();
++ c.save();c.shadowColor=k>.5?'#00f2cf':'#fdd835';c.shadowBlur=Math.min(8,S*.16);c.fillStyle=cg;c.beginPath();c.arc(cx,cy,cr*(.97+.03*pulse),0,7);c.fill();c.restore();
++ if(docked){c.strokeStyle='rgba(6,30,26,.9)';c.lineWidth=Math.max(1.5,S*.05);c.lineCap='round';c.lineJoin='round';c.beginPath();c.moveTo(cx-cr*.5,cy+cr*.02);c.lineTo(cx-cr*.12,cy+cr*.42);c.lineTo(cx+cr*.55,cy-cr*.4);c.stroke();}
++ // confirmación de acople: un único pulso de 160 ms
++ if(docked&&now!=null&&dockT[i]!=null){const q=(now-dockT[i])/160;if(q<1){c.strokeStyle='rgba(0,242,207,'+(1-q)+')';c.lineWidth=2;rr(c,x-S*.06*q,y-S*.06*q,w+S*.12*q,h+S*.12*q,r);c.stroke();}}
+  // top highlight
+  c.fillStyle='rgba(255,255,255,.55)';rr(c,x+r*.7,y+S*.05,w-r*1.4,S*.04,S*.02);c.fill();
+  // corner clamps
+- c.fillStyle='rgba(40,20,90,.35)';const bo=S*.1;[[x+bo,y+bo],[x+w-bo,y+bo],[x+bo,y+h-bo],[x+w-bo,y+h-bo]].forEach(([a,b])=>{c.beginPath();c.arc(a,b,S*.03,0,7);c.fill();});
++ if(LOD){c.fillStyle='rgba(40,20,90,.35)';const bo=S*.1;[[x+bo,y+bo],[x+w-bo,y+bo],[x+bo,y+h-bo],[x+w-bo,y+h-bo]].forEach(([a,b])=>{c.beginPath();c.arc(a,b,S*.03,0,7);c.fill();});}
+ }
+ function drawAstro(c,cx,cy,f,ph,moving,push,tm,hop){
+  const S=TS,u=S/100;
+@@ -780,7 +851,8 @@ function draw(tm,now){
+  if(anim&&(anim.k==='m'||anim.k==='u')){const[a,b]=pos(anim.pFrom);px=a+(px-a)*k;py=b+(py-b)*k;}
+  if(anim&&anim.k==='b'){const q=(now-anim.t0)/anim.dur,o=Math.sin(Math.PI*Math.min(1,q))*.1;px+=DCH[anim.d][0]*o;py+=DCH[anim.d][1]*o;}
+  const items=[];
+- boxes.forEach((b,i)=>{let[x,y]=pos(b);if(anim&&anim.bi===i&&(anim.k==='m'||anim.k==='u')){const[a,bb]=pos(anim.bFrom);x=a+(x-a)*k;y=bb+(y-bb)*k;}items.push({y,draw:()=>drawCrate(c,x*S,y*S,dock[i]||0,tm,i)});});
++ boxes.forEach((b,i)=>{let[x,y]=pos(b);const movingBox=!!(anim&&anim.bi===i&&(anim.k==='m'||anim.k==='u'));if(movingBox){const[a,bb]=pos(anim.bFrom);x=a+(x-a)*k;y=bb+(y-bb)*k;}
++  const docked=!movingBox&&!!L.goal[b];items.push({y,draw:()=>drawCrate(c,x*S,y*S,dock[i]||0,tm,i,docked,now)});});
+  const hop=won?(now-winT)/1000:0;
+  items.push({y:py+.01,draw:()=>drawAstro(c,px*S,py*S-S*.04,won&&hop>.2&&hop<1.9?'d':facing,walkPh,!!(anim&&anim.k!=='b'&&anim.pFrom!==anim.pTo),pushPose,tm,won?hop:0)});
+  items.sort((a,b)=>a.y-b.y).forEach(o=>o.draw());
+@@ -793,17 +865,38 @@ function pad2(n){return(n<10?'0':'')+n;}
+ function updateHud(){
+  const lv=LEVELS[li];$('lNum').innerHTML=pad2(li+1)+'<i>/'+LEVELS.length+'</i>';$('sMoves').textContent=moves;$('sPush').textContent=pushes;$('sPar').textContent=lv.par;
+  $('stMoves').classList.toggle('over',moves>lv.par);
++ // «Objetivo: {par} movimientos» con el objetivo real del nivel; «Par» queda como tooltip (PLAY-BOX-01, SRC-BX01)
++ const gt=goalText(lv.par);$('stPar').setAttribute('aria-label',gt);$('stPar').title=gt+' · '+t('parTip');
++ $('lName').setAttribute('aria-label',t('chooseLevel').replace('{n}',li+1).replace('{t}',LEVELS.length));
++ const onPad=boxes.filter(b=>L.goal[b]).length;$('stage').setAttribute('aria-label',t('board').replace('{b}',boxes.length).replace('{d}',onPad));
+  $('lPrev').disabled=li<=0;$('lNext').disabled=li>=LEVELS.length-1||li+1>=prog.u;
+  $('bUndo').disabled=hist.length===0;
+ }
++/* Modales (RSP-BOX-01, PLAY-BOX-03): uno solo abierto; cerrados con hidden + inert; #app inert mientras hay uno; el foco entra al primer
++   control relevante, Tab/Shift+Tab se quedan dentro y al cerrar vuelve al disparador. */
+ function overlay(){return!!document.querySelector('.modal-bg.show');}
+-function openM(id){document.querySelectorAll('.modal-bg.show').forEach(m=>m.classList.remove('show'));$(id).classList.add('show');queue.length=0;}
+-function closeM(id){$(id).classList.remove('show');}
++let mTrigger=null,mCloseT=0;
++function openM(id,focusEl){
++ const was=overlay();document.querySelectorAll('.modal-bg.show').forEach(m=>{if(m.id!==id)hideM(m);});
++ const m=$(id);clearTimeout(mCloseT);if(!was||!m.classList.contains('show'))mTrigger=document.activeElement&&document.activeElement!==document.body&&!m.contains(document.activeElement)?document.activeElement:mTrigger;
++ m.hidden=false;m.inert=false;$('app').inert=true;$('toast').inert=true;queue.length=0;
++ if(RMQ.matches)m.classList.add('show');else requestAnimationFrame(()=>m.classList.add('show'));
++ const f=focusEl||m.querySelector('[data-focus]')||m.querySelector('.btn.primary')||m.querySelector('.lt.cur')||m.querySelector('button:not([disabled])');
++ if(f)setTimeout(()=>{try{f.focus({preventScroll:true});}catch(e){}},30);
++}
++function hideM(m){m.classList.remove('show');m.inert=true;const done=()=>{if(!m.classList.contains('show'))m.hidden=true;};if(RMQ.matches)done();else setTimeout(done,200);}
++function closeM(id){const m=typeof id==='string'?$(id):id;if(!m||m.hidden)return;hideM(m);
++ if(m.id==='mHelp')store.set('seenHelp',true);
++ if(!document.querySelector('.modal-bg.show')){$('app').inert=false;$('toast').inert=false;const tr=mTrigger;mTrigger=null;const target=(tr&&tr.isConnected&&!tr.disabled&&tr.offsetParent!==null)?tr:$('stage');try{target.focus({preventScroll:true});}catch(e){}}
++}
++function trapTab(m,e){const f=[...m.querySelectorAll('button,a[href],input,select,textarea,[tabindex]:not([tabindex="-1"])')].filter(el=>!el.disabled&&el.offsetParent!==null);if(!f.length)return;
++ const first=f[0],last=f[f.length-1],cur=document.activeElement;
++ if(e.shiftKey&&(cur===first||!m.contains(cur))){e.preventDefault();last.focus();}else if(!e.shiftKey&&(cur===last||!m.contains(cur))){e.preventDefault();first.focus();}}
+ let toastT=0;function toast(m){const e=$('toast');e.textContent=m;e.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>e.classList.remove('show'),1500);}
+ let winInfo=null;
+ function paintWin(){if(!winInfo)return;const {nb,prev,st,last}=winInfo;
+  $('wTitle').textContent=last?t('all'):st===3?t('perfect'):t('win');
+- $('wSub').textContent=t('sub').replace('{n}',li+1).replace('{t}',LEVELS.length);
++ $('wSub').textContent=t('sub').replace('{n}',li+1).replace('{t}',LEVELS.length)+' · '+goalText(LEVELS[li].par)+' · '+t('stars').replace('{n}',st);
+  $('wBest').textContent=nb&&prev!=null?t('newBest'):(!nb?t('best').replace('{n}',prog.best[li]):'');
+ }
+ function showWin(nb,prev){
+@@ -813,31 +906,40 @@ function showWin(nb,prev){
+  paintWin();
+  $('wMoves').textContent=moves;$('wPar').textContent=lv.par;$('wPush').textContent=pushes;
+  $('wNext').style.display=last?'none':'';
+- openM('mWin');
++ openM('mWin',last?$('wLevels'):$('wNext'));
+ }
++/* Grilla de niveles (PLAY-BOX-04): disponible / completado / bloqueado se distinguen sin apagar la tarjeta; el bloqueado usa aria-disabled
++   (sigue enfocable y al activarlo explica la condición de desbloqueo), nunca inicia el nivel. Las miniaturas muestran el mapa real inicial. */
+ function buildLevels(){
+  const g=$('lGrid');g.innerHTML='';let tot=0;
+- LEVELS.forEach((lv,i)=>{const b=document.createElement('button');const best=prog.best[i];const lock=i>=prog.u;const st=best!=null?starsFor(best,lv.par):0;tot+=st;
+-  b.className='lt'+(lock?' lock':'')+(best!=null?' done':'')+(i===li?' cur':'');
++ LEVELS.forEach((lv,i)=>{const b=document.createElement('button');b.type='button';const best=prog.best[i];const lock=i>=prog.u;const st=best!=null?starsFor(best,lv.par):0;tot+=st;
++  b.className='lt'+(lock?' lock':'')+(best!=null?' done':(!lock?' avail':''))+(i===li?' cur':'');
+   const cvs=document.createElement('canvas');thumb(cvs,lv.m);b.appendChild(cvs);
+-  const n=document.createElement('span');n.className='n';n.textContent=i+1;b.appendChild(n);b.setAttribute('aria-label',t('level')+' '+(i+1)+' · '+(lock?t('lockedA'):t('stars').replace('{n}',st)));
+-  if(lock){b.insertAdjacentHTML('beforeend','<svg class="lk" viewBox="0 0 16 16" fill="currentColor"><path d="M4.5 7V5a3.5 3.5 0 0 1 7 0v2h.5a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1zm1.6 0h3.8V5a1.9 1.9 0 0 0-3.8 0z"/></svg>');}
++  const n=document.createElement('span');n.className='n';n.textContent=i+1;b.appendChild(n);
++  const lab=lock?t('level')+' '+(i+1)+', '+t('lockedA')+'. '+t('locked'):best!=null?t('level')+' '+(i+1)+', '+t('stars').replace('{n}',st):t('available').replace('{n}',i+1);
++  b.setAttribute('aria-label',lab);b.title=lab;if(lock)b.setAttribute('aria-disabled','true');
++  if(lock){b.insertAdjacentHTML('beforeend','<svg class="lk" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M4.5 7V5a3.5 3.5 0 0 1 7 0v2h.5a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1zm1.6 0h3.8V5a1.9 1.9 0 0 0-3.8 0z"/></svg>');}
+   else{const s=document.createElement('span');s.className='st';s.innerHTML=[0,1,2].map(k=>'<i class="'+(k<st?'on':'')+'">★</i>').join('');b.appendChild(s);}
+-  b.onclick=()=>{if(lock){sfx.bump();toast(t('locked'));return;}sfx.ui();closeM('mLevels');if(i!==li)loadLevel(i);};
++  b.onclick=()=>{if(lock){sfx.bump();toast(t('locked'));announce(t('locked'));return;}sfx.ui();mTrigger=$('lName');closeM('mLevels');if(i!==li)loadLevel(i);};
+   g.appendChild(b);});
+  requestAnimationFrame(()=>{const c=g.querySelector('.lt.cur');if(c)c.scrollIntoView({block:'center'});});
+  $('sTot').textContent='★ '+tot+'/'+LEVELS.length*3;
+  $('lTip').textContent=t('tipStars').replace('{p}',Math.round((TWO_STAR-1)*100));
+ }
++// Miniaturas a 6 px por celda con la misma paleta que la partida: formas planas, alineadas al píxel, sin brillos (VIS-BOX-04)
+ function thumb(cvs,rows){const P=parseLevel(rows);const s=6;cvs.width=P.W*s;cvs.height=P.H*s;const c=cvs.getContext('2d');
+- for(let i=0;i<P.N;i++){const x=(i%P.W)*s,y=((i/P.W)|0)*s;if(P.dw[i]){c.fillStyle='#5a3aa8';c.fillRect(x,y,s,s);}else if(P.inside[i]){c.fillStyle='#21183a';c.fillRect(x,y,s,s);}
+-  if(P.goal[i]){c.fillStyle='#00f2cf';c.fillRect(x+1.5,y+1.5,s-3,s-3);}if(P.boxes.indexOf(i)>=0){c.fillStyle=P.goal[i]?'#3ddc84':'#fdd835';c.fillRect(x+.5,y+.5,s-1,s-1);}if(i===P.p){c.fillStyle='#fff';c.beginPath();c.arc(x+s/2,y+s/2,s*.38,0,7);c.fill();}}}
++ for(let i=0;i<P.N;i++){const x=(i%P.W)*s,y=((i/P.W)|0)*s;if(P.dw[i]){c.fillStyle=PAL.wall;c.fillRect(x,y,s,s);}else if(P.inside[i]){c.fillStyle=PAL.floor;c.fillRect(x,y,s,s);}
++  if(P.goal[i]){c.strokeStyle=PAL.goal;c.lineWidth=1;c.strokeRect(x+1.5,y+1.5,s-3,s-3);}
++  if(P.boxes.indexOf(i)>=0){c.fillStyle=PAL.crate;c.fillRect(x+1,y+1,s-2,s-2);c.fillStyle=P.goal[i]?PAL.coreOn:PAL.core;c.fillRect(x+2,y+2,s-4,s-4);}
++  if(i===P.p){c.fillStyle=PAL.playerEdge;c.fillRect(x+1,y+1,s-2,s-2);c.fillStyle=PAL.player;c.fillRect(x+2,y+2,s-4,s-4);}}}
+ function helpHTML(){
++ const crate=(x,y,on)=>'<rect x="'+x+'" y="'+y+'" width="18" height="18" rx="4" fill="'+PAL.crate+'" stroke="'+PAL.crateEdge+'" stroke-width="1.4"/><circle cx="'+(x+9)+'" cy="'+(y+9)+'" r="3.4" fill="'+(on?PAL.coreOn:PAL.core)+'"/>';
+  const ill=[
+-  '<svg viewBox="0 0 52 52"><rect x="1" y="1" width="50" height="50" rx="12" fill="#1a1230" stroke="rgba(255,255,255,.08)"/><circle cx="36" cy="26" r="9" fill="none" stroke="#00f2cf" stroke-width="2.2"/><rect x="9" y="17" width="18" height="18" rx="3" fill="#b07008"/><rect x="12" y="20" width="12" height="12" rx="1.5" fill="#fdd835"/><path d="M12 20l12 12M24 20L12 32" stroke="#b07008" stroke-width="2"/><path d="M29 26h3" stroke="#00f2cf" stroke-width="2" stroke-linecap="round"/></svg>',
+-  '<svg viewBox="0 0 52 52"><rect x="1" y="1" width="50" height="50" rx="12" fill="#1a1230" stroke="rgba(255,255,255,.08)"/><circle cx="14" cy="26" r="7" fill="#fff"/><ellipse cx="15.5" cy="26" rx="4" ry="3.2" fill="#00c8d0"/><rect x="24" y="18" width="16" height="16" rx="3" fill="#b07008"/><rect x="27" y="21" width="10" height="10" rx="1.5" fill="#fdd835"/><path d="M42 26l4 0M44 23.5l2.5 2.5-2.5 2.5" stroke="#3ddc84" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+-  '<svg viewBox="0 0 52 52"><rect x="1" y="1" width="50" height="50" rx="12" fill="#1a1230" stroke="rgba(255,255,255,.08)"/>'+[0,1,2].map(k=>'<path transform="translate('+(5+k*14)+' '+(k===1?14:19)+') scale(.6)" d="M12 2.5l2.9 6 6.6.8-4.9 4.5 1.3 6.5L12 17l-5.9 3.3 1.3-6.5L2.5 9.3l6.6-.8z" fill="#fdd835"/>').join('')+'</svg>'];
+- return T[lang].help.map((h,i)=>'<div class="hrow">'+ill[i]+'<p>'+h+'</p></div>').join('')+'<div class="hctl">'+(isTouch?t('ctlTouch'):t('ctlKeys'))+'</div>';
++  '<svg viewBox="0 0 52 52" aria-hidden="true"><rect x="1" y="1" width="50" height="50" rx="12" fill="'+PAL.floor+'" stroke="rgba(255,255,255,.08)"/><circle cx="36" cy="26" r="9" fill="none" stroke="'+PAL.goal+'" stroke-width="2.2"/>'+crate(8,17,false)+'<path d="M29 26h3" stroke="'+PAL.goal+'" stroke-width="2" stroke-linecap="round"/></svg>',
++  '<svg viewBox="0 0 52 52" aria-hidden="true"><rect x="1" y="1" width="50" height="50" rx="12" fill="'+PAL.floor+'" stroke="rgba(255,255,255,.08)"/><circle cx="14" cy="26" r="7" fill="'+PAL.player+'" stroke="'+PAL.playerEdge+'" stroke-width="1.2"/><ellipse cx="15.5" cy="26" rx="4" ry="3.2" fill="#00c8d0"/>'+crate(24,17,false)+'<path d="M43 26l4 0M45 23.5l2.5 2.5-2.5 2.5" stroke="'+PAL.goal+'" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>',
++  '<svg viewBox="0 0 52 52" aria-hidden="true"><rect x="1" y="1" width="50" height="50" rx="12" fill="'+PAL.floor+'" stroke="rgba(255,255,255,.08)"/>'+[0,1,2].map(k=>'<path transform="translate('+(5+k*14)+' '+(k===1?14:19)+') scale(.6)" d="M12 2.5l2.9 6 6.6.8-4.9 4.5 1.3 6.5L12 17l-5.9 3.3 1.3-6.5L2.5 9.3l6.6-.8z" fill="#fdd835"/>').join('')+'</svg>'];
++ const par=LEVELS[li]?LEVELS[li].par:1;
++ return T[lang].help.map((h,i)=>'<div class="hrow">'+ill[i]+'<p>'+h.replace('{goal}',goalHelp(par))+'</p></div>').join('')+'<div class="hctl">'+(isTouch?t('ctlTouch'):t('ctlKeys'))+'</div>';
+ }
+ function applyLang(){
+  document.documentElement.lang=lang;document.querySelectorAll('.seg button').forEach(x=>{const on=x.dataset.l===lang;x.classList.toggle('on',on);x.setAttribute('aria-pressed',on?'true':'false');});
+@@ -846,8 +948,8 @@ function applyLang(){
+  $('metaDesc').setAttribute('content',t('desc'));
+  paintWin();
+  document.querySelectorAll('[data-i]').forEach(e=>{const v=T[lang][e.dataset.i];if(typeof v==='string')e.textContent=v;});
+- const a=T[lang].aria;Object.keys(a).forEach(k=>$(k).setAttribute('aria-label',a[k]));
+- $('keys').innerHTML=t('keys');$('hBody').innerHTML=helpHTML();
++ const a=T[lang].aria;Object.keys(a).forEach(k=>{const el=$(k);if(el)el.setAttribute('aria-label',a[k]);});
++ $('keys').innerHTML=t('keys');if(L)$('hBody').innerHTML=helpHTML();
+  if($('mLevels').classList.contains('show'))buildLevels();else $('lGrid').innerHTML='';$('lTip').textContent=t('tipStars').replace('{p}',Math.round((TWO_STAR-1)*100));
+  updateHud();
+  AUD.setTx(AUD_TX[lang]);
+@@ -860,25 +962,31 @@ document.querySelectorAll('.seg button').forEach(b=>b.addEventListener('click',e
+ window.addEventListener('jet-idioma',e=>{const v=e.detail==='en'?'en':'es';if(v===lang)return;lang=v;applyLang();});
+ $('btnHelp').onclick=()=>{$('hBody').innerHTML=helpHTML();openM('mHelp');sfx.ui();};
+ $('btnLevels').onclick=()=>{buildLevels();openM('mLevels');sfx.ui();};
+-document.querySelector('.lname').onclick=()=>$('btnLevels').click();
++$('lName').onclick=()=>{buildLevels();openM('mLevels');sfx.ui();};
+ $('lPrev').onclick=()=>{if(li>0){sfx.ui();loadLevel(li-1);}};
+ $('lNext').onclick=()=>{if(li+1<prog.u&&li<LEVELS.length-1){sfx.ui();loadLevel(li+1);}};
+ $('bUndo').onclick=()=>undo();
+-let rArm=0;$('bRestart').onclick=()=>{if(moves===0||won){restart();return;}const now=performance.now();if(now-rArm<2500){rArm=0;$('bRestart').classList.remove('arm');restart();}else{rArm=now;$('bRestart').classList.add('arm');toast(t('restartQ'));setTimeout(()=>{if(performance.now()-rArm>=2400)$('bRestart').classList.remove('arm');},2500);}};
+-$('wNext').onclick=()=>{closeM('mWin');sfx.ui();loadLevel(li+1);};
+-$('wReplay').onclick=()=>{closeM('mWin');sfx.ui();loadLevel(li);};
++$('bRestart').onclick=()=>restart();   // misma protección que la tecla R: reversible con Deshacer, con aviso
++$('wNext').onclick=()=>{mTrigger=$('stage');closeM('mWin');sfx.ui();loadLevel(li+1);};
++$('wReplay').onclick=()=>{mTrigger=$('stage');closeM('mWin');sfx.ui();loadLevel(li);};
+ $('wLevels').onclick=()=>{buildLevels();openM('mLevels');sfx.ui();};
+-document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>{const m=b.closest('.modal-bg');m.classList.remove('show');if(m.id==='mHelp')store.set('seenHelp',true);}));
+-document.querySelectorAll('.modal-bg').forEach(m=>m.addEventListener('click',e=>{if(e.target===m&&m.id!=='mWin'){m.classList.remove('show');if(m.id==='mHelp')store.set('seenHelp',true);}}));
+-document.querySelectorAll('button').forEach(b=>b.addEventListener('mouseup',()=>b.blur()));
++document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>{closeM(b.closest('.modal-bg'));}));
++document.querySelectorAll('.modal-bg').forEach(m=>m.addEventListener('click',e=>{if(e.target===m&&m.id!=='mWin')closeM(m);}));
++document.querySelectorAll('button:not(.ja-mute)').forEach(b=>b.addEventListener('mouseup',()=>{if(!b.matches(':focus-visible'))b.blur();}));
+ 
+ const KEYMAP={arrowup:'u',w:'u',arrowdown:'d',s:'d',arrowleft:'l',a:'l',arrowright:'r',d:'r'};
++const CTRL_SEL='button,a,input,select,textarea,[contenteditable="true"]';
+ window.addEventListener('keydown',e=>{
+  if(e.ctrlKey||e.metaKey||e.altKey)return;const k=e.key.toLowerCase();
++ const onCtrl=e.target&&e.target.closest&&e.target.closest(CTRL_SEL),editable=onCtrl&&onCtrl.matches('input,select,textarea,[contenteditable="true"]');
+  if(overlay()){
+-  if(k==='escape'){const m=document.querySelector('.modal-bg.show');if(m&&m.id!=='mWin'){m.classList.remove('show');if(m.id==='mHelp')store.set('seenHelp',true);}}
+-  if((k==='enter'||k===' '||k==='n')&&$('mWin').classList.contains('show')){e.preventDefault();if(li<LEVELS.length-1)$('wNext').click();else $('wLevels').click();}
++  const m=document.querySelector('.modal-bg.show');
++  if(k==='escape'&&m&&m.id!=='mWin'){e.preventDefault();closeM(m);return;}
++  if(k==='tab'&&m){trapTab(m,e);return;}
++  // en victoria: Enter/Espacio activan sólo el botón enfocado (nativo); N avanza desde cualquier sitio salvo campos editables (RSP-BOX-02)
++  if(k==='n'&&!editable&&m&&m.id==='mWin'){e.preventDefault();if(li<LEVELS.length-1)$('wNext').click();else $('wLevels').click();}
+   return;}
++ if(onCtrl)return;   // flechas en sliders, Enter/Espacio en botones: no mueven al astronauta
+  if(KEYMAP[k]){e.preventDefault();setTouch(false);if(e.repeat){if(queue.length===0)enqueue(KEYMAP[k],1);}else enqueue(KEYMAP[k],2);return;}
+  if(k==='z'||k==='u'||k==='backspace'){e.preventDefault();undo();return;}
+  if(k==='r'){e.preventDefault();restart();return;}
+@@ -910,19 +1018,19 @@ stage.addEventListener('pointerup',e=>endPointer(e,false));
+ stage.addEventListener('pointercancel',e=>endPointer(e,true));
+ stage.addEventListener('lostpointercapture',e=>{if(sp&&e.pointerId===sp.id)endPointer(e,true);});
+ 
+-// d-pad: each button tracks its own pointer (multitouch safe)
+-document.querySelectorAll('.dp').forEach(b=>{let pid=null,hold=0,rep=0;const d=b.dataset.d;
++// d-pad (RSP-BOX-04): cada botón sigue su propio puntero (multitáctil); un click sin pointerdown previo (teclado, asistencia) mueve una casilla
++function moveOnce(d){if(queue.length<2)enqueue(d,2);}
++document.querySelectorAll('.dp').forEach(b=>{let pid=null,hold=0,rep=0,ptr=0;const d=b.dataset.d;
+  const stop=()=>{pid=null;clearTimeout(hold);clearInterval(rep);b.classList.remove('act');};
+- b.addEventListener('pointerdown',e=>{e.preventDefault();if(e.pointerType==='touch')setTouch(true);if(pid!==null)return;pid=e.pointerId;try{b.setPointerCapture(pid);}catch(_){}b.classList.add('act');
+-  if(queue.length<2)enqueue(d,2);hold=setTimeout(()=>{rep=setInterval(()=>{if(queue.length===0)enqueue(d,1);},40);},280);});
++ b.addEventListener('pointerdown',e=>{e.preventDefault();if(e.pointerType==='touch')setTouch(true);if(pid!==null)return;pid=e.pointerId;ptr=performance.now();try{b.setPointerCapture(pid);}catch(_){}b.classList.add('act');
++  moveOnce(d);hold=setTimeout(()=>{rep=setInterval(()=>{if(queue.length===0)enqueue(d,1);},40);},280);});
+  b.addEventListener('pointerup',e=>{if(e.pointerId===pid)stop();});
+- b.addEventListener('pointercancel',e=>{if(e.pointerId===pid)stop();});
+- b.addEventListener('lostpointercapture',e=>{if(e.pointerId===pid)stop();});
++ b.addEventListener('pointercancel',e=>{if(e.pointerId===pid){stop();ptr=0;}});
++ b.addEventListener('lostpointercapture',e=>{if(e.pointerId===pid){stop();ptr=0;}});
++ b.addEventListener('click',e=>{if(ptr&&performance.now()-ptr<700){ptr=0;return;}ptr=0;moveOnce(d);});   // activación sintetizada: una casilla, nunca dos
+  b.addEventListener('contextmenu',e=>e.preventDefault());
+ });
+ document.addEventListener('contextmenu',e=>{if(e.target.closest('#stage,#dpad,#ctrl'))e.preventDefault();});
+-document.addEventListener('gesturestart',e=>e.preventDefault());
+-document.addEventListener('dblclick',e=>e.preventDefault(),{passive:false});
+ window.addEventListener('resize',requestLayout);
+ window.addEventListener('orientationchange',()=>{requestLayout();setTimeout(requestLayout,250);});
+ if(window.visualViewport)visualViewport.addEventListener('resize',requestLayout);
+@@ -934,9 +1042,10 @@ paintSound();applyLang();
+ const cur=store.get('cur',null);
+ let startL=0,startP='';if(cur&&typeof cur.l==='number'&&cur.l>=0&&cur.l<LEVELS.length&&cur.l<prog.u){startL=cur.l;startP=typeof cur.p==='string'?cur.p:'';}
+ else startL=Math.min(LEVELS.length-1,Math.max(0,prog.u-1));
++document.querySelectorAll('.modal-bg').forEach(m=>{m.inert=true;});
+ layout();loadLevel(startL,startP);
+ requestAnimationFrame(frame);setInterval(()=>{if(L&&!document.hidden)pump();},40);
+-if(!store.get('seenHelp',false))setTimeout(()=>openM('mHelp'),250);
++if(!store.get('seenHelp',false))setTimeout(()=>{$('hBody').innerHTML=helpHTML();openM('mHelp');},250);
+ if('serviceWorker' in navigator&&location.protocol==='https:'){window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js',{scope:'./'}).catch(()=>{});});}
+ window.__jetbox={get state(){return{li,p,boxes:boxes.slice(),moves,pushes,won,path,u:prog.u,anim:!!anim,queue:queue.length};},load:loadLevel,levels:LEVELS};
+ })();
