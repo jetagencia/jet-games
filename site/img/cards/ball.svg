@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180" preserveAspectRatio="xMidYMid slice" role="img" aria-labelledby="ballT"><title id="ballT">JET//Ball: una pared en construcción avanza hacia una bola dentro de un tablero dividido en zonas</title>
+  <defs>
+    <linearGradient id="cb-wall" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#7700f4"/><stop offset="1" stop-color="#00f2cf"/></linearGradient>
+    <linearGradient id="cb-wall-v" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#00f2cf"/><stop offset="1" stop-color="#7700f4"/></linearGradient>
+    <linearGradient id="cb-build" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#fdd835"/><stop offset="1" stop-color="#ffe98a"/></linearGradient>
+    <filter id="cb-glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <rect width="320" height="180" fill="#101225"/>
+  <g stroke="rgba(0,242,207,0.045)" stroke-width="1">
+    <path d="M0 45H320M0 90H320M0 135H320M40 0V180M80 0V180M120 0V180M160 0V180M200 0V180M240 0V180M280 0V180"/>
+  </g>
+  <!-- zona capturada: arriba a la derecha -->
+  <rect x="169" y="0" width="151" height="87" fill="rgba(119,0,244,0.20)"/>
+  <rect x="169" y="0" width="151" height="87" fill="none" stroke="rgba(119,0,244,0.35)" stroke-width="1"/>
+  <!-- paredes terminadas -->
+  <rect x="163" y="0" width="6" height="180" rx="1" fill="url(#cb-wall-v)"/>
+  <rect x="166" y="87" width="154" height="6" rx="1" fill="url(#cb-wall)"/>
+  <!-- pared en construcción: sube desde el borde inferior hacia la bola -->
+  <rect x="117" y="118" width="6" height="62" rx="1" fill="url(#cb-build)"/>
+  <rect x="113" y="114" width="14" height="6" rx="2" fill="#fdd835" filter="url(#cb-glow)"/>
+  <!-- bola de riesgo, cerca de la pared que crece -->
+  <circle cx="138" cy="99" r="9" fill="#00f2cf"/>
+  <circle cx="135" cy="96" r="3" fill="#fff" opacity=".7"/>
+  <path d="M146 92 L158 83" stroke="rgba(0,242,207,.35)" stroke-width="2" stroke-linecap="round"/>
+  <!-- segunda bola, zona inferior derecha -->
+  <circle cx="246" cy="138" r="9" fill="#fdd835"/>
+  <circle cx="243" cy="135" r="3" fill="#fff" opacity=".6"/>
+  <!-- tercera bola, zona izquierda arriba -->
+  <circle cx="58" cy="52" r="8" fill="#f5f0ff"/>
+  <circle cx="55.5" cy="49.5" r="2.5" fill="#fff"/>
+</svg>

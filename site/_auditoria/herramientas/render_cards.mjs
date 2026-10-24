@@ -1,0 +1,5 @@
+import { chromium } from 'playwright'; import { readFileSync, writeFileSync } from 'fs';
+const files = process.argv.slice(2); const browser = await chromium.launch(); const page = await browser.newPage({ viewport: { width: 1100, height: 700 }, deviceScaleFactor: 1 });
+const cards = files.map(f => { const svg = readFileSync(f, 'utf8'); const ratios = [['16/9', 320, 180], ['21/9', 320, 137], ['32/9', 320, 90]]; return `<div style="display:flex;gap:8px;align-items:flex-start"><b style="width:120px;font:12px sans-serif;color:#fff">${f.split('/').pop()}</b>${ratios.map(([r,w,h]) => `<div style="width:${w}px;aspect-ratio:${r};overflow:hidden;border:1px solid #444;border-radius:8px">${svg.replace('<svg ', `<svg style="width:100%;height:100%;display:block" `)}</div>`).join('')}</div>`; });
+await page.setContent(`<body style="background:#111;margin:10px;display:flex;flex-direction:column;gap:10px">${cards.join('')}</body>`);
+await page.waitForTimeout(300); await page.screenshot({ path: '/home/user/jet-games/site/_auditoria/_smoke/cards_preview.png', fullPage: true }); await browser.close(); console.log('ok');

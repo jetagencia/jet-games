@@ -1,0 +1,6 @@
+import { chromium } from 'playwright'; import { readdirSync, readFileSync } from 'fs'; import { resolve } from 'path';
+const dir = resolve('site/img'); const files = readdirSync(dir).filter(f => f.endsWith('.jpg')).sort();
+const browser = await chromium.launch(); const page = await browser.newPage({ viewport: { width: 1180, height: 900 } });
+const rows = files.map(f => { const src = 'data:image/jpeg;base64,' + readFileSync(dir + '/' + f).toString('base64'); const cell = (r, w, pos) => `<div style="width:${w}px;aspect-ratio:${r};overflow:hidden;border:1px solid #444;border-radius:6px"><img src="${src}" style="width:100%;height:100%;object-fit:cover;object-position:${pos};display:block"></div>`; return `<div style="display:flex;gap:6px;align-items:flex-start"><b style="width:110px;font:12px sans-serif;color:#fff">${f}</b>${cell('16/9', 300, '50% 50%')}${cell('21/9', 300, '50% 50%')}${cell('32/9', 300, '50% 50%')}</div>`; });
+await page.setContent(`<body style="background:#111;margin:8px;display:flex;flex-direction:column;gap:6px">${rows.join('')}</body>`);
+await page.waitForTimeout(800); await page.screenshot({ path: 'site/_auditoria/_smoke/jpg_contact.png', fullPage: true }); await browser.close(); console.log(files.length);

@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180" preserveAspectRatio="xMidYMid slice" role="img" aria-labelledby="wordsTes"><title id="wordsTes">JET//Words: dos intentos evaluados y un tercero en curso en una grilla de cinco letras</title>
+  <rect width="320" height="180" fill="#0a0512"/>
+  <g stroke="rgba(0,242,207,0.04)" stroke-width="1"><path d="M0 45H320M0 90H320M0 135H320M80 0V180M160 0V180M240 0V180"/></g>
+  <g font-family="Inter, Arial, sans-serif" font-weight="800" font-size="19" text-anchor="middle">
+    <rect x="78" y="40" width="28" height="28" rx="3" fill="#fdd835"/>
+    <text x="92.0" y="61.0" fill="#1a1200">N</text>
+    <rect x="112" y="40" width="28" height="28" rx="3" fill="#2a2140"/>
+    <text x="126.0" y="61.0" fill="#9d93b8">A</text>
+    <rect x="146" y="40" width="28" height="28" rx="3" fill="#2a2140"/>
+    <text x="160.0" y="61.0" fill="#9d93b8">S</text>
+    <rect x="180" y="40" width="28" height="28" rx="3" fill="#3ddc84"/>
+    <text x="194.0" y="61.0" fill="#052d18">A</text>
+    <rect x="214" y="40" width="28" height="28" rx="3" fill="#fdd835"/>
+    <text x="228.0" y="61.0" fill="#1a1200">L</text>
+    <rect x="78" y="76" width="28" height="28" rx="3" fill="#2a2140"/>
+    <text x="92.0" y="97.0" fill="#9d93b8">S</text>
+    <rect x="112" y="76" width="28" height="28" rx="3" fill="#2a2140"/>
+    <text x="126.0" y="97.0" fill="#9d93b8">O</text>
+    <rect x="146" y="76" width="28" height="28" rx="3" fill="#fdd835"/>
+    <text x="160.0" y="97.0" fill="#1a1200">L</text>
+    <rect x="180" y="76" width="28" height="28" rx="3" fill="#3ddc84"/>
+    <text x="194.0" y="97.0" fill="#052d18">A</text>
+    <rect x="214" y="76" width="28" height="28" rx="3" fill="#3ddc84"/>
+    <text x="228.0" y="97.0" fill="#052d18">R</text>
+    <rect x="78" y="112" width="28" height="28" rx="3" fill="rgba(0,242,207,0.08)" stroke="#00f2cf" stroke-width="1.6"/>
+    <text x="92.0" y="133.0" fill="#f5f0ff">L</text>
+    <rect x="112" y="112" width="28" height="28" rx="3" fill="rgba(0,242,207,0.08)" stroke="#00f2cf" stroke-width="1.6"/>
+    <text x="126.0" y="133.0" fill="#f5f0ff">U</text>
+    <rect x="146" y="112" width="28" height="28" rx="3" fill="rgba(245,240,255,0.04)" stroke="rgba(245,240,255,0.2)" stroke-width="1.4"/>
+    <rect x="180" y="112" width="28" height="28" rx="3" fill="rgba(245,240,255,0.04)" stroke="rgba(245,240,255,0.2)" stroke-width="1.4"/>
+    <rect x="214" y="112" width="28" height="28" rx="3" fill="rgba(245,240,255,0.04)" stroke="rgba(245,240,255,0.2)" stroke-width="1.4"/>
+  </g>
+</svg>

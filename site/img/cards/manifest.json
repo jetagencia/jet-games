@@ -1,0 +1,142 @@
+{
+ "fecha": "2026-10-24",
+ "regla": "Dirección editorial de las 22 cards (JETGAMES_INSTRUCCIONES_CARDS_PARA_CLAUDE.txt). Estado por card: 'vector_recompuesto' = arte nuevo final en SVG; 'transicion' = JPG actual con encuadre object-position según el fallback del brief, a la espera de la composición N/M/F nueva (captura limpia del juego o render fiel).",
+ "cards": [
+  {
+   "slug": "ball",
+   "tipo": "vector_recompuesto",
+   "normal": "img/cards/ball.svg",
+   "featured": "img/cards/ball-featured.svg",
+   "mobile": "img/cards/ball.svg (centro y=12–88% a salvo)",
+   "fidelidad": "paredes/zonas/bolas del juego; ninguna bola cruza una pared terminada"
+  },
+  {
+   "slug": "rocket",
+   "tipo": "vector_recompuesto",
+   "normal": "img/cards/rocket.svg",
+   "fidelidad": "nave chevron, 8 segmentos de cola, cristal y asteroide del SVG original"
+  },
+  {
+   "slug": "slalom",
+   "tipo": "vector_recompuesto",
+   "normal": "img/cards/slalom.svg",
+   "fidelidad": "esquiador, puertas magenta/cian y pinos del SVG original"
+  },
+  {
+   "slug": "words",
+   "tipo": "vector_recompuesto",
+   "normal": "img/cards/words-en.svg / words-es.svg (según idioma)",
+   "fidelidad": "objetivo ES «lunar» (intentos NASAL, SOLAR) y EN «orbit» (STONE, ROBOT); colores calculados con evalGuess real; ninguno es la palabra del día actual",
+   "colores": "absent #2a2140, present #fdd835, correct #3ddc84 (los del juego; el brief decía cian para acierto pero el juego usa verde: se respeta el juego)"
+  },
+  {
+   "slug": "box",
+   "tipo": "vector_recompuesto",
+   "normal": "img/cards/box.svg",
+   "fidelidad": "astronauta, contenedores, pads y muros del SVG original; secuencia empujar→pad legible"
+  },
+  {
+   "slug": "astro",
+   "tipo": "transicion",
+   "object_position": "50% 55%",
+   "pendiente": "captura limpia del impulso sobre un asteroide, sin HUD"
+  },
+  {
+   "slug": "flow",
+   "tipo": "transicion",
+   "object_position": "45% 50%",
+   "pendiente": "módulo de tablero con ruta de plasma, sin bandeja ni HUD"
+  },
+  {
+   "slug": "match",
+   "tipo": "transicion",
+   "object_position": "50% 50%",
+   "pendiente": "detalle 5×5 con jugada legal"
+  },
+  {
+   "slug": "salchidrez",
+   "tipo": "transicion",
+   "object_position": "100% 50% (tablero, no el logo)",
+   "pendiente": "fragmento de tablero con rey, caballo y pieza rival"
+  },
+  {
+   "slug": "escudos",
+   "tipo": "transicion",
+   "object_position": "50% 50%",
+   "pendiente": "llave de cuatro participantes sobre fondo oscuro"
+  },
+  {
+   "slug": "senal",
+   "tipo": "transicion",
+   "object_position": "50% 45%",
+   "pendiente": "sonda + muestra activa + dos testigos, sin paneles"
+  },
+  {
+   "slug": "antes",
+   "tipo": "transicion",
+   "object_position": "50% 92% (franja del corredor, sin logo)",
+   "pendiente": "corredor con astronauta, dos ecos, placa y puerta"
+  },
+  {
+   "slug": "telemetria",
+   "tipo": "transicion",
+   "object_position": "50% 50%",
+   "pendiente": "esquema de nave + dos lecturas dudosas"
+  },
+  {
+   "slug": "portada",
+   "tipo": "transicion",
+   "object_position": "0% 50% (el diario, no el logo)",
+   "pendiente": "primera plana con módulo separado"
+  },
+  {
+   "slug": "cajanegra",
+   "tipo": "transicion",
+   "object_position": "50% 45%",
+   "pendiente": "mesa de evidencias: fotograma, registro, fichas"
+  },
+  {
+   "slug": "crater",
+   "tipo": "transicion",
+   "object_position": "35% 45% (mapa)",
+   "pendiente": "mapa con tres cráteres candidatos y marcador"
+  },
+  {
+   "slug": "frentes",
+   "tipo": "transicion",
+   "object_position": "50% 45% (planetas)",
+   "pendiente": "cinco planetas con grupos de naves, sin porcentajes"
+  },
+  {
+   "slug": "balizas",
+   "tipo": "transicion",
+   "object_position": "50% 65% (corredor, sin logo)",
+   "pendiente": "nave + baliza dejada + baliza útil + paso entre rocas"
+  },
+  {
+   "slug": "estacion",
+   "tipo": "transicion",
+   "object_position": "50% 88% (astronauta)",
+   "featured": "contain sobre #0b1a2a a 900–1199 px (clase art-contain-f)",
+   "pendiente": "astronauta ante una consola encendida; segunda consola apagada"
+  },
+  {
+   "slug": "raid",
+   "tipo": "transicion",
+   "object_position": "55% 55%",
+   "pendiente": "verificar que el hovercraft del JPG coincide con el del juego; render fiel con estela y objetivo"
+  },
+  {
+   "slug": "jump",
+   "tipo": "transicion",
+   "object_position": "50% 45%",
+   "pendiente": "pose de aproximación o salto con obstáculo; no recortar patas"
+  },
+  {
+   "slug": "bestiario",
+   "tipo": "transicion",
+   "object_position": "50% 30% (cabeza y alas)",
+   "pendiente": "dragón en su recinto con señal de crianza"
+  }
+ ]
+}
