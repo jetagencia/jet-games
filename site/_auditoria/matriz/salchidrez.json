@@ -1,0 +1,190 @@
+[
+ {
+  "id": "RSP-SALCHIDREZ-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/salchidrez/index.html"
+  ],
+  "detalle": "Pila ovStack: sólo el overlay superior no es inerte; los visibles debajo, #bar, #lesson-panel, #a11y-board, #final-view y el canvas quedan inertes mientras haya overlay. role=dialog/alertdialog + aria-modal + aria-labelledby en intro, Ajustes, Cómo jugar, Aprender, fin de lección, Galería, Coronación, fin de partida y confirmación. Foco inicial al título (tabindex −1) o al control indicado; Tab/Shift+Tab encerrados; al cerrar vuelve al disparador. Coronación: Escape no cierra; Q/R/B/N se mantienen.",
+  "verificacion": "salchidrez_test.mjs: Ajustes por teclado sobre el menú (menú inerte, foco en título, Shift+Tab no alcanza ¡A jugar!, Escape devuelve a Ajustes); Galería y Cómo jugar igual."
+ },
+ {
+  "id": "RSP-SALCHIDREZ-02",
+  "estado": "implementado",
+  "archivos": [
+   "site/salchidrez/index.html"
+  ],
+  "detalle": "#a11y-board role=grid «Tablero de ajedrez» (8 filas × 8 gridcell, orden visual incluso girado, nombres de casilla fijos), una sola celda tabulable (kb.sq), etiquetas «{casilla}: {pieza} de {equipo}», «vacía», «seleccionado», «destino posible», «captura posible», «en jaque»; focus/click usan la misma kb.sq y keyActivate; flechas mueven foco y cursor. Región #a11y-live (polite) con jugada, captura, jaque, turno/máquina pensando y resultado; sólo publica al cambiar.",
+  "verificacion": "salchidrez_test.mjs: e2 «peón de Crema», selección e2 → e4 destino posible, flechas, Enter mueve; anuncios «peón de Crema e2–e4. La máquina está pensando…» y «caballo de Chocolate g8–f6. Turno de Crema»."
+ },
+ {
+  "id": "PLAY-SALCHI-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/salchidrez/index.html"
+  ],
+  "detalle": "playerStatus: tarjeta de la máquina muestra «La máquina está pensando…» mientras es su turno (también durante la animación del humano) y «La máquina está moviendo.» mientras su pieza anima; nunca «Toca o arrastra». Tarjeta humana: «Te toca: elegí un perro.» (o «Te toca» con pieza seleccionada).",
+  "verificacion": "Lectura de playerStatus (texto en canvas, no verificable por DOM); la región viva equivalente se verificó en el test."
+ },
+ {
+  "id": "PLAY-SALCHI-02",
+  "estado": "implementado",
+  "archivos": [
+   "site/salchidrez/index.html"
+  ],
+  "detalle": "updateHUD: aria-label y title de Deshacer = «Deshacer tu jugada y la respuesta de la máquina» cuando contra la IA se revierten 2 medias jugadas; «Deshacer última jugada» en local o cuando sólo hay una. Regla sin cambios.",
+  "verificacion": "salchidrez_test.mjs tras la respuesta de la IA."
+ },
+ {
+  "id": "PLAY-SALCHI-03",
+  "estado": "implementado",
+  "archivos": [
+   "site/salchidrez/index.html"
+  ],
+  "detalle": "Botón «Ver tablero final» en el cartel (si la partida está en curso): cierra el cartel sin borrar `over`, muestra #final-view con «El rey de {equipo} está en jaque y no tiene una jugada legal para escapar.» (equipo = bando al que le toca mover) y «Volver al resultado»; la línea de ataque se dibuja también en mate (finalReview); Deshacer sigue operando según las reglas existentes.",
+  "verificacion": "salchidrez_test.mjs (mate del loco local): texto exacto, Deshacer habilitado, Volver al resultado reabre el cartel; captura salchidrez-final-view-test.png."
+ },
+ {
+  "id": "PLAY-SALCHI-04",
+  "estado": "implementado",
+  "archivos": [
+   "site/salchidrez/index.html"
+  ],
+  "detalle": "Estadísticas finales: «Piezas capturadas por Crema/Chocolate» (SIDE_NAME real). El conteo de movidas se conserva (Math.ceil(turnos/2), número de jugada en notación de ajedrez) con rótulo «Jugadas», unidad consultable «{n} turnos» y title explicativo. No se usó literalmente «Jugadas completas» porque ceil(turnos/2) no es el número de jugadas completas en turnos impares y la instrucción prohíbe cambiar la métrica: contradicción señalada al coordinador.",
+  "verificacion": "salchidrez_test.mjs: mate en 4 turnos muestra «Jugadas … 4 turnos» y capturas por equipo."
+ },
+ {
+  "id": "PLAY-SALCHI-05",
+  "estado": "implementado",
+  "archivos": [
+   "site/salchidrez/index.html"
+  ],
+  "detalle": "Tablero accesible (ver RSP-02), región de turno «Turno de {equipo}», botones Música/Sonidos con aria-pressed y nombre «Música desactivada»/«Sonidos desactivados» cuando están apagados, sin disabled.",
+  "verificacion": "salchidrez_test.mjs: aria-pressed=false y «Música desactivada», botón sigue habilitado."
+ },
+ {
+  "id": "RSP-GLOBAL-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/salchidrez/index.html"
+  ],
+  "detalle": "Salchidrez: meta viewport sin maximum-scale/user-scalable; touch-action:none sólo en el canvas (quitado de html,body); overlays con pan-y pinch-zoom; botones manipulation.",
+  "verificacion": "grep del meta y CSS; test a 320 sin desborde."
+ },
+ {
+  "id": "RSP-SALCHIDREZ-03",
+  "estado": "implementado",
+  "archivos": [
+   "site/salchidrez/index.html"
+  ],
+  "detalle": "Grupos rival/dificultad/color con role=group y aria-labelledby; setPressed sincroniza .on y aria-pressed en syncCards (inicio, restauración, leaveLesson) y en los clicks; temas con aria-pressed en inicio y cambio; ai-opts.hidden sin cambios.",
+  "verificacion": "salchidrez_test.mjs: una selección por grupo al inicio, cambio a amigo sincroniza pressed y oculta opciones de IA."
+ },
+ {
+  "id": "RSP-SALCHIDREZ-04",
+  "estado": "implementado",
+  "archivos": [
+   "site/salchidrez/index.html"
+  ],
+  "detalle": ".overlay con padding lateral calc(16px + env(safe-area-inset-left/right)); .garrow 44×44 flex:0 0 44px también en horizontal (eliminada la regla de 40 px).",
+  "verificacion": "salchidrez_test.mjs: flechas 44×44."
+ },
+ {
+  "id": "SRC-CH02",
+  "estado": "implementado",
+  "archivos": [
+   "site/salchidrez/index.html"
+  ],
+  "detalle": "Con partida guardada, #btn-start pasa a «Nueva partida» y abre confirmación «¿Reemplazar la partida guardada?» / «La partida guardada se reemplazará por una nueva.» con Cancelar enfocado y «Nueva partida»; sin guardado sigue «¡A jugar!». Continuar partida conserva el resumen (rival y movida).",
+  "verificacion": "salchidrez_test.mjs: Nueva partida visible con guardado, confirmación con foco en Cancelar, Escape no toca el guardado, confirmar inicia partida nueva."
+ },
+ {
+  "id": "VIS-SALCHIDREZ-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/salchidrez/index.html"
+  ],
+  "detalle": "drawBoard: con fr ≥ 12 las coordenadas van al margen interior del marco a 2 px del área de juego (crema con contorno fino para leerse en los seis marcos); con marcos menores conservan su posición sobre un respaldo del color claro del tema al 90 %; fuente mínima 11 px si s ≥ 32, 9 px debajo; viñeta a alpha .08. Siguen flipped; sqXY y L.s sin cambios.",
+  "verificacion": "Captura salchidrez-final-view-test.png (letras a–h y números en el marco)."
+ },
+ {
+  "id": "VIS-SALCHIDREZ-02",
+  "estado": "implementado",
+  "archivos": [
+   "site/salchidrez/index.html"
+  ],
+  "detalle": "Última jugada: relleno .16 + esquinas interiores de 2 px fijas; selección: relleno .22 + borde sólido 3 px; foco de teclado cian con halo fijo de 6 px; captura: borde rosa discontinuo fijo con un único pulso de 450 ms al seleccionar (selAt); jaque rojo sin cambios; selMoves/inCheck intactos.",
+  "verificacion": "Lectura de render; captura del tablero final."
+ },
+ {
+  "id": "VIS-SALCHIDREZ-03",
+  "estado": "implementado",
+  "archivos": [
+   "site/salchidrez/index.html"
+  ],
+  "detalle": "opts.simple cuando la casilla mide <40 px: omite pestañas, perlas, reflejo del ojo y ceja decorativa; se conservan cabeza, hocico, cuerpo, orejas y el accesorio de tipo. Insignia de tipo (drawPieceBadge, radio .17 s ≈ .27 s) en la pieza seleccionada cuando el ajuste de símbolos está apagado.",
+  "verificacion": "Lectura de drawDog/drawDogHead; captura a 390 (casillas ≈ 46 px, sin variante) — render a 320 pendiente de ojo humano."
+ },
+ {
+  "id": "VIS-SALCHIDREZ-04",
+  "estado": "implementado",
+  "archivos": [
+   "site/salchidrez/index.html"
+  ],
+  "detalle": "drawBackground: estrellas, nubes y nieve se dibujan con clip evenodd fuera del rectángulo acolchado + 8 px durante la partida; noche 24 estrellas y nieve 24 copos en partida (menú conserva 46/60); con prefers-reduced-motion: sin titileo, nubes quietas, copos fijos, sin rebote de la pieza seleccionada ni sacudón de cámara (el borde sólido marca la selección).",
+  "verificacion": "Lectura de código; humo sin errores. Comparación visual Nieve/Noche con y sin movimiento reducido pendiente de ojo humano."
+ },
+ {
+  "id": "SRC-CH01",
+  "estado": "implementado",
+  "archivos": [
+   "site/salchidrez/index.html"
+  ],
+  "detalle": "Fin de lección: «Siguiente lección» (se conservan «Siguiente etapa»/«Ver etapas»), «Repetir lección» al ganar y «Reintentar lección» al no superar; fin de partida: «Revancha» conservado y «Volver al menú» (EN «Back to menu»).",
+  "verificacion": "salchidrez_test.mjs: «Volver al menú» en el cartel; lectura de paintLessonEnd."
+ },
+ {
+  "id": "SRC-G01",
+  "estado": "no_aplicable",
+  "archivos": [],
+  "detalle": "Salchidrez: .jg-back ya navega en la misma pestaña; las tarjetas son de la home.",
+  "verificacion": "Lectura del HTML."
+ },
+ {
+  "id": "SRC-G02",
+  "estado": "ya_corregido_verificado",
+  "archivos": [],
+  "detalle": "Salchidrez: selector ES/EN (menú y Ajustes) con aria-pressed vía JETIdioma; repintado en vivo.",
+  "verificacion": "salchidrez_test.mjs: EN cambia etiquetas y aria-pressed."
+ },
+ {
+  "id": "SRC-G03",
+  "estado": "implementado",
+  "archivos": [
+   "site/salchidrez/index.html"
+  ],
+  "detalle": "Salchidrez: «Continuar partida» (guardado), «Nueva partida» con confirmación, «Volver al menú», «Revancha», «Repetir/Reintentar lección»; «Menú» de la barra pausa y guarda (explicado en Cómo jugar).",
+  "verificacion": "salchidrez_test.mjs."
+ },
+ {
+  "id": "SRC-G04",
+  "estado": "no_aplicable",
+  "archivos": [],
+  "detalle": "Salchidrez no ofrece borrado de progreso; el único reemplazo destructivo (partida guardada) tiene confirmación explícita (SRC-CH02).",
+  "verificacion": "grep de removeItem."
+ },
+ {
+  "id": "SRC-G05",
+  "estado": "no_aplicable",
+  "archivos": [],
+  "detalle": "HTML único sin módulos externos (fuentes aparte); título y menú visibles sin esperar red; el worker de IA se crea desde un blob interno.",
+  "verificacion": "Lectura de <head> y de engineWorker."
+ },
+ {
+  "id": "SRC-G06",
+  "estado": "no_aplicable",
+  "archivos": [],
+  "detalle": "Salchidrez no tiene acción de compartir.",
+  "verificacion": "grep de navigator.share/clipboard."
+ }
+]

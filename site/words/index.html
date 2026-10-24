@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <script>
 /* Mudanza desde jetwords.jetgames.fun (2026-10-22): el puente de la dirección vieja manda el progreso
    en #jet-migrar=<base64url de un JSON {clave:valor}>; se importan solo las claves que aún no existen. */
@@ -21,25 +21,24 @@ try{history.replaceState(null,'',location.pathname+location.search);}catch(e){}}
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=JetBrains+Mono:wght@600;700&display=swap" rel="stylesheet">
 <link rel="icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%230a0512'/><rect x='10' y='10' width='20' height='20' rx='4' fill='%2300f2cf'/><rect x='34' y='10' width='20' height='20' rx='4' fill='%23fdd835'/><rect x='10' y='34' width='20' height='20' rx='4' fill='%237700f4'/><rect x='34' y='34' width='20' height='20' rx='4' fill='%23ffffff' opacity='.25'/></svg>">
 <style>
-:root{--bg:#0a0512;--bg2:#120a22;--card:#1a1030;--line:rgba(245,240,255,.12);--ink:#f5f2ff;--dim:#9a90b8;--cyan:#00f2cf;--violet:#7700f4;--yellow:#fdd835;--green:#3ddc84;--sat:env(safe-area-inset-top,0px);--sab:env(safe-area-inset-bottom,0px);--sal:env(safe-area-inset-left,0px);--sar:env(safe-area-inset-right,0px)}
+:root{--bg:#0a0512;--bg2:#120a22;--card:#1a1030;--line:rgba(245,240,255,.12);--ink:#f5f2ff;--dim:#9a90b8;--cyan:#00f2cf;--violet:#7700f4;--yellow:#fdd835;--green:#3ddc84;--active:#a79abe;--sat:env(safe-area-inset-top,0px);--sab:env(safe-area-inset-bottom,0px);--sal:env(safe-area-inset-left,0px);--sar:env(safe-area-inset-right,0px)}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
 html,body{margin:0;height:100%;background:radial-gradient(120% 80% at 50% -10%,#241145 0%,var(--bg) 60%);background-color:var(--bg);color:var(--ink);font-family:Poppins,system-ui,sans-serif;overflow:hidden;overscroll-behavior:none}
 button{font:inherit;color:inherit;background:none;border:0;padding:0;margin:0;cursor:pointer;touch-action:manipulation}
-button:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+button:focus-visible,a:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+.sr{position:absolute!important;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0}
 #app{height:100%;height:100dvh;display:flex;flex-direction:column;max-width:560px;margin:0 auto;padding:calc(6px + var(--sat)) calc(10px + var(--sar)) calc(6px + var(--sab)) calc(10px + var(--sal))}
+#app[inert]{pointer-events:none}
 header{display:grid;grid-template-columns:auto 1fr auto;grid-template-areas:"back . tools" "brand modes modes";align-items:center;column-gap:10px;row-gap:6px;padding:4px 2px}
-#back{grid-area:back;display:inline-flex;align-items:center;gap:4px;height:40px;padding:0 12px 0 8px;margin:-2px 0;border-radius:99px;background:rgba(10,5,18,.6);border:1px solid rgba(119,0,244,.4);color:#d9d3ee;font:600 12px 'JetBrains Mono',monospace;letter-spacing:.04em;text-decoration:none;white-space:nowrap;position:relative;touch-action:manipulation}
-#back::before{content:'';position:absolute;inset:-2px 0}
+#back{grid-area:back;display:inline-flex;align-items:center;gap:4px;min-height:44px;padding:0 12px 0 8px;border-radius:99px;background:rgba(10,5,18,.6);border:1px solid rgba(119,0,244,.4);color:#d9d3ee;font:600 12px 'JetBrains Mono',monospace;letter-spacing:.04em;text-decoration:none;white-space:nowrap;position:relative;touch-action:manipulation;justify-self:start}
 #back svg{width:14px;height:14px}#back i{font-style:normal;color:var(--cyan)}
-#back:hover,#back:focus-visible{color:#fff;border-color:var(--cyan);outline:none}
-.tools{grid-area:tools;display:flex;gap:6px;align-items:center}
+#back:hover{color:#fff;border-color:var(--cyan)}
+.tools{grid-area:tools;display:flex;gap:8px;align-items:center;justify-self:end}
 .brand{grid-area:brand}
 .brand{font-weight:800;font-size:22px;letter-spacing:-.02em;white-space:nowrap}.brand .sl{color:var(--cyan)}
-.spacer{flex:1}
-.ib{width:42px;height:42px;position:relative;border-radius:10px;background:var(--card);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:var(--dim);flex:none}
+.ib{width:44px;height:44px;position:relative;border-radius:10px;background:var(--card);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:var(--dim);flex:none}
 .ib:hover{color:var(--ink)}
 .ib svg{width:17px;height:17px;display:block}
-.ib::before,.lang::before,.x::before,.tog::before{content:'';position:absolute;inset:-3px}
 .modes{grid-area:modes;display:flex;gap:4px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:3px;margin:0;font-size:13px;font-weight:600;min-width:0}
 .modes button{flex:1 1 auto;min-width:0;min-height:38px;padding:0 8px;border-radius:9px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.modes button.on{background:var(--violet);color:#fff}
 .sub{text-align:center;font-size:11px;color:var(--dim);letter-spacing:.08em;text-transform:uppercase;min-height:16px;margin-top:2px}
@@ -47,9 +46,17 @@ header{display:grid;grid-template-columns:auto 1fr auto;grid-template-areas:"bac
 #board{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;padding:6px 0}
 .grid{display:grid;grid-template-rows:repeat(6,1fr);gap:6px;height:min(100%,420px,96vw);aspect-ratio:5/6;perspective:600px}
 .row{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
-.cell{display:flex;align-items:center;justify-content:center;border:2px solid var(--line);border-radius:10px;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:clamp(18px,6vw,32px);text-transform:uppercase;background:rgba(255,255,255,.02);transition:background-color .05s,border-color .05s}
-.cell.filled{border-color:var(--dim)}.cell.pop{animation:pop .12s}
-.cell.absent{background:#2a2140;border-color:#2a2140;color:#7d7396}.cell.present{background:var(--yellow);border-color:var(--yellow);color:#1a1200}.cell.correct{background:var(--green);border-color:var(--green);color:#052d18}
+/* VIS-WORDS-01: filas futuras discretas (--line), fila activa con borde neutro más claro, nunca un color de respuesta */
+.cell{position:relative;display:flex;align-items:center;justify-content:center;border:2px solid var(--line);border-radius:10px;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:clamp(18px,6vw,32px);line-height:1;text-transform:uppercase;background:rgba(255,255,255,.02);transition:background-color .05s,border-color .05s}
+.row.active .cell{border-color:rgba(167,154,190,.55)}
+.row.active .cell.filled,.cell.filled{border-color:var(--active)}
+.cell.pop{animation:pop .12s}
+.cell.absent{background:#2a2140;border-color:#2a2140;color:#8f85a8}.cell.present{background:var(--yellow);border-color:var(--yellow);color:#1a1200}.cell.correct{background:var(--green);border-color:var(--green);color:#052d18}
+/* RSP-WORDS-02 / PLAY-WORDS-01: marca no cromática en la esquina, sin tapar la letra */
+.cell::after,.key::after,.ex span::after{position:absolute;top:2px;right:4px;font-family:Poppins,system-ui,sans-serif;font-size:10px;font-weight:800;line-height:1;opacity:.95;pointer-events:none}
+.cell.correct::after,.key.correct::after,.ex span.c::after{content:'✓'}
+.cell.present::after,.key.present::after,.ex span.p::after{content:'•';font-size:14px;top:0}
+.cell.absent::after,.ex span.a::after{content:'–'}
 .cell.flip{animation:flip .5s ease-in-out}
 .row.win .cell{animation:hop .5s ease both}
 @keyframes pop{from{transform:scale(.85)}to{transform:scale(1)}}@keyframes flip{0%{transform:rotateX(0)}50%{transform:rotateX(90deg)}100%{transform:rotateX(0)}}
@@ -57,37 +64,43 @@ header{display:grid;grid-template-columns:auto 1fr auto;grid-template-areas:"bac
 .row.shake{animation:shake .4s}@keyframes shake{20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
 #kb{display:flex;flex-direction:column;gap:6px;padding:4px 0 2px}
 .krow{display:flex;gap:5px;justify-content:center}
-.key{flex:1;max-width:44px;height:54px;border-radius:9px;background:#2b2044;font-weight:600;font-size:15px;text-transform:uppercase;display:flex;align-items:center;justify-content:center;color:var(--ink);transition:background-color .2s,color .2s}
-.key.wide{max-width:70px;flex:1.6;font-size:12px}
-.key.absent{background:#17102a;color:#5a5275}.key.present{background:var(--yellow);color:#1a1200}.key.correct{background:var(--green);color:#052d18}
+.key{position:relative;flex:1;max-width:44px;height:54px;border-radius:9px;background:#2b2044;font-weight:600;font-size:15px;text-transform:uppercase;display:flex;align-items:center;justify-content:center;color:var(--ink);transition:background-color .2s,color .2s}
+.key.wide{max-width:70px;flex:1.6;font-size:12px;text-transform:none}
+/* VIS-WORDS-02 / PLAY-WORDS-02: descartada legible (#b2a7c8) con raya inferior; sigue habilitada */
+.key.absent{background:#17102a;color:#b2a7c8}.key.absent::after{content:'';top:auto;bottom:5px;left:25%;right:25%;height:1px;background:#6c607f;opacity:1}
+.key.present{background:var(--yellow);color:#1a1200}.key.correct{background:var(--green);color:#052d18}
 .key:active,.key.down{transform:scale(.94);filter:brightness(1.25)}
 .toast{position:fixed;left:50%;top:calc(104px + var(--sat));transform:translateX(-50%);background:#fff;color:#111;font-weight:700;padding:10px 16px;border-radius:12px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:40;font-size:14px;white-space:nowrap;box-shadow:0 8px 30px rgba(0,0,0,.4)}
 .toast.show{opacity:1}
-.modal-bg{position:fixed;inset:0;background:rgba(5,2,12,.72);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;padding:16px;z-index:20}.modal-bg.show{display:flex}
-.modal{position:relative;background:var(--bg2);border:1px solid var(--line);border-radius:20px;padding:20px;width:min(440px,100%);max-height:calc(100dvh - 32px);overflow:auto;animation:rise .22s ease}
+/* RSP-WORDS-03: padding por cada inset + 16, el panel nunca supera el espacio disponible */
+.modal-bg{position:fixed;inset:0;background:rgba(5,2,12,.72);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;padding:calc(16px + var(--sat)) calc(16px + var(--sar)) calc(16px + var(--sab)) calc(16px + var(--sal));z-index:20}.modal-bg.show{display:flex}
+.modal{position:relative;background:var(--bg2);border:1px solid var(--line);border-radius:20px;padding:20px;width:min(440px,100%);max-height:100%;overflow:auto;touch-action:pan-y pinch-zoom;animation:rise .22s ease}
 @keyframes rise{from{transform:translateY(12px);opacity:0}to{transform:none;opacity:1}}
 .modal h2{margin:0 0 6px;font-size:22px;padding-right:44px}.modal p{color:var(--dim);margin:6px 0;font-size:14px;line-height:1.5}
+.modal h3{margin:12px 0 4px;font-size:12px;line-height:1.3;font-weight:600;color:#b7abce;letter-spacing:.04em;text-transform:uppercase}
 .x{position:absolute;top:10px;right:10px;width:44px;height:44px;border-radius:10px;color:var(--dim);font-size:20px;display:flex;align-items:center;justify-content:center}
 .x:hover{color:var(--ink);background:var(--card)}
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:12px 0}.stat{background:var(--card);border-radius:12px;padding:10px 6px;text-align:center}.stat b{display:block;font-size:22px;font-family:'JetBrains Mono',monospace}.stat span{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.06em}
-.dist{display:flex;flex-direction:column;gap:4px;margin:8px 0 12px}.dist div{display:flex;align-items:center;gap:8px;font-family:'JetBrains Mono',monospace;font-size:12px}.dist i{display:block;height:18px;background:#2b2044;border-radius:4px;min-width:18px;text-align:right;padding-right:6px;font-style:normal;line-height:18px}.dist i.hi{background:var(--green);color:#052d18}
-.acts{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}.btn{flex:1;padding:12px;border-radius:12px;background:var(--card);border:1px solid var(--line);font-weight:700;text-align:center;white-space:nowrap}.btn.primary{background:var(--cyan);color:#052d18;border-color:transparent}
+/* VIS-WORDS-03 / PLAY-WORDS-04: cifras con tabular-nums, rótulos de 12 px, dos filas antes de comprimir */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:6px 0 12px}.stat{background:var(--card);border-radius:12px;padding:10px 6px;text-align:center;display:flex;flex-direction:column;gap:4px;justify-content:center}.stat b{display:block;font-size:24px;line-height:1.1;font-weight:700;font-family:'JetBrains Mono',monospace;font-variant-numeric:tabular-nums}.stat span{font-size:12px;line-height:1.3;font-weight:600;color:#b7abce}
+.dist{display:flex;flex-direction:column;gap:4px;margin:4px 0 12px}.dist div{display:grid;grid-template-columns:14px 1fr auto;align-items:center;gap:8px;font-family:'JetBrains Mono',monospace;font-size:12px;font-variant-numeric:tabular-nums}.dist i{display:block;height:20px;background:#2b2044;border-radius:4px;min-width:6px}.dist i.hi{background:var(--green)}.dist b{font-weight:700;min-width:2ch;text-align:right}
+.acts{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}.btn{flex:1;min-height:44px;padding:12px;border-radius:12px;background:var(--card);border:1px solid var(--line);font-weight:700;text-align:center;white-space:nowrap;text-decoration:none;color:inherit;display:inline-flex;align-items:center;justify-content:center}.btn.primary{background:var(--cyan);color:#052d18;border-color:transparent}
 /* en pantallas bajas, el botón de la ayuda queda siempre a la vista */
 #mHelp .acts{position:sticky;bottom:-20px;margin:10px -20px -20px;padding:14px 20px 18px;background:linear-gradient(rgba(18,10,34,0),var(--bg2) 35%)}
 .answer{font-family:'JetBrains Mono',monospace;font-size:28px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--yellow);margin:8px 0}
 .answer:empty{display:none}
-.ex{display:inline-flex;gap:4px;margin:4px 0}.ex span{width:30px;height:30px;border-radius:6px;border:1.5px solid var(--line);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-weight:700;text-transform:uppercase}
-.ex span.c{background:var(--green);border-color:var(--green);color:#052d18}.ex span.p{background:var(--yellow);border-color:var(--yellow);color:#1a1200}.ex span.a{background:#2a2140;border-color:#2a2140;color:#7d7396}
+.ex{display:inline-flex;gap:4px;margin:4px 0}.ex span{position:relative;width:30px;height:30px;border-radius:6px;border:1.5px solid var(--line);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-weight:700;text-transform:uppercase}
+.ex span.c{background:var(--green);border-color:var(--green);color:#052d18}.ex span.p{background:var(--yellow);border-color:var(--yellow);color:#1a1200}.ex span.a{background:#2a2140;border-color:#2a2140;color:#8f85a8}
+.ex span.ka{background:#17102a;border-color:#17102a;color:#b2a7c8;border-radius:5px}.ex span.ka::after{content:'';top:auto;bottom:4px;left:25%;right:25%;height:1px;background:#6c607f}
 .timer{text-align:center;font-family:'JetBrains Mono',monospace;color:var(--ink)!important;font-size:15px!important}
 .timer small{display:block;font-family:Poppins,sans-serif;color:var(--dim);font-size:11px;letter-spacing:.08em;text-transform:uppercase}
 .set{display:grid;grid-template-columns:1fr auto;grid-template-areas:"lbl tog" "rng rng";align-items:center;column-gap:12px;row-gap:4px;padding:12px 0;border-bottom:1px solid var(--line)}
-.set .lbl{grid-area:lbl}.set .tog{grid-area:tog}.set input[type=range]{grid-area:rng;width:100%}
+.set .lbl{grid-area:lbl}.set .tog{grid-area:tog}.set input[type=range]{grid-area:rng;width:100%}.set .btn{grid-area:tog;flex:none;min-height:44px;padding:0 16px}
 .set:last-of-type{border-bottom:0}
 .set .lbl{flex:1;font-weight:600;font-size:14px}.set .lbl small{display:block;color:var(--dim);font-weight:400;font-size:12px}
 .tog{width:52px;height:30px;border-radius:15px;background:#2b2044;position:relative;flex:none;transition:background .2s}
 .tog::after{content:'';position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;transition:transform .2s}
 .tog[aria-checked="true"]{background:var(--violet)}.tog[aria-checked="true"]::after{transform:translateX(22px)}
-.tog::before{inset:-7px -4px}
+.tog::before{content:'';position:absolute;inset:-7px -4px}
 input[type=range]{-webkit-appearance:none;appearance:none;width:110px;height:36px;background:transparent;flex:none;touch-action:none}
 input[type=range]::-webkit-slider-runnable-track{height:6px;border-radius:3px;background:linear-gradient(90deg,var(--cyan) var(--v,50%),#2b2044 var(--v,50%))}
 input[type=range]::-moz-range-track{height:6px;border-radius:3px;background:#2b2044}input[type=range]::-moz-range-progress{height:6px;border-radius:3px;background:var(--cyan)}
@@ -95,19 +108,29 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
 input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:#fff;border:0}
 input[type=range]:disabled{opacity:.35}
 footer{font-size:11px;color:var(--dim);text-align:center;padding-top:4px}footer a{color:var(--cyan);text-decoration:none}
-.lang{position:relative;display:flex;height:42px;border-radius:10px;background:var(--card);border:1px solid var(--line);padding:3px;gap:2px;font-size:12px;font-weight:700;flex:none}
+.lang{position:relative;display:flex;height:44px;border-radius:10px;background:var(--card);border:1px solid var(--line);padding:3px;gap:2px;font-size:12px;font-weight:700;flex:none}
 .lang button{position:relative;display:flex;align-items:center;justify-content:center;min-width:44px;padding:0 10px;border-radius:7px;color:var(--dim)}.lang button.on{background:var(--violet);color:#fff}
 .set .lang{grid-area:tog;height:44px}
-#btnLang button{min-width:34px;padding:0 8px}
-@media(max-width:400px){header{column-gap:8px}.tools{gap:4px}.brand{font-size:19px}.ib{width:38px;height:38px}.lang{height:38px}#btnLang button{min-width:30px;padding:0 6px}#back{padding:0 10px 0 6px;font-size:11px;letter-spacing:.02em}.modes{font-size:12px}.modes button{padding:0 6px}}
-@media(max-width:350px){header{column-gap:6px}.tools{gap:3px}.brand{font-size:17px}.ib{width:36px;height:36px}.lang{height:36px;padding:2px}#btnLang button{min-width:28px;padding:0 5px;font-size:11px}#back{height:36px;padding:0 8px 0 5px;font-size:10.5px;letter-spacing:0}.modes{font-size:11px}.modes button{padding:0 4px}}
+#btnLang button{min-width:36px;padding:0 8px}
+/* SRC-W02: el texto íntegro del resultado queda seleccionable */
+.sharebox{display:block;width:100%;min-height:150px;resize:vertical;margin:8px 0 0;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:600 14px/1.5 'JetBrains Mono',monospace;user-select:text;-webkit-user-select:text}
+/* SRC-G05: estado de error de carga, recuperable */
+#boot{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;padding:calc(16px + var(--sat)) calc(16px + var(--sar)) calc(16px + var(--sab)) calc(16px + var(--sal));background:var(--bg)}
+#boot[hidden]{display:none}
+#boot .modal{animation:none}
+/* RSP-WORDS-04: a <=419 px la cabecera se resuelve en filas, no encogiendo las áreas de interacción */
+@media(max-width:419px){
+  header{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"back tools" "brand brand" "modes modes";gap:6px 8px}
+  .tools{gap:8px}#btnLang,#btnStats{display:none}
+  .brand{font-size:21px}.modes{font-size:12px}.modes button{padding:0 6px}
+}
 @media(max-height:680px){.key{height:46px}}
-@media(max-width:380px){.stat span{font-size:11px;letter-spacing:0;display:block;line-height:1.2}.stat b{font-size:19px}}
+@media(max-width:380px){.stats{grid-template-columns:repeat(2,1fr)}}
 @media(max-height:560px) and (orientation:portrait){.sub,footer{display:none}.key{height:40px}}
 /* teléfono o tablet acostada con poca altura: tablero a la izquierda, teclado a la derecha */
 @media(orientation:landscape) and (max-height:560px){
   #app{max-width:none;padding-top:calc(4px + var(--sat));padding-bottom:calc(4px + var(--sab))}
-  header{padding:0 2px 4px;grid-template-columns:auto auto auto 1fr auto;grid-template-areas:"back brand modes . tools";row-gap:0}.brand{font-size:18px}.ib,.lang{height:38px}.ib{width:38px}#back{height:38px}
+  header{padding:0 2px 4px;grid-template-columns:auto auto auto 1fr auto;grid-template-areas:"back brand modes . tools";row-gap:0}.brand{font-size:18px}
   .modes{padding:2px}.modes button{min-height:32px;padding:0 12px;min-width:max-content}
   .sub,footer{display:none}
   .play{flex-direction:row;gap:clamp(14px,4vw,48px);align-items:center;justify-content:center}
@@ -118,7 +141,8 @@ footer{font-size:11px;color:var(--dim);text-align:center;padding-top:4px}footer 
   .toast{top:calc(46px + var(--sat))}
 }
 @media(max-height:360px) and (orientation:landscape){.modes{display:none}}
-@media(prefers-reduced-motion:reduce){.cell.flip,.row.win .cell,.cell.pop,.row.shake,.modal{animation:none!important}}
+/* VIS-WORDS-04: con movimiento reducido el estado final aparece de inmediato */
+@media(prefers-reduced-motion:reduce){.cell.flip,.row.win .cell,.cell.pop,.row.shake,.modal{animation:none!important}.cell,.key,.tog,.tog::after,.toast{transition:none!important}}
 </style>
 </head>
 <body>
@@ -126,7 +150,7 @@ footer{font-size:11px;color:var(--dim);text-align:center;padding-top:4px}footer 
   <header>
     <a id="back" href="https://jetgames.fun/" target="_top" rel="noopener" aria-label="Volver a JET//Games"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>JET<i>//</i>Games</a>
     <h1 class="brand" style="margin:0">JET<span class="sl">//</span>Words</h1>
-    <nav class="modes" id="modes" aria-label="Modo"><button id="mDaily" class="on">Palabra del día</button><button id="mFree">Práctica</button></nav>
+    <nav class="modes" id="modes" aria-label="Modo"><button id="mDaily" class="on" aria-pressed="true">Palabra del día</button><button id="mFree" aria-pressed="false">Práctica</button></nav>
     <div class="tools">
     <div class="lang" id="btnLang" role="group" aria-label="Idioma / Language"><button data-l="es" lang="es">ES</button><button data-l="en" lang="en">EN</button></div>
     <button class="ib" id="btnStats" aria-label="Estadísticas"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="8" width="3" height="6.5" rx="1" fill="currentColor"/><rect x="6.5" y="4" width="3" height="10.5" rx="1" fill="currentColor"/><rect x="11.5" y="1.5" width="3" height="13" rx="1" fill="currentColor"/></svg></button>
@@ -134,33 +158,48 @@ footer{font-size:11px;color:var(--dim);text-align:center;padding-top:4px}footer 
     <button class="ib" id="btnHelp" aria-label="Cómo jugar">?</button>
     </div>
   </header>
-  <div class="sub" id="sub"></div>
+  <div class="sub" id="sub">Cargando JET//Words…</div>
   <div class="play">
-    <div id="board"><div class="grid" id="grid"></div></div>
-    <div id="kb"></div>
+    <div id="board"><div class="grid" id="grid" role="group" aria-label="Tablero"></div></div>
+    <div id="kb" role="group" aria-label="Teclado"></div>
   </div>
   <footer>© 2026 JETCompany OÜ · <a href="https://jetgames.fun/">jetgames.fun</a></footer>
 </div>
-<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="toast" id="toast" aria-hidden="true"></div>
+<!-- PLAY-WORDS-05: región de validación (se vacía al corregir). RSP-WORDS-02: región exclusiva del resultado. -->
+<div id="srMsg" class="sr" role="status" aria-live="polite"></div>
+<div id="srResult" class="sr" role="status" aria-live="polite"></div>
 <div class="modal-bg" id="mHelp"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="hTitle"><button class="x" data-close aria-label="Cerrar">×</button><h2 id="hTitle">Cómo jugar</h2><div id="hBody"></div><div class="acts"><button class="btn primary" data-close id="hOk">A jugar</button></div></div></div>
-<div class="modal-bg" id="mEnd"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="eTitle"><button class="x" data-close aria-label="Cerrar">×</button><h2 id="eTitle"></h2><div class="answer" id="eWord"></div><p id="eMsg"></p><div class="stats" id="eStats"></div><div class="dist" id="eDist"></div><div class="acts"><button class="btn" id="eShare">Compartir</button><button class="btn primary" id="eNext">Otra palabra</button></div><p class="timer" id="eTimer"></p></div></div>
+<div class="modal-bg" id="mEnd"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="eTitle"><button class="x" data-close aria-label="Cerrar">×</button><h2 id="eTitle"></h2><div class="answer" id="eWord"></div><p id="eMsg"></p><h3 id="eStatsT"></h3><div class="stats" id="eStats"></div><h3 id="eDistT"></h3><div class="dist" id="eDist"></div><div class="acts"><button class="btn" id="eShare">Compartir resultado</button><button class="btn primary" id="eNext">Otra palabra</button></div><p class="timer" id="eTimer"></p></div></div>
+<div class="modal-bg" id="mShare"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="shTitle"><button class="x" data-close aria-label="Cerrar">×</button><h2 id="shTitle">Compartir resultado</h2><p id="shMsg"></p><textarea class="sharebox" id="shText" readonly aria-labelledby="shTitle" rows="8"></textarea><div class="acts"><button class="btn primary" id="shCopy">Copiar texto</button><button class="btn" data-close id="shClose">Cerrar</button></div></div></div>
 <div class="modal-bg" id="mSet"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="sTitle"><button class="x" data-close aria-label="Cerrar">×</button><h2 id="sTitle">Ajustes</h2>
   <div class="set"><div class="lbl" id="sMusL">Música<small id="sMusS">Composición original, suave, para pensar</small></div><input type="range" id="sMusV" min="0" max="100" step="1" aria-labelledby="sMusL"><button class="tog" id="sMus" role="switch" aria-checked="true" aria-labelledby="sMusL"></button></div>
   <div class="set"><div class="lbl" id="sSfxL">Efectos<small id="sSfxS">Teclas y fichas</small></div><input type="range" id="sSfxV" min="0" max="100" step="1" aria-labelledby="sSfxL"><button class="tog" id="sSfx" role="switch" aria-checked="true" aria-labelledby="sSfxL"></button></div>
+  <div class="set"><div class="lbl" id="sStatsL">Estadísticas<small id="sStatsS">Partidas, victorias y racha de este modo e idioma.</small></div><button class="btn" id="sStats">Ver</button></div>
   <div class="set"><div class="lbl" id="sLangL">Idioma<small id="sLangS">También cambia la lista de palabras y se aplica a todo JET//Games.</small></div><div class="lang" id="sLang" role="group" aria-labelledby="sLangL"><button data-l="es" lang="es">ES</button><button data-l="en" lang="en">EN</button></div></div>
   <div class="acts"><button class="btn primary" data-close id="sOk">Listo</button></div></div></div>
+<div id="boot" hidden><div class="modal" role="alertdialog" aria-modal="true" aria-labelledby="bootT" aria-describedby="bootMsg"><h2 id="bootT">JET//Words</h2><p id="bootMsg">La carga se interrumpió. Podés volver a intentarlo.</p><div class="acts"><button class="btn primary" id="bootReload">Volver a cargar</button><a class="btn" id="bootHome" href="https://jetgames.fun/">Volver a los juegos</a></div></div></div>
 <script src="palabras.js?v=20261022w"></script>
 <script src="musica.js?v=20261022w"></script>
 <script>
 (function(){
 'use strict';
 const $=id=>document.getElementById(id);
-const HELP_ES='<p>Adivina la palabra de <b>cinco letras</b> en seis intentos. Después de cada intento los colores te guían:</p><div class="ex"><span class="c">p</span><span>l</span><span>a</span><span>t</span><span>o</span></div><p><b>Verde</b>: la letra está en la palabra y en ese lugar.</p><div class="ex"><span>c</span><span class="p">a</span><span>m</span><span>p</span><span>o</span></div><p><b>Amarillo</b>: la letra está, pero en otro lugar.</p><div class="ex"><span>n</span><span>u</span><span>b</span><span class="a">e</span><span>s</span></div><p><b>Gris</b>: la letra no está.</p><p>Las tildes no cuentan (escribe <b>arbol</b> para árbol) y la <b>ñ</b> es una letra más. Se aceptan plurales y verbos conjugados. Hay una palabra nueva cada día y práctica sin límite.</p><p>Teclado: escribe, <b>Enter</b> para enviar, <b>Retroceso</b> para borrar.</p><p style="font-size:11px">Diccionarios: Hunspell RLA-ES (MPL), Wiktionary vía Kaikki (CC BY-SA 4.0), ENABLE y SCOWL. Música original de JET.</p>';
-const HELP_EN='<p>Guess the <b>five-letter</b> word in six tries. After each guess the colors guide you:</p><div class="ex"><span class="c">p</span><span>l</span><span>a</span><span>n</span><span>t</span></div><p><b>Green</b>: the letter is in the word and in the right spot.</p><div class="ex"><span>c</span><span class="p">a</span><span>m</span><span>p</span><span>s</span></div><p><b>Yellow</b>: the letter is in the word but elsewhere.</p><div class="ex"><span>b</span><span>o</span><span>a</span><span class="a">r</span><span>d</span></div><p><b>Gray</b>: the letter is not in the word.</p><p>A new word every day, plus unlimited practice. Keyboard: type, <b>Enter</b> to submit, <b>Backspace</b> to delete.</p><p style="font-size:11px">Word lists: ENABLE, SCOWL, Hunspell RLA-ES (MPL) and Wiktionary via Kaikki (CC BY-SA 4.0). Original music by JET.</p>';
+// SRC-G05: si palabras.js no llegó (red, bloqueo o error), estado de error recuperable; nada queda a medio pintar.
+function bootError(){const en=(window.JETIdioma&&JETIdioma.get()==='en');
+  $('bootMsg').textContent=en?'Loading was interrupted. You can try again.':'La carga se interrumpió. Podés volver a intentarlo.';
+  $('bootReload').textContent=en?'Reload game':'Volver a cargar';$('bootHome').textContent=en?'Back to games':'Volver a los juegos';
+  $('bootReload').onclick=()=>location.reload();$('sub').textContent='';$('app').inert=true;$('boot').hidden=false;$('bootReload').focus();}
+if(!window.WORDS||!window.WORDS.es||!window.WORDS.en){bootError();return;}
+const HELP_ES='<p>Adivina la palabra de <b>cinco letras</b> en seis intentos. Después de cada intento los colores y las marcas te guían:</p><div class="ex"><span class="c">p</span><span>l</span><span>a</span><span>t</span><span>o</span></div><p><b>Verde ✓</b>: la letra está en la palabra y en ese lugar.</p><div class="ex"><span>c</span><span class="p">a</span><span>m</span><span>p</span><span>o</span></div><p><b>Amarillo •</b>: la letra está, pero en otro lugar.</p><div class="ex"><span>n</span><span>u</span><span>b</span><span class="a">e</span><span>s</span></div><p><b>Gris –</b>: esa copia de la letra no coincide con ninguna letra de la palabra.</p><div class="ex"><span>c</span><span class="a">a</span><span>r</span><span>t</span><span class="c">a</span></div><p><b>Letras repetidas</b>: si repetís una letra, sólo se marcan las veces que aparece en la palabra. Una copia puede quedar gris aunque otra esté verde.</p><div class="ex"><span class="ka">x</span></div><p><b>Letra descartada</b>: en el teclado se ve más oscura y con una raya abajo cuando ningún intento la encontró. Igual podés seguir escribiéndola.</p><p>Las tildes no cuentan (escribe <b>arbol</b> para árbol) y la <b>ñ</b> es una letra más. Se aceptan plurales y verbos conjugados. Hay una palabra nueva cada día y práctica sin límite.</p><p>Teclado: escribe, <b>Enter</b> para enviar, <b>Retroceso</b> para borrar. En el teclado de pantalla, las flechas recorren las teclas y Enter o Espacio las activan.</p><p style="font-size:11px">Diccionarios: Hunspell RLA-ES (MPL), Wiktionary vía Kaikki (CC BY-SA 4.0), ENABLE y SCOWL. Música original de JET.</p>';
+const HELP_EN='<p>Guess the <b>five-letter</b> word in six tries. After each guess the colors and marks guide you:</p><div class="ex"><span class="c">p</span><span>l</span><span>a</span><span>n</span><span>t</span></div><p><b>Green ✓</b>: the letter is in the word and in the right spot.</p><div class="ex"><span>c</span><span class="p">a</span><span>m</span><span>p</span><span>s</span></div><p><b>Yellow •</b>: the letter is in the word but elsewhere.</p><div class="ex"><span>b</span><span>o</span><span>a</span><span class="a">r</span><span>d</span></div><p><b>Gray –</b>: this copy of the letter matches nothing in the word.</p><div class="ex"><span>s</span><span class="a">e</span><span>n</span><span>s</span><span class="c">e</span></div><p><b>Repeated letters</b>: if you repeat a letter, only as many copies as appear in the word are marked. One copy may be gray while another is green.</p><div class="ex"><span class="ka">x</span></div><p><b>Ruled-out letter</b>: on the keyboard it looks darker with a line underneath once no guess has found it. You can still type it.</p><p>A new word every day, plus unlimited practice. Keyboard: type, <b>Enter</b> to submit, <b>Backspace</b> to delete. On the on-screen keyboard, arrow keys move between keys and Enter or Space activates them.</p><p style="font-size:11px">Word lists: ENABLE, SCOWL, Hunspell RLA-ES (MPL) and Wiktionary via Kaikki (CC BY-SA 4.0). Original music by JET.</p>';
 const T={
- es:{sub:['Palabra del día · {d}','Práctica · sin límite'],modes:['Palabra del día','Práctica'],short:'Faltan letras',bad:'No está en la lista',win:['¡Genial!','¡Impresionante!','¡Excelente!','¡Muy bien!','¡Bien!','¡Por poco!'],lose:'La palabra era',stats:['Jugadas','Victorias','Racha','Mejor racha'],statsT:'Estadísticas',share:'Copiado al portapapeles',shareB:'Compartir',next:'Otra palabra',practice:'Práctica',close:'Cerrar',nextIn:'Próxima palabra en',help:HELP_ES,helpT:'Cómo jugar',helpOk:'A jugar',keys:['qwertyuiop','asdfghjklñ','⏎zxcvbnm⌫'],enter:'Enviar',del:'Borrar',set:'Ajustes',mus:'Música',musS:'Composición original, suave, para pensar',sfx:'Efectos',sfxS:'Teclas y fichas',ok:'Listo',tries:'{n} de 6 intentos',lang:'Idioma',langS:'También cambia la lista de palabras y se aplica a todo JET//Games.',back:'Volver a JET//Games',modeNav:'Modo',title:'JET//Words · La palabra del día',desc:'Adivina la palabra de cinco letras en seis intentos. Una palabra nueva cada día, en español y en inglés, y práctica sin límite.',langB:'Idioma'},
- en:{sub:['Word of the day · {d}','Practice · unlimited'],modes:['Word of the day','Practice'],short:'Not enough letters',bad:'Not in word list',win:['Genius!','Brilliant!','Impressive!','Very good!','Nice!','Just in time!'],lose:'The word was',stats:['Played','Wins','Streak','Best streak'],statsT:'Statistics',share:'Copied to clipboard',shareB:'Share',next:'Another word',practice:'Practice',close:'Close',nextIn:'Next word in',help:HELP_EN,helpT:'How to play',helpOk:'Play',keys:['qwertyuiop','asdfghjkl','⏎zxcvbnm⌫'],enter:'Enter',del:'Delete',set:'Settings',mus:'Music',musS:'Original score, calm, made for thinking',sfx:'Sound effects',sfxS:'Keys and tiles',ok:'Done',tries:'{n} of 6 tries',lang:'Language',langS:'Also switches the word list and applies across JET//Games.',back:'Back to JET//Games',modeNav:'Mode',title:'JET//Words · Word of the day',desc:'Guess the five-letter word in six tries. A new word every day, in English and Spanish, plus unlimited practice.',langB:'Language'}
+ es:{sub:['Palabra del día · {d}','Práctica · sin límite'],modes:['Palabra del día','Práctica'],missingOne:'Falta 1 letra.',missingMany:'Faltan {n} letras.',fiveLetters:'Escribí una palabra de 5 letras.',bad:'No está en la lista',win:['¡Genial!','¡Impresionante!','¡Excelente!','¡Muy bien!','¡Bien!','¡Por poco!'],lose:'La palabra era',stats:['Partidas','Victorias','Victorias consecutivas','Mejor racha'],statsT:'Estadísticas',statsOf:'Estadísticas de {modalidad} · {idioma}',distT:'Intentos necesarios para ganar',langName:{es:'Español',en:'Inglés'},shareB:'Compartir resultado',copied:'Texto copiado',copyFail:'No pudimos copiarlo automáticamente. Seleccioná y copiá este texto.',copyText:'Copiar texto',next:'Otra palabra',practice:'Práctica',close:'Cerrar',nextIn:'Próxima palabra en',help:HELP_ES,helpT:'Cómo jugar',helpOk:'A jugar',keys:['qwertyuiop','asdfghjklñ','⏎zxcvbnm⌫'],enter:'Enviar',del:'Borrar',kbName:'Teclado',boardName:'Tablero',set:'Ajustes',mus:'Música',musS:'Composición original, suave, para pensar',sfx:'Efectos',sfxS:'Teclas y fichas',statsS:'Partidas, victorias y racha de este modo e idioma.',view:'Ver',ok:'Listo',tries:'{n} de 6 intentos',lang:'Idioma',langS:'También cambia la lista de palabras y se aplica a todo JET//Games.',back:'Volver a JET//Games',modeNav:'Modo',title:'JET//Words · La palabra del día',desc:'Adivina la palabra de cinco letras en seis intentos. Una palabra nueva cada día, en español y en inglés, y práctica sin límite.',langB:'Idioma',
+  attempt:'Intento {n} de 6',tile:'Intento {n}, posición {posición}, {letra}: {estado}',tileEmpty:'Intento {n}, posición {posición}: {estado}',stC:'posición correcta',stP:'está en otra posición',stA:'sin coincidencia para esta copia',stPend:'sin evaluar',keyA:'{letra}: descartada según los intentos revelados',keyP:'{letra}: está en otra posición',keyC:'{letra}: posición correcta'},
+ en:{sub:['Word of the day · {d}','Practice · unlimited'],modes:['Word of the day','Practice'],missingOne:'1 letter is missing.',missingMany:'{n} letters are missing.',fiveLetters:'Enter a 5-letter word.',bad:'Not in word list',win:['Genius!','Brilliant!','Impressive!','Very good!','Nice!','Just in time!'],lose:'The word was',stats:['Games','Wins','Consecutive wins','Best streak'],statsT:'Statistics',statsOf:'{modalidad} statistics · {idioma}',distT:'Attempts needed to win',langName:{es:'Spanish',en:'English'},shareB:'Share result',copied:'Text copied',copyFail:'We couldn’t copy it automatically. Select and copy this text.',copyText:'Copy text',next:'Another word',practice:'Practice',close:'Close',nextIn:'Next word in',help:HELP_EN,helpT:'How to play',helpOk:'Play',keys:['qwertyuiop','asdfghjkl','⏎zxcvbnm⌫'],enter:'Enter',del:'Delete',kbName:'Keyboard',boardName:'Board',set:'Settings',mus:'Music',musS:'Original score, calm, made for thinking',sfx:'Sound effects',sfxS:'Keys and tiles',statsS:'Games, wins and streak for this mode and language.',view:'View',ok:'Done',tries:'{n} of 6 tries',lang:'Language',langS:'Also switches the word list and applies across JET//Games.',back:'Back to JET//Games',modeNav:'Mode',title:'JET//Words · Word of the day',desc:'Guess the five-letter word in six tries. A new word every day, in English and Spanish, plus unlimited practice.',langB:'Language',
+  attempt:'Attempt {n} of 6',tile:'Attempt {n}, position {posición}, {letra}: {estado}',tileEmpty:'Attempt {n}, position {posición}: {estado}',stC:'correct position',stP:'in another position',stA:'no match for this copy',stPend:'not evaluated',keyA:'{letra}: ruled out based on revealed guesses',keyP:'{letra}: in another position',keyC:'{letra}: correct position'}
 };
+const fmt=(s,o)=>s.replace(/\{(\w+|posición)\}/g,(m,k)=>o[k]!==undefined?o[k]:m);
 const store={get(k,d){try{const v=localStorage.getItem('jetwords.'+k);return v==null?d:JSON.parse(v);}catch(e){return d;}},set(k,v){try{localStorage.setItem('jetwords.'+k,JSON.stringify(v));}catch(e){}}};
 // listas: el diccionario de intentos viene concatenado de a 5 letras
 const DICT={};
@@ -192,6 +231,7 @@ function newGame(keep,noEnd){
   else{s=keep?store.get(stateKey(),null):null;if(!(s&&typeof s.answer==='string'&&window.WORDS[lang].ans.includes(s.answer)&&!s.done))s=null;answer=s?s.answer:pickAnswer();}
   if(s&&Array.isArray(s.rows)){rows=s.rows.filter(r=>typeof r==='string'&&r.length===5).slice(0,6);done=!!s.done;won=!!s.won;rows.forEach(r=>markKeys(r));
     if(!done&&typeof s.cur==='string'&&/^[a-zñ]{0,5}$/.test(s.cur))cur=s.cur;}
+  $('srResult').textContent='';setMsg('');
   saveState();renderAll();paintTexts();
   if(done&&!noEnd)setTimeout(()=>{if(!modalOpen())showEnd();},300);
 }
@@ -199,33 +239,57 @@ function saveState(){store.set(stateKey(),{answer,rows,cur,done,won});}
 function evalGuess(g){const res=Array(5).fill('absent'),left=answer.split('');for(let i=0;i<5;i++)if(g[i]===answer[i]){res[i]='correct';left[i]=null;}for(let i=0;i<5;i++){if(res[i]==='correct')continue;const j=left.indexOf(g[i]);if(j>=0){res[i]='present';left[j]=null;}}return res;}
 const RANK={absent:1,present:2,correct:3};
 function markKeys(g){const r=evalGuess(g);for(let i=0;i<5;i++){const k=g[i];if(!keyState[k]||RANK[r[i]]>RANK[keyState[k]])keyState[k]=r[i];}}
+// Nombres accesibles construidos sólo con resultados ya revelados (evalGuess de filas enviadas), nunca con la solución.
+const stText=st=>({correct:T[lang].stC,present:T[lang].stP,absent:T[lang].stA})[st]||T[lang].stPend;
+function tileLabel(r,i,ch,st){const t=T[lang];return ch?fmt(t.tile,{n:r+1,'posición':i+1,letra:ch.toUpperCase(),estado:stText(st)}):fmt(t.tileEmpty,{n:r+1,'posición':i+1,estado:t.stPend});}
 function renderAll(hideRow){
-  const grid=$('grid');grid.innerHTML='';
-  for(let r=0;r<6;r++){const row=document.createElement('div');row.className='row';row.id='row'+r;const g=rows[r]||(r===rows.length?cur:'');const res=rows[r]&&r!==hideRow?evalGuess(rows[r]):null;
-    for(let i=0;i<5;i++){const c=document.createElement('div');c.className='cell'+(g[i]?' filled':'')+(res?' '+res[i]:'');c.textContent=g[i]||'';row.appendChild(c);}grid.appendChild(row);}
+  const grid=$('grid');grid.innerHTML='';grid.setAttribute('aria-label',T[lang].boardName);
+  for(let r=0;r<6;r++){const row=document.createElement('div');row.className='row'+(r===rows.length&&!done?' active':'');row.id='row'+r;row.setAttribute('role','group');row.setAttribute('aria-label',fmt(T[lang].attempt,{n:r+1}));
+    const g=rows[r]||(r===rows.length?cur:'');const res=rows[r]&&r!==hideRow?evalGuess(rows[r]):null;
+    for(let i=0;i<5;i++){const c=document.createElement('div');c.className='cell'+(g[i]?' filled':'')+(res?' '+res[i]:'');c.textContent=g[i]||'';c.setAttribute('role','img');c.setAttribute('aria-label',tileLabel(r,i,g[i],res?res[i]:null));row.appendChild(c);}grid.appendChild(row);}
   renderKb();
 }
-function renderCur(){const row=$('row'+rows.length);if(!row)return;[...row.children].forEach((c,i)=>{const ch=cur[i]||'';if(c.textContent!==ch){c.textContent=ch;c.classList.toggle('filled',!!ch);c.classList.remove('pop');if(ch){void c.offsetWidth;c.classList.add('pop');}}});}
-function renderKb(){const kb=$('kb');kb.innerHTML='';T[lang].keys.forEach(r=>{const row=document.createElement('div');row.className='krow';[...r].forEach(k=>{const b=document.createElement('button');const wide=k==='⏎'||k==='⌫';b.className='key'+(wide?' wide':'')+(keyState[k]?' '+keyState[k]:'');b.textContent=k==='⏎'?T[lang].enter:k;if(k==='⌫')b.setAttribute('aria-label',T[lang].del);b.dataset.k=k;b.tabIndex=-1;b.addEventListener('pointerdown',e=>{e.preventDefault();window.JWAudio&&JWAudio.unlock();press(k);});row.appendChild(b);});kb.appendChild(row);});}
-let toastT=null;function toast(m,ms){const t=$('toast');t.textContent=m;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),ms||1400);}
+function renderCur(){const r=rows.length,row=$('row'+r);if(!row)return;[...row.children].forEach((c,i)=>{const ch=cur[i]||'';if(c.textContent!==ch){c.textContent=ch;c.classList.toggle('filled',!!ch);c.setAttribute('aria-label',tileLabel(r,i,ch,null));c.classList.remove('pop');if(ch){void c.offsetWidth;c.classList.add('pop');}}});}
+// RSP-WORDS-01: click como única activación; pointerdown sólo para feedback/audio y para que el botón no retenga el foco.
+// Roving tabindex: una sola tecla tabulable (la última usada), flechas para moverse, Tab sale del grupo.
+let roving='q';
+function keyLabel(k){const t=T[lang];if(k==='⏎')return t.enter;if(k==='⌫')return t.del;const st=keyState[k],L=k.toUpperCase();return st==='absent'?fmt(t.keyA,{letra:L}):st==='present'?fmt(t.keyP,{letra:L}):st==='correct'?fmt(t.keyC,{letra:L}):L;}
+function renderKb(){const kb=$('kb');kb.innerHTML='';kb.setAttribute('aria-label',T[lang].kbName);const keys=T[lang].keys;if(!keys.some(r=>r.includes(roving)))roving=keys[0][0];
+  keys.forEach(r=>{const row=document.createElement('div');row.className='krow';[...r].forEach(k=>{const b=document.createElement('button');b.type='button';const wide=k==='⏎'||k==='⌫';b.className='key'+(wide?' wide':'')+(keyState[k]?' '+keyState[k]:'');b.textContent=k==='⏎'?T[lang].enter:k;b.setAttribute('aria-label',keyLabel(k));if(k==='⌫')b.setAttribute('aria-label',T[lang].del);b.dataset.k=k;b.tabIndex=k===roving?0:-1;
+    b.addEventListener('pointerdown',e=>{e.preventDefault();window.JWAudio&&JWAudio.unlock();b.classList.add('down');setTimeout(()=>b.classList.remove('down'),110);});
+    b.addEventListener('mousedown',e=>e.preventDefault());
+    b.addEventListener('click',()=>{setRoving(k,false);press(k);});
+    row.appendChild(b);});kb.appendChild(row);});}
+function setRoving(k,focus){const prev=document.querySelector('.key[tabindex="0"]');if(prev)prev.tabIndex=-1;roving=k;const b=document.querySelector('.key[data-k="'+k+'"]');if(b){b.tabIndex=0;if(focus)b.focus({preventScroll:true});}}
+$('kb').addEventListener('keydown',e=>{const b=e.target.closest&&e.target.closest('.key');if(!b)return;const keys=T[lang].keys;let r=keys.findIndex(x=>x.includes(b.dataset.k)),i=keys[r].indexOf(b.dataset.k);
+  const nav={ArrowLeft:[0,-1],ArrowRight:[0,1],ArrowUp:[-1,0],ArrowDown:[1,0]}[e.key];
+  if(nav){r=(r+nav[0]+keys.length)%keys.length;const row=[...keys[r]];i=Math.min(Math.max(0,i+nav[1]),row.length-1);setRoving(row[i],true);e.preventDefault();}
+  else if(e.key==='Home'){setRoving(keys[r][0],true);e.preventDefault();}else if(e.key==='End'){setRoving(keys[r].slice(-1),true);e.preventDefault();}});
+let toastT=null;function toast(m,ms){const t=$('toast');t.textContent=m;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),ms||1500);}
+// PLAY-WORDS-05: la región de validación refleja el problema vigente y se vacía al corregirlo, no por un temporizador.
+let msgLive='';function setMsg(m){if(m===msgLive)return;msgLive=m;$('srMsg').textContent=m;}
 const sfx=(n,a,b)=>{try{window.JWAudio&&JWAudio.sfx(n,a,b);}catch(e){}};
 function press(k){
   if(done||busy)return;
-  if(k==='⌫'){if(cur){cur=cur.slice(0,-1);renderCur();sfx('del');saveState();}return;}
+  if(k==='⌫'){if(cur){cur=cur.slice(0,-1);renderCur();sfx('del');saveState();setMsg('');}return;}
   if(k==='⏎'){submit();return;}
   if(!/^[a-zñ]$/.test(k)||(lang==='en'&&k==='ñ'))return;
-  if(cur.length<5){cur+=k;renderCur();sfx('key');saveState();}
+  if(cur.length<5){cur+=k;renderCur();sfx('key');saveState();setMsg('');}
 }
-function submit(){
-  if(cur.length<5){toast(T[lang].short);shakeRow();sfx('bad');return;}
-  if(!dict(lang).has(cur)){toast(T[lang].bad);shakeRow();sfx('bad');return;}
+function submit(){const t=T[lang];
+  if(cur.length<5){const n=5-cur.length;const m=cur.length===0?t.fiveLetters:n===1?t.missingOne:fmt(t.missingMany,{n});toast(m);setMsg(m);shakeRow();sfx('bad');return;}
+  if(!dict(lang).has(cur)){toast(t.bad);setMsg(t.bad);shakeRow();sfx('bad');return;}
+  setMsg('');
   const g=cur,ri=rows.length;rows.push(g);cur='';
   if(g===answer){done=true;won=true;}else if(rows.length>=6){done=true;won=false;}
   saveState();if(done)recordStats();
   busy=true;renderAll(ri);
   const res=evalGuess(g),cells=[...$('row'+ri).children],STEP=reduced?0:260;
-  cells.forEach((c,i)=>{setTimeout(()=>{c.classList.add('flip');setTimeout(()=>{c.classList.add(res[i]);sfx('tile',res[i],i);},reduced?0:250);},i*STEP);});
-  setTimeout(()=>{markKeys(g);busy=false;renderKb();
+  cells.forEach((c,i)=>{setTimeout(()=>{c.classList.add('flip');setTimeout(()=>{c.classList.add(res[i]);c.setAttribute('aria-label',tileLabel(ri,i,g[i],res[i]));sfx('tile',res[i],i);},reduced?0:250);},i*STEP);});
+  // El desbloqueo no depende de animationend: con movimiento reducido todo ocurre de inmediato (VIS-WORDS-04).
+  setTimeout(()=>{markKeys(g);busy=false;renderAll();
+    // RSP-WORDS-02: un único anuncio por evaluación, con las cinco letras y su estado revelado
+    $('srResult').textContent=fmt(t.attempt,{n:ri+1})+': '+[...g].map((ch,i)=>ch.toUpperCase()+': '+stText(res[i])).join(', ')+'.';
     // si pidieron otro idioma durante la animación, se aplica ahora (la partida ya quedó guardada)
     if(pendLang){const nl=pendLang;pendLang=null;applyLang(nl);return;}
     if(done){if(won){$('row'+ri).classList.add('win');sfx('win');}else{sfx('lose');toast(shown(answer).toUpperCase(),2200);}setTimeout(()=>showEnd(),won?900:1300);}
@@ -241,10 +305,12 @@ function recordStats(){const s=getStats();
   // la racha diaria se corta si quedó un día sin jugar
   if(mode==='daily'){const d=dayIndex();if(s.lastDay!=null&&d-s.lastDay>1)s.streak=0;s.lastDay=d;}
   s.played++;if(won){s.wins++;s.streak++;s.best=Math.max(s.best,s.streak);s.dist[rows.length-1]++;}else s.streak=0;store.set(statsKey(),s);}
+// PLAY-WORDS-04: las estadísticas están separadas por modo e idioma (statsKey), así que el título lo dice.
 function paintStats(hi){const s=getStats(),t=T[lang];
   if(mode==='daily'&&s.lastDay!=null&&dayIndex()-s.lastDay>1)s.streak=0;
+  const modal=t.modes[mode==='daily'?0:1];$('eStatsT').textContent=fmt(t.statsOf,{modalidad:lang==='es'?modal.toLowerCase():modal,idioma:t.langName[lang]});$('eDistT').textContent=t.distT;
   $('eStats').innerHTML=[s.played,s.played?Math.round(s.wins/s.played*100)+'%':'0%',s.streak,s.best].map((v,i)=>`<div class="stat"><b>${v}</b><span>${t.stats[i]}</span></div>`).join('');
-  const mx=Math.max(1,...s.dist);$('eDist').innerHTML=s.dist.map((n,i)=>`<div><span>${i+1}</span><i class="${hi===i?'hi':''}" style="width:${Math.max(8,n/mx*100)}%">${n}</i></div>`).join('');}
+  const mx=Math.max(1,...s.dist);$('eDist').innerHTML=s.dist.map((n,i)=>`<div><span>${i+1}</span><i class="${hi===i?'hi':''}" style="width:${Math.max(3,n/mx*100)}%"></i><b>${n}</b></div>`).join('');}
 function showEnd(){
   const t=T[lang];
   $('eTitle').textContent=won?t.win[Math.min(rows.length-1,5)]:t.lose;$('eWord').textContent=shown(answer);$('eMsg').textContent=won?t.tries.replace('{n}',rows.length):'';
@@ -258,19 +324,41 @@ function tickTimer(){const el=$('eTimer');
   const p=x=>String(x).padStart(2,'0');el.innerHTML=`<small>${T[lang].nextIn}</small>${p(Math.floor(s/3600))}:${p(Math.floor(s/60)%60)}:${p(s%60)}`;}
 setInterval(()=>{if($('mEnd').classList.contains('show'))tickTimer();
   // pasó la medianoche con el juego abierto: palabra nueva
-  if(mode==='daily'&&playingDay!=null&&dayIndex()!==playingDay&&!busy){closeAll();newGame();}},1000);
+  if(mode==='daily'&&playingDay!=null&&dayIndex()!==playingDay&&!busy){closeAll(true);newGame();}},1000);
 function shareText(){const sq={correct:'🟩',present:'🟨',absent:'⬛'};const g=rows.map(r=>evalGuess(r).map(x=>sq[x]).join('')).join('\n');return `JET//Words ${lang.toUpperCase()} ${mode==='daily'?'#'+dayIndex():'·'} ${won?rows.length:'X'}/6\n${g}\nhttps://jetgames.fun/words/`;}
-$('eShare').onclick=async()=>{const txt=shareText();try{if(navigator.share&&matchMedia('(pointer:coarse)').matches){await navigator.share({text:txt});return;}}catch(e){if(e&&e.name==='AbortError')return;}try{await navigator.clipboard.writeText(txt);toast(T[lang].share);}catch(e){toast(txt.split('\n')[0]);}};
+// SRC-W02 / SRC-G06: compartir nativo sólo si existe; cancelar no avisa nada; si el portapapeles falla,
+// el texto completo (cuadrícula y URL) queda seleccionable en un diálogo, no en un toast truncado.
+async function copyText(txt){try{await navigator.clipboard.writeText(txt);return true;}catch(e){return false;}}
+function showShareFallback(txt){const t=T[lang];$('shTitle').textContent=t.shareB;$('shMsg').textContent=t.copyFail;$('shText').value=txt;$('shCopy').textContent=t.copyText;$('shClose').textContent=t.close;openModal('mShare',{returnTo:'mEnd'});}
+$('eShare').onclick=async()=>{const txt=shareText();try{if(navigator.share&&matchMedia('(pointer:coarse)').matches){await navigator.share({text:txt});return;}}catch(e){if(e&&e.name==='AbortError')return;}
+  if(await copyText(txt))toast(T[lang].copied);else showShareFallback(txt);};
+$('shCopy').onclick=async()=>{const ta=$('shText');if(await copyText(ta.value)){toast(T[lang].copied);$('shMsg').textContent=T[lang].copied;}else{ta.focus();ta.select();}};
+$('shText').addEventListener('focus',()=>{try{$('shText').select();}catch(e){}});
 $('eNext').onclick=()=>{closeModal('mEnd');const a=$('eNext').dataset.act;if(a==='practice')setMode('free');else if(a==='next')newGame(false);};
-// modales
-function openModal(id){closeAll();clearTimeout(toastT);$('toast').classList.remove('show');$(id).classList.add('show');const f=$(id).querySelector('.btn.primary');if(f&&matchMedia('(pointer:fine)').matches)f.focus({preventScroll:true});}
-function closeModal(id){$(id).classList.remove('show');if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();}
-function closeAll(){document.querySelectorAll('.modal-bg.show').forEach(m=>closeModal(m.id));}
+// RSP-WORDS-03: modales con fondo inerte, foco inicial dentro, Tab encerrado y foco devuelto al disparador.
+let trigger=null;
+const FOC='button:not([disabled]),[href],input:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
+const visible=el=>!!(el&&el.isConnected&&el.offsetParent!==null&&!el.closest('[inert]'));
+function openModal(id,o){o=o||{};const act=document.activeElement;
+  if(!modalOpen()&&act&&act!==document.body)trigger=act; // si ya hay un modal abierto, el disparador externo se conserva
+  closeAll(true);clearTimeout(toastT);$('toast').classList.remove('show');
+  const m=$(id);m.dataset.returnTo=o.returnTo||'';m.classList.add('show');$('app').inert=true;
+  const f=m.querySelector('.btn.primary')||m.querySelector(FOC);if(f)f.focus({preventScroll:true});}
+function closeModal(id,silent){const m=$(id);if(!m.classList.contains('show'))return;m.classList.remove('show');const back=m.dataset.returnTo;m.dataset.returnTo='';
+  if(silent)return; // lo cierra openModal para abrir otro: el disparador externo se conserva
+  if(back&&$(back)){ $(back).classList.add('show');const f=$(back).querySelector('.btn.primary')||$(back).querySelector(FOC);if(f)f.focus({preventScroll:true});return;}
+  if(modalOpen())return;
+  $('app').inert=false;
+  const t=visible(trigger)?trigger:document.querySelector('.key[tabindex="0"]');trigger=null;if(t)t.focus({preventScroll:true});}
+function closeAll(silent){document.querySelectorAll('.modal-bg.show').forEach(m=>closeModal(m.id,silent));if(silent&&!modalOpen())$('app').inert=false;}
 const modalOpen=()=>!!document.querySelector('.modal-bg.show');
 document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>closeModal(b.closest('.modal-bg').id)));
-document.querySelectorAll('.modal-bg').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)closeModal(m.id);}));
+document.querySelectorAll('.modal-bg').forEach(m=>{m.addEventListener('click',e=>{if(e.target===m)closeModal(m.id);});
+  m.addEventListener('keydown',e=>{if(e.key!=='Tab')return;const f=[...m.querySelectorAll(FOC)].filter(x=>x.offsetParent!==null);if(!f.length)return;const first=f[0],last=f[f.length-1];
+    if(e.shiftKey&&(document.activeElement===first||!m.contains(document.activeElement))){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}});});
 $('btnHelp').onclick=()=>{$('hTitle').textContent=T[lang].helpT;$('hBody').innerHTML=T[lang].help;$('hOk').textContent=T[lang].helpOk;openModal('mHelp');sfx('ui');};
-$('btnStats').onclick=()=>{const t=T[lang];$('eTitle').textContent=t.statsT;$('eWord').textContent='';$('eMsg').textContent='';paintStats(-1);$('eShare').style.display='none';$('eNext').textContent=t.close;$('eNext').dataset.act='close';$('eTimer').innerHTML='';openModal('mEnd');sfx('ui');};
+function showStats(){const t=T[lang];$('eTitle').textContent=t.statsT;$('eWord').textContent='';$('eMsg').textContent='';paintStats(-1);$('eShare').style.display='none';$('eNext').textContent=t.close;$('eNext').dataset.act='close';$('eTimer').innerHTML='';openModal('mEnd');sfx('ui');}
+$('btnStats').onclick=showStats;$('sStats').onclick=showStats;
 // Selector ES | EN (cabecera y Ajustes): solo llama a JETIdioma.set; el cambio llega por el evento
 // 'jet-idioma' y se aplica en vivo, sin recargar. En este juego el idioma también elige la lista de palabras.
 $('btnLang').onclick=e=>{const t=e.target.closest('button');if(t)JETIdioma.set(t.dataset.l);};
@@ -282,6 +370,8 @@ function applyLang(nl){
   saveState();lang=nl;
   if($('mEnd').classList.contains('show'))closeModal('mEnd'); // estadísticas del otro idioma: se cierran
   newGame(true,true);sfx('ui');
+  // el foco sigue en la opción elegida del selector
+  const sel=document.querySelector(modalOpen()?'#sLang button.on':'#btnLang button.on');if(sel&&visible(sel))sel.focus({preventScroll:true});
 }
 window.addEventListener('jet-idioma',e=>applyLang(e.detail));
 function paintTexts(){const t=T[lang];document.documentElement.lang=lang;
@@ -290,10 +380,12 @@ function paintTexts(){const t=T[lang];document.documentElement.lang=lang;
   document.querySelectorAll('#btnLang button,#sLang button').forEach(x=>{const on=x.dataset.l===lang;x.classList.toggle('on',on);x.setAttribute('aria-pressed',on);});
   $('sLangL').firstChild.textContent=t.lang;$('sLangS').textContent=t.langS;$('btnLang').setAttribute('aria-label',t.langB);
   if($('mHelp').classList.contains('show')){$('hTitle').textContent=t.helpT;$('hBody').innerHTML=t.help;$('hOk').textContent=t.helpOk;}
-  $('mDaily').textContent=t.modes[0];$('mFree').textContent=t.modes[1];$('mDaily').classList.toggle('on',mode==='daily');$('mFree').classList.toggle('on',mode==='free');
+  $('mDaily').textContent=t.modes[0];$('mFree').textContent=t.modes[1];$('mDaily').classList.toggle('on',mode==='daily');$('mFree').classList.toggle('on',mode==='free');$('mDaily').setAttribute('aria-pressed',mode==='daily');$('mFree').setAttribute('aria-pressed',mode==='free');
   $('sub').textContent=t.sub[mode==='daily'?0:1].replace('{d}',dayLabel());
   $('btnStats').setAttribute('aria-label',t.statsT);$('btnStats').title=t.statsT;$('btnHelp').setAttribute('aria-label',t.helpT);$('btnHelp').title=t.helpT;$('btnSet').setAttribute('aria-label',t.set);$('btnSet').title=t.set;
   $('sTitle').textContent=t.set;$('sMusL').firstChild.textContent=t.mus;$('sMusS').textContent=t.musS;$('sSfxL').firstChild.textContent=t.sfx;$('sSfxS').textContent=t.sfxS;$('sOk').textContent=t.ok;
+  $('sStatsL').firstChild.textContent=t.statsT;$('sStatsS').textContent=t.statsS;$('sStats').textContent=t.view;$('sStats').setAttribute('aria-label',t.statsT);
+  $('eShare').textContent=t.shareB;$('shTitle').textContent=t.shareB;$('shCopy').textContent=t.copyText;$('shClose').textContent=t.close;
   document.querySelectorAll('.x').forEach(x=>x.setAttribute('aria-label',t.close));}
 function setMode(m){if(busy)return;mode=m;store.set('mode',m);newGame();}
 $('mDaily').onclick=()=>{if(mode!=='daily'){setMode('daily');sfx('ui');}};$('mFree').onclick=()=>{if(mode!=='free'){setMode('free');sfx('ui');}else if(done)newGame(false);};
@@ -309,19 +401,20 @@ $('sSfxV').oninput=e=>{audio.sv=+e.target.value;paintAudio();applyAudio();};$('s
 // el audio arranca con el primer gesto (política de reproducción automática)
 function firstGesture(){if(!window.JWAudio)return;applyAudio();JWAudio.unlock();applyAudio();}
 ['pointerdown','keydown','touchstart'].forEach(ev=>window.addEventListener(ev,firstGesture,{capture:true,passive:true}));
-// teclado físico
+// teclado físico. RSP-WORDS-01: si el foco está en un botón, enlace o campo, Enter/Espacio son de ese control,
+// no del juego; sobre una tecla del teclado de pantalla, las letras físicas siguen escribiendo.
 window.addEventListener('keydown',e=>{
   if(e.ctrlKey||e.metaKey||e.altKey)return;
   if(e.key==='Escape'){if(modalOpen()){e.preventDefault();closeAll();}return;}
   if(modalOpen()){if(e.key==='Enter'&&$('mEnd').classList.contains('show')&&document.activeElement===document.body){e.preventDefault();$('eNext').click();}return;}
-  const tgt=e.target;if(tgt&&tgt.tagName==='INPUT')return;
+  const tgt=document.activeElement;const ctl=tgt&&tgt.closest&&tgt.closest('button,a,input,select,textarea,[contenteditable]');
+  if(ctl&&!ctl.classList.contains('key'))return;
+  if(ctl&&(e.key==='Enter'||e.key===' '))return;
   let k=e.key;if(k==='Enter'){e.preventDefault();press('⏎');return;}if(k==='Backspace'){e.preventDefault();press('⌫');return;}
   if(!k||k.length!==1)return;k=strip(k.toLowerCase());if(e.key.toLowerCase()==='ñ')k='ñ';
   if(/^[a-zñ]$/.test(k)){e.preventDefault();press(k);const b=document.querySelector('.key[data-k="'+k+'"]');if(b){b.classList.add('down');setTimeout(()=>b.classList.remove('down'),110);}}
 });
-// los botones no se quedan con el foco (Enter enviaría el intento y además los activaría)
-document.querySelectorAll('header button').forEach(b=>b.addEventListener('mouseup',()=>b.blur()));
-newGame();
+try{newGame();}catch(err){bootError();throw err;}
 if(!store.get('seenHelp',false)){store.set('seenHelp',true);$('btnHelp').click();}
 // caché sin conexión (sw.js con alcance relativo: /words/)
 if('serviceWorker' in navigator&&location.protocol==='https:')window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{});});

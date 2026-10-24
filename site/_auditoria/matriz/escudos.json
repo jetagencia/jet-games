@@ -1,0 +1,244 @@
+[
+ {
+  "id": "RSP-ESCUDOS-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/escudos/index.html"
+  ],
+  "detalle": ".team.pick y .ko-side son <button type=button> con aria-pressed y nombre «Gana {equipo}» (title con nombre completo); .vs role=group «A – B». En la llave cada equipo es un botón (elige ganador) y «¿Quién pasa?» es un botón aparte que abre el detalle; las casillas sin equipo o cruces no listos son texto. render() recuerda data-pick/res, data-race/team, data-kside+tie, data-detail, data-rk/mode/v/z o id y devuelve el foco tras reconstruir #app. Las filas de tabla dejan de simular clic (no tenían acción).",
+  "verificacion": "escudos_test.mjs (fixture): 96 botones de equipo con aria-pressed/aria-label; Enter elige y el foco queda en el mismo botón; cambiar elección no abre detalle; slots botones con aria-pressed."
+ },
+ {
+  "id": "RSP-ESCUDOS-02",
+  "estado": "implementado",
+  "archivos": [
+   "site/escudos/index.html"
+  ],
+  "detalle": ".modal role=dialog aria-modal aria-labelledby=koTitle aria-describedby=koHint; .modal-bg padding 16 px + safe-area por lado; .modal{max-height:100%;overflow:auto}; openDialog/closeDialog: .wrap.inert, foco inicial dentro, Tab encerrado, Escape = Cerrar, foco devuelto al disparador. Acciones en flujo.",
+  "verificacion": "escudos_test.mjs: role/aria-modal, .wrap inerte, foco dentro, 5 Tab no salen, Escape cierra y devuelve el foco al botón «¿Quién pasa?»."
+ },
+ {
+  "id": "SRC-E01",
+  "estado": "implementado",
+  "archivos": [
+   "site/escudos/index.html",
+   "site/escudos/i18n.js"
+  ],
+  "detalle": "simulatePending: fútbol rellena sólo partidos sin resultado (pruneKo previo) y cruces vacíos; F1 completa sólo los puestos vacíos de cada podio sin tocar los elegidos. Botón «Simular resultados pendientes» con ayuda ES/EN; «Volver a simular todo» separado, con confirmación («¿Reemplazar todos los resultados…?») y snapshot; «Deshacer simulación» restaura el snapshot. lockedText/seasonStatus dejan de nombrar «Simular todo».",
+  "verificacion": "escudos_test.mjs: fútbol conserva el partido manual (48/48, 15 cruces); F1 conserva el 1.º elegido y completa 3/3; Deshacer simulación vuelve al estado previo; resimular pide confirmación y reemplaza."
+ },
+ {
+  "id": "SRC-E02",
+  "estado": "implementado",
+  "archivos": [
+   "site/escudos/index.html"
+  ],
+  "detalle": "bindPicks ya no vacía DB.ko: requestChange simula el cambio sobre una copia, cuenta las elecciones de llave que dejarían de valer (DB.ko guarda ahora los equipos A/B del cruce; pruneKo invalida sólo cruces cuyos equipos cambiaron o quedaron vacíos y sus descendientes) y, si n>0, pide confirmación «¿Cambiar este resultado?» / «Se recalcularán los cruces que dependen de este partido.» + «Se perderán {n} selecciones dependientes.»/«Se perderá 1 selección dependiente.» con Cancelar enfocado; snapshot para «Deshacer». Igual para cambiar/quitar un ganador de la llave.",
+  "verificacion": "escudos_test.mjs: cambiar un resultado anuncia 4 dependientes; Escape no modifica nada; confirmar deja 11 de 15 cruces (los otros intactos); Deshacer recupera todo."
+ },
+ {
+  "id": "PLAY-ESCUDOS-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/escudos/index.html",
+   "site/escudos/i18n.js"
+  ],
+  "detalle": "Nombres con dos líneas (line-clamp 2) y title completo; grupos minmax(min(100%,420px),1fr); encabezados <abbr title> Jugados/Ganados/Empatados/Perdidos/Puntos y leyenda de abreviaturas bajo cada tabla; ceros con var(--muted) opacity .7.",
+  "verificacion": "escudos_test.mjs: abbr.stP title «Jugados», leyenda «PJ: Jugados · …», color de los ceros distinto de --line; captura escudos-320-test.png."
+ },
+ {
+  "id": "PLAY-ESCUDOS-02",
+  "estado": "implementado",
+  "archivos": [
+   "site/escudos/index.html",
+   "site/escudos/i18n.js"
+  ],
+  "detalle": "Grupo semántico por partido (local, Empate, visitante) con aria-pressed, teclado y foco visible; en eliminatorias sin empate; región #live anuncia «{equipo} seleccionado como ganador»; nombres desde el partido vigente.",
+  "verificacion": "escudos_test.mjs: anuncio en #live; selección con Enter."
+ },
+ {
+  "id": "PLAY-ESCUDOS-03",
+  "estado": "implementado",
+  "archivos": [
+   "site/escudos/index.html",
+   "site/escudos/i18n.js"
+  ],
+  "detalle": "Ver SRC-E01. Resumen al terminar una simulación: «Campeón de tu simulación: {equipo}» (del resultado real) + «Ver la final» (abre la llave en la final sin interrumpir la navegación); ayuda «Se completarán los partidos sin resultado hasta definir un campeón. Tus elecciones se conservarán.» (F1: variante de podios) mostrada sólo después de implementar y probar la preservación.",
+  "verificacion": "escudos_test.mjs: estado con campeón de simulación y Ver la final; koRound=r1 tras el clic."
+ },
+ {
+  "id": "PLAY-ESCUDOS-04",
+  "estado": "implementado",
+  "archivos": [
+   "site/escudos/index.html",
+   "site/escudos/i18n.js"
+  ],
+  "detalle": "Nav con «Vista por ronda» / «Llave completa» (por defecto ronda a ≤600 px, completa en pantallas anchas), botones de ronda, «Ver campeón» en lugar de 🏆; encabezado de ronda con «Cruces decididos: {d}/{total}»; separador vertical entre rondas; conectores SVG 1.5 px detrás de las tarjetas siguiendo los vínculos reales de nextRound (gris pendiente, acento con ganador) y de la final al campeón; «Deslizá para ver las siguientes rondas.» en llave completa.",
+  "verificacion": "escudos_test.mjs: 15 conectores (15 con ganador), «Cruces decididos: 8/8», vista por ronda a 390 muestra una sola columna; capturas escudos-1180-ko-test.png y escudos-390-ko-test.png."
+ },
+ {
+  "id": "PLAY-ESCUDOS-05",
+  "estado": "implementado",
+  "archivos": [
+   "site/escudos/index.html",
+   "site/escudos/i18n.js"
+  ],
+  "detalle": "Cada carrera muestra Primero/Segundo/Tercero con nombre o «Sin elegir»; ayuda «Elegí las escuderías en orden…» y «Tocá una escudería seleccionada para quitarla; las siguientes subirán un puesto.»; estado «Podios completos: {n}/{total}» (completo = 3 puestos); puntos desde F1PTS «Primero: 25 puntos · Segundo: 18 · Tercero: 15»; botones con aria-pressed y nombre «{escudería}: Primero/…/Sin elegir». Métrica sin cambios.",
+  "verificacion": "escudos_test.mjs: puestos vacíos rotulados, un solo puesto no cuenta como completo (0/3), aria-label «: Primero»."
+ },
+ {
+  "id": "PLAY-ESCUDOS-06",
+  "estado": "implementado",
+  "archivos": [
+   "site/escudos/index.html",
+   "site/escudos/i18n.js",
+   "site/escudos/pelotas.js"
+  ],
+  "detalle": "armClear sustituido por diálogo explícito (#cfBg alertdialog): «¿Borrar tus resultados de {competición}?» con el nombre real, «Esta acción reinicia esta competición en este navegador.», Cancelar enfocado, «Borrar resultados» (peligro); Escape/clic exterior cancelan. ESC_armClear mantiene la firma para Pelotas.",
+  "verificacion": "escudos_test.mjs: título con «Copa de prueba», foco en Cancelar, Escape no borra, confirmar borra."
+ },
+ {
+  "id": "RSP-AUDIO-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/escudos/index.html"
+  ],
+  "detalle": "Escudos (JetAudioUI): setAudioOpen(open,{focus,restoreFocus}) cambia clase y aria-expanded juntos; apertura por teclado (detail 0) enfoca el primer control; Escape cierra y devuelve el foco al botón; clic exterior cierra sin robar foco; eliminados los blur forzados de botón, checkbox y range.",
+  "verificacion": "escudos_test.mjs: Enter abre con foco dentro, Escape cierra y aria-expanded=false con foco en el botón, clic exterior actualiza aria-expanded."
+ },
+ {
+  "id": "RSP-ESCUDOS-03",
+  "estado": "implementado",
+  "archivos": [
+   "site/escudos/index.html"
+  ],
+  "detalle": ".race .podio button 44×44 gap 8; .drawbtn, .tab, .round-nav button, .back, .btn min-height 44; .ja-b 44×44 sin pseudoelemento de ampliación; sin reducción a ≤600 px; toolbar/topnav hacen wrap.",
+  "verificacion": "escudos_test.mjs: podio 44×44 con 8 px de separación; sin desborde a 320."
+ },
+ {
+  "id": "RSP-ESCUDOS-04",
+  "estado": "implementado",
+  "archivos": [
+   "site/escudos/index.html"
+  ],
+  "detalle": "groups-grid minmax(min(100%,420px),1fr); a ≤419 px fila compacta con grid-template-areas: posición 20 px, escudo 38 px, nombre completo (wrap), puntos 36 px; segunda fila .sts (display:flex) con «PJ n · G n · E n · P n» a 12 px desde data-l localizado; encabezado conserva Equipo y PT; .sts usa display:contents en escritorio.",
+  "verificacion": "escudos_test.mjs a 320: .sts flex con ::before «PJ», nombre completo sin recorte, sin scroll horizontal; captura."
+ },
+ {
+  "id": "RSP-LANGUAGE-TARGETS-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/escudos/index.html"
+  ],
+  "detalle": "Escudos: cada opción ES/EN min 44×44, height auto, flex none, gap 8 px, sin pseudoelementos; a ≤419 px .top{flex-wrap:wrap}, .topnav{flex-basis:100%;justify-content:flex-start} y spacer oculto; aria-pressed sincronizado y foco en la opción elegida tras el cambio (sin blur).",
+  "verificacion": "escudos_test.mjs: 44×44 en header, foco en EN tras el cambio; captura 320 con el título sin recorte."
+ },
+ {
+  "id": "SRC-E03",
+  "estado": "implementado",
+  "archivos": [
+   "site/escudos/index.html",
+   "site/escudos/i18n.js"
+  ],
+  "detalle": "openComp: estado «Cargando {competición}…» (role=status); 404 → «No encontramos esta competición.» + «Ver competiciones»; red/HTTP/JSON → «No pudimos abrir esta competición.» + «Volver a intentar» (reintenta sin tocar lo guardado) + «Ver competiciones». «EMP» → «Empate» visible; leyenda PJ/G/E/P/PT.",
+  "verificacion": "escudos_test.mjs: 404 y 500 producen mensajes distintos; reintentar carga la competición."
+ },
+ {
+  "id": "VIS-ESCUDOS-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/escudos/index.html"
+  ],
+  "detalle": ".cb con --cbs, radio 22 %, borde 1 px rgba(10,15,20,.12), padding max(3px, 8 %) en todos los tamaños (46/58/84/38/50, miniaturas 28); .cb.none placa neutra con abreviatura 11 px y escudo vacío tenue; TBD mantiene «Por definir» como texto.",
+  "verificacion": "Capturas escudos-320/1180 (fixture sin logos: placas con abreviatura)."
+ },
+ {
+  "id": "VIS-ESCUDOS-02",
+  "estado": "implementado",
+  "archivos": [
+   "site/escudos/index.html",
+   "site/escudos/i18n.js"
+  ],
+  "detalle": "Sin opacidad global en .team.un ni .slot.lose; ganador con borde verde 2 px y etiqueta «✓ Ganador» junto al nombre; perdedor con rótulo «Perdedor» (sr-only en la llave); empate oro con «= Empate»; pendiente conserva contorno discontinuo. Estado desde DB.gs/DB.ko.",
+  "verificacion": "escudos_test.mjs: opacidad 1 del rival y de su escudo, rótulos Ganador/Perdedor."
+ },
+ {
+  "id": "VIS-ESCUDOS-03",
+  "estado": "implementado",
+  "archivos": [
+   "site/escudos/index.html"
+  ],
+  "detalle": "tabular-nums; .st.dim var(--muted) opacity .7; puntos peso 800 con fondo neutro; filas alternas al 2 %; bandas de 3 px conservadas y símbolo de clasificación (▲ △ ◆ ▼) junto a la posición y en la leyenda, con significado desde cada competición.",
+  "verificacion": "escudos_test.mjs (color de ceros); capturas."
+ },
+ {
+  "id": "VIS-ESCUDOS-04",
+  "estado": "implementado",
+  "archivos": [
+   "site/escudos/index.html",
+   "site/escudos/i18n.js"
+  ],
+  "detalle": "Ver PLAY-ESCUDOS-04: separadores, encabezado con contador, conectores que reflejan nextRound/findTie, halo del campeón 20 px alpha .12 con rótulo estable; scroll horizontal conservado y vista por ronda en móvil.",
+  "verificacion": "escudos_test.mjs y capturas de la llave."
+ },
+ {
+  "id": "RSP-GLOBAL-01",
+  "estado": "no_aplicable",
+  "archivos": [],
+  "detalle": "Escudos ya permite zoom en el meta viewport; el catálogo lo excluye explícitamente.",
+  "verificacion": "grep del meta."
+ },
+ {
+  "id": "SRC-G01",
+  "estado": "no_aplicable",
+  "archivos": [],
+  "detalle": "Escudos ya abre en la misma pestaña; la unificación de las 21 tarjetas es de la home.",
+  "verificacion": "Lectura del HTML."
+ },
+ {
+  "id": "SRC-G02",
+  "estado": "ya_corregido_verificado",
+  "archivos": [],
+  "detalle": "Escudos: selector ES/EN (header y panel de sonido) vía JETIdioma con aria-pressed; repintado en vivo conservando estado.",
+  "verificacion": "escudos_test.mjs: EN cambia etiquetas y aria-pressed."
+ },
+ {
+  "id": "SRC-G03",
+  "estado": "implementado",
+  "archivos": [
+   "site/escudos/index.html",
+   "site/escudos/i18n.js"
+  ],
+  "detalle": "Escudos: «Ver competiciones», «Volver a intentar», «Volver a JET//Games», «Cancelar», «Borrar resultados», «Cambiar resultado», «Deshacer»; sin pausa.",
+  "verificacion": "escudos_test.mjs."
+ },
+ {
+  "id": "SRC-G04",
+  "estado": "implementado",
+  "archivos": [
+   "site/escudos/index.html",
+   "site/escudos/i18n.js"
+  ],
+  "detalle": "Escudos: ver PLAY-ESCUDOS-06 (sin doble toque; alcance enumerado: esta competición en este navegador).",
+  "verificacion": "escudos_test.mjs."
+ },
+ {
+  "id": "SRC-G05",
+  "estado": "implementado",
+  "archivos": [
+   "site/escudos/index.html"
+  ],
+  "detalle": "Escudos: «Cargando JET//Escudos…» en #app antes del JS; si i18n.js/jet-idioma.js no cargan, error recuperable («La carga se interrumpió. Podés volver a intentarlo.», «Volver a cargar», «Volver a los juegos») en vez de excepción; el panel de audio tolera la ausencia de ESC. Errores de competición en SRC-E03.",
+  "verificacion": "Lectura de código y humo; el bloqueo de i18n.js no se ejecutó en Playwright."
+ },
+ {
+  "id": "SRC-G06",
+  "estado": "implementado",
+  "archivos": [
+   "site/escudos/pelotas.js",
+   "site/escudos/i18n.js"
+  ],
+  "detalle": "Pelotas (trivia): «Compartir resultado»; share nativo sólo con puntero grueso, AbortError silencioso, «Texto copiado» sólo tras copiar; si falla, caja con texto íntegro seleccionable, «No pudimos copiarlo automáticamente…», «Copiar texto» y «Cerrar».",
+  "verificacion": "node --check; pelotas.json no está en el repo, por lo que el flujo no se ejecutó en Playwright."
+ }
+]

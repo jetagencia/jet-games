@@ -1,0 +1,192 @@
+[
+ {
+  "id": "RSP-WORDS-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/words/index.html"
+  ],
+  "detalle": "Teclas .key: activación sólo por click (press(k)); pointerdown/mousedown sólo feedback visual, desbloqueo de audio y preventDefault para que el botón no retenga el foco. Roving tabindex (última tecla usada con 0, resto −1), flechas/Home/End recorren el teclado, Enter/Espacio activan por click nativo, Tab sale del grupo. El listener físico devuelve si el foco está en button,a,input,select,textarea,[contenteditable] (salvo .key, donde las letras siguen escribiendo y Enter/Espacio quedan para el botón). Eliminado el mouseup→blur del header.",
+  "verificacion": "words_test.mjs: click sintetizado ingresa una letra sin duplicar; una sola tecla tabulable; tecla no retiene el foco; flechas mueven el foco (s→z), Home→Enviar, Enter sobre Enviar envía una sola vez; Tab→Ajustes→Enter abre Ajustes sin enviar palabra ni anunciar validación."
+ },
+ {
+  "id": "RSP-WORDS-02",
+  "estado": "implementado",
+  "archivos": [
+   "site/words/index.html"
+  ],
+  "detalle": "Cada celda role=img con nombre «Intento {n}, posición {posición}, {letra}: {estado}» (estado desde evalGuess de filas ya enviadas; «sin evaluar» para la fila activa); filas role=group «Intento {n} de 6»; al terminar la evaluación una sola frase en #srResult (role=status) con las 5 letras y estados; teclas con estado agregado en aria-label (keyState: correcta / otra posición / «descartada según los intentos revelados»). Marcas no cromáticas ✓ • – en la esquina de celdas y teclas sin tapar la letra; mismas marcas en la leyenda de la ayuda.",
+  "verificacion": "words_test.mjs: etiquetas de las 5 celdas con el patrón esperado; fila group «Intento 1 de 6»; anuncio único «Intento 1 de 6: A: …, D: …»; aria-label de teclas con estado. Captura words-1280.png con marcas en la leyenda."
+ },
+ {
+  "id": "RSP-WORDS-03",
+  "estado": "implementado",
+  "archivos": [
+   "site/words/index.html"
+  ],
+  "detalle": "openModal guarda el disparador, pone #app.inert=true, enfoca .btn.primary (o el primer control) sin condicionar al puntero; Tab/Shift+Tab encerrados en el modal; Escape y cierre devuelven el foco al disparador (si se abrió otro modal encima, al disparador externo). .modal-bg con padding calc(16px + inset) por lado; .modal{max-height:100%;overflow:auto}. Se conservan role/aria-modal/aria-labelledby.",
+  "verificacion": "words_test.mjs: #app inerte con modal; foco inicial dentro; 6 Tab no salen; Escape libera #app; Ajustes→Estadísticas→Escape devuelve el foco a #btnSet."
+ },
+ {
+  "id": "PLAY-WORDS-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/words/index.html"
+  ],
+  "detalle": "Estado por casilla («sin coincidencia para esta copia») separado del agregado del teclado («descartada según los intentos revelados»), ambos construidos sólo con evalGuess de intentos revelados; la evaluación de repetidas no cambia. Anuncio por intento en región exclusiva.",
+  "verificacion": "words_test.mjs: anuncio de celdas y teclas; sin consultar answer en las etiquetas (sólo res de filas enviadas, por lectura de código)."
+ },
+ {
+  "id": "PLAY-WORDS-02",
+  "estado": "implementado",
+  "archivos": [
+   "site/words/index.html"
+  ],
+  "detalle": ".key.absent color #b2a7c8 sobre #17102a con raya inferior de 1 px al 50 % (#6c607f); las teclas descartadas siguen habilitadas. Leyenda «Letra descartada» en la ayuda con ejemplo.",
+  "verificacion": "Captura words-1280.png (leyenda); teclado acepta letras descartadas (lógica press sin cambios)."
+ },
+ {
+  "id": "PLAY-WORDS-03",
+  "estado": "implementado",
+  "archivos": [
+   "site/words/index.html"
+  ],
+  "detalle": "Ayuda ES/EN: ejemplo de letra repetida (CARTA con una A gris y otra verde / SENSE) y texto «Si repetís una letra, sólo se marcan las veces que aparece en la palabra. Una copia puede quedar gris aunque otra esté verde.»; además el gris se explica como copia sin coincidencia.",
+  "verificacion": "words_test.mjs: #hBody contiene «repetís una letra» y «Letra descartada»."
+ },
+ {
+  "id": "PLAY-WORDS-04",
+  "estado": "implementado",
+  "archivos": [
+   "site/words/index.html"
+  ],
+  "detalle": "«Jugadas»→«Partidas», «Racha»→«Victorias consecutivas»; título de bloque «Estadísticas de {modalidad} · {idioma}» generado desde mode y lang (statsKey ya separa stats por idioma y modo); título de distribución «Intentos necesarios para ganar»; número visible al final de cada barra.",
+  "verificacion": "words_test.mjs: «Estadísticas de palabra del día · Español» y «Estadísticas de práctica · Español»; victoria en 3/6 muestra 1 partida y «3 de 6 intentos»."
+ },
+ {
+  "id": "PLAY-WORDS-05",
+  "estado": "implementado",
+  "archivos": [
+   "site/words/index.html"
+  ],
+  "detalle": "Región #srMsg (role=status, polite) para la validación vigente: «Escribí una palabra de 5 letras.» (0 letras), «Falta 1 letra.», «Faltan {n} letras.» con n real, «No está en la lista»; se vacía al escribir/borrar o al enviar válido, no por temporizador. El toast visual queda aria-hidden.",
+  "verificacion": "words_test.mjs: «Faltan 4 letras.», se vacía al corregir, «Falta 1 letra.», la validación fallida no consume intento."
+ },
+ {
+  "id": "RSP-GLOBAL-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/words/index.html"
+  ],
+  "detalle": "Words: meta viewport sin maximum-scale ni user-scalable (conserva width, initial-scale y viewport-fit=cover); .modal con touch-action:pan-y pinch-zoom; botones manipulation; sin bloqueos de gesturestart/dblclick.",
+  "verificacion": "grep del meta; humo sin errores."
+ },
+ {
+  "id": "RSP-WORDS-04",
+  "estado": "implementado",
+  "archivos": [
+   "site/words/index.html"
+  ],
+  "detalle": "A ≤419 px header grid minmax(0,1fr) auto con áreas 'back tools' 'brand brand' 'modes modes', gap 6px 8px; sólo Ajustes y Ayuda (44×44, gap 8) en .tools; Idioma y Estadísticas quedan en Ajustes (fila «Estadísticas · Ver» nueva, idioma ya existía). Enlace Volver min-height 44. Eliminadas las reglas que bajaban iconos a 38/36 px.",
+  "verificacion": "words_test.mjs a 320: cero intersección entre áreas, herramientas 44×44, idioma/estadísticas ocultos del header y disponibles en Ajustes, sin scroll horizontal; captura words-320-test.png."
+ },
+ {
+  "id": "SRC-W02",
+  "estado": "implementado",
+  "archivos": [
+   "site/words/index.html"
+  ],
+  "detalle": "Botón «Compartir resultado». navigator.share sólo con puntero grueso; AbortError silencioso; clipboard OK → «Texto copiado»; si falla, diálogo #mShare con texto íntegro (cuadrícula y URL) en textarea seleccionable, mensaje «No pudimos copiarlo automáticamente. Seleccioná y copiá este texto.», «Copiar texto» y «Cerrar» (vuelve al resultado).",
+  "verificacion": "words_test.mjs con clipboard denegado: fallback con 🟩 y URL, mensaje exacto, cerrar vuelve a #mEnd."
+ },
+ {
+  "id": "VIS-WORDS-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/words/index.html"
+  ],
+  "detalle": "Fila activa con borde neutro (#a79abe, 2 px; vacías al 55 %), filas futuras con --line (.12), relleno rgba(255,255,255,.02) conservado, peso 700, line-height 1 para alinear Ñ; colores semánticos sin cambios.",
+  "verificacion": "words_test.mjs: #row2 .active tras restaurar práctica; capturas 390/320."
+ },
+ {
+  "id": "VIS-WORDS-02",
+  "estado": "implementado",
+  "archivos": [
+   "site/words/index.html"
+  ],
+  "detalle": "Texto de tecla descartada #b2a7c8, fondo #17102a, línea inferior 1 px 50 %; teclas normales #f5f2ff; Enviar/Borrar sin colores de evaluación (keyState sólo letras); prioridad markKeys sin cambios.",
+  "verificacion": "Lectura de markKeys (sin cambios) y captura 390."
+ },
+ {
+  "id": "VIS-WORDS-03",
+  "estado": "implementado",
+  "archivos": [
+   "site/words/index.html"
+  ],
+  "detalle": "Ficha de resultado: rótulos 12px/1.3 600 #b7abce, cifras 24px/1.1 700 tabular-nums, grid de 4 que pasa a 2 columnas a ≤380; barras 20 px radio 4 con único acento y número visible al final; títulos de sección; cian sólo en la acción principal.",
+  "verificacion": "words_test.mjs resultado de práctica; capturas."
+ },
+ {
+  "id": "VIS-WORDS-04",
+  "estado": "implementado",
+  "archivos": [
+   "site/words/index.html"
+  ],
+  "detalle": "Se conserva flip/hop/shake en modo normal y la regla reduced-motion existente; se añaden transiciones a none con movimiento reducido; mensaje de error con 1500 ms mínimo; el desbloqueo ya usaba setTimeout (no animationend) y se verificó inmediato con STEP=0.",
+  "verificacion": "words_test.mjs con reducedMotion:'reduce': evaluación inmediata, estados aplicados y entrada desbloqueada."
+ },
+ {
+  "id": "SRC-W01",
+  "estado": "ya_corregido_verificado",
+  "archivos": [],
+  "detalle": "newGame/saveState/stateKey ya guardan la práctica por idioma y modo con letras activas; no se agregó advertencia. Sólo «Otra palabra» inicia práctica nueva.",
+  "verificacion": "words_test.mjs: dos intentos + letras activas; práctica→diario→práctica, cambio EN→ES y recarga restauran palabra, filas, letras activas y estado del teclado; «Otra palabra» inicia práctica nueva."
+ },
+ {
+  "id": "SRC-G01",
+  "estado": "no_aplicable",
+  "archivos": [],
+  "detalle": "Words: el enlace de regreso ya navega en la misma pestaña (target=_top a jetgames.fun); las tarjetas son de la home.",
+  "verificacion": "Lectura del HTML."
+ },
+ {
+  "id": "SRC-G02",
+  "estado": "ya_corregido_verificado",
+  "archivos": [],
+  "detalle": "Words: selector ES/EN con aria-pressed vía JETIdioma (URL > cookie/localStorage > navegador); un solo selector (header y Ajustes son el mismo estado).",
+  "verificacion": "words_test.mjs: cambio a EN y vuelta conserva la partida; aria-pressed sincronizado."
+ },
+ {
+  "id": "SRC-G03",
+  "estado": "implementado",
+  "archivos": [
+   "site/words/index.html"
+  ],
+  "detalle": "Words: «Compartir resultado», «Otra palabra», «Práctica», «Cerrar», «Listo», «A jugar» (verbo propio); sin pausa en este juego.",
+  "verificacion": "Lectura de T.es/T.en."
+ },
+ {
+  "id": "SRC-G04",
+  "estado": "no_aplicable",
+  "archivos": [],
+  "detalle": "Words no ofrece borrado de progreso.",
+  "verificacion": "grep de localStorage.removeItem/clear."
+ },
+ {
+  "id": "SRC-G05",
+  "estado": "implementado",
+  "archivos": [
+   "site/words/index.html"
+  ],
+  "detalle": "Words: título visible y «Cargando JET//Words…» en #sub antes del JS; si palabras.js no define WORDS o newGame lanza, #boot (alertdialog) con «La carga se interrumpió. Podés volver a intentarlo.», «Volver a cargar» (reload) y «Volver a los juegos», #app inerte; ES/EN según JETIdioma.",
+  "verificacion": "words_test.mjs con palabras.js en 404: mensaje y botones exactos; captura words-error-test.png."
+ },
+ {
+  "id": "SRC-G06",
+  "estado": "implementado",
+  "archivos": [
+   "site/words/index.html"
+  ],
+  "detalle": "Words: ver SRC-W02 (fallback persistente, éxito veraz, cancelación silenciosa).",
+  "verificacion": "words_test.mjs."
+ }
+]

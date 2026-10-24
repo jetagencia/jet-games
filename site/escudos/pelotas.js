@@ -139,7 +139,15 @@ function bindTrivia(){
   document.querySelectorAll('[data-opt]').forEach(b=>b.onclick=()=>{const q=t.qs[t.i];if(q.ans!==null)return;q.ans=b.dataset.opt;if(q.ans===String(q.b.temporada))t.score++;render();});
   const nx=$('tqNext');if(nx)nx.onclick=()=>{if(t.i+1<t.qs.length)t.i++;else{t.done=true;DB.trivia.played=(DB.trivia.played||0)+1;DB.trivia.best=Math.max(DB.trivia.best||0,t.score);save(C,DB);}render();};
   const ag=$('tqAgain');if(ag)ag.onclick=()=>{TQ=newTrivia();render();};
-  const sh=$('tqShare');if(sh)sh.onclick=async()=>{const txt=tr('pbShareTxt',t.score,t.qs.length,COMPS[C][0])+` · https://jetgames.fun/escudos/#/pelotas/${C}`;try{if(navigator.share)await navigator.share({text:txt});else{await navigator.clipboard.writeText(txt);$('status').textContent=tr('pbCopied');}}catch(e){}};
+  // SRC-G06: compartir nativo sólo si existe; cancelar no avisa nada; si el portapapeles falla, el texto íntegro queda seleccionable.
+  const sh=$('tqShare');if(sh)sh.onclick=async()=>{const txt=tr('pbShareTxt',t.score,t.qs.length,COMPS[C][0])+` · https://jetgames.fun/escudos/#/pelotas/${C}`;
+    try{if(navigator.share&&matchMedia('(pointer:coarse)').matches){await navigator.share({text:txt});return;}}catch(e){if(e&&e.name==='AbortError')return;}
+    try{await navigator.clipboard.writeText(txt);$('status').textContent=tr('pbCopied');}
+    catch(e){let box=$('pbShareBox');if(!box){box=document.createElement('div');box.id='pbShareBox';box.className='panel';box.style.marginTop='10px';sh.closest('.tq').appendChild(box);}
+      box.innerHTML=`<p class="hint" style="margin:0 0 6px">${tr('copyFailed')}</p><textarea readonly rows="3" style="width:100%;font:inherit;color:inherit;background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:8px;user-select:text;-webkit-user-select:text"></textarea><div class="acts"><button class="btn" id="pbCopyBtn">${tr('copyText')}</button><button class="btn" id="pbCloseBox">${tr('close')}</button></div>`;
+      const ta=box.querySelector('textarea');ta.value=txt;ta.focus();ta.select();
+      $('pbCopyBtn').onclick=async()=>{try{await navigator.clipboard.writeText(ta.value);$('status').textContent=tr('pbCopied');}catch(e2){ta.focus();ta.select();}};
+      $('pbCloseBox').onclick=()=>{box.remove();sh.focus();};}};
 }
 
 /* ---------- galería ---------- */
