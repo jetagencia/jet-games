@@ -1,0 +1,10 @@
+# Raid: resumen de la matriz (22-oct-2026)
+
+Hecho (implementado, 15 IDs): orientación comprobada antes de iniciar la misión con diálogo accesible y salida al briefing (RSP-RAID-01); Tab ya no se cancela en partida y Enter/Espacio sobre controles enfocados no disparan acciones de juego (RSP-RAID-02); estado fatal con identidad JET//Raid, causa específica (WebGL, texturas, interrumpida), «Volver a cargar», «Volver a JET//Games», «Continuar sin texturas» sólo para el recurso opcional, foco gestionado y cargador/canvas inertes (PLAY-RAID-01/02, SRC-RA02, SRC-G05); HUD con cuatro acciones de 44 px separadas 8 px y barra superior que les reserva 200 px en anchos cortos (RSP-RAID-03); notas de despliegue en briefing y resultados (SRC-RA01); meta viewport con zoom permitido (RSP-GLOBAL-01); «Reanudar partida» también en el diálogo de confirmación (SRC-G03); VIS-RAID-01 a 05 (grano 0, viñeta ≤ .18, cristal menos espejado, HUD estable, señalética con placa y pulso de opacidad, advertencias sin parpadeo y cuenta regresiva estática en reduced-motion).
+Verificado sin tocar: SRC-G02 (idioma compartido). No aplicable: SRC-G01, SRC-G04, SRC-G06.
+
+Pruebas: node --check del bundle; smoke sin errores nuevos (0 botones vacíos); Playwright con swiftshader llegó al título, briefing, partida y pausa; fallo WebGL forzado con --disable-webgl; HUD medido a 768×390 y 568×320.
+
+Pendiente de prueba (no aprobado): las cinco VIS exigen comparación antes/después en un renderer compatible y medición de frame; 768×1024 coarse, zoom 200 % y gestos con dedo real no se probaron. Resultados de misión no alcanzados (cero misiones completadas): la nota #r-redeploy-note se verificó por código.
+
+Riesgos: raid.js es un bundle minificado; los identificadores nuevos (Ozz, Ozy, Ozq, pzz) se eligieron sin colisión. El reinicio desde la pausa en vertical ahora pasa por el diálogo de orientación y vuelve a la pausa. El pulso de marcadores dura un ciclo por cambio de clase: si el motor espera un pulso continuo, el aviso visual es más breve.

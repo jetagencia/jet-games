@@ -1,0 +1,18 @@
+[
+ {
+  "id": "SRC-G01",
+  "estado": "implementado",
+  "archivos": [
+   "site/index.html"
+  ],
+  "detalle": "home: se quitó target=\"_blank\" de las 21 tarjetas que lo tenían; las 22 .card[href] navegan en la misma pestaña (Escudos ya lo hacía). Ctrl/Cmd+clic, clic central y menú contextual siguen siendo los nativos del enlace (no hay manejador JS que fuerce pestañas). No se tocó el arte de las tarjetas (SVG inline ni rutas de imagen) ni rel=noopener. El regreso al catálogo conserva idioma por la cookie compartida jet_lang.",
+  "verificacion": "Playwright (rjb-home-test.mjs): 22 a.card, 0 con target _blank; Ctrl+clic abre pestaña nueva (evento page) y el clic normal navega en la misma pestaña (una sola página en el contexto). Smoke de la home sin errores de consola."
+ },
+ {
+  "id": "SRC-G02",
+  "estado": "ya_corregido_verificado",
+  "archivos": [],
+  "detalle": "home: existe un único selector ES/EN (.lang-sw, role=group, aria-pressed) y JETIdioma inline con prioridad ?lang > cookie .jetgames.fun/localStorage > navegador; no se creó otro ni se renombró. Los 22 juegos cargan jet-idioma.js (misma clave jet_lang).",
+  "verificacion": "Playwright: ?lang=en en navegador es-AR → lang=en y EN pressed; ?lang=es en navegador en-US → lang=es; sin ?lang sigue al navegador; clic en EN + recarga conserva EN (cookie). Fallback con cookies bloqueadas verificado por código (localStorage en try/catch); no se simuló el bloqueo. Los 22 juegos no se abrieron uno por uno desde la home en esta pasada."
+ }
+]

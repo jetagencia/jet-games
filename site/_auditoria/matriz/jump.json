@@ -1,0 +1,182 @@
+[
+ {
+  "id": "RSP-JUMP-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/jetjump/index.html",
+   "site/jetjump/src/main.js"
+  ],
+  "detalle": "jump: regla global [hidden]{display:none!important} al inicio del CSS (conservando las clases .hidden); .load-in es una columna flex centrada con max-width:100%; el bloque .load-actions (margin-top 16 px) contiene «Volver a cargar» y «Volver a los juegos» con width:min(100%,260px), min-height 48 px, centrados, sin posición absoluta. El botón sólo aparece en el estado error (window.JJBoot), que termina la carga, lo muestra y lo enfoca; al pulsarlo se deshabilita («Volviendo a cargar…») y recarga; en éxito #load pasa a hidden + inert + aria-hidden.",
+  "verificacion": "Playwright (rjb-jump-test*.mjs): carga normal (recursos retenidos) → estado loading, botón display:none y Tab no lo alcanza; error → botón centrado (centro = centro de .load-in) a 320/360/390/768/1180 y 844×390, ancho 260, alto 48, 16 px entre mensaje y acciones, sin desbordes; JJBoot.ready() deja #load hidden/inert. Zoom 200 % no probado."
+ },
+ {
+  "id": "SRC-JU01",
+  "estado": "implementado",
+  "archivos": [
+   "site/jetjump/index.html"
+  ],
+  "detalle": "jump: ocultamiento real con [hidden]{display:none!important} (gana a .btn{display:flex}); botón «Volver a cargar» tras el mensaje en la columna centrada de .load-in, 16 px de separación, 48/260 px. Ver RSP-JUMP-01.",
+  "verificacion": "Igual que RSP-JUMP-01; a 320 px sin desborde (scrollWidth = innerWidth)."
+ },
+ {
+  "id": "SRC-JU02",
+  "estado": "implementado",
+  "archivos": [
+   "site/jetjump/index.html",
+   "site/jetjump/src/main.js",
+   "site/jetjump/src/text.js"
+  ],
+  "detalle": "jump: bootstrap inline window.JJBoot antes del módulo con estados loading/error/ready dueños del texto del cargador (ES/EN). Captura error de script/dependencia (evento error en <script type=module> → «No pudimos descargar todos los recursos.»), excepciones y rechazos no capturados durante el arranque, fallo del constructor WebGLRenderer (ahora dentro de try/catch en main.js, antes de pedir recursos → «Este navegador no pudo iniciar los gráficos 3D.» + consejo), fallo de carga de recursos (Promise.all → red si el error es de descarga, si no «La carga se interrumpió. Podés volver a intentarlo.»), contexto perdido, y carga prolongada (aviso a los 25 s sin progreso, sin convertirlo en error). Título «No pudimos cargar JET//Jump»; acciones «Volver a cargar» (handler registrado antes de mostrarse) y «Volver a los juegos». T.load actualizado al mismo repertorio.",
+  "verificacion": "Playwright: dependencia 404 (RGBELoader en este entorno) → error de red por script; con stubs de vendor y --disable-webgl → causa WebGL con detalle «Error creating WebGL context.»; con WebGL y GLB 404 → red con detalle del fetch; reintento deshabilita el botón. Ready sólo simulado con JJBoot.ready() (los assets no están en el repo)."
+ },
+ {
+  "id": "PLAY-JUMP-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/jetjump/index.html"
+  ],
+  "detalle": "jump: logo, progreso, estado y bloque de acciones en una sola columna flex centrada (align-items:center); botón centrado por el contenedor, 16 px al mensaje, 48/260 px, sin offsets absolutos. Etiqueta «Volver a cargar».",
+  "verificacion": "Playwright: centro del botón coincide con el de la columna a 360/390/768/1180 (y 320, 844×390); en carga normal oculto y fuera del foco. Capturas rjb-shots/jump-err-net-*.png."
+ },
+ {
+  "id": "PLAY-JUMP-02",
+  "estado": "implementado",
+  "archivos": [
+   "site/jetjump/index.html",
+   "site/jetjump/src/main.js"
+  ],
+  "detalle": "jump: estados excluyentes (data-state en #load): en loading sólo progreso y texto; en error se oculta la barra, se muestra título + causa («No pudimos descargar todos los recursos.» sólo con fallo de descarga confirmado; «La carga se interrumpió. Podés volver a intentarlo.» si la causa es desconocida) y las acciones; los elementos inactivos usan hidden (fuera del foco y del árbol). El botón se deshabilita mientras reintenta.",
+  "verificacion": "Playwright: carga normal sin botón ni foco; fallo simulado produce mensaje y acción; progreso tardío tras error ignorado (texto y barra no cambian)."
+ },
+ {
+  "id": "PLAY-JUMP-03",
+  "estado": "implementado",
+  "archivos": [
+   "site/jetjump/src/main.js",
+   "site/jetjump/index.html"
+  ],
+  "detalle": "jump: el renderer se crea dentro de try/catch antes de iniciar la carga de recursos; si falla, JJBoot.fail('webgl') muestra «Este navegador no pudo iniciar los gráficos 3D.» con el consejo «Probá con un navegador compatible con WebGL y la aceleración gráfica activada.», «Volver a los juegos» y «Volver a cargar» como secundaria funcional (sin prometer que resuelva). Nunca indicador de carga infinito.",
+  "verificacion": "Playwright con --disable-webgl y stubs de vendor: error WebGL legible, sin barra, foco en Volver a cargar (captura jump-err-webgl-390.png). El bloqueo es del entorno; no prueba fallo universal."
+ },
+ {
+  "id": "RSP-JUMP-02",
+  "estado": "implementado",
+  "archivos": [
+   "site/jetjump/index.html"
+  ],
+  "detalle": "jump: .modal{padding:calc(16px + var(--t)) calc(16px + var(--r)) calc(16px + var(--b)) calc(16px + var(--l))}; .card conserva max-height:100%/overflow:auto y el gestor inert/foco de main.js no se tocó.",
+  "verificacion": "Playwright 768×390 con --l/--r = 44px simulados y .card.wide: padding computado 16px 60px, tarjeta a 60 px de ambos bordes, ancho 648. Diálogos reales no abiertos (el módulo no arranca sin assets)."
+ },
+ {
+  "id": "SRC-JU04",
+  "estado": "implementado",
+  "archivos": [
+   "site/jetjump/src/main.js",
+   "site/jetjump/index.html"
+  ],
+  "detalle": "jump: un único estado de progreso: manager.onProgress → JJBoot.progress(done,total) actualiza barra (round(done/total*100)), aria-valuenow/max y texto «Cargando recursos: {cargados} de {total}» desde el mismo par; no se tocó la fórmula. Tras fail() los callbacks tardíos se ignoran y no pisan el error. No se muestra porcentaje (total inestable por recursos anidados).",
+  "verificacion": "Playwright: progreso 2/28 con barra 7 % y aria 2/28 coherentes; progreso posterior al error no cambia texto ni barra."
+ },
+ {
+  "id": "VIS-JUMP-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/jetjump/src/post.js"
+  ],
+  "detalle": "jump: GradeShader uGrain .035→0, uCA .0022→0, uVig .32→.16; saturación mix 1.1→1.0 conservando el split tonal y el contraste pow 1.04; bloom strength .22→.16 sin tocar radio/threshold; GTAO, sombras y orden de pases intactos; sin DOF ni pases nuevos.",
+  "verificacion": "node --check. Comparación en ejecución pendiente: WebGL del entorno no renderiza la pista (assets ausentes)."
+ },
+ {
+  "id": "VIS-JUMP-02",
+  "estado": "implementado",
+  "archivos": [
+   "site/jetjump/src/world.js"
+  ],
+  "detalle": "jump: arena normalScale (.7,.7)→(.5,.5) y variación macro de albedo .93+.07·n → .96+.04·n, misma función n, color, mapas, escala, geometría y césped intactos.",
+  "verificacion": "node --check. Prueba de cámara a ras/elevada pendiente en renderer compatible con assets."
+ },
+ {
+  "id": "VIS-JUMP-03",
+  "estado": "implementado",
+  "archivos": [
+   "site/jetjump/src/fences.js"
+  ],
+  "detalle": "jump: labelTexture a 256×256 con borde 12 en (10,10,236,236) y texto en (128,140); fuente Inter 800 si document.fonts la tiene disponible, si no Arial 900; medición previa (measureText) que reduce el tamaño hasta que uno o dos dígitos quepan en 200 px; colorSpace sRGB conservado; el cartel 3D, materiales, banderas, RAIL_R y física no cambian.",
+  "verificacion": "node --check. Vista oblicua y shimmer pendientes de prueba con assets."
+ },
+ {
+  "id": "VIS-JUMP-04",
+  "estado": "implementado",
+  "archivos": [
+   "site/jetjump/index.html"
+  ],
+  "detalle": "jump: tokens --hud-surface rgba(13,36,26,.90) y --hud-line rgba(244,236,219,.18) en .data, .gait y .keyhelp (radio 8 px, sin forma de botón); .lbl 12 px/1.3, cifras 18 px/800 tabular, unidad 13 px/600; .hbtn con borde rgba(244,236,219,.4), foco dorado 3 px sin sombra; #jump-state añade un indicador (● listo / ◌ solicitado) además del color, sin cambiar condiciones ni tamaños táctiles.",
+  "verificacion": "CSS carga sin errores; HUD no visible en este entorno (el módulo no arranca sin assets): captura pendiente."
+ },
+ {
+  "id": "VIS-JUMP-05",
+  "estado": "implementado",
+  "archivos": [
+   "site/jetjump/index.html"
+  ],
+  "detalle": "jump: .card con fondo #11301f, borde crema al 16 %, radios 18/12/8; Playfair sólo en h2 (28/700), secciones 16/800, cuerpo 15/1.55, metadatos 12/1.4 (.spot small sube a 12 px y admite dos líneas sin mover el anclaje); fondo interno #183b2b en .score y .spot; números tabulares 26 px. Sin cambios de economía ni navegación.",
+  "verificacion": "CSS carga sin errores; rancho/resultados no alcanzables en este entorno: captura pendiente."
+ },
+ {
+  "id": "SRC-JU03",
+  "estado": "implementado",
+  "archivos": [
+   "site/jetjump/src/text.js",
+   "site/jetjump/src/main.js"
+  ],
+  "detalle": "jump: ayuda unificada como «Cómo jugar» / «How to play» (menú, pausa y título del panel, mismo contenido de controles y reglas); «Reintentar recorrido» / «Retry course» conservado; «Volver al inicio» → «Volver al menú» / «Back to menu» en pausa, confirmación y resultados; la confirmación de reinicio existente no se tocó; en resultados cada tarjeta lleva aria-label con «Penalización: {puntos} puntos» y «Tiempo: {s} s» a partir de los datos reales (visual: cifra + unidad).",
+  "verificacion": "node --check de text.js y main.js; cadenas revisadas en ES/EN. Flujo de resultados no ejecutable en este entorno."
+ },
+ {
+  "id": "SRC-G01",
+  "estado": "no_aplicable",
+  "archivos": [],
+  "detalle": "jump: tarjetas en la home (ver home.json). El menú y el cargador enlazan al catálogo canónico.",
+  "verificacion": "Revisión de fuente."
+ },
+ {
+  "id": "SRC-G02",
+  "estado": "ya_corregido_verificado",
+  "archivos": [],
+  "detalle": "jump: usa jet-idioma.js y selector ES|EN con aria-pressed en menú y Ajustes; el cargador nuevo también traduce su estado en vivo.",
+  "verificacion": "Playwright: JETIdioma.set('en') durante el error cambia el título y el mensaje sin volver a «Cargando»."
+ },
+ {
+  "id": "SRC-G03",
+  "estado": "implementado",
+  "archivos": [
+   "site/jetjump/src/text.js"
+  ],
+  "detalle": "jump: pausa «Reanudar partida» / «Resume game» (antes Continuar partida / Resume); «Volver al menú»; «Reintentar recorrido»; verbos de dominio conservados.",
+  "verificacion": "Cadenas revisadas; node --check."
+ },
+ {
+  "id": "SRC-G04",
+  "estado": "no_aplicable",
+  "archivos": [],
+  "detalle": "jump: no hay acción de borrar progreso; las confirmaciones destructivas existentes (reiniciar, retirarse) ya son diálogos explícitos.",
+  "verificacion": "Revisión de fuente (grep borrar/reset)."
+ },
+ {
+  "id": "SRC-G05",
+  "estado": "implementado",
+  "archivos": [
+   "site/jetjump/index.html",
+   "site/jetjump/src/main.js"
+  ],
+  "detalle": "jump: ver SRC-JU02; además #m-how y #m-credits llevan texto estático de respaldo para no mostrar botones vacíos si el módulo no pinta.",
+  "verificacion": "Ver SRC-JU02."
+ },
+ {
+  "id": "SRC-G06",
+  "estado": "ya_corregido_verificado",
+  "archivos": [],
+  "detalle": "jump: la única compartición es la foto del rancho con navigator.share por acción del usuario, con descarga como alternativa y sin éxito anticipado (AbortError silencioso).",
+  "verificacion": "Revisión de fuente (career-ui.js); no ejecutado."
+ }
+]

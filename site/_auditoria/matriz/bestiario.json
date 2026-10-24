@@ -1,0 +1,172 @@
+[
+ {
+  "id": "RSP-BESTIARIO-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/bestiario/src/main.js",
+   "site/bestiario/src/panels.js",
+   "site/bestiario/index.html"
+  ],
+  "detalle": "bestiario: syncWorldInert() centraliza worldDisabled = titleOn || panels.isOpen() || battle.active y aplica/quita inert a los controles del mundo (labels, zone, rot, coins, goal, act, esc, esc-panel, cam, cam-panel, fs, hint, menu, toast); #title sólo es inert con un panel abierto. showTitle(on) lo invoca y panels.setInert() avisa por hooks.afterInert, así cerrar Ayuda/Ajustes con la portada abierta no devuelve el foco al mundo. #back conserva body.modal-open #back{display:none}. El foco de portada queda en Jugar/Continuar; al salir pasa al canvas si no hay panel. Durante el arranque todos los [data-ui] y #gl están inert (bootstrap) y se liberan en ready.",
+  "verificacion": "Playwright (rjb-be-test.mjs): en portada cam/menu/coins/esc/fs/rot/goal/act inert y title no; Tab recorre t-help › t-set › ES › EN › back › t-play sin tocar controles del mundo; abrir Ayuda (title inert) y cerrarla con Escape mantiene el aislamiento y devuelve el foco a t-help; tras Jugar todos los controles recuperan acceso."
+ },
+ {
+  "id": "RSP-BESTIARIO-02",
+  "estado": "implementado",
+  "archivos": [
+   "site/bestiario/src/main.js"
+  ],
+  "detalle": "bestiario: el keydown que llama talk() exige además !titleOn && !battle.active y que el evento no venga de button, a, input, select, textarea, [contenteditable=true] o [role=button]; #act sigue usando su click nativo.",
+  "verificacion": "Playwright: con #menu enfocado, Enter abre el menú (acción nativa) y no una conversación. Prueba junto a un NPC con Tab→Cámara/Menú no reproducida (requiere mover al jugador); guard verificado por código."
+ },
+ {
+  "id": "SRC-BE01",
+  "estado": "implementado",
+  "archivos": [
+   "site/bestiario/src/panels.js"
+  ],
+  "detalle": "bestiario: elegir un inicio (startmode) con partida existente ya no borra: muestra una confirmación única «Reemplazar partida actual» con «Nuevo inicio: {modo}. Se perderán {n criaturas, monedas, emblemas y objetos}. Esta acción no se puede deshacer.», «Cancelar» (foco inicial, clase alt) y «Borrar y empezar» (peligro; se deshabilita al pulsar). El título del panel pasa a «Elegir nueva partida» cuando reemplaza. La pestaña Partida del menú abre el selector directamente (sin el doble paso anterior) y aclara que nada se borra hasta confirmar; la portada (t-new) usa el mismo camino. Una primera partida sin progreso no pide confirmación. open()/close() limpian el estado pendiente.",
+  "verificacion": "Playwright: primera partida sin confirmación; con partida (maestro) → menú Partida → Nueva partida → selector con partida intacta → Domador → fila de confirmación con el texto real (4 criaturas, 6000 monedas…) y foco en Cancelar; Enter sobre Cancelar conserva modo y plantel; Borrar y empezar inicia Domador. Desde la portada, Nueva partida → mismo flujo. Captura be-newgame-confirm-1280.png."
+ },
+ {
+  "id": "PLAY-BESTIARIO-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/bestiario/index.html",
+   "site/bestiario/src/main.js"
+  ],
+  "detalle": "bestiario: el bootstrap es el único dueño del texto de #boot (estados loading/error/ready con data-state); #boot-msg perdió su data-en y paint() de las traducciones estáticas llama a __bootPaint(), que traduce el estado vigente sin reponer «Cargando el pueblo…» sobre un error. En fallo se ocultan mensaje de carga y barra y se muestra la región de error con título y explicación específicos por causa (webgl / navegador antiguo / red / desconocido); las guardias existentes de WebGL 2, import maps, error/unhandledrejection y try/catch del renderer se conservan y pasan por fail(kind, detail). El aviso de los 12 s sólo actúa en loading.",
+  "verificacion": "Playwright con --disable-webgl: lead «No pudimos iniciar los gráficos 3D.», explicación «Este navegador no pudo crear el contexto gráfico que necesita Bestiario.», mensaje de carga y barra ocultos; JETIdioma.set('en') traduce el error sin volver a Cargando; a los 13 s el error sigue. Carga normal con swiftshader llega a ready y #boot se retira."
+ },
+ {
+  "id": "PLAY-BESTIARIO-02",
+  "estado": "implementado",
+  "archivos": [
+   "site/bestiario/index.html"
+  ],
+  "detalle": "bestiario: bajo la explicación, grupo centrado con «Volver a cargar» (se deshabilita y recarga; no crea partida ni borra almacenamiento) y «Volver a JET//Games» (secundario, menor jerarquía), seguido de <details> «Ver ayuda y detalles» con «Si el problema continúa, probá otro navegador o dispositivo compatible.» y el detalle técnico. El regreso superior #back se mantiene. Botones de 48 px y ancho máximo 260.",
+  "verificacion": "Playwright 360×640: botones y detalles presentes, scrollWidth=360 (sin desborde), Tab recorre boot-retry › boot-home › summary › back (captura be-fatal-360.png). Repetición de recarga normal sin crear partida: verificado por código (reload no toca el almacenamiento)."
+ },
+ {
+  "id": "PLAY-BESTIARIO-03",
+  "estado": "implementado",
+  "archivos": [
+   "site/bestiario/index.html",
+   "site/bestiario/src/main.js"
+  ],
+  "detalle": "bestiario: durante el arranque lockHud(true) vuelve inert todos los [data-ui] (cámara, mochila, escenarios, vista, menú, portada…) y #gl; en fallo #boot pasa a role=alertdialog con «Bestiario no pudo iniciar», «Estado del juego: no disponible» y el foco en el título; sólo en ready (__bootReady desde main.js, mismo estado que gobierna los mensajes) se liberan, y la portada vuelve a aislar el mundo con syncWorldInert.",
+  "verificacion": "Playwright: durante la carga y en el fallo WebGL todos los controles están inert y Tab sólo alcanza las acciones de recuperación y #back; tras ready la portada tiene el foco en t-play y los controles del mundo siguen inert hasta Jugar."
+ },
+ {
+  "id": "RSP-GLOBAL-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/bestiario/index.html"
+  ],
+  "detalle": "bestiario: meta viewport sin maximum-scale ni user-scalable; touch-action:none sale de html,body y queda en #gl y #stick; botones/enlaces con touch-action:manipulation; #mbody ya usaba pan-y. No hay bloqueos globales de gesturestart/dblclick.",
+  "verificacion": "Playwright: meta «width=device-width, initial-scale=1, viewport-fit=cover», body touch-action auto, #gl none. Zoom 200 % en dispositivo real no probado."
+ },
+ {
+  "id": "SRC-BE02",
+  "estado": "implementado",
+  "archivos": [
+   "site/bestiario/src/panels.js"
+  ],
+  "detalle": "bestiario: el botón de cada par pasa a «Fusionar criaturas» sin data-confirm (sin segundo toque temporal); al pulsarlo la fila se convierte en confirmación «Fusionar criaturas» con «{conservada} se conserva. {consumida} desaparecerá.», «Nivel: {antes} → {después}», «Costo: {costo}» (monedas reales), «Cancelar» (foco inicial) y «Fusionar y consumir {nombre}» (peligro, deshabilitado si faltan monedas, se deshabilita al ejecutar). Precio separado de la acción. Regla de fusión y costo (G.fuse) sin cambios.",
+  "verificacion": "Playwright con una criatura duplicada inyectada: fila de confirmación con nombres, nivel 14 → 17 y costo 120 monedas, foco en Cancelar; Enter sobre Cancelar no consume criatura ni monedas; doble clic sobre Fusionar ejecuta una sola fusión (5→4 criaturas, 600→480 monedas). Captura be-fuse-confirm-1280.png."
+ },
+ {
+  "id": "VIS-BESTIARIO-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/bestiario/src/themes.js"
+  ],
+  "detalle": "bestiario: se usa la extensión theme.path ya prevista en world.js con los pares propuestos: ceniza [0x93805e,0x6c5b42], fortaleza [0x7c8894,0x525d69], pantano [0x7c7053,0x464a30], volcanico [0x8b6554,0x4b3933], nevado [0x9da7ad,0x626e78]. Sin cambios en pathRect/keepRect, colisiones, niebla, seed ni edificios.",
+  "verificacion": "node --check; carga del pueblo sin errores (tema por defecto). Comparación de los 5 biomas con la misma cámara y la vista mapa pendiente en renderer compatible."
+ },
+ {
+  "id": "VIS-BESTIARIO-02",
+  "estado": "implementado",
+  "archivos": [
+   "site/bestiario/src/model3d.js"
+  ],
+  "detalle": "bestiario: piel del dragón metalness .05→0 y roughnessFactor .42+.26·sR → .52+.24·sR; hueso roughness .36→.48 y metalness .04→0; membrana .6/0, ojos, brasas, _seam/_grad, mallas y skins intactos. Otras especies no se tocaron (pipeline propio).",
+  "verificacion": "node --check; portada con el fénix renderiza. Dragón en 4 skins × 5 biomas pendiente de prueba en renderer compatible."
+ },
+ {
+  "id": "VIS-BESTIARIO-03",
+  "estado": "implementado",
+  "archivos": [
+   "site/bestiario/src/world.js"
+  ],
+  "detalle": "bestiario: opacidad del anillo de zona .45 inactivo / .85 activo y relleno .06 / .18, interpolados desde fx.active; se retiró sólo la oscilación .18·sin; la escala pulsante, geometría, def.r, activeId y puertas no se tocan.",
+  "verificacion": "node --check; pueblo renderiza con anillos. Entrada/salida de zonas con captura estática pendiente."
+ },
+ {
+  "id": "VIS-BESTIARIO-04",
+  "estado": "implementado",
+  "archivos": [
+   "site/bestiario/src/ui.css"
+  ],
+  "detalle": "bestiario: #mcard #0e1117 y borde rgba(233,230,223,.14); título de panel 20 px/700, tracking .02em, caja normal (17 px en pantallas angostas, 15 en bajas); fichas #191e25; nombres 16/700 y secundario 13/1.4 en pantallas normales (se conservan los tamaños compactos y de tableta existentes); precio 14/700 tabular; .row.dim ya no atenúa toda la fila, sólo la ilustración; .row.gold con borde 2 px. Orden, precios y acciones sin cambios.",
+  "verificacion": "Captura del panel de confirmación de nueva partida y de fusión a 1280 (be-newgame-confirm-1280.png, be-fuse-confirm-1280.png). Estados falta de monedas/poseída/en trabajo y 320/390/768 con 200 % de texto pendientes."
+ },
+ {
+  "id": "VIS-BESTIARIO-05",
+  "estado": "implementado",
+  "archivos": [
+   "site/bestiario/src/ui.css"
+  ],
+  "detalle": "bestiario: .bar a 8 px con pista #323b46 y radio 4 px; relleno con transición de 180 ms lineal (ninguna en prefers-reduced-motion); cifras .hp span a 13 px tabular; colores verde/rojo/azul/oro y datos del modelo sin cambios.",
+  "verificacion": "CSS carga sin errores; fichas con barras no abiertas en la prueba (requiere criatura en la Mochila): comprobación de 0/1/máximo pendiente."
+ },
+ {
+  "id": "SRC-G01",
+  "estado": "no_aplicable",
+  "archivos": [],
+  "detalle": "bestiario: tarjetas en la home; el juego enlaza al catálogo canónico desde #back, el menú y ahora el estado fatal.",
+  "verificacion": "Revisión de fuente."
+ },
+ {
+  "id": "SRC-G02",
+  "estado": "ya_corregido_verificado",
+  "archivos": [],
+  "detalle": "bestiario: jet-idioma.js compartido, selector ES|EN con aria-pressed en portada y Ajustes, repintado en vivo por 'jet-idioma'; el bootstrap también traduce su estado.",
+  "verificacion": "Playwright: ?lang=es en navegador en-US pinta español; smoke sin ?lang en inglés; cambio en vivo durante el error traduce sin perderlo."
+ },
+ {
+  "id": "SRC-G03",
+  "estado": "implementado",
+  "archivos": [
+   "site/bestiario/src/main.js"
+  ],
+  "detalle": "bestiario: el botón de portada con partida guardada pasa de «Continuar» a «Continuar partida» / «Continue game»; «Nueva partida», «Volver a mi partida», «Salir a JET//Games» se conservan. No hay pausa con etiqueta propia (el menú se cierra con ×/Escape).",
+  "verificacion": "node --check; Playwright: tras iniciar una partida y volver a la portada el botón mostraba el estado con partida (texto comprobado antes del cambio como «Continuar»)."
+ },
+ {
+  "id": "SRC-G04",
+  "estado": "implementado",
+  "archivos": [
+   "site/bestiario/src/panels.js"
+  ],
+  "detalle": "bestiario: el borrado de progreso es el reemplazo de partida: confirmación explícita con enumeración real de lo que se pierde, Cancelar enfocado y botón peligro «Borrar y empezar»; sin doble toque temporal; no toca idioma ni audio. Ver SRC-BE01.",
+  "verificacion": "Ver SRC-BE01."
+ },
+ {
+  "id": "SRC-G05",
+  "estado": "implementado",
+  "archivos": [
+   "site/bestiario/index.html",
+   "site/bestiario/src/main.js"
+  ],
+  "detalle": "bestiario: título visible antes del JS, estados excluyentes, error recuperable con «Volver a cargar» y «Volver a JET//Games», sin spinner infinito ni botones vacíos (los botones del error reciben texto al mostrarse). Ver PLAY-BESTIARIO-01/02/03.",
+  "verificacion": "Ver PLAY-BESTIARIO-01/02/03; smoke: 0 botones vacíos."
+ },
+ {
+  "id": "SRC-G06",
+  "estado": "no_aplicable",
+  "archivos": [],
+  "detalle": "bestiario: no tiene acción Compartir (navigator.share/clipboard: 0 ocurrencias).",
+  "verificacion": "Revisión de fuente."
+ }
+]

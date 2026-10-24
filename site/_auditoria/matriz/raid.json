@@ -1,0 +1,177 @@
+[
+ {
+  "id": "RSP-RAID-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/raid/raid.js",
+   "site/raid/index.html",
+   "site/raid/style.css"
+  ],
+  "detalle": "raid: Ji() (lanzar misión) comprueba (orientation: portrait) y (pointer: coarse) antes de arrancar: no inicia física ni temporizador y abre el diálogo #rotate (role=dialog, aria-modal, aria-labelledby/describedby, botón «Volver a la misión» de 48 px que vuelve al briefing/pausa/resultados según el origen, Escape también vuelve vía AT()). Nuevo estado data-screen=orientation (gn('orientation') con el HUD inerte); la regla CSS .rotate ya no depende de body.playing sino de body[data-screen=orientation]. Al girar a horizontal con el diálogo abierto se vuelve al briefing (el lanzamiento requiere acción explícita, sin duplicar). Girar a vertical durante la partida pausa (listener existente) y el menú Pausa queda visible y operable. Copys: «Girá el dispositivo» / «Para jugar esta misión, usá la orientación horizontal.» / «Volver a la misión» (ES/EN).",
+  "verificacion": "Playwright (Chromium swiftshader) con script propio en el scratchpad (rjb-raid-test.mjs): contexto móvil 390×844 coarse → Iniciar misión → data-screen=orientation, game.state=idle (no consume tiempo), foco en #rotate-back (48 px); Escape y botón vuelven a brief con la etiqueta de retroceso correcta; rotar a 844×390 vuelve al briefing; lanzar en horizontal → state=intro; rotar a vertical en partida → data-screen=pause, overlay .rotate display:none (captura raid-pause-portrait-390.png). 768×1024 coarse no probado con dispositivo real."
+ },
+ {
+  "id": "RSP-RAID-02",
+  "estado": "implementado",
+  "archivos": [
+   "site/raid/raid.js"
+  ],
+  "detalle": "raid: en el keydown de la clase de entrada se quitó «Tab» del conjunto con preventDefault; si el evento viene de button/a/input/select/textarea/[role=button], Espacio y Enter se devuelven antes de registrarse como tecla de juego (la acción nativa del control manda) y las flechas sobre input/select/textarea quedan para el control. Además, un clic de puntero sobre un botón del HUD suelta el foco (i.detail>0) para que Espacio/flechas sigan siendo del juego. Se corrigió que al reanudar desde la pausa el HUD quedara con inert (ahora se quita en Ei(false) y en Ji()).",
+  "verificacion": "Playwright (Chromium swiftshader) con script propio en el scratchpad (rjb-raid-test.mjs): en partida Tab recorre ping › camera › fullscreen › pause y vuelve al documento; Enter sobre Pausa enfocada abre la pausa (data-screen=pause); Reanudar vuelve a game; con el botón Cámara enfocado, Espacio no entra en input.keys; con foco en body sí. Sin errores de consola nuevos."
+ },
+ {
+  "id": "PLAY-RAID-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/raid/index.html",
+   "site/raid/raid.js",
+   "site/raid/style.css"
+  ],
+  "detalle": "raid: el estado fatal (#fatal) ahora lleva la identidad JET//Raid (logo), título dinámico, mensaje principal y explicación por causa (gl: «No pudimos iniciar los gráficos 3D.» + «Este navegador no pudo crear el contexto gráfico que necesita Raid.»; assets: «No pudimos descargar todos los recursos.» + explicación de texturas; boot: «La carga se interrumpió. Podés volver a intentarlo.»), botones centrados «Volver a cargar» (se deshabilita al pulsar y recarga; no es «Reintentar misión»), «Volver a JET//Games» (enlace al catálogo canónico https://jetgames.fun/) y, sólo para texturas opcionales, «Continuar sin texturas». La ayuda no promete que recargar resuelva la incompatibilidad. Se conservó el centrado existente de .fatal-btns.",
+  "verificacion": "Playwright (Chromium swiftshader) con script propio en el scratchpad (rjb-raid-test.mjs) con --disable-webgl: kind=gl, título «No se pudo iniciar Raid», lead y explicación correctos, botones Volver a cargar / Volver a JET//Games, detalle «Error creating WebGL context.» (capturas rjb-shots/raid-fatal-gl-390.png). Con WebGL y texturas 404: kind=assets, tres acciones, Continuar sin texturas restaura la carga y llega al título."
+ },
+ {
+  "id": "PLAY-RAID-02",
+  "estado": "implementado",
+  "archivos": [
+   "site/raid/raid.js",
+   "site/raid/index.html",
+   "site/raid/style.css"
+  ],
+  "detalle": "raid: al entrar en fatal, ip() oculta y vuelve inert la pantalla de carga (#s-loading hidden+inert) y el canvas #gl (inert + aria-hidden), fija data-screen=fatal y mueve el foco al encabezado #fatal-title (tabindex=-1) sin disparar recarga; el alertdialog se anuncia una vez. Dentro de <details> «Ver ayuda y detalles» se separan «Ayuda para iniciar los gráficos» (lista general, sólo para fallo gl) y «Detalles técnicos» (<pre> con el error real, 13 px, color legible, overflow-wrap:anywhere y alto máximo con scroll). pzz() restaura carga/canvas al continuar sin texturas.",
+  "verificacion": "Playwright (Chromium swiftshader) con script propio en el scratchpad (rjb-raid-test.mjs): en fatal el foco inicial es fatal-title; Tab recorre Volver a cargar › Continuar › Volver a JET//Games › summary; #load-text queda fuera del árbol accesible (offsetParent null); a 360 px con detalles abiertos scrollWidth=360 (sin desborde). Zoom 200 % no probado con dispositivo."
+ },
+ {
+  "id": "RSP-GLOBAL-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/raid/index.html"
+  ],
+  "detalle": "raid: meta viewport sin maximum-scale ni user-scalable (se conservan width=device-width, initial-scale=1, viewport-fit=cover). touch-action:none ya estaba limitado a #gl y .touch-zone; no hay bloqueos globales de gesturestart/dblclick en el bundle (grep: 0).",
+  "verificacion": "grep del meta y de gesturestart; smoke sin errores nuevos. Zoom real al 200 % en dispositivo no probado."
+ },
+ {
+  "id": "RSP-RAID-03",
+  "estado": "implementado",
+  "archivos": [
+   "site/raid/style.css"
+  ],
+  "detalle": "raid: regla final consolidada .h-btns .btn.icon.sm{width:44px;min-width:44px;min-height:44px;padding:0;flex:none} con gap 8 px; eliminadas las redefiniciones de 34 px (max-height:520 táctil) y 36 px; a ≤740 px la barra superior .h-top se ancla a la izquierda con max-width calc(100vw − 236px − insets) para reservar 200 px (4×44+3×8) más insets a las acciones, con contadores en segunda línea (flex-wrap) y objetivo con salto de línea.",
+  "verificacion": "Playwright (Chromium swiftshader) con script propio en el scratchpad (rjb-raid-test.mjs) con body.touch-on: 768×390 → 4 botones de 44×44 separados 8 px, sin solape con .h-top; 568×320 → ídem, .h-top termina en x=311 y los botones empiezan en x=350 (antes se solapaban). Capturas raid-game-768.png / raid-game-568.png. Tap entre botones no probado con dedo real."
+ },
+ {
+  "id": "SRC-RA01",
+  "estado": "implementado",
+  "archivos": [
+   "site/raid/index.html",
+   "site/raid/raid.js",
+   "site/raid/style.css"
+  ],
+  "detalle": "raid: en el briefing se añade #b-redeploy-note «Nuevo despliegue: cambia la distribución de esta misión.» (ES/EN) bajo la fila Despliegue/Nuevo despliegue, enlazada con aria-describedby y oculta en misiones de puntos de control (igual que el botón). En resultados, nota #r-redeploy-note «Reintentar misión conserva este despliegue. Nuevo despliegue: cambia la distribución de esta misión.», oculta donde no hay despliegue (gates/práctica). La mecánica (semilla nueva sólo con newDeploy) no se tocó. El briefing ya muestra misión, modo/clima/rivales (chips), objetivo y dificultad.",
+  "verificacion": "Playwright (Chromium swiftshader) con script propio en el scratchpad (rjb-raid-test.mjs): en el briefing de la misión 1 la nota es visible con el texto exacto; chips «Captura de banderas · Despejado · Atardecer · 2 rivales», objetivo y radiogroup de dificultad presentes. Pantalla de resultados no alcanzada en la prueba (cero misiones completadas): nota verificada por código."
+ },
+ {
+  "id": "SRC-RA02",
+  "estado": "implementado",
+  "archivos": [
+   "site/raid/raid.js",
+   "site/raid/index.html"
+  ],
+  "detalle": "raid: «Jugar sin ellas» pasa a «Continuar sin texturas» (recurso opcional concreto; sólo visible en el fallo de texturas); el fallo WebGL tiene mensaje específico y salida a los juegos, sin «Continuar». Reintentar pasa a «Volver a cargar». El aviso de orientación conserva la pausa y el acceso al menú (ver RSP-RAID-01).",
+  "verificacion": "Playwright (Chromium swiftshader) con script propio en el scratchpad (rjb-raid-test.mjs): fallo assets muestra Volver a cargar / Continuar sin texturas / Volver a JET//Games; fallo gl sólo Volver a cargar / Volver a JET//Games."
+ },
+ {
+  "id": "VIS-RAID-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/raid/raid.js"
+  ],
+  "detalle": "raid: preset «táctico limpio» en el post del bundle: grain .025→0, vignette .35→.18, aberration se mantiene 0; setGrade() limita la viñeta de cada preset de escenario a Math.min(.18, e.vignette) sin tocar exposición, saturación, contraste, lift/gain/tint ni bloom (.22) y threshold. Uniforms flash/stun/damage intactos.",
+  "verificacion": "node --check del bundle; smoke y partida de prueba renderizan sin errores (software rendering). La comparación antes/después con misma misión, clima y calidad, y la medición de tiempo de frame, requieren un renderer compatible: pendientes."
+ },
+ {
+  "id": "VIS-RAID-02",
+  "estado": "implementado",
+  "archivos": [
+   "site/raid/raid.js"
+  ],
+  "detalle": "raid: material glass del hovercraft: roughness .04→.10, clearcoatRoughness .03→.08, envMapIntensity 1.8→1.3; color, transparencia, armour/accent, steel, rubber, decals y geometría sin cambios. Nota: el bundle es la única fuente disponible en el repo; el cambio se hizo en el bloque de materiales del producto, no en three.js.",
+  "verificacion": "node --check; la partida de prueba renderiza el vehículo (captura raid-game-1280.png). Revisión de reflejo vs. lectura de cabina por skin y vista: pendiente en renderer compatible."
+ },
+ {
+  "id": "VIS-RAID-03",
+  "estado": "implementado",
+  "archivos": [
+   "site/raid/style.css"
+  ],
+  "detalle": "raid: tokens --hud-surface rgba(7,19,29,.88) y --hud-line rgba(190,220,240,.24) aplicados a .h-objective, .h-top y .h-item (radio 12 px, sombra 0 4px 16px rgba(0,0,0,.24), backdrop-filter 6 px; el objetivo dentro de .h-top mantiene sólo su línea superior); tabular-nums en tiempo, velocidad, puesto, contadores y cockpit; etiquetas .h-timer small, .g-val span, .boost span a 12 px, tracking .06em, line-height 1.25 (también en modo táctil, sin bajar tipografía). Pantallas de título sin cambios.",
+  "verificacion": "Capturas de partida a 1280×720, 768×390 y 568×320 con el HUD legible (rjb-shots/raid-game-*.png). Fondos claros/oscuros y filtros CSS desactivados no probados."
+ },
+ {
+  "id": "VIS-RAID-04",
+  "estado": "implementado",
+  "archivos": [
+   "site/raid/style.css"
+  ],
+  "detalle": "raid: .marker i conserva rombo 18 px/borde 2 px y anclaje; sombra 0 0 6px color-mix(var(--c) 40%); rótulo .marker b en Inter 600 13 px, tracking .02em, sombra 0 1px 3px rgba(0,0,0,.8) y placa rgba(3,9,14,.8) padding 2px 5px radio 4 px; triángulo fuera de campo intacto; el pulso de escala 1.35 se sustituye por variación de opacidad .72↔1 del borde en 2 iteraciones (un ciclo por transición) y en reduced-motion no hay animación. Colores, contenido y visibilidad de cada marcador no se tocan.",
+  "verificacion": "CSS validado por carga sin errores; los marcadores aparecen durante la partida de prueba. Objetivos delante/detrás/fuera de pantalla y captura/entrega no se jugaron: pendiente."
+ },
+ {
+  "id": "VIS-RAID-05",
+  "estado": "implementado",
+  "archivos": [
+   "site/raid/style.css"
+  ],
+  "detalle": "raid: .timer.danger en rojo sólido, opacity 1, sin parpadeo, con borde inferior de estado; .h-alert con fondo fijo rgba(120,10,14,.88) y sin loop alarm; cuenta regresiva: pop y popbig limitan la escala a 1.04→1 con opacidad, sin letter-spacing animado; en prefers-reduced-motion .count.go queda estático y visible durante el mismo intervalo (el motor sigue retirándolo con sus propios temporizadores) y .marker.pulse sin animación. Umbrales, secuencia y duración no se modifican.",
+  "verificacion": "CSS cargado sin errores; cuenta regresiva vista en la partida de prueba. Comparación normal/reduced-motion y avisos consecutivos no grabados: pendiente."
+ },
+ {
+  "id": "SRC-G01",
+  "estado": "no_aplicable",
+  "archivos": [],
+  "detalle": "raid: las tarjetas viven en la home (ver matriz home.json). Raid ya enlaza al catálogo canónico https://jetgames.fun/ desde el título y ahora también desde el estado fatal.",
+  "verificacion": "Revisión de fuente."
+ },
+ {
+  "id": "SRC-G02",
+  "estado": "ya_corregido_verificado",
+  "archivos": [],
+  "detalle": "raid: usa jet-idioma.js compartido (?lang > cookie .jetgames.fun/localStorage > navegador), selector ES/EN con role=radiogroup en título y ajustes; no se creó otro.",
+  "verificacion": "Playwright (Chromium swiftshader) con script propio en el scratchpad (rjb-raid-test.mjs): /raid/?lang=es en navegador en-US muestra textos en español; sin ?lang el navegador en inglés recibe inglés (smoke)."
+ },
+ {
+  "id": "SRC-G03",
+  "estado": "implementado",
+  "archivos": [
+   "site/raid/index.html",
+   "site/raid/raid.js"
+  ],
+  "detalle": "raid: la pausa ya usaba «Reanudar partida»; el diálogo de confirmación (¿Salir de la misión? / ¿Reiniciar el intento?) usaba «Reanudar» y pasa a «Reanudar partida» / «Resume game». Se conservan verbos de dominio: Iniciar misión, Reintentar misión, Nuevo despliegue, Volver a misiones, Salir de la misión.",
+  "verificacion": "grep del bundle y HTML; pausa comprobada en Playwright (captura raid-pause-portrait-390.png)."
+ },
+ {
+  "id": "SRC-G04",
+  "estado": "no_aplicable",
+  "archivos": [],
+  "detalle": "raid: no existe acción de borrado de progreso ni confirmación por doble toque (grep «Borrar» en el bundle: 0).",
+  "verificacion": "Revisión de fuente."
+ },
+ {
+  "id": "SRC-G05",
+  "estado": "implementado",
+  "archivos": [
+   "site/raid/index.html",
+   "site/raid/raid.js",
+   "site/raid/style.css"
+  ],
+  "detalle": "raid: título visible antes del JS (pantalla de carga estática), estados carga/error excluyentes (al fallar se oculta y vuelve inert la carga), error recuperable con «Volver a cargar» y «Volver a JET//Games», sin spinner infinito ni botones vacíos; mensajes por causa (WebGL / descarga / interrumpida). Ver PLAY-RAID-01/02.",
+  "verificacion": "Ver PLAY-RAID-01/02; smoke: 0 botones vacíos."
+ },
+ {
+  "id": "SRC-G06",
+  "estado": "no_aplicable",
+  "archivos": [],
+  "detalle": "raid: no tiene acción Compartir (navigator.share: 0 ocurrencias).",
+  "verificacion": "Revisión de fuente."
+ }
+]
