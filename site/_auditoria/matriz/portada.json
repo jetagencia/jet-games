@@ -1,0 +1,240 @@
+[
+ {
+  "id": "RSP-MODALS-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/portada/src/ui.js",
+   "site/portada/index.html",
+   "site/portada/src/style.css"
+  ],
+  "detalle": "show()/push()/back()/hideAll() guardan el activador en S.focusStack y lo restauran al cerrar (restaurarFoco; si desapareció, primer control lógico); fondoInerte() vuelve inert #game, #back, #tr y #tut cuando hay una capa encima; Tab/Shift+Tab atrapados en la capa superior (focusables/visibleEl); modal() conecta aria-labelledby al h2 (id modalT) o aria-label, con role alertdialog para confirmaciones (opts.alerta); confirmar() enfoca Cancelar. Pausa, Ajustes, Ayuda, Hemeroteca, Vista, Intro y Modal llevan role=dialog + aria-modal + aria-labelledby en el HTML.",
+  "verificacion": "Playwright (site/_auditoria/_smoke/portada-test.mjs): pausa → #game/#back/#tr inert, 7 Tabs no salen de #sPause, Ajustes desde la pausa devuelve el foco a #bSetP, Escape reanuda y el foco vuelve a la pieza; detalle de pieza devuelve el foco a la pieza (data-ix); confirmaciones enfocan Cancelar y al cancelar vuelven a #bErase/#bRestart; compartir vuelve a #bViewShare."
+ },
+ {
+  "id": "PLAY-PORTADA-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/portada/src/style.css",
+   "site/portada/src/ui.js",
+   "site/portada/src/art.js",
+   "site/portada/src/i18n.js"
+  ],
+  "detalle": "Titulares con hyphenate-limit-chars 10 5 4 (no se parten palabras cortas) además de overflow-wrap normal; tamaños por tipo de pieza (fitEl con mínimos de 10 px y variante compacta); trama de impresión atenuada (halftone con paso en px CSS × DPR, sin cambiar la ilustración ni la geometría). Vista ampliada: h2 con el titular, nombre accesible «Vista ampliada de la noticia» y cierre «Cerrar vista ampliada»; muestra el texto íntegro sin mover la pieza.",
+  "verificacion": "Playwright: modal de detalle con h2 y botón «Cerrar vista ampliada»; capturas portada-juego-1180.png y 390x844: titulares sin cortes torpes."
+ },
+ {
+  "id": "PLAY-PORTADA-02",
+  "estado": "implementado",
+  "archivos": [
+   "site/portada/src/ui.js",
+   "site/portada/src/style.css",
+   "site/portada/src/i18n.js"
+  ],
+  "detalle": "Guías de filas/columnas sólo con #board.editing (retícula tenue tras cerrar la edición); nombre accesible de cada pieza «{tipo}, {sección}. {ancho} por {alto} celdas. {titular}. Fila {fila}, columna {columna}.» o «En la mesa.», con aria-pressed para selección; al mover con teclado el status anuncia «Fila {fila}, columna {columna}.» y «No entra en esta posición.» en colisión o fuera de límites; «Devolver a la mesa» en el detalle. K.dims y vecindad intactos.",
+  "verificacion": "Playwright: aria-label de la primera pieza de la mesa y de la pieza colocada; kbPreview anuncia fila/columna; «No entra» al soltar en destino inválido."
+ },
+ {
+  "id": "PLAY-PORTADA-03",
+  "estado": "implementado",
+  "archivos": [
+   "site/portada/index.html",
+   "site/portada/src/ui.js",
+   "site/portada/src/i18n.js",
+   "site/portada/src/style.css"
+  ],
+  "detalle": "HUD con «Tirada estimada: {cantidad} mil ejemplares» (unidad visible .sc-u y en aria-label de #score), «Meta: {n} mil ejemplares» y «Referencia del jefe: {referencia} mil ejemplares» (presentación y tabla lateral) sin presentarla como garantía; sellos con causa en title/glyph («×2 por cabecera» ⌃, «×2 por foto relacionada» ◩, tema ★); tabla de pares con nombres completos de sección (expandCodes) y línea «Ciencia + Cultura: +{bonificación}» desde el estado real.",
+  "verificacion": "Playwright: aria-label de #score con tirada, meta y referencia; intro con «Referencia del jefe: 28 mil ejemplares»; captura 1180: tabla lateral con secciones completas."
+ },
+ {
+  "id": "PLAY-PORTADA-04",
+  "estado": "implementado",
+  "archivos": [
+   "site/portada/src/ui.js",
+   "site/portada/src/i18n.js"
+  ],
+  "detalle": "tutCheck() se ejecuta al colocar, retirar, deshacer y rehacer y deriva los textos del estado actual: «La portada está completa. Imprimí para ver el resultado.», «No hace falta publicar todas las noticias.», «Tenés {cantidad} piezas en la mesa y {huecos} celdas vacías.» + «Podés devolver una pieza a la mesa para probar otra combinación.» (tutSayTxt con clave de estado); cambiar de idioma re-evalúa el texto.",
+  "verificacion": "Playwright: colocar el titular cambia la guía; z (deshacer) devuelve el mensaje anterior; el texto de piezas/celdas usa los contadores reales."
+ },
+ {
+  "id": "PLAY-PORTADA-05",
+  "estado": "implementado",
+  "archivos": [
+   "site/portada/src/ui.js",
+   "site/portada/src/i18n.js",
+   "site/portada/src/style.css"
+  ],
+  "detalle": "Resultado con «Edición publicada · {estrellas} de 3 estrellas» y «Te faltaron {diferencia} mil ejemplares para igualar la referencia.» sólo si total < referencia; bossDiff conserva su fórmula: pieza ausente → «Aporte de esta pieza en la portada del jefe: {aporte}», presente en ambas → «Diferencia de aporte de esta pieza: {delta}», siempre con «Este valor no indica la ganancia neta de sustituir otra pieza.»; se presenta como «La diferencia más grande: …». La opción de simular sustituciones (diferencia neta con dos ejecuciones completas de la puntuación) queda sin implementar: el catálogo la marca pendiente de decisión de producto.",
+  "verificacion": "Playwright: dnote «La diferencia más grande: el jefe dejó fuera «…». Aporte de esta pieza en la portada del jefe: +18. Este valor no indica…»; stars-txt con faltante sólo bajo la referencia."
+ },
+ {
+  "id": "PLAY-PORTADA-06",
+  "estado": "implementado",
+  "archivos": [
+   "site/portada/src/ui.js",
+   "site/portada/src/i18n.js",
+   "site/portada/src/style.css"
+  ],
+  "detalle": "Resultado: resumen, «Ver desglose» (piezas, efectos con vecinos, reglas, multiplicadores, huecos) siempre visible antes de las acciones; comparación bajo demanda «Comparar portadas» (#bCmp aria-expanded, #cmpBox oculto por defecto); .acts en flujo (sin sticky que tape el desglose); acciones: «Siguiente edición» / «Ver resultado final», «Repetir esta práctica» (tutorial, intento separado), «Rehacer esta edición» (libre fallida, según la lógica existente), «Volver al menú» + nota «La partida queda guardada.». No se ofreció «Volver a editar» porque el resultado ya está guardado.",
+  "verificacion": "Playwright: botones del resultado, cmpBox hidden→visible al pulsar, getComputedStyle(.acts).position = static; capturas portada-resultado-1180.png y 390."
+ },
+ {
+  "id": "PLAY-PORTADA-07",
+  "estado": "implementado",
+  "archivos": [
+   "site/portada/src/ui.js",
+   "site/portada/index.html",
+   "site/portada/src/i18n.js",
+   "site/portada/src/style.css"
+  ],
+  "detalle": "Introducción con botón real «Continuar» (#bIntroGo, foco inicial, Enter/Espacio) distinto de «Reanudar partida» de la pausa; superposiciones con role=dialog, foco inicial, restauración y fondo inert; carrusel de ayuda: sólo la lámina activa visible para lectores (inert + aria-hidden en las demás), puntos con «Paso {actual} de {total}» y aria-current, botones «Paso anterior» / «Paso siguiente», cierre «Cerrar ayuda».",
+  "verificacion": "Playwright: sIntro role=dialog con foco en #bIntroGo; ayuda: hPrev disabled en el paso 1, aria-hidden [false,true,true,true] y aria-current en el punto activo; hNext cambia de lámina."
+ },
+ {
+  "id": "RSP-GLOBAL-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/portada/index.html",
+   "site/portada/src/style.css"
+  ],
+  "detalle": "viewport sin maximum-scale/user-scalable; sin bloqueos globales de gesturestart/dblclick; .scr, #tray y .hcar con touch-action que admite pinch-zoom; las piezas conservan touch-action:none para el arrastre.",
+  "verificacion": "Inspección de index.html y style.css; pruebas a 320/390/768/1180 y 844×390 sin desplazamiento horizontal (overflowX=false)."
+ },
+ {
+  "id": "RSP-PORTADA-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/portada/src/style.css",
+   "site/portada/src/ui.js",
+   "site/portada/src/i18n.js"
+  ],
+  "detalle": ".chip{min-height:44px;height:auto} sin pseudo-elemento invasor; layout reserva 44+8 px: vertical corto con fila dedicada bajo score (top=y1+48, py=y1+44+56), horizontal chips 44 px y mesa en top+146+TR, ancho con chipsH ≥ 44. En vertical corto el resumen es un botón «Reglas y tema» (aria-label con «Reglas activas ({n})») y no se muestra si no hay reglas ni tema. Desplazamiento horizontal de chips conservado.",
+  "verificacion": "Playwright a 320×568: chip de 44 px de alto y sin solaparse con Volver/Ajustes; capturas 390x844, 768x1024, 844x390."
+ },
+ {
+  "id": "RSP-PORTADA-02",
+  "estado": "implementado",
+  "archivos": [
+   "site/portada/src/ui.js",
+   "site/portada/src/i18n.js"
+  ],
+  "detalle": "Tab durante la colocación por teclado llama kbCancel(true): limpia la previsualización (S.kb=null, clearPreview, renderAll) sin tocar posición ni historial, anuncia «Colocación cancelada» en el status y deja que el foco avance (sin preventDefault). Enter/Espacio confirman, Escape cancela.",
+  "verificacion": "Playwright: Enter en pieza → fantasma visible; Tab → fantasma retirado, mensaje «Colocación cancelada», foco en el siguiente control; la pieza sigue en la mesa."
+ },
+ {
+  "id": "SRC-PO01",
+  "estado": "implementado",
+  "archivos": [
+   "site/portada/src/ui.js",
+   "site/portada/src/i18n.js"
+  ],
+  "detalle": "Con meta insuficiente, Imprimir abre un alertdialog «La portada no alcanza la meta» / «Si imprimís ahora, termina esta partida.» (+ aclaración de modo libre) con «Tirada: {n} mil ejemplares», «Meta: {n} mil ejemplares», «Faltan {n} mil ejemplares para la meta.», botones «Seguir editando» (primario, foco) e «Imprimir y terminar» (peligro). Sin confirmación si la meta está cumplida. Reglas de tirada intactas.",
+  "verificacion": "Playwright: Ctrl+Enter con tablero vacío abre el diálogo con las tres líneas; Escape conserva piezas y devuelve el foco a #bPrint; «Imprimir y terminar» pasa a la rotativa."
+ },
+ {
+  "id": "SRC-PO02",
+  "estado": "implementado",
+  "archivos": [
+   "site/portada/src/ui.js",
+   "site/portada/src/i18n.js"
+  ],
+  "detalle": "Mesa: «{n} piezas en la mesa»; huecos: «{n} celdas vacías · −{penalización}» con la penalización real (sc.holePen) en el mensaje y el desglose; «mil ejemplares» junto a tirada y meta; «Reglas activas ({n})»; reiniciar edición explica que las piezas vuelven a la mesa y que partida, reglas y ediciones previas se conservan; «Nueva partida» en el final. Abrir el chip de reglas no mueve piezas.",
+  "verificacion": "Playwright: trayN «3 piezas en la mesa»; desglose «Huecos (20) −40»; diálogo de reinicio con su texto."
+ },
+ {
+  "id": "VIS-PORTADA-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/portada/src/style.css",
+   "site/portada/src/ui.js"
+  ],
+  "detalle": "#paper::before con ruido alpha .035 y viñeta .06 en z-index 0, bajo #mast/#board (z-index 1) y las piezas; retícula dibujada por CSS desde --cell: puntos .2 + guías .07 sólo en #board.editing, .07 en reposo; borde doble del masthead conservado; el nombre del diario se limita también por el ancho del papel y en papeles angostos se ocultan fecha/precio (#mast.tiny).",
+  "verificacion": "Capturas portada-juego-320x568 (masthead legible), 1180 y resultado-390 (tapa terminada sin ruido sobre el texto); smoke OK."
+ },
+ {
+  "id": "VIS-PORTADA-02",
+  "estado": "implementado",
+  "archivos": [
+   "site/portada/src/ui.js",
+   "site/portada/src/style.css"
+  ],
+  "detalle": "fitEl marca .compact cuando el recorte mide <90×64 px CSS: sección con icono y código, titular en máximo 2 líneas desde 11 px, bajada oculta sólo en la miniatura; mínimo de letra 10 px en todos los casos; el detalle y el aria-label conservan el texto íntegro. Rotar recalcula la variante.",
+  "verificacion": "Playwright: compactPcs = 3 a 320×568 y 0 a 768×1024; detalle muestra el texto completo."
+ },
+ {
+  "id": "VIS-PORTADA-03",
+  "estado": "implementado",
+  "archivos": [
+   "site/portada/src/art.js",
+   "site/portada/src/ui.js",
+   "site/portada/src/style.css"
+  ],
+  "detalle": "halftone(cv,id,ink,paper,dpr): pasoCSS = clamp(min(w,h)/30, 1.5, 3) × DPR; versión de tres tonos planos cuando el lado corto < 48 px CSS; clave de caché con DPR/paso/plano; misma tinta #16111f sobre #e9e2d2 y misma p.ill. showDetail de fotos añade una reproducción .det-foto de min(100 %, 360 px) sin sustituir el texto de pareja.",
+  "verificacion": "Captura portada-juego-1180.png (foto reconocible) y 320 (miniatura plana); modal de detalle con canvas .det-foto."
+ },
+ {
+  "id": "VIS-PORTADA-04",
+  "estado": "implementado",
+  "archivos": [
+   "site/portada/src/style.css",
+   "site/portada/src/ui.js"
+  ],
+  "detalle": "Franja superior para sellos (.pc.has-st .in padding-top max(16px,1.5em)), sellos sin rotación y con elipsis; en compactos un sello resumido «Sellos: {n}» con desglose en el detalle; selección contorno cian 2 px sin halo; origen de arrastre contorno discontinuo y contenido al 45 %; rótulo «No entra» en el borde inferior; esquinas y dimensiones intactas.",
+  "verificacion": "Playwright: pieza colocada con clase has-st y titular visible; capturas del juego a 1180 y 390."
+ },
+ {
+  "id": "SRC-G01",
+  "estado": "no_aplicable",
+  "archivos": [],
+  "detalle": "Las tarjetas de la home no pertenecen al juego; #back «Volver a los juegos» conserva idioma.",
+  "verificacion": "aria-label de #back «Volver a los juegos» / «Back to games»."
+ },
+ {
+  "id": "SRC-G02",
+  "estado": "ya_corregido_verificado",
+  "archivos": [],
+  "detalle": "Portada ya usa JETIdioma y su selector ES/EN (langSeg/langSegT) con aria-pressed; no se duplicó.",
+  "verificacion": "Playwright: JETIdioma.set('en') traduce todas las cadenas nuevas (Resume game, Back to menu, Delete progress, Previous step…)."
+ },
+ {
+  "id": "SRC-G03",
+  "estado": "implementado",
+  "archivos": [
+   "site/portada/src/i18n.js",
+   "site/portada/index.html",
+   "site/portada/src/ui.js"
+  ],
+  "detalle": "Pausa «Reanudar partida» / «Volver al menú»; intro «Continuar»; resultado «Siguiente edición» / «Repetir esta práctica» / «Rehacer esta edición» / «Volver al menú»; final «Nueva partida»; carga «Volver a los juegos». «Imprimir» conservado como verbo de dominio.",
+  "verificacion": "Playwright: textos de #bCont, #bHome, botones del resultado en ES/EN."
+ },
+ {
+  "id": "SRC-G04",
+  "estado": "implementado",
+  "archivos": [
+   "site/portada/src/ui.js",
+   "site/portada/src/i18n.js"
+  ],
+  "detalle": "Borrar progreso vía confirmar(): alertdialog «¿Borrar todo el progreso de JET//Portada?» / «Se borrarán el progreso de la campaña (rango, rachas, récords y reglas desbloqueadas), la hemeroteca y las partidas guardadas. Esta acción no se puede deshacer.», Cancelar enfocado, botón peligro «Borrar progreso»; conserva jet-portada:settings (idioma/audio).",
+  "verificacion": "Playwright: primer clic no borra; Escape devuelve el foco a #bErase con el estado intacto."
+ },
+ {
+  "id": "SRC-G05",
+  "estado": "implementado",
+  "archivos": [
+   "site/portada/index.html",
+   "site/portada/src/style.css",
+   "site/portada/src/ui.js"
+  ],
+  "detalle": "Bootstrap JETCarga: título JET//Portada y «Cargando Portada…» antes del JS; error de script → «No pudimos descargar todos los recursos.», otro error/timeout 15 s → «La carga se interrumpió. Podés volver a intentarlo.»; botones «Volver a cargar» y «Volver a los juegos»; estados excluyentes con html[data-carga]; boot() llama JETCarga.listo().",
+  "verificacion": "BLOCK=i18n.js → data-carga=red, foco en «Volver a cargar» (portada-carga-error.png); carga normal → listo y #carga oculto."
+ },
+ {
+  "id": "SRC-G06",
+  "estado": "implementado",
+  "archivos": [
+   "site/portada/src/ui.js",
+   "site/portada/src/i18n.js"
+  ],
+  "detalle": "share(): navigator.share (AbortError silencioso) → clipboard → modal con textarea readonly, «Copiar texto» y «Cerrar»; «Texto copiado» sólo tras éxito; «No pudimos copiarlo automáticamente. Seleccioná y copiá este texto.»; botones «Compartir resultado»; el foco vuelve al botón que compartió.",
+  "verificacion": "Playwright con share/clipboard anulados desde la hemeroteca: modal con texto íntegro; al cerrar foco en #bViewShare; sin toast falso."
+ }
+]

@@ -1,0 +1,197 @@
+[
+ {
+  "id": "RSP-MODALS-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/senal/src/app.js",
+   "site/senal/src/style.css",
+   "site/senal/index.html"
+  ],
+  "detalle": "abrirModal() guarda el activador (modalActivador), vuelve inert las capas de fondo (capasFondo(): pantallas .scr y HUD), conecta aria-labelledby al título del modal (id modalTitulo), admite role alertdialog (o.alerta) y foco inicial declarado (o.foco / [data-foco]); Tab y Shift+Tab quedan atrapados dentro de #velo; cerrarModal() retira inert y devuelve el foco al activador (o al primer control lógico si desapareció). Encadenados Pausa→Ajustes→Pausa resueltos con la bandera reabriendo. Escape cierra.",
+  "verificacion": "Playwright (site/_auditoria/_smoke/senal-test.mjs): con la pausa abierta #juego e #inicio tienen inert=true, 8 Tabs seguidos no salen de #velo, Escape devuelve el foco a #btnPausa; Ajustes desde la pausa vuelve a la pausa con foco en el botón que lo abrió; el alertdialog de rendirse enfoca «Seguir investigando»."
+ },
+ {
+  "id": "PLAY-SENAL-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/senal/src/app.js",
+   "site/senal/src/style.css",
+   "site/senal/index.html",
+   "site/senal/src/i18n.js"
+  ],
+  "detalle": "Reorganización en tres zonas (evidencia / bandeja+acciones / paleta): altura de la sonda decorativa reducida (clamp(H*0.14,64,140) vertical, clamp(H*0.13,56,100) horizontal) y el globo de guía se posiciona sobre la bandeja (posicionarGlobo) en horizontal, junto al control señalado. Bandeja vacía muestra «Armá una muestra». La frase «Cambiaste una sola característica. Compará la respuesta con la muestra anterior.» (tut5b) sólo se muestra cuando unaCaracteristica() comprueba que la muestra difiere en exactamente una característica de la anterior.",
+  "verificacion": "Captura senal-juego-1180.png: guía, bandeja y Enviar muestra en el mismo campo visual; registro de evidencia visible. Prueba: tut paso 4 con dos cambios no muestra la frase."
+ },
+ {
+  "id": "PLAY-SENAL-02",
+  "estado": "implementado",
+  "archivos": [
+   "site/senal/src/app.js",
+   "site/senal/src/style.css",
+   "site/senal/src/i18n.js"
+  ],
+  "detalle": "Fila de categorías con aria-label «Categorías de reglas», pestañas en varias filas (flex-wrap) y scrollIntoView({block:'nearest',inline:'nearest'}) al activar; pestaña activa con marca ✓. Categorías bloqueadas con aria-disabled=true, opacidad legible, title/aria-label «{categoría} bloqueada · completá {requisito} para desbloquearla.» y el mismo texto en toast al tocarlas; el requisito sale del estado real de desbloqueo (reqBase/reqComb).",
+  "verificacion": "Playwright: tras elegir una categoría su pestaña queda dentro del área visible (getBoundingClientRect dentro del contenedor); las bloqueadas tienen aria-disabled y nombre con el requisito."
+ },
+ {
+  "id": "PLAY-SENAL-03",
+  "estado": "implementado",
+  "archivos": [
+   "site/senal/src/app.js",
+   "site/senal/index.html",
+   "site/senal/src/i18n.js",
+   "site/senal/src/style.css"
+  ],
+  "detalle": "HUD con rótulo «Pruebas enviadas: {n}» (sólo pruebas del jugador) y subtotal «Muestras analizadas: {n}» (incluye ejemplos iniciales); las muestras de regalo llevan la etiqueta visible «Ejemplo inicial» (.etq) y conservan su número único (#1, #2…) para localizar contradicciones.",
+  "verificacion": "Playwright: hudLbl/hudTotal coherentes con el registro (enviadas + 2 ejemplos = analizadas); tarjetas .regalo con etiqueta «Ejemplo inicial»."
+ },
+ {
+  "id": "PLAY-SENAL-04",
+  "estado": "implementado",
+  "archivos": [
+   "site/senal/src/app.js",
+   "site/senal/src/style.css",
+   "site/senal/src/i18n.js"
+  ],
+  "detalle": "Tres estados separados: selección = borde sólido + ✓ (.chip.on::after, .tab.on::before, aria-pressed); foco = anillo blanco (outline) independiente del color de pieza; guía del tutorial = contorno ámbar discontinuo con rótulo data-guia («Elegí esta opción» / «Siguiente paso») y «Seleccionado» en el nombre accesible de la opción elegida. Sin halos de brillo.",
+  "verificacion": "Captura senal-panel-1180.png: opción guiada (ámbar + rótulo) distinta de la seleccionada (✓) y del foco. Playwright: Tab recorre chips sin perder el anillo de foco."
+ },
+ {
+  "id": "PLAY-SENAL-05",
+  "estado": "implementado",
+  "archivos": [
+   "site/senal/index.html",
+   "site/senal/src/app.js",
+   "site/senal/src/i18n.js",
+   "site/senal/src/style.css"
+  ],
+  "detalle": "Ayuda compacta desplegable junto a la bandeja (#ayudaBand, botón #btnAtajos con aria-expanded/aria-controls) que explica armar, reemplazar («Tocá una casilla ocupada para reemplazar su pieza.») y quitar piezas, define pulso y lista los atajos reales (Enviar muestra · Enter, Formular regla · L, Pausar · Esc) verificados contra los manejadores de app.js; cada ranura tiene nombre accesible de acción (ranuraLlena/ranuraSel/ranuraVacia). Guía de teclado opcional (aj.atajos, body.atajos-on) con la tecla sobre cada pieza, sin alterar orden ni atributos. Los atajos no se disparan con un control enfocado.",
+  "verificacion": "Playwright: Enter con foco en un botón no envía la muestra; L abre el formulario una sola vez; Esc pausa. El panel de ayuda abre/cierra y refleja aria-expanded."
+ },
+ {
+  "id": "RSP-GLOBAL-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/senal/index.html",
+   "site/senal/src/style.css"
+  ],
+  "detalle": "meta viewport sin maximum-scale ni user-scalable (conserva width=device-width, initial-scale=1, viewport-fit=cover). Sin bloqueo global de gesturestart/dblclick. Paneles desplazables con touch-action que admite pinch-zoom; la bandeja y las piezas conservan su touch-action de arrastre.",
+  "verificacion": "Inspección del HTML y CSS; Playwright: no hay listeners globales de gesturestart; el juego funciona a 320/390/768/1280 sin desplazamiento horizontal."
+ },
+ {
+  "id": "SRC-SE01",
+  "estado": "implementado",
+  "archivos": [
+   "site/senal/src/i18n.js",
+   "site/senal/src/app.js",
+   "site/senal/index.html"
+  ],
+  "detalle": "Botones «Enviar muestra», «Formular regla» y «Comprobar regla» (EN Send sample / Formulate rule / Check rule). El pie del formulario muestra el costo real antes de comprobar («Comprobar regla · {c} pulsos» con COSTO_FALLO vigente, «1 pulso» si c=1); resultado con «Objetivo: {par} pulsos» y la definición «Los pulsos indican el costo de tus acciones.» junto al HUD/ayuda. Abrir y cerrar el formulario conserva la muestra.",
+  "verificacion": "Playwright: textos de #btnEnviar/#btnFormular y del pie del panel; muestra intacta tras abrir/cerrar el formulario."
+ },
+ {
+  "id": "SRC-SE02",
+  "estado": "implementado",
+  "archivos": [
+   "site/senal/src/i18n.js",
+   "site/senal/src/app.js"
+  ],
+  "detalle": "Rendirse abre un alertdialog previo a revelar: «¿Ver la solución y terminar el intento?» / «Se revelará la regla y este intento quedará sin resolver.» + «En el reto diario se cortará tu racha.» sólo en modo diario; botones «Ver solución» / «Seguir investigando» (foco inicial). Revelado una sola vez (guarda). En resultados el CTA de práctica es «Nueva práctica» (genera una regla nueva, comportamiento real de nuevaPractica). «Repetir esta señal» no se añadió porque no existe manejador que repita la misma señal.",
+  "verificacion": "Playwright: cancelar conserva señal y racha; confirmar revela una vez; en práctica no aparece la frase de racha."
+ },
+ {
+  "id": "VIS-SENAL-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/senal/src/piezas.js",
+   "site/senal/src/app.js",
+   "site/senal/src/style.css"
+  ],
+  "detalle": "piezas.js añade la variante mini pzs{id} (svgMini): misma silueta y escala .58, sin brillo ovalado, un solo contorno y patrones proporcionales (pzRayasM/pzPuntosM, paso 14) que garantizan ≥3 rayas/puntos en 24–28 px. El registro usa la variante mini cuando el tamaño renderizado es ≤28 px (miniChico); mismos 18 IDs y nombres accesibles.",
+  "verificacion": "Capturas senal-juego-320.png y senal-juego-1180.png: cian/ámbar distinguibles sin color en el registro; proporción grande/pequeño conservada."
+ },
+ {
+  "id": "VIS-SENAL-02",
+  "estado": "implementado",
+  "archivos": [
+   "site/senal/src/app.js",
+   "site/senal/src/style.css"
+  ],
+  "detalle": "Tarjetas del registro en rejilla de tres columnas estables (índice 11 px tabular, secuencia sobre línea base común, veredicto en caja de 20 px al extremo). Prueba nueva: línea lateral de 2 px y fondo blanco al 6 % durante 700 ms (.entra/.nueva). Contraejemplo: marco discontinuo estático + rótulo, sin resplandor sobre vecinas. Orden temporal y encabezados Aceptadas/Rechazadas preservados.",
+  "verificacion": "Captura senal-juego-1180.png con secuencias de distinta longitud: índice y veredicto no cambian de columna."
+ },
+ {
+  "id": "VIS-SENAL-03",
+  "estado": "implementado",
+  "archivos": [
+   "site/senal/src/style.css",
+   "site/senal/src/app.js"
+  ],
+  "detalle": "Ranura vacía dashed; seleccionada: doble contorno cian 2 px con pestaña inferior, sin halo; destino válido al arrastrar: esquinas cian 3 px y fondo .12 (.destino); llena no seleccionada: borde neutro. Número de posición en cápsula oscura de 11 px en la esquina superior, siempre visible.",
+  "verificacion": "Captura senal-juego-1180.png; Playwright: arrastrar entre ranuras muestra un único origen (.sel) y destino (.destino)."
+ },
+ {
+  "id": "VIS-SENAL-04",
+  "estado": "implementado",
+  "archivos": [
+   "site/senal/src/style.css"
+  ],
+  "detalle": "Tiempos unificados: colocación .encaja 160 ms escala 1.03; inserción .entra 220 ms (≤6 px); confirmación/error 450 ms por cambio de borde (.parpadea una sola vez, .ola 450 ms, .bordeErr en lugar de tiembla repetido). Contraejemplo resaltado estático (.nuevo-contra dashed) hasta la siguiente acción. body.reducido y prefers-reduced-motion mantienen estados instantáneos.",
+  "verificacion": "Inspección CSS y smoke sin errores; dos hipótesis seguidas no acumulan animaciones (clases se limpian al re-renderizar)."
+ },
+ {
+  "id": "SRC-G01",
+  "estado": "no_aplicable",
+  "archivos": [],
+  "detalle": "Las tarjetas .card[href] viven en la home; el juego ya ofrece #back «Volver a los juegos» hacia la ruta canónica conservando idioma.",
+  "verificacion": "Enlace #back con aria-label «Volver a los juegos» / «Back to games» (EN)."
+ },
+ {
+  "id": "SRC-G02",
+  "estado": "ya_corregido_verificado",
+  "archivos": [],
+  "detalle": "Señal ya consume JETIdioma (?lang= > cookie > localStorage > navigator) y tiene selector ES/EN con aria-pressed; no se duplicó.",
+  "verificacion": "Playwright: JETIdioma.set('en') repinta todas las cadenas nuevas en inglés; ?lang=es prevalece."
+ },
+ {
+  "id": "SRC-G03",
+  "estado": "implementado",
+  "archivos": [
+   "site/senal/src/i18n.js",
+   "site/senal/src/app.js"
+  ],
+  "detalle": "Pausa: «Reanudar partida» / «Volver al menú»; inicio con guardado: «Continuar partida»; carga: «Volver a los juegos»; resultado: «Nueva práctica» / «Compartir resultado» / «Volver al menú». Verbos de dominio (Enviar muestra, Formular regla, Comprobar regla) conservados.",
+  "verificacion": "Playwright: textos de los botones de pausa, inicio y resultado en ES y EN."
+ },
+ {
+  "id": "SRC-G04",
+  "estado": "implementado",
+  "archivos": [
+   "site/senal/src/app.js",
+   "site/senal/src/i18n.js"
+  ],
+  "detalle": "Borrar progreso abre alertdialog «¿Borrar todo el progreso de JET//Señal?» / «Se borrarán {datos concretos}. Esta acción no se puede deshacer.» con «Cancelar» (foco inicial) y botón peligro «Borrar progreso» separado; se enumeran los datos reales y se conserva la clave 'ajustes' (idioma/audio).",
+  "verificacion": "Playwright: primer clic no borra; Escape/Cancelar conserva estado; confirmar borra sólo las claves enumeradas."
+ },
+ {
+  "id": "SRC-G05",
+  "estado": "implementado",
+  "archivos": [
+   "site/senal/index.html",
+   "site/senal/src/style.css",
+   "site/senal/src/app.js"
+  ],
+  "detalle": "Bootstrap inline en <head> (window.JETCarga) con título visible antes del JS, estado «Cargando Señal…», error de script → «No pudimos descargar todos los recursos.», otro error/timeout 15 s → «La carga se interrumpió. Podés volver a intentarlo.», botones «Volver a cargar» (location.reload, sin duplicar listeners) y «Volver a los juegos». Estados excluyentes vía html[data-carga]; app.js llama JETCarga.listo().",
+  "verificacion": "BLOCK=i18n.js node senal-test.mjs → data-carga=red, texto de red, foco en «Volver a cargar» (senal-carga-error.png); carga normal → listo y #carga oculto."
+ },
+ {
+  "id": "SRC-G06",
+  "estado": "implementado",
+  "archivos": [
+   "site/senal/src/app.js",
+   "site/senal/src/i18n.js"
+  ],
+  "detalle": "compartir(): navigator.share (AbortError silencioso) → clipboard → modal con textarea readonly seleccionable, «Copiar texto» y «Cerrar»; toast «Texto copiado» sólo tras éxito; «No pudimos copiarlo automáticamente. Seleccioná y copiá este texto.» en el fallback. Botón «Compartir resultado». Sólo por acción del usuario.",
+  "verificacion": "Playwright con navigator.share indefinido y clipboard rechazado: aparece el modal con el texto íntegro; el foco vuelve al botón al cerrar."
+ }
+]

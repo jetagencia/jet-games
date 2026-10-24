@@ -1,0 +1,216 @@
+[
+ {
+  "id": "RSP-MODALS-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/telemetria/src/ui.js",
+   "site/telemetria/index.html",
+   "site/telemetria/src/estilos.css",
+   "site/telemetria/src/textos.js"
+  ],
+  "detalle": "Sistema de overlays con pila (ovPila): abrirOv(id, activador) guarda el activador, vuelve inert #hdr, las pantallas .scr y #sheet (fondoInerte), nombra el diálogo con aria-labelledby a su título (nombrarDialogo), enfoca el primer control o [data-foco]; Tab/Shift+Tab atrapados en la capa superior; cerrarOv() restaura inert y devuelve el foco al activador. confirmar() crea alertdialogs (#ov-confirm) con Cancelar enfocado. La hoja de Registro (#sheet) es role=dialog aria-modal con aria-labelledby, gestiona foco e inert y Escape la cierra.",
+  "verificacion": "Playwright (site/_auditoria/_smoke/telemetria-test.mjs): pausa → #s-juego inert, Tab no sale del overlay, Escape devuelve el foco a #bPausa; Registro en 390×844: foco dentro de #sheet, juego inert, al cerrar foco en #bLog; confirmaciones de reinicio y borrado enfocan Cancelar."
+ },
+ {
+  "id": "PLAY-TELEMETRIA-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/telemetria/index.html",
+   "site/telemetria/src/ui.js",
+   "site/telemetria/src/textos.js",
+   "site/telemetria/src/estilos.css"
+  ],
+  "detalle": "Cabecera «Probabilidad de avería» (#listaCabT) sobre la lista; PDEF.pct=true muestra porcentajes por defecto (las preferencias guardadas prevalecen; body.vet sigue ocultándolos). Cada fila expone «{porcentaje} % de probabilidad según las lecturas» y «Última lectura: {resultado}» separados del historial; el más probable lleva el rótulo «Mayor probabilidad» sólo donde ya se mostraba y nunca en Veterano.",
+  "verificacion": "Playwright: textContent de #listaCabT, aria-label de las filas con porcentaje y última lectura; en modo vet no hay porcentajes ni rótulo."
+ },
+ {
+  "id": "PLAY-TELEMETRIA-02",
+  "estado": "implementado",
+  "archivos": [
+   "site/telemetria/src/estilos.css",
+   "site/telemetria/index.html",
+   "site/telemetria/src/ui.js",
+   "site/telemetria/src/textos.js"
+  ],
+  "detalle": "Cabina en tres zonas alineadas (áreas de grid lay-l: aire / nave+lista+banda / nave+lista+ORA); banda de información (#selInfo «Sistema seleccionado: {sistema}», #repInfo) junto a las acciones; ORA ofrece «Mostrar todo» (#oraTodo) y completa el texto al tocar; cierre nombrado «Cerrar consejo de ORA». Conexiones y selección sincronizadas (aria-pressed en nodos).",
+  "verificacion": "Captura telemetria-juego-1180.png: consejo y control en el mismo campo visual, sin columna vacía; Playwright: «Mostrar todo» completa el texto al instante."
+ },
+ {
+  "id": "PLAY-TELEMETRIA-03",
+  "estado": "implementado",
+  "archivos": [
+   "site/telemetria/src/ui.js",
+   "site/telemetria/src/textos.js",
+   "site/telemetria/src/estilos.css"
+  ],
+  "detalle": "Botón «Reparar {sistema}» con sub «Mantené pulsado para confirmar.» y #repInfo: «Si está averiado: −{R} min. Si está sano: −{R+Rx} min en total.» con los costes del caso vigente (caso.R y caso.R+caso.Rx, sin sumar dos veces), más «El aire se consume al actuar, no mientras pensás.» (airRule en el título de #gAire y en el brief). La vista previa sólo usa aire y costes visibles; no consulta st.real. El aria-label de #bRep contiene el texto íntegro aunque .ri-s se oculte en vertical corto.",
+  "verificacion": "Playwright: con el caso 1-4 seleccionado, repInfo muestra R y R+Rx reales (estado() del juego); tras reparar, el aire baja exactamente una vez (R o R+Rx)."
+ },
+ {
+  "id": "PLAY-TELEMETRIA-04",
+  "estado": "implementado",
+  "archivos": [
+   "site/telemetria/src/ui.js",
+   "site/telemetria/src/textos.js",
+   "site/telemetria/src/estilos.css"
+  ],
+  "detalle": "Escenarios hipotéticos «Si está averiado, quedarían {aire−R} min. Si está sano, quedarían {aire−R−Rx} min.» (mínimo 0 visible) + «Agotar el aire termina el caso, aunque la reparación sea correcta.» cuando aire ≤ R. ariaRepairOk = «Avería reparada: {s}.»; si el caso termina SIN AIRE tras reparar bien, el subtítulo del resultado añade «Reparaste {sistema}, pero agotaste el aire.». La precedencia de NUCLEO.aplicar (aire<=0 antes de real===0) no se tocó.",
+  "verificacion": "Playwright: reparación correcta con aire == caso.R → resultado SIN AIRE con el texto «Reparaste Navegación, pero agotaste el aire.»; con aire sobrante → victoria."
+ },
+ {
+  "id": "PLAY-TELEMETRIA-05",
+  "estado": "implementado",
+  "archivos": [
+   "site/telemetria/src/ui.js",
+   "site/telemetria/src/textos.js"
+  ],
+  "detalle": "Derrota: «Reintentar caso» primario con el foco (data-foco) y «Elegir otro caso» secundario en campaña; victoria: «Siguiente caso» / «Repetir caso» / «Ver campaña» / «Volver al menú». El atajo Enter global queda desactivado en la pantalla de resultado (sólo actúa el botón enfocado). registrarProgreso conserva Math.max.",
+  "verificacion": "Playwright: tras perder, document.activeElement es «Reintentar caso»; Enter no avanza al siguiente caso salvo con ese botón enfocado."
+ },
+ {
+  "id": "PLAY-TELEMETRIA-06",
+  "estado": "implementado",
+  "archivos": [
+   "site/telemetria/src/ui.js",
+   "site/telemetria/src/textos.js",
+   "site/telemetria/src/estilos.css"
+  ],
+  "detalle": "Estrellas con role=img «{estrellas} de 3 estrellas» y texto visible (#rStarsTxt); bloque .est-ayuda: «Puntaje de decisiones: {prec}/100» + explicación comparativa (decScoreHelp) + «Para {objetivo} estrellas: ganá el caso con al menos {umbral}/100…» con UMBRAL_EST={2:80,3:95} reales, «Ganá el caso para obtener al menos 1 estrella.», «Si usás pista, podés obtener como máximo 2 estrellas.» si G.pista, y «En este tutorial, ganar otorga 3 estrellas.» en tut 1/2. Capítulos bloqueados legibles con «Bloqueado: ganá {cantidad} casos del capítulo anterior.» (GANAR_PARA_ABRIR). Fórmula de prec y estrellas sin cambios; el análisis diferido actualiza cifra visible y accesible.",
+  "verificacion": "Playwright: aria-label de .stars-w coincide con las estrellas dibujadas; texto de umbrales en resultado; casos del mapa anuncian «{n} de 3 estrellas»."
+ },
+ {
+  "id": "PLAY-TELEMETRIA-07",
+  "estado": "implementado",
+  "archivos": [
+   "site/telemetria/index.html",
+   "site/telemetria/src/ui.js",
+   "site/telemetria/src/textos.js"
+  ],
+  "detalle": "#filas es role=radiogroup (aria-labelledby «Probabilidad de avería») con filas role=radio aria-checked; nodos con aria-pressed coherente; hoja de Registro y overlays con role=dialog, foco gestionado y fondo inert; cierres nombrados «Cerrar registro» y «Cerrar consejo de ORA»; al cerrar vuelve el foco al activador.",
+  "verificacion": "Playwright: exactamente una fila aria-checked=true tras seleccionar; con Registro abierto Tab no alcanza la cabina."
+ },
+ {
+  "id": "RSP-GLOBAL-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/telemetria/index.html",
+   "site/telemetria/src/ui.js",
+   "site/telemetria/src/estilos.css"
+  ],
+  "detalle": "viewport sin maximum-scale/user-scalable; retirados los listeners globales de gesturestart y dblclick de ui.js; paneles con touch-action que admite pinch-zoom (pan-y pinch-zoom); la nave conserva su superficie de interacción.",
+  "verificacion": "Inspección de index.html/ui.js; smoke y prueba a 390×844 y 1180×757 sin desplazamiento horizontal."
+ },
+ {
+  "id": "SRC-TE01",
+  "estado": "implementado",
+  "archivos": [
+   "site/telemetria/src/ui.js",
+   "site/telemetria/src/textos.js"
+  ],
+  "detalle": "Sensores: «Medir · {c} min de aire» con el coste del sensor vigente y motivo real de deshabilitación en el aria-label (aire insuficiente / tipo incorrecto / sin sistema). Reparación: «Reparar {sistema}» + dos costes totales alternativos (R / R+Rx) + «El aire se consume al actuar, no mientras pensás.»; sin revelar la avería. Costes tomados del caso, nunca fijados en cadenas.",
+  "verificacion": "Playwright: aria-label de .sen incluye coste y motivo; una acción inválida no cambia el aire."
+ },
+ {
+  "id": "SRC-TE02",
+  "estado": "implementado",
+  "archivos": [
+   "site/telemetria/src/ui.js",
+   "site/telemetria/src/textos.js"
+  ],
+  "detalle": "«Ver pista · máximo 2 estrellas en este caso» antes de pedir pista y «Si usás pista, podés obtener como máximo 2 estrellas.» en el resultado (regla Math.min(est,2) intacta; antes el texto decía que la pista costaba la tercera estrella). Resultado: «Siguiente caso» / «Reintentar caso» (derrota) / «Repetir caso» (victoria) / «Ver análisis de decisiones» (toggle #rAna) / «Ver campaña» / «Volver al menú»; el piloto se presenta como «Estimación del piloto automático». Continuar desde el menú restaura caso y aire.",
+  "verificacion": "Playwright: etiquetas de resultado en victoria y derrota; estrellas con pista 0/1/2/3 → 0/1/2/2 según cálculo existente (calcEstrellas sin cambios)."
+ },
+ {
+  "id": "VIS-TELEMETRIA-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/telemetria/src/estilos.css",
+   "site/telemetria/src/ui.js"
+  ],
+  "detalle": "Nodo seleccionado: anillo exterior cian 2 px sin escala; reparado: sello ✓ interior inferior con relleno cian suave; mayor probabilidad: borde ámbar + rótulo «Mayor probabilidad» en el panel (sólo donde ya se mostraba, nunca en Veterano); descartado: ✕ dashed con icono/nombre a .7. Sin ✓ ni ▲ para probabilidad.",
+  "verificacion": "Captura telemetria-juego-1180.png; Playwright: tras una lectura ningún nodo recibe .rep."
+ },
+ {
+  "id": "VIS-TELEMETRIA-02",
+  "estado": "implementado",
+  "archivos": [
+   "site/telemetria/src/estilos.css",
+   "site/telemetria/index.html"
+  ],
+  "detalle": "Barras con la misma escala 0–100 %, violeta sólido #a46bff en filas normales (ámbar de .fila.top preservado), transición 220 ms y fantasma 350 ms; marcas 0/50/100 % sólo en la cabecera y sólo con body.pct:not(.vet); leyenda ▲/○ junto a la zona de sensores (#senLeyenda).",
+  "verificacion": "Playwright: ticks visibles con pct y ocultos en vet; dos filas con igual porcentaje tienen igual ancho."
+ },
+ {
+  "id": "VIS-TELEMETRIA-03",
+  "estado": "implementado",
+  "archivos": [
+   "site/telemetria/src/cabina.js"
+  ],
+  "detalle": "En modo juego: estrellas y luces al 35 % de su alpha, anillos/rejilla alpha .06, casco con contorno neutro 1.5 px y conductos decorativos alpha .18; geometria().pos y zonasX intactos (los botones DOM siguen coincidiendo con los nodos).",
+  "verificacion": "Capturas telemetria-juego-1180.png y 390: casco, nodos y selección distinguibles sin brillo; smoke sin errores."
+ },
+ {
+  "id": "VIS-TELEMETRIA-04",
+  "estado": "implementado",
+  "archivos": [
+   "site/telemetria/src/estilos.css"
+  ],
+  "detalle": "Lámpara de lectura: aparición 120 ms, permanencia 700 ms, salida 180 ms sin apagones; aire bajo: borde rojo estable + símbolo ⚠ junto al número y un único pulso de 200 ms al cruzar el umbral (sin latido continuo). Costes y umbrales intactos; movimiento reducido conserva estados estáticos.",
+  "verificacion": "Inspección CSS (.lamp.on, #gAire.bajo) y smoke; prueba visual en 390×844."
+ },
+ {
+  "id": "SRC-G01",
+  "estado": "no_aplicable",
+  "archivos": [],
+  "detalle": "Las tarjetas de la home no pertenecen al juego; #back «Volver a los juegos» conserva idioma.",
+  "verificacion": "aria-label de #back en ES/EN."
+ },
+ {
+  "id": "SRC-G02",
+  "estado": "ya_corregido_verificado",
+  "archivos": [],
+  "detalle": "Telemetría ya usa JETIdioma y su selector ES/EN; no se duplicó.",
+  "verificacion": "Playwright: JETIdioma.set('en') traduce las cadenas nuevas (Resume game, Back to menu, Delete progress…)."
+ },
+ {
+  "id": "SRC-G03",
+  "estado": "implementado",
+  "archivos": [
+   "site/telemetria/src/textos.js",
+   "site/telemetria/src/ui.js"
+  ],
+  "detalle": "Pausa «Reanudar partida» / «Volver al menú» (reiniciar explica que se pierde el intento y se conserva la campaña); resultado con «Reintentar caso» / «Repetir caso» / «Siguiente caso» / «Ver campaña» / «Volver al menú»; carga «Volver a los juegos». «Reparar» y «Medir» conservados como verbos de dominio.",
+  "verificacion": "Playwright: textos de botones de pausa y resultado en ES/EN."
+ },
+ {
+  "id": "SRC-G04",
+  "estado": "implementado",
+  "archivos": [
+   "site/telemetria/src/ui.js",
+   "site/telemetria/src/textos.js"
+  ],
+  "detalle": "Borrar progreso vía confirmar(): alertdialog «¿Borrar todo el progreso de JET//Telemetría?» / «Se borrarán {datos}. Esta acción no se puede deshacer.», Cancelar enfocado, botón peligro «Borrar progreso»; conserva preferencias.",
+  "verificacion": "Playwright: primer clic no borra; Escape conserva estado; confirmar borra lo enumerado."
+ },
+ {
+  "id": "SRC-G05",
+  "estado": "implementado",
+  "archivos": [
+   "site/telemetria/index.html",
+   "site/telemetria/src/estilos.css",
+   "site/telemetria/src/ui.js"
+  ],
+  "detalle": "Bootstrap JETCarga con título visible antes del JS, «Cargando Telemetría…», error de script → «No pudimos descargar todos los recursos.», otro/timeout → «La carga se interrumpió. Podés volver a intentarlo.», «Volver a cargar» y «Volver a los juegos»; estados excluyentes con html[data-carga]; ui.js llama JETCarga.listo(). La ausencia de piloto.worker.js no dispara el error (el worker cae al cálculo local).",
+  "verificacion": "BLOCK=textos.js → data-carga=red con foco en «Volver a cargar» (telemetria-carga-error.png); carga normal → listo."
+ },
+ {
+  "id": "SRC-G06",
+  "estado": "implementado",
+  "archivos": [
+   "site/telemetria/src/ui.js",
+   "site/telemetria/src/textos.js"
+  ],
+  "detalle": "compartir(): navigator.share (AbortError silencioso) → clipboard → modal con textarea readonly, «Copiar texto» y «Cerrar»; «Texto copiado» sólo tras éxito; «No pudimos copiarlo automáticamente. Seleccioná y copiá este texto.»; botón «Compartir resultado»; el foco vuelve al botón que compartió.",
+  "verificacion": "Playwright con share/clipboard anulados: modal con texto íntegro; al cerrar foco en #rShare2."
+ }
+]

@@ -286,7 +286,10 @@ function layout() {
   const sl = Math.max(tr('gold').length, tr('sold_out').length, tr('recycled').length);
   $('stamp').style.fontSize = clamp((C * cell) * 0.84 / (sl * 0.66 + 1.5), 14, 46) + 'px';
   const mast = $('mast'); mast.style.height = m.mast + 'px';
-  $('mName').style.fontSize = clamp(m.mast * (m.mast < 56 ? 0.62 : 0.5), 15, 42) + 'px';
+  // VIS-PORTADA-01: el nombre del diario nunca se recorta: también lo limita el ancho del papel; en papeles muy angostos se ocultan fecha y precio
+  const nmLen = ($('mName').textContent || '').length || 10;
+  $('mName').style.fontSize = Math.min(clamp(m.mast * (m.mast < 56 ? 0.62 : 0.5), 15, 42), Math.max(12, (C * cell - 12) / (nmLen * 0.58))) + 'px';
+  mast.classList.toggle('tiny', C * cell < 200);
   const mf = clamp(m.mast * 0.15, 8, 11) + 'px'; mast.querySelectorAll('.m-top,.m-bot').forEach(e => { e.style.fontSize = mf; });
   const B = $('board'); B.style.width = C * cell + 'px'; B.style.height = F * cell + 'px';
   // VIS-PORTADA-01: la retícula la dibuja el CSS a partir de --cell (puntos tenues en reposo, guías visibles solo en #board.editing)
@@ -295,6 +298,7 @@ function layout() {
   // PLAY-PORTADA-02 / VIS-PORTADA-01: guías de filas y columnas sólo mientras se edita; tras cerrar la edición, retícula tenue
   $('board').classList.toggle('editing', !!(S.run && S.run.phase === 'play' && !S.run.demo));
   if (changed || S.elsKey !== keyEls()) buildEls();
+  if (changed && S.tut) tutCheck(); // la guía del tutorial (celdas resaltadas) sigue al nuevo tamaño de celda
   renderAll();
   placeChrome();
   if (S.tut) positionTut();
@@ -1239,9 +1243,9 @@ function share(text, noUrl) {
     const done = () => { sfx('copied'); toast(tr('copied')); volver(); };
     if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(full).then(done, () => { if (copiarClasico()) done(); else manual(); }); else if (copiarClasico()) done(); else manual();
   };
-  const manual = () => modal('<div class="top"><h2>' + esc(tr('share')) + '</h2><button class="x" data-c aria-label="' + esc(tr('close')) + '">✕</button></div><p class="note">' + esc(tr('share_fail')) + '</p><textarea class="shtxt" readonly aria-labelledby="modalT" data-foco>' + esc(full) + '</textarea><div class="row"><button class="btn pri" data-cp>' + esc(tr('copy_text')) + '</button><button class="btn" data-c>' + esc(tr('close')) + '</button></div>', c => {
+  const manual = () => { abrirManual(); if (act && S.stack[S.stack.length - 1] === 'sModal') S.focusStack[S.focusStack.length - 1] = act; };
+  const abrirManual = () => modal('<div class="top"><h2>' + esc(tr('share')) + '</h2><button class="x" data-c aria-label="' + esc(tr('close')) + '">✕</button></div><p class="note">' + esc(tr('share_fail')) + '</p><textarea class="shtxt" readonly aria-labelledby="modalT" data-foco>' + esc(full) + '</textarea><div class="row"><button class="btn pri" data-cp>' + esc(tr('copy_text')) + '</button><button class="btn" data-c>' + esc(tr('close')) + '</button></div>', c => {
     c.querySelectorAll('[data-c]').forEach(b => b.onclick = closeModal); const ta = c.querySelector('textarea'); setTimeout(() => { ta.focus(); ta.select(); }, 40);
-    if (act && S.focusStack.length) S.focusStack[S.focusStack.length - 1] = act;
     c.querySelector('[data-cp]').onclick = () => { ta.focus(); ta.select(); const fin = ok => { if (ok) { sfx('copied'); toast(tr('copied')); } else toast(tr('share_fail'), 3000); }; if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(full).then(() => fin(true), () => fin(copiarClasico())); else fin(copiarClasico()); };
   });
   if (navigator.share) navigator.share({ text, url }).then(() => sfx('copied'), e => { if (!e || e.name !== 'AbortError') fallback(); });
@@ -1403,6 +1407,8 @@ function relayout() {
   cancelAnimationFrame(relayT);
   relayT = requestAnimationFrame(() => {
     layout();
+    // el globo del tutorial se reubica en el cuadro siguiente: tras un cambio de tamaño el papel puede terminar de moverse después de este paso
+    requestAnimationFrame(() => { if (S.tut) positionTut(); });
     const top = S.stack[S.stack.length - 1];
     if (top === 'sSet') renderSettings(); if (top === 'sTitle') renderTitle(); if (top === 'sRules') drawRulesBg();
     if (top === 'sEd') renderEdResult(); if (top === 'sFinal') drawFinal();

@@ -426,7 +426,8 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
  .rules-h{margin-bottom:10px}
 }
 @media (orientation:landscape) and (max-height:520px) and (min-width:760px){.scr{padding-left:calc(158px + var(--sal));padding-right:calc(158px + var(--sar))}#sTitle,#sRules{padding-left:calc(14px + var(--sal));padding-right:calc(14px + var(--sar))}}
-@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.12s!important;animation-iteration-count:1!important;transition-duration:.12s!important}.rcard{animation:fade .12s}}
+/* con movimiento reducido no se añaden transiciones: una duración distinta de 0 junto a transition-property:all (valor inicial) animaba la posición de todas las cajas */
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.12s!important;animation-iteration-count:1!important;transition-duration:0s!important}.rcard{animation:fade .12s}}
 
 /* cuadro de la tarjeta (?demo) */
 .demo #trayBox,.demo #side,.demo #bar,.demo #score,.demo #chips,.demo #tr,.demo #back{display:none!important}
@@ -546,3 +547,7 @@ html[data-carga="listo"] #carga{display:none!important}
 @media (max-width:359px){.sc-u{display:none}}
 /* vuelve a pintar las fichas de pares por encima del papel (z-index del papel ahora en 0) */
 #pieces{z-index:2}
+#mast.tiny .m-top,#mast.tiny .m-bot{display:none}
+/* tabla de pares del panel lateral: nombres completos de sección con salto de línea (nada queda fuera del panel) */
+#side .ptab td:first-child{white-space:normal;line-height:1.25}
+#side{overflow-x:hidden}
