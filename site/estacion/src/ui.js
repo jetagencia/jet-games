@@ -81,19 +81,72 @@
     box.appendChild(el); while (box.children.length > 3) box.firstChild.remove();
     setTimeout(() => { el.classList.add('out'); setTimeout(() => el.remove(), 260); }, o.ms || 2600);
   }
-  function screen(html, cls = 'veil') { const el = document.createElement('div'); el.className = 'scr ' + cls; el.innerHTML = html; $('#layer').appendChild(el); APP.stack.push(el); el.addEventListener('click', (e) => { const b = e.target.closest('button,a'); if (b && !b.classList.contains('nosfx')) AU.sfx('tap'); }); return el; }
-  function closeScreen(el) { if (!el || !el.isConnected) return; APP.stack = APP.stack.filter(x => x !== el); el.classList.add('out'); setTimeout(() => el.remove(), 200); }
+  // ---------- pantallas apiladas como diálogos (RSP-MODALS-01) ----------
+  // Cada capa de la pila guarda su activador, recibe role/aria-modal/aria-labelledby, vuelve inerte al fondo
+  // (#insp, cabecera, lista de paneles…) y a las capas inferiores, enfoca su primer control útil y, al cerrar,
+  // devuelve el foco al activador si sigue visible. El ciclo Tab se contiene en el teclado (ver addEventListener('keydown')).
+  const BASE_INERT = ['#insp', '#top', '#roomList', '#roomPan', '#hubBar', '#plateBar', '#bGear', '#back'];
+  const FOCUSABLE = 'button:not([disabled]),a[href],input:not([disabled]),textarea:not([disabled]),select:not([disabled]),summary,[tabindex]:not([tabindex="-1"])';
+  const visible = (el) => !!el && el.isConnected && !el.closest('[hidden]') && !el.closest('[inert]') && el.getClientRects().length > 0;
+  const focusables = (root) => [...root.querySelectorAll(FOCUSABLE)].filter(visible);
+  let dlgN = 0;
+  function liveStack() { return APP.stack.filter(e => e.isConnected && !e.classList.contains('out')); }
+  function syncInert() {
+    const live = liveStack(); const topEl = live[live.length - 1]; const modal = live.some(e => !e.classList.contains('home'));
+    BASE_INERT.forEach(s => { const el = $(s); if (el) el.inert = modal; });
+    live.forEach(e => { e.inert = e !== topEl; });
+  }
+  function focusFirst(el) { const card = el.querySelector('.card') || el; const pref = card.querySelector('[data-focus]'); const f = (pref && visible(pref) && !pref.disabled) ? pref : focusables(card).find(x => !x.classList.contains('x')) || focusables(card)[0]; (f || card).focus({ preventScroll: true }); }
+  function screen(html, cls = 'veil', opener) {
+    const el = document.createElement('div'); el.className = 'scr ' + cls; el.innerHTML = html; $('#layer').appendChild(el); APP.stack.push(el);
+    el._opener = opener || document.activeElement;
+    const card = el.querySelector('.card');
+    if (card && !el.classList.contains('home')) {
+      card.setAttribute('role', el.classList.contains('confirm') ? 'alertdialog' : 'dialog'); card.setAttribute('aria-modal', 'true');
+      const hd = card.querySelector('h1,h2,h3,.big-t,.kick'); if (hd) { if (!hd.id) hd.id = 'dlg-t' + (++dlgN); card.setAttribute('aria-labelledby', hd.id); }
+      if (!card.hasAttribute('tabindex')) card.tabIndex = -1;
+    }
+    syncInert();
+    el.addEventListener('click', (e) => { const b = e.target.closest('button,a'); if (b && !b.classList.contains('nosfx')) AU.sfx('tap'); });
+    if (!el.classList.contains('home') && card) requestAnimationFrame(() => { if (el.isConnected && !el.contains(document.activeElement)) focusFirst(el); });
+    return el;
+  }
+  function closeScreen(el) {
+    if (!el || !el.isConnected) return; const op = el._opener; APP.stack = APP.stack.filter(x => x !== el); el.classList.add('out'); el.inert = true; syncInert();
+    setTimeout(() => el.remove(), 200);
+    if (op && op !== document.body && visible(op) && !op.disabled) { op.focus({ preventScroll: true }); return; }
+    const tp = top(); if (tp) { focusFirst(tp); return; }
+    if (APP.insp) { const a = $('#ans'); (a.disabled ? $('#iClose') : a).focus({ preventScroll: true }); }
+  }
   function closeAll() { APP.stack.slice().forEach(closeScreen); }
   function top() { return APP.stack[APP.stack.length - 1]; }
-  function dbl(btn, fn) { // doble confirmación sin confirm()
-    const label = btn.textContent; let armed = 0;
-    btn.onclick = () => { if (armed) { clearTimeout(armed); armed = 0; btn.classList.remove('arm'); btn.textContent = label; fn(); return; } btn.classList.add('arm'); btn.textContent = t('confirm.again'); armed = setTimeout(() => { armed = 0; btn.classList.remove('arm'); btn.textContent = label; }, 4000); };
+  // Confirmación explícita (alertdialog): foco inicial en Cancelar, botón de peligro con verbo concreto, enumera lo que cambia.
+  function confirmDlg(o) {
+    const el = screen(`<div class="card" style="max-width:420px"><div class="head"><h2>${esc(o.title)}</h2></div>${o.body ? `<p class="cf-body">${esc(o.body)}</p>` : ''}${o.keep ? `<p class="cf-keep">${esc(o.keep)}</p>` : ''}${o.backup ? `<button class="btn" type="button" data-k="bk">${t('s.copyRescue')}</button>` : ''}<div class="row cf-row"><button class="btn" type="button" data-k="no" data-focus>${t('cancel')}</button><button class="btn ${o.danger ? 'danger strong' : 'pri'}" type="button" data-k="yes">${esc(o.ok)}</button></div></div>`, 'veil confirm', o.opener);
+    el.querySelector('[data-k=no]').onclick = () => closeScreen(el);
+    el.querySelector('[data-k=yes]').onclick = () => { closeScreen(el); o.onOk(); };
+    const bk = el.querySelector('[data-k=bk]'); if (bk) bk.onclick = () => copyOrShow(CO.rescueCode(), t('s.codeCopied'), bk);
+    el.addEventListener('click', (e) => { if (e.target === el) closeScreen(el); });
+    return el;
   }
-  function share(text) {
-    if (navigator.share) { navigator.share({ text }).catch(() => { }); return; }
-    copy(text, t('share.copied'));
+  // ---------- compartir / copiar (SRC-G06) ----------
+  // copyText devuelve true sólo con copia confirmada; si falla, un diálogo persistente muestra el texto para copiarlo a mano.
+  async function copyText(text) {
+    if (navigator.clipboard && window.isSecureContext) { try { await navigator.clipboard.writeText(text); return true; } catch (e) { } }
+    const prev = document.activeElement; const ta = document.createElement('textarea'); ta.value = text; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.opacity = '0'; ta.style.left = '-9999px'; document.body.appendChild(ta); ta.select(); let ok = false; try { ok = document.execCommand('copy') === true; } catch (e) { ok = false; } ta.remove(); if (prev && prev.focus) prev.focus({ preventScroll: true }); return ok;
   }
-  function copy(text, okMsg) { const done = () => toast(okMsg, 'ok'); if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(text).then(done, () => fallback()); else fallback(); function fallback() { const ta = document.createElement('textarea'); ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); done(); } catch (e) { } ta.remove(); } }
+  function showCopyFallback(text, opener) {
+    const el = screen(`<div class="card" style="max-width:460px"><div class="head"><h2>${t('share')}</h2><button class="x" type="button" data-k="x" aria-label="${t('close')}">×</button></div><p class="cf-body">${t('share.fail')}</p><textarea class="sf-ta" readonly aria-label="${t('share')}"></textarea><div class="row cf-row"><button class="btn" type="button" data-k="x2">${t('close')}</button><button class="btn pri" type="button" data-k="cp" data-focus>${t('share.copy')}</button></div></div>`, 'veil', opener);
+    const ta = el.querySelector('textarea'); ta.value = text;
+    el.querySelector('[data-k=x]').onclick = el.querySelector('[data-k=x2]').onclick = () => closeScreen(el);
+    el.querySelector('[data-k=cp]').onclick = async () => { ta.focus(); ta.select(); const ok = await copyText(text); if (ok) { toast(t('share.copied'), 'ok'); closeScreen(el); } else { ta.focus(); ta.select(); } };
+    return el;
+  }
+  async function copyOrShow(text, okMsg, opener) { if (await copyText(text)) toast(okMsg, 'ok'); else showCopyFallback(text, opener); }
+  function share(text, opener) {
+    if (navigator.share) { navigator.share({ text }).catch((err) => { if (err && err.name === 'AbortError') return; copyOrShow(text, t('share.copied'), opener); }); return; }
+    copyOrShow(text, t('share.copied'), opener);
+  }
   function fade(fn, ms = 320) { const f = $('#fade'); f.classList.add('on'); setTimeout(() => { fn(); requestAnimationFrame(() => f.classList.remove('on')); }, ms); }
   function door(fn) { if (document.documentElement.classList.contains('reduce')) return fade(fn, 150); const d = document.createElement('div'); d.className = 'door'; d.innerHTML = '<i></i><i></i>'; d.classList.add('open'); document.body.appendChild(d); requestAnimationFrame(() => { d.classList.remove('open'); AU.sfx('door'); setTimeout(() => { fn(); requestAnimationFrame(() => { d.classList.add('open'); setTimeout(() => d.remove(), 400); }); }, 340); }); }
 
@@ -107,7 +160,7 @@
   }
   function setGameChrome(on) {
     document.body.classList.toggle('ingame', on); $('#top').hidden = !on; document.body.classList.toggle('inhub', on && APP.scr === 'hub');
-    $('#roomList').hidden = !(on && APP.scr === 'room'); $('#hubBar').hidden = !(on && APP.scr === 'hub');
+    $('#roomList').hidden = !(on && APP.scr === 'room'); $('#hubBar').hidden = !(on && APP.scr === 'hub'); if (!(on && APP.scr === 'room')) $('#roomPan').hidden = true;
     $('#plateBar').hidden = !(on && APP.scr === 'hub' && CO.isSolved('p3'));
     $('#bRing').hidden = !(APP.scr === 'room' && CO.isSolved('p3')); document.body.classList.toggle('ringon', !$('#bRing').hidden && on);
     $('#bMap').hidden = !CO.isSolved('p3');
@@ -133,7 +186,11 @@
     nav.innerHTML = ids.map(id => {
       const P0 = C.puzzles[id], ok = CO.isSolved(id), unl = CO.puzzleUnlocked(id); const st = CO.G.pz[id];
       const right = ok ? '★'.repeat(st.stars) + '☆'.repeat(3 - st.stars) : P0.meta && P0.mod !== 'observatorio' ? `<span class="frs">${[0, 1, 2, 3].map(f => `<i style="background:${CO.isSolved(CO.MOD_PUZ[APP.mod][f]) ? DR.FRAG_COL[f] : ''}"></i>`).join('')}</span>` : '';
-      return `<button class="pc ${ok ? 'ok' : ''} ${unl ? '' : 'lock'} ${P0.meta ? 'meta' : ''}" data-id="${id}" type="button"><i class="led"></i><span class="tx"><b>${SC.shortId(id)}${P0.meta ? ' · ' + (I18N.LANG === 'en' ? 'META' : 'META') : ''}</b><span>${esc(L2(P0.t))}</span></span><span class="st">${right}</span></button>`;
+      // estado por texto e icono, derivado del estado real (PLAY-ESTACION-07 / VIS-ESTACION-06): resuelto ✓, bloqueado 🔒, disponible punto fijo
+      const state = ok ? (st.stars === 1 ? t('pc.solved1') : t('pc.solved', { estrellas: st.stars })) : unl ? t('pc.avail') : t('puz.locked');
+      const name = t('pc.name', { 'número': SC.shortId(id), nombre: L2(P0.t) }) + ' · ' + state;
+      const cur = APP.rs.sel === id;
+      return `<button class="pc ${ok ? 'ok' : ''} ${unl ? '' : 'lock'} ${P0.meta ? 'meta' : ''}" data-id="${id}" type="button" aria-label="${esc(name)}"${cur ? ' aria-current="true"' : ''}><i class="led" aria-hidden="true"><svg class="ck" viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></svg><svg class="lk" viewBox="0 0 24 24"><rect x="6" y="11" width="12" height="9" rx="2"/><path d="M9 11V8a3 3 0 0 1 6 0v3"/></svg></i><span class="tx"><b>${SC.shortId(id)}${P0.meta ? ' · META' : ''}</b><span class="nm">${esc(L2(P0.t))}</span><span class="pcs">${esc(state)}</span></span><span class="st" aria-hidden="true">${right}</span></button>`;
     }).join('');
     nav.querySelectorAll('.pc').forEach(b => b.onclick = () => { AU.sfx('tap'); selectPanel(b.dataset.id); });
   }
@@ -172,23 +229,28 @@
     const dom = $('#iDom'); dom.innerHTML = ''; icv.style.display = R.dom ? 'none' : 'block';
     if (R.dom) R.build(cx, dom);
     if (R.init) R.init(cx);
-    renderTools(); renderHints(); renderAtt();
+    renderTools(); renderHints(); renderAtt(); setAnsStatus('');
+    const a11y = $('#iA11y'); a11y.innerHTML = ''; if (R.a11y) R.a11y(cx, a11y); // PLAY-ESTACION-03 · controles DOM sincronizados con el lienzo
     const solved = !daily && CO.isSolved(id); const st = daily ? APP.dstate : CO.pz(id);
     $('#iStamp').textContent = t('puz.solved') + (solved && st.helped ? ' · ' + t('puz.helped') : ''); $('#iStamp').classList.toggle('on', !!solved);
     const ans = $('#ans'); ans.value = solved ? (st.ans || '') : (o.keep || ui.draft || ''); ans.disabled = !!solved; $('#send').disabled = !!solved; $('#hintBtn').disabled = !!solved; $('#enie').hidden = I18N.LANG !== 'es';
     $('#bar').className = ''; $('#offer').hidden = true; removeSuccess();
     if (!daily) { CO.G.open = id; saveSoon(); }
     AU.sfx('open'); AU.inspector(true);
-    requestAnimationFrame(() => { layout(); if (!solved && matchMedia('(pointer:fine)').matches && !R.dom) ans.focus({ preventScroll: true }); });
+    APP.inspOpener = o.opener || document.activeElement;
+    requestAnimationFrame(() => { layout(); if (!solved && matchMedia('(pointer:fine)').matches && !R.dom) ans.focus({ preventScroll: true }); else $('#iTitle').focus({ preventScroll: true }); });
     if (id === 'p1' && !CO.G.ui._barTip) { CO.G.ui._barTip = 1; setTimeout(() => { if (APP.insp === 'p1') toast(t('tour.bar'), '', { ms: 4200 }); }, 2500); }
   }
   function closeInsp(silent) {
     if (!APP.insp) return; const R = APP.R; if (R && R.leave) R.leave(APP.cx);
-    $('#insp').hidden = true; APP.insp = null; APP.cx = null; APP.R = null; removeSuccess();
-    if (document.activeElement) document.activeElement.blur();
+    const closedId = APP.insp;
+    $('#insp').hidden = true; APP.insp = null; APP.cx = null; APP.R = null; removeSuccess(); $('#iA11y').innerHTML = '';
     AU.inspector(false); if (!silent) AU.sfx('close');
     if (CO.G) { CO.G.open = null; saveSoon(); }
-    if (APP.scr === 'room') { renderRoomList(); $('#roomList').hidden = false; APP.rs.sel = null; }
+    if (APP.scr === 'room') { APP.rs.sel = null; renderRoomList(); $('#roomList').hidden = false; }
+    // retorno de foco: tarjeta del enigma recién cerrado, luego su activador, luego la cabecera (nunca .blur())
+    const back = $(`#roomList .pc[data-id="${closedId}"]`) || (visible(APP.inspOpener) ? APP.inspOpener : null) || (!$('#top').hidden ? $('#bPause') : null);
+    if (back && !top()) back.focus({ preventScroll: true }); APP.inspOpener = null;
     if (APP.daily && APP.scr === 'dailyHome') showDaily();
   }
   function renderTools() {
@@ -207,10 +269,15 @@
     if (W <= 340 && a.length) { box.innerHTML = `<span style="text-decoration:none">${t('puz.attempts', { n: st.att.length })}</span>`; return; }
     box.innerHTML = a.map(x => `<span class="${x.r === 'mid' ? 'mid' : x.r === 'near' ? 'near' : ''}">${esc(x.w)}</span>`).join('');
   }
+  // Estado de comprobación junto al campo (PLAY-ESTACION-02): un mensaje, anunciado una vez por aria-live; se limpia antes de reasignar para que un mismo texto vuelva a anunciarse.
+  function setAnsStatus(msg, kind = '') { const s = $('#ansStatus'); if (!s) return; s.textContent = ''; s.className = 'ans-status ' + kind; if (msg) requestAnimationFrame(() => { s.textContent = msg; }); }
+  function ansLen() { const cx = APP.cx; return cx && cx.V && cx.V.len ? (cx.V.len[I18N.LANG] || cx.V.len.es) : 0; }
   function renderEnum() {
-    const cx = APP.cx; const box = $('#enum'); if (!cx) { box.innerHTML = ''; return; }
-    if (!cx.V || !cx.V.len) { box.innerHTML = ''; return; }
-    const n = cx.V.len[I18N.LANG] || cx.V.len.es; const v = CO.norm($('#ans').value); const fit = Math.floor((Math.min(W, document.body.classList.contains('land') ? W * .4 : W) - 40) / 17);
+    const cx = APP.cx; const box = $('#enum'); const fmt = $('#answerFormat'); if (!cx) { box.innerHTML = ''; if (fmt) fmt.textContent = ''; return; }
+    if (!cx.V || !cx.V.len) { box.innerHTML = ''; if (fmt) fmt.textContent = ''; return; }
+    const n = cx.V.len[I18N.LANG] || cx.V.len.es; const v = CO.norm($('#ans').value);
+    // indicación textual de longitud (orientativa; no valida ni bloquea el envío)
+    if (fmt) fmt.textContent = t('answer.format', { formato: n === 1 ? t('answer.letter1') : t('answer.letters', { cantidad: n }) }); const fit = Math.floor((Math.min(W, document.body.classList.contains('land') ? W * .4 : W) - 40) / 17);
     if (n > fit) { box.innerHTML = `<em>(${n}) · ${v.length}/${n}</em>`; return; }
     let h = ''; for (let i = 0; i < Math.max(n, v.length); i++) h += `<i class="${i < v.length ? (i < n ? 'f' : 'f x') : ''}">${v[i] || ''}</i>`; box.innerHTML = h + `<em>(${n})</em>`;
   }
@@ -259,7 +326,7 @@
   async function submit(text) {
     const cx = APP.cx; if (!cx || APP.busy) return; if (performance.now() < APP.cool) { toast(t('v.cooldown'), 'warn'); return; }
     const val = text != null ? text : ans.value; if (text != null) ans.value = text;
-    const n = CO.norm(val); if (!n) { barAnim('shake'); return null; }
+    const n = CO.norm(val); if (!n) { barAnim('shake'); const L = ansLen(); if (L) setAnsStatus(L === 1 ? t('answer.lenHelp1') : t('answer.lenHelp', { cantidad: L }), 'warn'); return null; }
     if (val.replace(/\s/g, '').length > 24) toast(t('v.long'), 'warn');
     APP.busy = true; $('#bar').classList.add('busy'); $('#send').disabled = true; AU.sfx('scan'); const t0 = performance.now();
     let r; try { r = cx.daily ? await CO.verify(null, val, { daily: APP.dstate, v: cx.V, salt: `jet-estacion:daily:${cx.V.i}` }) : await CO.verify(cx.id, val); } catch (e) { r = { r: 'wrong', n }; }
@@ -267,16 +334,18 @@
     APP.busy = false; $('#bar').classList.remove('busy'); $('#send').disabled = false;
     if (!APP.cx || APP.cx !== cx) return r;
     const st = cx.daily ? APP.dstate : CO.pz(cx.id); const push = (w, rr) => { st.att.push({ w, r: rr }); if (st.att.length > 40) st.att.shift(); renderAtt(); };
+    // Cada veredicto conserva su mensaje específico; además queda escrito junto al campo (#ansStatus) y el foco vuelve al campo sin borrar lo escrito.
+    let msg = '', kind = '';
     switch (r.r) {
-      case 'ok': onSolved(cx, r.n); break;
-      case 'mid': push(r.n, 'mid'); toast(r.msg && C.traps[r.msg] ? L2(C.traps[r.msg]) : t('v.mid'), 'ok'); AU.sfx('mid'); AU.peekLayer(); AU.vibrate(12); barAnim('mid'); st.offerAt = st.active; break;
-      case 'trap': push(r.n, 'wrong'); toast(L2(C.traps[r.msg] || ['', '']) || t('v.wrong'), 'warn'); AU.sfx('trap'); barAnim('shake'); AU.vibrate([20, 40, 20]); noteWrong(); break;
-      case 'near': case 'enie': push(r.n, 'near'); toast(t(r.r === 'enie' ? 'v.near.enie' : 'v.near'), 'warn'); AU.sfx('near'); barAnim('nearly'); AU.vibrate(12); break;
-      case 'other': push(r.n, 'wrong'); toast(t('v.other'), 'warn'); AU.sfx('trap'); barAnim('nearly'); break;
-      case 'repeat': toast(t('v.repeat')); AU.sfx('near'); break;
-      default: push(r.n, 'wrong'); toast(t('v.wrong'), 'bad'); AU.sfx('wrong'); barAnim('shake'); AU.vibrate([20, 40, 20]); noteWrong();
+      case 'ok': setAnsStatus(cx.daily ? t('v.okA') : t('v.repaired'), 'ok'); onSolved(cx, r.n); break;
+      case 'mid': push(r.n, 'mid'); msg = r.msg && C.traps[r.msg] ? L2(C.traps[r.msg]) : t('v.mid'); kind = 'ok'; toast(msg, 'ok'); AU.sfx('mid'); AU.peekLayer(); AU.vibrate(12); barAnim('mid'); st.offerAt = st.active; break;
+      case 'trap': push(r.n, 'wrong'); msg = L2(C.traps[r.msg] || ['', '']) || t('v.wrong'); kind = 'warn'; toast(msg, 'warn'); AU.sfx('trap'); barAnim('shake'); AU.vibrate([20, 40, 20]); noteWrong(); break;
+      case 'near': case 'enie': push(r.n, 'near'); msg = t(r.r === 'enie' ? 'v.near.enie' : 'v.near'); kind = 'warn'; toast(msg, 'warn'); AU.sfx('near'); barAnim('nearly'); AU.vibrate(12); break;
+      case 'other': push(r.n, 'wrong'); msg = t('v.other'); kind = 'warn'; toast(msg, 'warn'); AU.sfx('trap'); barAnim('nearly'); break;
+      case 'repeat': msg = t('v.repeat'); toast(msg); AU.sfx('near'); break;
+      default: push(r.n, 'wrong'); msg = t('v.wrongA'); kind = 'bad'; toast(t('v.wrong'), 'bad'); AU.sfx('wrong'); barAnim('shake'); AU.vibrate([20, 40, 20]); noteWrong();
     }
-    if (r.r !== 'ok') { saveSoon(); if (cx.daily) saveDailyState(); }
+    if (r.r !== 'ok') { setAnsStatus(msg, kind); saveSoon(); if (cx.daily) saveDailyState(); if (!ans.disabled && APP.cx === cx && !top()) ans.focus({ preventScroll: true }); }
     return r;
   }
   function noteWrong() {
@@ -309,11 +378,14 @@
   function showSuccess(cx, st) {
     const P0 = cx.P; const f = P0.frag; const box = document.createElement('div'); box.id = 'succ'; box.className = 'succ';
     const frag = f != null ? fragHTML(P0.mod, f) : '';
-    box.innerHTML = `<div class="card" style="max-width:360px;text-align:center"><span class="kick">${t('v.ok')}</span><div style="font-size:30px;color:#ffd34d;letter-spacing:6px;margin:8px 0">${'★'.repeat(st.stars)}<span style="opacity:.25">${'★'.repeat(3 - st.stars)}</span></div>${frag ? `<div class="fragline">${frag}<span>${t('frag.got')}</span></div>` : ''}<div class="row" style="margin-top:12px">${C.rec['rec-' + cx.id] ? `<button class="btn sm" type="button" data-k="rec">▶ ${t('log.listen')}</button>` : ''}<button class="btn sm pri" type="button" data-k="ok">${cx.id === 'p3' ? (I18N.LANG === 'en' ? 'Open the hatch' : 'Abrir la compuerta') : (I18N.LANG === 'en' ? 'Back to the room' : 'Volver a la sala')}</button></div></div>`;
-    Object.assign(box.style, { position: 'absolute', inset: '0', display: 'grid', placeItems: 'center', background: 'rgba(5,1,8,.55)', zIndex: 5, padding: '12px' });
+    // PLAY-ESTACION-05: estrellas obtenidas y pistas usadas explícitas; PLAY-ESTACION-04: leer transcripción separado de reproducir, con icono propio.
+    const hasRec = !!C.rec['rec-' + cx.id]; const starsTxt = t('stars.earned', { obtenidas: st.stars, 'máximo': 3 });
+    box.innerHTML = `<div class="card" style="max-width:380px;text-align:center" role="group" aria-labelledby="succK"><span class="kick" id="succK">${t('v.ok')}</span><div role="img" aria-label="${esc(starsTxt)}" style="font-size:30px;color:#ffd34d;letter-spacing:6px;margin:8px 0">${'★'.repeat(st.stars)}<span style="opacity:.25">${'★'.repeat(3 - st.stars)}</span></div><p class="succ-meta">${esc(starsTxt)} · ${esc(t('hint.used', { cantidad: st.hints || 0 }))}</p>${frag ? `<div class="fragline">${frag}<span>${t('frag.got')}</span></div>` : ''}<div class="succ-acts">${hasRec ? `<button class="btn sm" type="button" data-k="read"><svg class="ico ln" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4h9l4 4v12H6z M9 12h7M9 16h7"/></svg>${t('log.read')}</button><button class="btn sm" type="button" data-k="rec"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>${t('log.listen')}</button>` : ''}<button class="btn sm pri" type="button" data-k="ok">${cx.id === 'p3' ? t('open.hatch') : t('back.room')}</button></div></div>`;
+    Object.assign(box.style, { position: 'absolute', inset: '0', display: 'grid', placeItems: 'center', background: 'rgba(5,1,8,.55)', zIndex: 5, padding: '12px', overflowY: 'auto' });
     $('#iStage').appendChild(box); if (f != null) AU.sfx('frag');
     box.querySelector('[data-k=ok]').onclick = () => { AU.sfx('tap'); afterSolvedClose(cx.id); };
     const rb = box.querySelector('[data-k=rec]'); if (rb) rb.onclick = () => { AU.sfx('tap'); openLog('rec-' + cx.id); };
+    const rd = box.querySelector('[data-k=read]'); if (rd) rd.onclick = () => { AU.sfx('tap'); openLog('rec-' + cx.id, { read: true }); };
     setTimeout(() => { const b = box.querySelector('[data-k=ok]'); if (b) b.focus({ preventScroll: true }); }, 100);
   }
   function fragHTML(mod, f) {
@@ -338,9 +410,14 @@
     const cx = APP.cx; if (!cx) return; const daily = cx.daily; const st = daily ? APP.dstate : CO.pz(cx.id); const P0 = cx.P;
     const free = !daily && cx.id === 'p3' && !CO.G.freeHintUsed;
     const n = daily ? 2 : 3; const keys = ['hint.nudge', 'hint.method', 'hint.solution'];
-    const el = screen(`<div class="card sheet"><div class="head"><h2>${t('hints')}</h2><button class="x" type="button" data-k="x" aria-label="${t('close')}">×</button></div>${free && st.hints === 0 ? `<p class="hint" style="margin-bottom:10px">${t('hint.free')}</p>` : ''}<div class="steps">${keys.slice(0, n).map((k, i) => {
+    // Etiquetas por acción (SRC-ES01 / PLAY-ESTACION-05): pista, método y solución son acciones distintas; «−1 estrella en este enigma»
+    // sólo cuando esa ayuda produce el decremento real (rama de campaña: paid = hints − freeHint); la gratuita sólo en p3 elegible;
+    // el diario no usa estrellas, así que no se le muestra coste alguno.
+    const label = (i) => i === 0 ? (free ? t('hint.revealFree') : daily ? t('hint.revealHint') : t('hint.revealPaid')) : i === 1 ? t('hint.revealMethod') + (daily ? '' : ' · −1 ★') : t('hint.prepSol', { segundos: 60 });
+    const effect = (i) => daily ? '' : (i === 0 && free ? t('hint.free') : t('hint.effect'));
+    const el = screen(`<div class="card sheet"><div class="head"><h2>${t('hints')}</h2><button class="x" type="button" data-k="x" aria-label="${t('close.hints')}">×</button></div><div class="steps">${keys.slice(0, n).map((k, i) => {
       const done = st.hints > i; const can = st.hints === i; const txt = i < 2 ? L2(P0.h[i]) : '';
-      return `<div class="step ${done ? 'done' : ''}"><span class="n">${i + 1}</span><div class="b"><b>${t(k)}</b><p>${done ? esc(txt || t('hint.ready')) : (i === 0 && free ? t('hint.free.btn') : t('hint.cost'))}</p>${i === 2 && st.solT != null && !done ? `<div class="wait"><i id="hw"></i></div>` : ''}</div><div class="act">${done ? '✓' : can ? (i === 2 && st.solT != null ? `<button class="btn sm" type="button" data-k="cancel">${t('hint.cancel')}</button>` : `<button class="btn sm cy" type="button" data-k="r${i}">${i === 0 && free ? t('hint.free.btn') : t('hint.reveal')}</button>`) : `<small style="color:#6a6080;font-size:11px">${t('hint.locked')}</small>`}</div></div>`;
+      return `<div class="step ${done ? 'done' : ''}"><span class="n" aria-hidden="true">${i + 1}</span><div class="b"><b>${t(k)}</b>${done ? `<p>${esc(txt || t('hint.ready'))}</p>` : (effect(i) ? `<p class="fx">${esc(effect(i))}</p>` : '')}${i === 2 && st.solT != null && !done ? `<div class="wait"><i id="hw"></i></div>` : ''}</div><div class="act">${done ? `<span class="done-tag">${t('hint.done')}</span>` : can ? (i === 2 && st.solT != null ? `<button class="btn sm" type="button" data-k="cancel">${t('hint.cancel')}</button>` : `<button class="btn sm cy" type="button" data-k="r${i}">${label(i)}</button>`) : `<small style="color:#8f84ad;font-size:11px">${t('hint.locked')}</small>`}</div></div>`;
     }).join('')}</div></div>`, 'veil sheet');
     el.querySelector('[data-k=x]').onclick = () => closeScreen(el); el._re = openHints;
     el.addEventListener('click', (e) => { if (e.target === el) closeScreen(el); });
@@ -400,14 +477,14 @@
       </div><div class="hlang">${LANG_SEG()}</div></div>`, 'home');
     bindLang(el);
     el.querySelector('[data-k=go]').onclick = () => { AU.unlock(); if (!CO.G) { const sd = Q.get('seed') ? CO.seedOf(Q.get('seed')) : null; newGame(sd); intro(); } else resume(); };
-    const np = el.querySelector('[data-k=newplus]'); if (np) dbl(np, () => { newGame(); intro(); });
+    const np = el.querySelector('[data-k=newplus]'); if (np) np.onclick = () => confirmNewGame(null, np);
     const en = el.querySelector('[data-k=ending]'); if (en) en.onclick = () => finale(CO.nameOfGame(), true);
     el.querySelector('[data-k=daily]').onclick = () => showDaily();
     el.querySelector('[data-k=how]').onclick = () => showHow();
     el.querySelector('[data-k=set]').onclick = () => showSettings();
     const fs = el.querySelector('[data-k=fs]'); if (fs) fs.onclick = () => toggleFS();
     if (!CO.STORAGE_OK) toast(t('err.storage'), 'warn', { ms: 8000 });
-    setTimeout(() => { const b = el.querySelector('[data-k=go]'); if (b && matchMedia('(pointer:fine)').matches) b.focus({ preventScroll: true }); }, 200);
+    setTimeout(() => { const b = el.querySelector('[data-k=go]'); if (b && el.isConnected && !top().contains(document.activeElement) && !document.activeElement.closest('#bGear,#back')) b.focus({ preventScroll: true }); }, 200);
     musicFor(); return el;
   }
   function resume() {
@@ -432,37 +509,40 @@
   function pause() {
     if (APP.paused || !CO.G) return; APP.paused = true; CO.saveGame(); AU.pauseMix(true);
     const el = screen(`<div class="card" style="max-width:380px"><div class="head"><h2>${t('pause')}</h2></div><p class="kick" style="margin-bottom:14px;color:var(--dim)">${esc(statusLine())}</p>
-      <button class="btn pri" type="button" data-k="c">${t('pause.continue')}</button><button class="btn" type="button" data-k="how">${t('how')}</button><button class="btn" type="button" data-k="set">${t('settings')}</button><button class="btn" type="button" data-k="share">${t('restored.share')}</button><button class="btn" type="button" data-k="home">${t('pause.home')}</button></div>`);
+      <button class="btn pri" type="button" data-k="c" data-focus>${t('pause.continue')}</button><button class="btn" type="button" data-k="how">${t('how')}</button><button class="btn" type="button" data-k="set">${t('settings')}</button><button class="btn" type="button" data-k="share">${t('restored.share')}</button><button class="btn" type="button" data-k="home">${t('pause.home')}</button></div>`);
     el.dataset.pause = 1; el._re = () => { APP.paused = false; pause(); };
     const cont = () => { APP.paused = false; AU.unlock(); AU.resume(); AU.pauseMix(false); closeScreen(el); };
     el.querySelector('[data-k=c]').onclick = cont; el.querySelector('[data-k=how]').onclick = () => showHow(); el.querySelector('[data-k=set]').onclick = () => showSettings();
-    el.querySelector('[data-k=share]').onclick = () => share(shareProgress()); el.querySelector('[data-k=home]').onclick = () => { APP.paused = false; AU.resume(); AU.pauseMix(false); goHome(); };
+    el.querySelector('[data-k=share]').onclick = (e) => share(shareProgress(), e.currentTarget); el.querySelector('[data-k=home]').onclick = () => { APP.paused = false; AU.resume(); AU.pauseMix(false); goHome(); };
     APP.pauseEl = el; APP.resumeFn = cont;
     setTimeout(() => el.querySelector('[data-k=c]').focus({ preventScroll: true }), 60);
   }
   function shareProgress() { const n = CO.modulesDone(); const dots = CO.MODS.map(m => CO.G.metas[m] ? (CO.MOD_PUZ[m].some(id => CO.G.pz[id] && CO.G.pz[id].hints >= 3) ? '🟡' : '🟢') : '⚫').join(''); return `${t('title')}\n${I18N.LANG === 'en' ? 'Modules' : 'Módulos'} ${n}/6 · ★ ${CO.totalStars()}\n${dots} ${fmtTime(CO.G.activeMs)}\nhttps://jetgames.fun/estacion/`; }
   // ---------- ajustes ----------
   function showSettings() {
-    const G = CO.G; const tog = (k, on) => `<button class="tog ${on ? 'on' : ''}" type="button" role="switch" aria-checked="${on ? 'true' : 'false'}" data-tog="${k}"></button>`;
+    const G = CO.G;
+    // Cada interruptor lleva aria-labelledby a su etiqueta visible y cada deslizador el nombre de su canal (PLAY-ESTACION-06 / SRC-G03).
+    const tog = (k, on) => `<button class="tog ${on ? 'on' : ''}" type="button" role="switch" aria-checked="${on ? 'true' : 'false'}" aria-labelledby="lb-${k}" data-tog="${k}"></button>`;
+    const row = (k, label, ctl) => `<div class="set"><span class="lb" id="lb-${k}">${label}</span>${ctl}</div>`;
     const el = screen(`<div class="card"><div class="head"><h2>${t('settings')}</h2><button class="x" type="button" data-k="x" aria-label="${t('close')}">×</button></div>
       <div class="sect">${t('s.sound')}</div>
-      <div class="set"><span class="lb">${t('s.music')}</span><input type="range" min="0" max="1" step=".05" value="${Pf.mv}" data-r="mv" aria-label="${t('s.music')}">${tog('music', Pf.music)}</div>
-      <div class="set"><span class="lb">${t('s.sfx')}</span><input type="range" min="0" max="1" step=".05" value="${Pf.sv}" data-r="sv" aria-label="${t('s.sfx')}">${tog('sfx', Pf.sfx)}</div>
-      <div class="set"><span class="lb">${t('s.amb')}</span>${tog('amb', Pf.amb)}</div>
-      <div class="set"><span class="lb">${t('s.murmur')}</span><input type="range" min="0" max="1" step=".05" value="${Pf.murmur}" data-r="murmur" aria-label="${t('s.murmur')}"></div>
-      ${navigator.vibrate && !IOS ? `<div class="set"><span class="lb">${t('s.vib')}</span>${tog('vib', Pf.vib)}</div>` : ''}
+      ${row('music', t('s.music'), `<input type="range" min="0" max="1" step=".05" value="${Pf.mv}" data-r="mv" aria-label="${t('s.musicVol')}">` + tog('music', Pf.music))}
+      ${row('sfx', t('s.sfx'), `<input type="range" min="0" max="1" step=".05" value="${Pf.sv}" data-r="sv" aria-label="${t('s.sfxVol')}">` + tog('sfx', Pf.sfx))}
+      ${row('amb', t('s.amb'), tog('amb', Pf.amb))}
+      <div class="set"><label class="lb" for="r-murmur">${t('s.murmur')}</label><input type="range" id="r-murmur" min="0" max="1" step=".05" value="${Pf.murmur}" data-r="murmur"></div>
+      ${navigator.vibrate && !IOS ? row('vib', t('s.vib'), tog('vib', Pf.vib)) : ''}
       <div class="set"><span class="lb">${t('s.lang')}</span>${LANG_SEG()}</div>
-      ${FS_OK ? `<div class="set"><span class="lb">${t('fullscreen')}</span><button class="tog ${isFS() ? 'on' : ''}" type="button" role="switch" aria-checked="${isFS() ? 'true' : 'false'}" aria-label="${t('fullscreen')}" data-k="fs" data-fs></button></div>` : ''}
+      ${FS_OK ? row('fs', t('fullscreen'), `<button class="tog ${isFS() ? 'on' : ''}" type="button" role="switch" aria-checked="${isFS() ? 'true' : 'false'}" aria-labelledby="lb-fs" data-k="fs" data-fs></button>`) : ''}
       <div class="sect">${t('s.a11y')}</div>
-      <div class="set"><span class="lb">${t('a11y.audio')}</span>${tog('a11yAudio', Pf.a11yAudio)}</div>
-      <div class="set"><span class="lb">${t('a11y.reduce')}</span>${tog('reduce', document.documentElement.classList.contains('reduce'))}</div>
-      <div class="set"><span class="lb">${t('a11y.big')}</span>${tog('big', Pf.big)}</div>
-      <div class="set"><span class="lb">${t('a11y.contrast')}</span>${tog('contrast', Pf.contrast)}</div>
+      ${row('a11yAudio', t('a11y.audio'), tog('a11yAudio', Pf.a11yAudio))}
+      ${row('reduce', t('a11y.reduce'), tog('reduce', document.documentElement.classList.contains('reduce')))}
+      ${row('big', t('a11y.big'), tog('big', Pf.big))}
+      ${row('contrast', t('a11y.contrast'), tog('contrast', Pf.contrast))}
       <div class="sect">${t('s.game')}</div>
       ${G ? `<div class="set"><span class="lb">${t('s.code')}</span><span class="code">${G.code}</span></div>
-      <button class="btn" type="button" data-k="copy">${t('s.copyRescue')}</button>` : ''}
-      <details><summary class="btn" style="list-style:none">${t('s.pasteRescue')}</summary><textarea class="resc" placeholder="${t('s.rescuePh')}"></textarea><button class="btn" type="button" data-k="load">${t('s.load')}</button></details>
-      <details><summary class="btn" style="list-style:none">${t('s.new')}</summary><p style="font-size:13px;color:var(--dim);margin:6px 0">${t('s.newCode')}</p><input class="codein" maxlength="6" placeholder="ABC234" autocapitalize="characters"><button class="btn danger" type="button" data-k="new">${t('s.new')}</button></details>
+      <div class="sect">${t('s.backup')}</div><button class="btn" type="button" data-k="copy">${t('s.copyRescue')}</button>` : ''}
+      <details><summary class="btn" style="list-style:none">${t('s.pasteRescue')}</summary><textarea class="resc" aria-label="${t('s.pasteRescue')}" placeholder="${t('s.rescuePh')}"></textarea><button class="btn" type="button" data-k="load">${t('s.load')}</button></details>
+      <details><summary class="btn" style="list-style:none">${t('s.new')}</summary><p style="font-size:13px;color:var(--dim);margin:6px 0">${t('s.newCode')}</p><input class="codein" maxlength="6" placeholder="ABC234" autocapitalize="characters" aria-label="${t('s.newCode')}"><button class="btn danger" type="button" data-k="new">${t('s.new')}</button></details>
       <button class="btn danger" type="button" data-k="wipe">${t('s.wipe')}</button>
       </div>`);
     el.querySelector('[data-k=x]').onclick = () => closeScreen(el);
@@ -470,10 +550,17 @@
     el.querySelectorAll('[data-r]').forEach(r => r.oninput = () => { Pf[r.dataset.r] = +r.value; CO.savePrefs(); AU.applyPrefs(); });
     bindLang(el); el._re = showSettings;
     const fs = el.querySelector('[data-k=fs]'); if (fs) fs.onclick = () => toggleFS();
-    const cp = el.querySelector('[data-k=copy]'); if (cp) cp.onclick = () => copy(CO.rescueCode(), t('s.codeCopied'));
-    dbl(el.querySelector('[data-k=load]'), () => { const g2 = CO.parseRescue(el.querySelector('.resc').value); if (!g2) { toast(t('err.rescue'), 'bad'); return; } CO.G = g2; CO.saveGame(); toast(t('s.loaded'), 'ok'); goHome(); });
-    dbl(el.querySelector('[data-k=new]'), () => { const c = el.querySelector('.codein').value.trim(); let sd = null; if (c) { sd = CO.seedOf(c); if (sd == null) { toast(t('err.code'), 'bad'); return; } } newGame(sd); closeAll(); intro(); });
-    dbl(el.querySelector('[data-k=wipe]'), () => { ['save', 'daily', 'records'].forEach(CO.lsDel); CO.G = null; Object.assign(CO.DAILY, { lastSolved: '', streak: 0, best: 0, today: null }); toast(t('s.wiped'), 'ok'); goHome(); });
+    const cp = el.querySelector('[data-k=copy]'); if (cp) cp.onclick = () => copyOrShow(CO.rescueCode(), t('s.codeCopied'), cp);
+    // SRC-ES02: la copia de seguridad se valida antes de tocar nada; una inválida no borra. Reemplazar o empezar de nuevo pide confirmación explícita y enumera qué se conserva y qué cambia.
+    const ld = el.querySelector('[data-k=load]'); ld.onclick = () => { const g2 = CO.parseRescue(el.querySelector('.resc').value); if (!g2) { toast(t('err.rescue'), 'bad'); return; } const apply = () => { CO.G = g2; CO.saveGame(); toast(t('s.loaded'), 'ok'); goHome(); }; if (!CO.G) return apply(); confirmDlg({ title: t('replace.title'), body: t('effect', { conservado: t('restore.keep'), cambiado: t('restore.change') }), keep: t('backup.first'), backup: true, ok: t('confirm.replace'), onOk: apply, opener: ld }); };
+    const nw = el.querySelector('[data-k=new]'); nw.onclick = () => { const c = el.querySelector('.codein').value.trim(); let sd = null; if (c) { sd = CO.seedOf(c); if (sd == null) { toast(t('err.code'), 'bad'); return; } } confirmNewGame(sd, nw); };
+    const wp = el.querySelector('[data-k=wipe]'); wp.onclick = () => confirmDlg({ title: t('wipe.title', { juego: t('title') }), body: t('wipe.body', { 'datos concretos': t('wipe.data') }), keep: t('wipe.keep'), backup: !!CO.G, ok: t('wipe.do'), danger: true, opener: wp, onOk: () => { ['save', 'daily', 'records'].forEach(CO.lsDel); CO.G = null; Object.assign(CO.DAILY, { lastSolved: '', streak: 0, best: 0, today: null }); toast(t('s.wiped'), 'ok'); goHome(); } });
+  }
+  // Nueva partida (+): si hay progreso, confirma y explica qué conserva (ajustes, diario, récords) y qué cambia (toda la partida, semilla nueva).
+  function confirmNewGame(sd, opener) {
+    const go = () => { newGame(sd); closeAll(); intro(); };
+    if (!CO.G) return go();
+    confirmDlg({ title: t('replace.title'), body: t('effect', { conservado: t('new.keep'), cambiado: t('new.change') }), keep: t('backup.first'), backup: true, ok: t('confirm.replace'), onOk: go, opener });
   }
   function refreshAfterLang() {
     if (APP.scr === 'home') { showHome(); }
@@ -515,15 +602,17 @@
   // ---------- cuaderno ----------
   function openNotebook(tab0) {
     const G = CO.G; if (!G) return; const mod = APP.mod || (G.room !== 'hub' ? G.room : 'prologo') || 'prologo'; let tab = tab0 === 'clips' ? 'clips' : 'notes';
-    const el = screen(`<div class="card wide"><div class="head"><h2>${t('notebook')} · <span style="color:var(--mod)">${t('m.' + mod)}</span></h2><button class="x" type="button" data-k="x" aria-label="${t('close')}">×</button></div><div class="tabs"><button type="button" data-tab="notes">${t('notebook.notes')}</button><button type="button" data-tab="clips">${t('notebook.clips')} (${G.clips.length})</button></div><div class="nb"></div></div>`);
+    const el = screen(`<div class="card wide"><div class="head"><h2 tabindex="-1">${t('notebook')} · <span style="color:var(--mod)">${t('m.' + mod)}</span></h2><button class="x" type="button" data-k="x" aria-label="${t('close.notebook')}">×</button></div><div class="tabs" role="tablist"><button type="button" role="tab" data-tab="notes">${t('notebook.notes')}</button><button type="button" role="tab" data-tab="clips">${t('notebook.clips')} (${G.clips.length})</button></div><div class="nb"></div></div>`);
     const nb = el.querySelector('.nb'); let deb = 0;
     const render = () => {
-      el.querySelectorAll('[data-tab]').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
+      el.querySelectorAll('[data-tab]').forEach(b => { b.classList.toggle('on', b.dataset.tab === tab); b.setAttribute('aria-selected', b.dataset.tab === tab ? 'true' : 'false'); });
       if (tab === 'notes') { nb.innerHTML = `<textarea class="notes" maxlength="4000" placeholder="${esc(t('notebook.ph'))}"></textarea>`; const ta = nb.querySelector('textarea'); ta.value = G.notes[mod] || ''; ta.oninput = () => { clearTimeout(deb); deb = setTimeout(() => { G.notes[mod] = ta.value.slice(0, 4000); CO.saveGame(); }, 1000); }; }
       else if (!G.clips.length) nb.innerHTML = `<div class="empty"><svg viewBox="0 0 24 24"><path d="M4 20l4-1 11-11-3-3L5 16z"/><path d="M14 6l3 3"/></svg>${t('notebook.empty')}</div>`;
-      else { nb.innerHTML = `<div class="clips">${G.clips.map((c, i) => `<div class="clip" data-i="${i}"><img alt="" src="${c.img}"><small>${SC.shortId(c.p)}</small><button type="button" data-del="${i}" aria-label="×">×</button></div>`).join('')}</div>`;
-        nb.querySelectorAll('[data-del]').forEach(b => b.onclick = (e) => { e.stopPropagation(); G.clips.splice(+b.dataset.del, 1); CO.saveGame(); render(); });
-        nb.querySelectorAll('.clip').forEach(c => c.onclick = () => { const v = screen(`<div class="card" style="max-width:520px;padding:10px"><img alt="" style="width:100%;border-radius:12px;display:block" src="${G.clips[+c.dataset.i].img}"></div>`); v.onclick = () => closeScreen(v); }); }
+      else { // RSP-ESTACION-01 · tarjeta no interactiva con dos botones hermanos (abrir / eliminar) y visor como diálogo con cierre explícito
+        const ctxOf = (c) => C.puzzles[c.p] ? SC.shortId(c.p) + ' · ' + L2(C.puzzles[c.p].t) : SC.shortId(c.p);
+        nb.innerHTML = `<div class="clips">${G.clips.map((c, i) => `<div class="clip"><button type="button" class="clip-open" data-i="${i}" aria-label="${esc(t('clip.open', { contexto: ctxOf(c) }))}"><img alt="" src="${c.img}"><small aria-hidden="true">${esc(SC.shortId(c.p))}</small></button><button type="button" class="clip-delete" data-del="${i}" aria-label="${esc(t('clip.del', { contexto: ctxOf(c) }))}">×</button></div>`).join('')}</div>`;
+        nb.querySelectorAll('[data-del]').forEach(b => b.onclick = () => { const i = +b.dataset.del; G.clips.splice(i, 1); CO.saveGame(); render(); const opens = nb.querySelectorAll('.clip-open'); const nx = opens[Math.min(i, opens.length - 1)]; (nx || el.querySelector('h2')).focus({ preventScroll: true }); });
+        nb.querySelectorAll('.clip-open').forEach(b => b.onclick = () => { const c = G.clips[+b.dataset.i]; if (!c) return; const title = t('clip.title', { contexto: ctxOf(c) }); const v = screen(`<div class="card viewer" style="max-width:560px"><div class="head"><h2>${esc(title)}</h2><button class="x" type="button" data-k="x" aria-label="${t('close')}">×</button></div><img alt="${esc(title)}" src="${c.img}"></div>`, 'veil', b); v.querySelector('[data-k=x]').onclick = () => closeScreen(v); v.addEventListener('click', (e) => { if (e.target === v) closeScreen(v); }); }); }
     };
     el.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => { tab = b.dataset.tab; render(); });
     el._re = () => { const ta = nb.querySelector('textarea'); if (ta) { clearTimeout(deb); G.notes[mod] = ta.value.slice(0, 4000); CO.saveGame(); } openNotebook(tab); };
@@ -546,27 +635,31 @@
   function recSigned(rid) { const R = C.rec[rid]; if (rid === 'rec-final' || (rid === 'rec-p1' && CO.G.finished)) return dispName(); return L2(R.by); }
   let playing = null;
   function stopPlay() { if (playing) { playing.stop(); playing = null; } }
-  async function player(host, rid, auto) {
+  // PLAY-ESTACION-04: «Leer transcripción» (opts.read) muestra el texto completo sin audio ni animación; Reproducir/Detener reinicia desde el principio (no hay pausa real).
+  const ICO_PLAY = '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>', ICO_STOP = '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>';
+  async function player(host, rid, auto, opts = {}) {
     stopPlay(); const txt = await recText(rid); const words = txt.split(/\s+/); const R = C.rec[rid];
-    host.innerHTML = `<div class="player"><div class="meta">${esc(recSigned(rid))} · ${I18N.LANG === 'en' ? 'Cycle' : 'Ciclo'} ${esc(R.c)}</div><canvas></canvas><div class="tr">${words.map(w => `<span>${esc(w)}</span> `).join('')}</div><div class="humbars"><em>${t('log.hum')}</em>${[62, 69, 72, 71].map(m => `<i style="height:${10 + (m - 60) * 2}px"></i>`).join('')}</div><div class="row" style="margin-top:10px"><button class="btn sm cy" type="button" data-k="pl">▶ ${t('log.play')}</button></div></div>`;
+    host.innerHTML = `<div class="player"><div class="meta">${esc(recSigned(rid))} · ${I18N.LANG === 'en' ? 'Cycle' : 'Ciclo'} ${esc(R.c)}</div><canvas aria-hidden="true"></canvas><div class="tr ${opts.read ? 'read' : ''}">${words.map(w => `<span class="${opts.read ? 'on' : ''}">${esc(w)}</span> `).join('')}</div><div class="humbars" aria-hidden="true"><em>${t('log.hum')}</em>${[62, 69, 72, 71].map(m => `<i style="height:${10 + (m - 60) * 2}px"></i>`).join('')}</div><div class="row" style="margin-top:10px"><button class="btn sm cy" type="button" data-k="pl">${ICO_PLAY}${t('log.play')}</button>${opts.read ? '' : `<button class="btn sm" type="button" data-k="rd">${t('log.read')}</button>`}</div></div>`;
     const spans = [...host.querySelectorAll('.tr span')], cnv = host.querySelector('canvas'), cg = cnv.getContext('2d'); const btn = host.querySelector('[data-k=pl]');
+    const rd = host.querySelector('[data-k=rd]'); if (rd) rd.onclick = () => { stop(); spans.forEach(s => s.classList.add('on')); rd.remove(); if (CO.G.rec[rid] === 'new') { CO.G.rec[rid] = 'heard'; saveSoon(); setGameChrome(['room', 'hub'].includes(APP.scr)); } };
+    if (opts.read && CO.G.rec[rid] === 'new') { CO.G.rec[rid] = 'heard'; saveSoon(); setGameChrome(['room', 'hub'].includes(APP.scr)); }
     let on = false, idx = 0, tmr = 0, raf = 0, amp = 0;
     const draw = () => { const w = cnv.clientWidth, h = cnv.clientHeight, d = Math.min(2, devicePixelRatio || 1); if (cnv.width !== Math.round(w * d)) { cnv.width = w * d; cnv.height = h * d; } cg.setTransform(d, 0, 0, d, 0, 0); cg.clearRect(0, 0, w, h); amp *= .9; cg.strokeStyle = '#00f2cf'; cg.lineWidth = 2; cg.beginPath(); for (let x = 0; x < w; x += 3) { const y = h / 2 + Math.sin(x * .09 + performance.now() / 120) * (2 + amp * 16) * Math.sin(x / w * Math.PI); x ? cg.lineTo(x, y) : cg.moveTo(x, y); } cg.stroke(); if (host.isConnected) raf = requestAnimationFrame(draw); };
-    const step = () => { if (!on) return; if (idx < spans.length) { spans[idx].classList.add('on'); AU.syllable(); amp = 1; const w = spans[idx].textContent; idx++; tmr = setTimeout(step, 130 + w.length * 38 + (/[.,:;?]$/.test(w) ? 260 : 0)); } else { AU.murmurStop(); const tb = REC_ORDER.indexOf(rid) % 4; const d = AU.hum(tb); tmr = setTimeout(() => { on = false; btn.textContent = '▶ ' + t('log.play'); }, d * 1000); CO.G.rec[rid] = 'heard'; saveSoon(); setGameChrome(['room', 'hub'].includes(APP.scr)); } };
-    const start = () => { AU.unlock(); on = true; idx = 0; spans.forEach(s => s.classList.remove('on')); AU.murmurStart(); btn.textContent = '■ ' + t('log.stop'); step(); };
-    const stop = () => { on = false; clearTimeout(tmr); AU.murmurStop(); btn.textContent = '▶ ' + t('log.play'); };
+    const step = () => { if (!on) return; if (idx < spans.length) { spans[idx].classList.add('on'); AU.syllable(); amp = 1; const w = spans[idx].textContent; idx++; tmr = setTimeout(step, 130 + w.length * 38 + (/[.,:;?]$/.test(w) ? 260 : 0)); } else { AU.murmurStop(); const tb = REC_ORDER.indexOf(rid) % 4; const d = AU.hum(tb); tmr = setTimeout(() => { on = false; btn.innerHTML = ICO_PLAY + t('log.play'); }, d * 1000); CO.G.rec[rid] = 'heard'; saveSoon(); setGameChrome(['room', 'hub'].includes(APP.scr)); } };
+    const start = () => { AU.unlock(); on = true; idx = 0; spans.forEach(s => s.classList.remove('on')); AU.murmurStart(); btn.innerHTML = ICO_STOP + t('log.stop'); step(); };
+    const stop = () => { on = false; clearTimeout(tmr); AU.murmurStop(); btn.innerHTML = ICO_PLAY + t('log.play'); };
     btn.onclick = () => on ? stop() : start(); draw(); playing = { stop: () => { stop(); cancelAnimationFrame(raf); } };
     if (auto) setTimeout(start, 400);
   }
-  function openLog(focus) {
+  function openLog(focus, opts = {}) {
     const G = CO.G; if (!G) return; const have = REC_ORDER.filter(r => G.rec[r]);
-    const el = screen(`<div class="card wide"><div class="head"><h2>${t('log')}</h2><button class="x" type="button" data-k="x" aria-label="${t('close')}">×</button></div><div class="pl"></div><div class="recs"></div></div>`);
+    const el = screen(`<div class="card wide"><div class="head"><h2>${t('log')}</h2><button class="x" type="button" data-k="x" aria-label="${t('close.log')}">×</button></div><div class="pl"></div><div class="recs"></div></div>`);
     const list = el.querySelector('.recs'), pl = el.querySelector('.pl');
     if (!have.length) list.innerHTML = `<div class="empty"><svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="11" rx="2"/><circle cx="8" cy="12.5" r="2"/><circle cx="16" cy="12.5" r="2"/></svg>${t('log.empty')}</div>`;
     else { let html = '', last = ''; for (const r of REC_ORDER) { if (!G.rec[r]) continue; const m = recModule(r); if (m !== last) { html += `<div class="recg">${t('m.' + m)}</div>`; last = m; } const R = C.rec[r]; html += `<button class="rec" type="button" data-r="${r}"><span><span class="m">${I18N.LANG === 'en' ? 'Cycle' : 'Ciclo'} ${esc(R.c)} · ${esc(recSigned(r))}</span><b>${esc(L2((C.puzzles[r.slice(4)] || { t: ['', ''] }).t))}</b></span>${G.rec[r] === 'new' ? `<span class="new">${I18N.LANG === 'en' ? 'NEW' : 'NUEVA'}</span>` : ''}</button>`; } list.innerHTML = html; }
     list.querySelectorAll('.rec').forEach(b => b.onclick = () => { player(pl, b.dataset.r, true); pl.scrollIntoView({ behavior: 'smooth' }); const n = b.querySelector('.new'); if (n) n.remove(); });
     el.querySelector('[data-k=x]').onclick = () => { stopPlay(); closeScreen(el); }; el._re = () => { stopPlay(); openLog(); };
-    if (focus && G.rec[focus]) player(pl, focus, true);
+    if (focus && G.rec[focus]) player(pl, focus, !opts.read, opts);
   }
   // ---------- mapa ----------
   function openMap() {
@@ -582,7 +675,7 @@
     const anim = () => { if (!el.isConnected) return; const p = Math.min(1, (performance.now() - t0) / 1600); cg.clearRect(0, 0, 120, 120); DR.glow(cg, 60, 60, 60 * p, CO.MOD_COL[mod], .8); SC.plateGlyph(cg, ch, 60, 60, 80, 0); requestAnimationFrame(anim); }; anim(); setTimeout(() => AU.sfx('glyph'), 700);
     player(el.querySelector('.pl'), 'rec-' + CO.META_OF[mod], true);
     el.querySelector('[data-k=hub]').onclick = () => { stopPlay(); closeScreen(el); door(goHub); };
-    el.querySelector('[data-k=share]').onclick = () => share(shareProgress());
+    el.querySelector('[data-k=share]').onclick = (e) => share(shareProgress(), e.currentTarget);
     if (mod === 'energia') setTimeout(() => toast(I18N.LANG === 'en' ? 'Four rooms open, in any order.' : 'Se abren cuatro salas, en el orden que quieras.', 'ok', { ms: 4000 }), 1200);
     if (CO.MODS.every(m => CO.G.metas[m])) setTimeout(() => toast(I18N.LANG === 'en' ? 'The observatory at the core is open.' : 'El observatorio del núcleo está abierto.', 'ok', { ms: 4500 }), 2400);
   }
@@ -623,14 +716,14 @@
     const el = screen(`<div class="card" style="text-align:center"><span class="kick">${t('log')}</span><div class="pl" style="text-align:left;margin:10px 0"></div><p style="font-size:17px;font-weight:600;margin:12px 0 18px">${t('end.line')}</p><button class="btn pri" type="button" data-k="res">${I18N.LANG === 'en' ? 'See result' : 'Ver resultado'}</button><button class="btn" type="button" data-k="np">${t('cta.newplus')}</button></div>`, 'veil');
     player(el.querySelector('.pl'), 'rec-p1', false);
     el.querySelector('[data-k=res]').onclick = () => { stopPlay(); closeScreen(el); result(); };
-    dbl(el.querySelector('[data-k=np]'), () => { stopPlay(); newGame(); intro(); });
+    const np = el.querySelector('[data-k=np]'); np.onclick = () => { stopPlay(); confirmNewGame(null, np); };
   }
   function rankOf(s) { return s >= 95 ? 1 : s >= 80 ? 2 : s >= 55 ? 3 : 4; }
   function result() {
     const G = CO.G; const s = CO.totalStars(); const clean = Object.values(G.pz).filter(x => x.st === 'solved' && !x.hints).length; const nm = CO.nameOfGame();
     const txt = `${t('title')} · ${I18N.LANG === 'en' ? 'STATION RESTORED' : 'ESTACIÓN RESTAURADA'}\n★ ${s}/102 · ${t('rank.' + rankOf(s))} · ${fmtTime(G.activeMs)} · ${G.hintsUsed} ${I18N.LANG === 'en' ? (G.hintsUsed === 1 ? 'hint' : 'hints') : (G.hintsUsed === 1 ? 'ayuda' : 'ayudas')}\n${CO.MODS.map(m => CO.MOD_PUZ[m].some(id => G.pz[id] && G.pz[id].hints >= 3) ? '🟡' : '🟢').join('')}✨\nhttps://jetgames.fun/estacion/`;
     const el = screen(`<div class="card"><p class="big-t">${t('res.title')}</p><p class="rank">${t('rank.' + rankOf(s)).toUpperCase()}</p>${APP.newRecord ? `<p style="text-align:center;color:#ffd34d;font-weight:700;margin-top:6px">${t('res.record')}</p>` : ''}<div class="lines"><div><span>${t('res.name')}</span><b>${esc(dispName())}</b></div><div><span>${t('res.stars')}</span><b>★ ${s}/102</b></div><div><span>${t('res.time')}</span><b>${fmtTime(G.activeMs)}</b></div><div><span>${t('res.hints')}</span><b>${G.hintsUsed}</b></div><div><span>${t('res.clean')}</span><b>${clean}</b></div></div><button class="btn pri" type="button" data-k="sh">${t('share')}</button><button class="btn" type="button" data-k="np">${t('cta.newplus')}</button><button class="btn" type="button" data-k="home">${t('pause.home')}</button></div>`);
-    el.querySelector('[data-k=sh]').onclick = () => share(txt); dbl(el.querySelector('[data-k=np]'), () => { newGame(); intro(); }); el.querySelector('[data-k=home]').onclick = () => goHome();
+    el.querySelector('[data-k=sh]').onclick = (e) => share(txt, e.currentTarget); const np = el.querySelector('[data-k=np]'); np.onclick = () => confirmNewGame(null, np); el.querySelector('[data-k=home]').onclick = () => goHome();
   }
 
   // ================= transmisión del día =================
@@ -648,7 +741,7 @@
       <button class="btn" type="button" data-k="home">${t('pause.home')}</button></div>`);
     el.querySelector('[data-k=x]').onclick = () => goHome(); el.querySelector('[data-k=home]').onclick = () => goHome();
     el.querySelector('[data-k=go]').onclick = () => { AU.unlock(); closeScreen(el); APP.daily = todayItem(); openInsp(null, { daily: APP.daily }); if (st.solved) { ans.value = CO.C.daily ? '' : ''; } };
-    const sh = el.querySelector('[data-k=sh]'); if (sh) sh.onclick = () => share(`${t('title')} · ${I18N.LANG === 'en' ? 'Transmission' : 'Transmisión'} ${st.date}\n📡 ${I18N.LANG === 'en' ? 'Received in' : 'Recibida en'} ${Math.max(1, Math.round(st.ms / 60000))} ${t('mins')} · ${st.att.length + 1} ${I18N.LANG === 'en' ? (st.att.length ? 'attempts' : 'attempt') : (st.att.length ? 'intentos' : 'intento')} · ${st.hints ? st.hints + ' ' + (I18N.LANG === 'en' ? (st.hints > 1 ? 'hints' : 'hint') : (st.hints > 1 ? 'ayudas' : 'ayuda')) : (I18N.LANG === 'en' ? 'no hints' : 'sin ayudas')}\n🔥 ${I18N.LANG === 'en' ? 'Streak' : 'Racha'} ${D.streak}\nhttps://jetgames.fun/estacion/`);
+    const sh = el.querySelector('[data-k=sh]'); if (sh) sh.onclick = (e) => share(`${t('title')} · ${I18N.LANG === 'en' ? 'Transmission' : 'Transmisión'} ${st.date}\n📡 ${I18N.LANG === 'en' ? 'Received in' : 'Recibida en'} ${Math.max(1, Math.round(st.ms / 60000))} ${t('mins')} · ${st.att.length + 1} ${I18N.LANG === 'en' ? (st.att.length ? 'attempts' : 'attempt') : (st.att.length ? 'intentos' : 'intento')} · ${st.hints ? st.hints + ' ' + (I18N.LANG === 'en' ? (st.hints > 1 ? 'hints' : 'hint') : (st.hints > 1 ? 'ayudas' : 'ayuda')) : (I18N.LANG === 'en' ? 'no hints' : 'sin ayudas')}\n🔥 ${I18N.LANG === 'en' ? 'Streak' : 'Racha'} ${D.streak}\nhttps://jetgames.fun/estacion/`, e.currentTarget);
   }
   function dailySolved(cx) {
     const D = CO.DAILY, st = APP.dstate; if (!st.solved) { st.solved = true; const today = st.date; D.streak = D.lastSolved === CO.prevDate(today) ? D.streak + 1 : (D.lastSolved === today ? D.streak : 1); D.lastSolved = today; D.best = Math.max(D.best, D.streak); CO.saveDaily(); }
@@ -659,6 +752,11 @@
   // ================= teclado =================
   addEventListener('keydown', (e) => {
     AU.unlock(); const tag = (document.activeElement || {}).tagName; const inOther = /INPUT|TEXTAREA|SELECT/.test(tag) && document.activeElement !== ans;
+    // RSP-MODALS-01 · ciclo Tab contenido en la capa superior (la pantalla de inicio no es un diálogo)
+    if (e.key === 'Tab') { const tp = top(); if (tp && !tp.classList.contains('home')) { const f = focusables(tp); if (!f.length) { e.preventDefault(); return; } const i = f.indexOf(document.activeElement); if (e.shiftKey && (i <= 0)) { e.preventDefault(); f[f.length - 1].focus(); } else if (!e.shiftKey && (i === -1 || i === f.length - 1)) { e.preventDefault(); f[0].focus(); } } return; }
+    // RSP-NATIVE-KEYS-01 · Enter/Espacio sobre un control activan ese control, nunca una acción del juego
+    const onCtl = e.target && e.target.closest && e.target.closest('button,a[href],input,textarea,select,summary');
+    if (onCtl && (e.key === 'Enter' || e.key === ' ') && e.target !== ans) return;
     if (e.altKey && !e.ctrlKey && !e.metaKey) { const k = e.key.toLowerCase(); if (CO.G && inGame()) { if (k === 'n') { e.preventDefault(); openNotebook(); } else if (k === 'b') { e.preventDefault(); openLog(); } else if (k === 'm' && CO.isSolved('p3')) { e.preventDefault(); openMap(); } else if (k === 'h' && APP.cx) { e.preventDefault(); openHints(); } } return; }
     if (e.key === 'Escape') {
       if (APP.scr === 'intro' && APP.introSkip) { APP.introSkip(); return; }
@@ -675,7 +773,12 @@
       return;
     }
     if ((e.key === 'p' || e.key === 'P') && inGame()) pause();
+    if (APP.scr === 'room' && !APP.insp && (e.key === 'ArrowLeft' || e.key === 'ArrowRight') && !onCtl) { e.preventDefault(); panRoom(e.key === 'ArrowLeft' ? -1 : 1); }
   });
+  // PLAY-ESTACION-07 · la vista de la sala se puede desplazar con controles visibles y flechas, además del arrastre
+  function panRoom(dir) { const cam = APP.cam; if (!cam || cam.pan <= 0) return; APP.rs.px = Math.max(0, Math.min(cam.pan, APP.rs.px + dir * W * .5)); APP.rs.follow = false; }
+  $('#rpL').onclick = () => panRoom(-1); $('#rpR').onclick = () => panRoom(1);
+  function syncRoomPan() { const cam = APP.cam; const show = APP.scr === 'room' && !APP.insp && !!cam && cam.pan > 0; const rp = $('#roomPan'); if (rp.hidden === show) rp.hidden = !show; if (show) { $('#rpL').disabled = APP.rs.px <= 1; $('#rpR').disabled = APP.rs.px >= cam.pan - 1; } }
 
   // ================= visibilidad =================
   document.addEventListener('visibilitychange', () => { if (document.hidden) { CO.saveGame(); AU.suspend(); if (inGame() && !APP.paused && CO.G) pause(); } else { if (!inGame()) AU.resume(); } });
@@ -700,7 +803,7 @@
         if (rs.ax !== rs.tx) { const v = rs.walkV || 600; const dd = rs.tx - rs.ax; const stp = Math.sign(dd) * Math.min(Math.abs(dd), v * dt); rs.ax += stp; rs.ph += dt * 12; rs.face = dd > 0 ? 'r' : 'l'; if (Math.floor(rs.ph / Math.PI) !== Math.floor((rs.ph - dt * 12) / Math.PI)) AU.sfx('step'); rs.follow = true; }
         else if (rs.pending) { const id = rs.pending; rs.pending = null; openInsp(id); }
         if (rs.follow !== false && cam.pan > 0) { const want = Math.max(0, Math.min(cam.pan, rs.ax * cam.s - W / 2)); rs.px += (want - rs.px) * Math.min(1, dt * 4); }
-        rs.px = Math.max(0, Math.min(cam.pan, rs.px));
+        rs.px = Math.max(0, Math.min(cam.pan, rs.px)); syncRoomPan();
         SC.room(g, W, H, tm, { mod: APP.mod, cam, px: rs.px, ax: rs.ax, tx: rs.tx, ph: rs.ph, face: rs.face, sel: rs.sel, hover: rs.hover, get hot() { return rs.hot; }, set hot(v) { rs.hot = v; } });
       } else if (APP.scr === 'hub') { const land = document.body.classList.contains('land'); const topH = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--topH')) + (land ? 6 : 50); APP.hs.top = topH; APP.hs.bot = land ? 10 : 80; SC.hub(g, W, H, tm, APP.hs); }
       else if (APP.scr === 'intro') { APP.introT += dt; g.fillStyle = '#000'; g.fillRect(0, 0, W, H); const p = Math.min(1, Math.max(0, (APP.introT - 6) / 10)); if (p > 0) { DR.glow(g, W / 2, H / 2, Math.min(W, H) * .6 * p, '#5a8cff', p * .8); g.fillStyle = `rgba(200,215,240,${p * .15})`; DR.rrect(g, W * .2, H * .25, W * .6, H * .5, Math.min(W, H) * .2); g.fill(); } }
@@ -731,6 +834,7 @@
     if (DEMO) { CO.G = CO.freshGame(seedFromQ() || 12345); ['p1', 'p2', 'p3'].forEach(id => CO.pz(id).st = 'solved'); CO.G.metas.oxigeno = CO.G.metas.energia = true; ['na-1', 'na-2', 'na-3', 'na-4'].forEach(id => { const s = CO.pz(id); s.st = 'solved'; s.stars = 3; }); APP.scr = 'room'; APP.mod = 'navegacion'; APP.rs.ax = APP.rs.tx = 1050 + 180; APP.rs.face = 'l'; document.body.classList.add('demo'); $('#back').style.display = 'none'; $('#bGear').style.display = 'none'; requestAnimationFrame(frame); return; }
     CO.G = CO.loadGame(); if (CO.G && Q.get('seed') && CO.seedOf(Q.get('seed')) != null && CO.seedOf(Q.get('seed')) !== CO.G.seed) { /* se respeta la partida guardada; el código se usa al crear una nueva */ }
     showHome(); requestAnimationFrame(frame);
+    if (window.__estacionCarga) window.__estacionCarga.listo(); // SRC-G05
     if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => { });
   }
   function seedFromQ() { const s = Q.get('seed'); return s ? CO.seedOf(s) : null; }

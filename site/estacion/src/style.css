@@ -85,9 +85,9 @@ body.land #roomList{display:flex;flex-wrap:nowrap;overflow-x:auto;padding-top:6p
 body.land #roomList .pc{flex:1 0 150px;min-height:46px}
 @keyframes pulse{50%{opacity:.35}}
 
-#hubBar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(12px + var(--sab));z-index:15;display:flex;gap:8px;align-items:center;padding:6px;border-radius:16px;background:rgba(10,5,18,.8);border:1px solid var(--line)}
+#hubBar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(12px + var(--sab));z-index:15;display:flex;gap:8px;align-items:center;padding:6px;border-radius:10px;background:#121D2B;border:1px solid #52677E}
 #hubBar[hidden]{display:none}
-.stars-n{font:700 14px 'JetBrains Mono',monospace;color:#ffd34d;padding:0 10px;white-space:nowrap}
+.stars-n{font:700 16px 'JetBrains Mono',monospace;color:#ffd34d;padding:0 10px;white-space:nowrap}
 
 /* botones */
 .btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:52px;border-radius:14px;font:600 calc(16px*var(--fs)) Poppins,system-ui,sans-serif;color:var(--ink);background:rgba(255,255,255,.05);border:1px solid var(--line);cursor:pointer;transition:transform .12s,background .15s,border-color .15s,box-shadow .15s;margin:0 0 10px;padding:0 16px;text-decoration:none}
@@ -124,7 +124,8 @@ h1,h2,h3,p{margin:0}
 .x:hover{border-color:rgba(0,242,207,.5)}
 
 /* inicio */
-.home{justify-content:flex-end;padding-bottom:calc(22px + var(--sab))}
+.home{justify-content:flex-end;padding-bottom:calc(22px + var(--sab));pointer-events:none}
+.home .hcard{pointer-events:auto}
 .home .hcard{width:100%;max-width:400px;text-align:center;animation:pop .5s cubic-bezier(.2,1.2,.4,1)}
 .logo{font-weight:900;font-size:clamp(34px,10vw,58px);letter-spacing:-.035em;line-height:.98;text-shadow:0 6px 40px rgba(0,0,0,.8)}
 .logo i{font-style:normal;color:var(--cy)}
@@ -358,7 +359,8 @@ html.contrast .i-stage{filter:contrast(1.25) saturate(1.15)}
 .frag svg{width:40px;height:40px}
 details summary::-webkit-details-marker{display:none}
 details[open] summary{border-color:var(--cy)}
-body.demo #top,body.demo #roomList{display:none!important}
+body.demo #top,body.demo #roomList,body.demo #roomPan{display:none!important}
+#iTitle:focus{outline:none}
 body.land #plateBar{left:calc(10px + var(--sal));transform:none;flex-direction:column;align-items:flex-start;gap:4px}
 body.land #hubBar{left:auto;right:calc(12px + var(--sar));transform:none;flex-direction:column;align-items:stretch}
 body.land #hubBar .stars-n{text-align:center;padding:4px 0}

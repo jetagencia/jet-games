@@ -61,28 +61,30 @@ const SC = (() => {
     g.save(); g.translate(cam.ox - st.px, cam.top); g.scale(cam.s, cam.s);
     const x0 = (st.px - cam.ox) / cam.s - 400, x1 = x0 + w / cam.s + 800;
     // pared
-    const wall = g.createLinearGradient(0, 0, 0, RH); wall.addColorStop(0, mix('#0c0720', '#1a1430', done * .5)); wall.addColorStop(1, mix('#110a26', '#20183a', done * .4)); g.fillStyle = wall; g.fillRect(x0, 0, x1 - x0, RH);
-    for (let x = Math.floor(x0 / 210) * 210; x < x1; x += 210) { g.fillStyle = 'rgba(255,255,255,.025)'; g.fillRect(x, 60, 4, 680); g.fillStyle = 'rgba(0,0,0,.25)'; g.fillRect(x + 4, 60, 2, 680); for (let y = 120; y < 700; y += 140) { g.fillStyle = 'rgba(255,255,255,.04)'; g.beginPath(); g.arc(x + 20, y, 4, 0, 7); g.fill(); } }
+    // VIS-ESTACION-01 · materiales de estación: pared #101623→#151E2B, uniones #263343 α.45, suelo #0B1019; la luz propia (MOD_COL) y su relación con el progreso no cambian, sólo el cono ambiental baja de .28 a .16 máx.
+    const wall = g.createLinearGradient(0, 0, 0, RH); wall.addColorStop(0, mix('#101623', '#1B2636', done * .5)); wall.addColorStop(1, mix('#151E2B', '#22303F', done * .4)); g.fillStyle = wall; g.fillRect(x0, 0, x1 - x0, RH);
+    for (let x = Math.floor(x0 / 210) * 210; x < x1; x += 210) { g.fillStyle = 'rgba(38,51,67,.45)'; g.fillRect(x, 60, 4, 680); g.fillStyle = 'rgba(0,0,0,.25)'; g.fillRect(x + 4, 60, 2, 680); for (let y = 120; y < 700; y += 140) { g.fillStyle = 'rgba(255,255,255,.04)'; g.beginPath(); g.arc(x + 20, y, 4, 0, 7); g.fill(); } }
     // techo y luces
-    g.fillStyle = '#07040f'; g.fillRect(x0, 0, x1 - x0, 60); const nl = 6, lit = Math.round(done * nl) + 1;
-    for (let i = 0; i < nl; i++) { const lx = 175 + i * 350, on = i < lit; g.fillStyle = on ? hexA(col, .95) : '#241d33'; rrect(g, lx - 70, 48, 140, 12, 6); g.fill(); if (on) { const cone = g.createLinearGradient(0, 60, 0, 760); cone.addColorStop(0, hexA(col, .18 + done * .1)); cone.addColorStop(1, hexA(col, 0)); g.fillStyle = cone; g.beginPath(); g.moveTo(lx - 70, 60); g.lineTo(lx + 70, 60); g.lineTo(lx + 230, 760); g.lineTo(lx - 230, 760); g.closePath(); g.fill(); } }
+    g.fillStyle = '#070B12'; g.fillRect(x0, 0, x1 - x0, 60); const nl = 6, lit = Math.round(done * nl) + 1;
+    for (let i = 0; i < nl; i++) { const lx = 175 + i * 350, on = i < lit; g.fillStyle = on ? hexA(col, .95) : '#242B36'; rrect(g, lx - 70, 48, 140, 12, 6); g.fill(); if (on) { const cone = g.createLinearGradient(0, 60, 0, 760); cone.addColorStop(0, hexA(col, .10 + done * .06)); cone.addColorStop(1, hexA(col, 0)); g.fillStyle = cone; g.beginPath(); g.moveTo(lx - 70, 60); g.lineTo(lx + 70, 60); g.lineTo(lx + 230, 760); g.lineTo(lx - 230, 760); g.closePath(); g.fill(); } }
     // suelo
-    g.fillStyle = '#0a0616'; g.fillRect(x0, 760, x1 - x0, RH - 760); g.strokeStyle = 'rgba(255,255,255,.05)'; g.lineWidth = 2; for (let x = Math.floor(x0 / 70) * 70; x < x1; x += 70) { g.beginPath(); g.moveTo(x, 760); g.lineTo(x - 40, RH); g.stroke(); } g.fillStyle = hexA(col, .35); g.fillRect(x0, 758, x1 - x0, 3);
+    g.fillStyle = '#0B1019'; g.fillRect(x0, 760, x1 - x0, RH - 760); g.strokeStyle = 'rgba(255,255,255,.05)'; g.lineWidth = 2; for (let x = Math.floor(x0 / 70) * 70; x < x1; x += 70) { g.beginPath(); g.moveTo(x, 760); g.lineTo(x - 40, RH); g.stroke(); } g.fillStyle = hexA(col, .35); g.fillRect(x0, 758, x1 - x0, 3);
     props(g, mod, tm, done, col);
     // paneles
     st.hot = [];
     (PANELS[mod] || []).forEach(([id, x, k]) => {
       const solved = CORE.isSolved(id), unl = CORE.puzzleUnlocked(id), meta = CORE.C.puzzles[id].meta; const pw = 210 * k, ph = 250 * k, y = 300 - (k - 1) * 120;
       const hov = st.hover === id; const sel = st.sel === id;
-      g.save(); if (hov || sel) { g.shadowColor = col; g.shadowBlur = 30; }
-      plate(g, x - pw / 2, y, pw, ph, { r: 16, top: solved ? '#1b2440' : '#1a1028', bot: '#0b0716', edge: solved ? hexA(col, .6) : 'rgba(255,255,255,.1)' }); g.restore();
-      // pantalla
-      const sx = x - pw * .38, sy = y + ph * .14, sw = pw * .76, sh = ph * .5; g.fillStyle = solved ? hexA(col, .16) : unl ? 'rgba(255,68,102,.07)' : 'rgba(255,255,255,.02)'; rrect(g, sx, sy, sw, sh, 10); g.fill();
+      // carcasa #26313D→#141E29, borde #556879, radio 12; luz superior izquierda y sombra suave debajo; halo de hover ≤ 10 px CSS (shadowBlur no escala con cam.s)
+      g.save(); if (hov || sel) { g.shadowColor = col; g.shadowBlur = 10; } else { g.shadowColor = 'rgba(0,0,0,.45)'; g.shadowBlur = 10; g.shadowOffsetY = 6; }
+      plate(g, x - pw / 2, y, pw, ph, { r: 12, top: '#26313D', bot: '#141E29', edge: solved ? hexA(col, .6) : '#556879' }); g.restore();
+      // pantalla: negro #071016 + color de estado existente (no toda la tarjeta roja)
+      const sx = x - pw * .38, sy = y + ph * .14, sw = pw * .76, sh = ph * .5; g.fillStyle = '#071016'; rrect(g, sx, sy, sw, sh, 10); g.fill(); g.fillStyle = solved ? hexA(col, .16) : unl ? 'rgba(255,68,102,.07)' : 'rgba(255,255,255,.02)'; rrect(g, sx, sy, sw, sh, 10); g.fill();
       if (solved) { g.strokeStyle = hexA(col, .9); g.lineWidth = 3; g.beginPath(); for (let i = 0; i <= 30; i++) { const xx = sx + 10 + i * (sw - 20) / 30; const yy = sy + sh / 2 + Math.sin(i * .6 + tm * 3) * sh * .18 * (1 - Math.abs(i - 15) / 18); i ? g.lineTo(xx, yy) : g.moveTo(xx, yy); } g.stroke(); }
       else if (unl) { g.fillStyle = 'rgba(255,68,102,.4)'; for (let i = 0; i < 6; i++) g.fillRect(sx + 14 + i * (sw - 28) / 6, sy + sh * .5 + Math.sin(i * 1.7 + Math.floor(tm * 2)) * sh * .25, (sw - 28) / 9, 4); }
       else { text(g, '🔒', x, sy + sh / 2, { s: 40, c: '#555' }); }
       // LED de estado
-      const led = solved ? col : unl ? '#ff4466' : '#3a3346'; const pulse = !solved && unl ? .5 + .5 * Math.sin(tm * 4) : 1; g.globalAlpha = pulse; glow(g, x, y + ph * .78, 40, led, .9); g.fillStyle = led; g.beginPath(); g.arc(x, y + ph * .78, 9, 0, 7); g.fill(); g.globalAlpha = 1;
+      const led = solved ? col : unl ? '#ff4466' : '#3a3346'; const pulse = !solved && unl && !rm() ? .75 + .25 * Math.sin(tm * 4) : 1; g.globalAlpha = pulse; glow(g, x, y + ph * .78, Math.min(40, 12 / cam.s), led, .9); g.fillStyle = led; g.beginPath(); g.arc(x, y + ph * .78, 9, 0, 7); g.fill(); g.globalAlpha = 1; // LED: estado y punto iguales; halo ≤ 12 px CSS, pulso .75–1, estable con «reducir movimiento»
       if (meta) { const fr = [0, 1, 2, 3].map(f => CORE.isSolved(CORE.MOD_PUZ[mod][f])); fr.forEach((o, i) => { g.fillStyle = o ? DR.FRAG_COL[i] : 'rgba(255,255,255,.08)'; rrect(g, x - 70 + i * 37, y + ph * .86, 30, 16, 5); g.fill(); }); }
       st.hot.push({ id, x: x - pw / 2, y, w: pw, h: ph, cx: x });
     });
@@ -149,25 +151,27 @@ const SC = (() => {
     g.fillStyle = '#04010a'; g.fillRect(0, 0, w, h); starfield(g, w, h, tm, .7);
     const top = st.top, bot = st.bot; const X = w / 2, Y = top + (h - top - bot) / 2; const R = Math.min(w * .44, (h - top - bot) * .44); st.ring = { X, Y, R };
     const allLit = CORE.G.metas.energia; const pulse = .5 + .5 * Math.sin(tm * 2);
-    // anillo
-    g.strokeStyle = allLit ? 'rgba(240,240,255,.18)' : 'rgba(255,255,255,.06)'; g.lineWidth = R * .5; g.beginPath(); g.arc(X, Y, R * .72, 0, 7); g.stroke();
+    // anillo (VIS-ESTACION-02): base #152333 con borde #52677E de 1 px; sectores y radios de impacto (.36/.45/1.0) intactos
+    g.strokeStyle = allLit ? '#1B2C40' : '#152333'; g.lineWidth = R * .5; g.beginPath(); g.arc(X, Y, R * .72, 0, 7); g.stroke();
+    g.strokeStyle = '#52677E'; g.lineWidth = 1; [R * .47, R * .97].forEach(rr => { g.beginPath(); g.arc(X, Y, rr, 0, 7); g.stroke(); });
     st.sectors = [];
     CORE.MODS.forEach((m, i) => {
       const a0 = -Math.PI / 2 - Math.PI / 6 + i * Math.PI / 3 + .03, a1 = a0 + Math.PI / 3 - .06, am = (a0 + a1) / 2; const unl = CORE.modUnlocked(m), done = CORE.G.metas[m], col = CORE.MOD_COL[m];
       const hov = st.hover === m;
       g.beginPath(); g.arc(X, Y, R * .97, a0, a1); g.arc(X, Y, R * .47, a1, a0, true); g.closePath();
-      g.fillStyle = done ? hexA(col, .3) : unl ? hexA('#7700f4', .22 + (hov ? .15 : 0) + .08 * pulse * (CORE.modProgress(m) ? 0 : 1)) : 'rgba(255,255,255,.03)'; g.fill();
-      g.strokeStyle = done ? col : unl ? hexA('#b48cff', .6) : 'rgba(255,255,255,.08)'; g.lineWidth = hov ? 3 : 1.5; g.stroke();
-      if (done) { g.save(); g.clip(); glow(g, X + Math.cos(am) * R * .72, Y + Math.sin(am) * R * .72, R * .4, col, .7); g.restore(); }
+      // bloqueado #101925/#344454 · disponible #253249/#9DAFCA (hover sólo +.06 de relleno y borde 2 px, sin pulso) · completo MOD_COL a .20 y borde 1.5 px
+      g.fillStyle = done ? hexA(col, .20 + (hov ? .06 : 0)) : unl ? (hov ? '#2B3A54' : '#253249') : '#101925'; g.fill();
+      g.strokeStyle = done ? col : unl ? '#9DAFCA' : '#344454'; g.lineWidth = hov ? 2 : done ? 1.5 : unl ? 1.5 : 1; g.stroke();
+      if (done) { g.save(); g.clip(); glow(g, X + Math.cos(am) * R * .72, Y + Math.sin(am) * R * .72, R * .4, col, .35); g.restore(); }
       const ix = X + Math.cos(am) * R * .76, iy = Y + Math.sin(am) * R * .76; const s = R * .26;
-      g.save(); g.translate(ix, iy - s * .25); g.strokeStyle = done ? col : unl ? '#e6dcff' : '#4a4458'; g.lineWidth = Math.max(1.5, s * .07); g.lineJoin = 'round'; ICON[m](g, s); g.restore();
-      const fs = Math.max(10, Math.min(14, R * .075)); const nmM = I18N.t('m.' + m).toUpperCase(); text(g, nmM, ix, iy + s * .32, { s: fit(g, nmM, R * .44, fs, { w: 700 }), w: 700, c: done ? col : unl ? COL.ink : '#5a5468' });
+      g.save(); g.translate(ix, iy - s * .25); g.strokeStyle = done ? col : unl ? '#e6dcff' : '#4a4458'; g.lineWidth = Math.min(2, Math.max(1.5, s * .07)); g.lineJoin = 'round'; g.lineCap = 'round'; ICON[m](g, s); g.restore();
+      const fs = Math.max(12, Math.min(14, R * .075)); const nmM = I18N.t('m.' + m).toUpperCase(); text(g, nmM, ix, iy + s * .32, { s: fit(g, nmM, R * .44, fs, { w: 600, f: 'pop' }), w: 600, f: 'pop', c: done ? col : unl ? COL.ink : '#5a5468' });
       if (!unl) { const sl = '🔒 ' + I18N.t(m === 'energia' ? 'sealed.pressure' : 'sealed.power'); text(g, sl, ix, iy + s * .32 + fs * 1.3, { s: fit(g, sl, R * .44, fs * .82), c: '#6a6478' }); }
-      else { const n = CORE.modProgress(m); for (let k = 0; k < 4; k++) { g.fillStyle = CORE.isSolved(CORE.MOD_PUZ[m][k]) ? col : 'rgba(255,255,255,.18)'; g.beginPath(); g.arc(ix - 22 + k * 11, iy + s * .32 + fs * 1.3, 3.2, 0, 7); g.fill(); } g.fillStyle = done ? col : 'rgba(255,255,255,.18)'; g.save(); g.translate(ix + 26, iy + s * .32 + fs * 1.3); g.rotate(Math.PI / 4); g.fillRect(-3.5, -3.5, 7, 7); g.restore(); void n; }
+      else { const n = CORE.modProgress(m); g.lineWidth = 1; g.strokeStyle = 'rgba(157,175,202,.9)'; for (let k = 0; k < 4; k++) { g.fillStyle = CORE.isSolved(CORE.MOD_PUZ[m][k]) ? col : 'rgba(255,255,255,.12)'; g.beginPath(); g.arc(ix - 22 + k * 11, iy + s * .32 + fs * 1.3, 3.2, 0, 7); g.fill(); g.stroke(); } g.fillStyle = done ? col : 'rgba(255,255,255,.12)'; g.save(); g.translate(ix + 26, iy + s * .32 + fs * 1.3); g.rotate(Math.PI / 4); g.fillRect(-3.5, -3.5, 7, 7); g.strokeRect(-3.5, -3.5, 7, 7); g.restore(); void n; }
       st.sectors.push({ m, a0, a1 });
     });
     // núcleo: observatorio
-    const obs = CORE.modUnlocked('observatorio'); const cr = R * .36; g.fillStyle = obs ? '#141838' : '#0a0716'; g.beginPath(); g.arc(X, Y, cr, 0, 7); g.fill(); g.strokeStyle = obs ? '#eef3ff' : 'rgba(255,255,255,.1)'; g.lineWidth = 2; g.stroke(); if (obs) glow(g, X, Y, cr * 1.6, '#eef3ff', .4 + .3 * pulse); // el borde se traza antes del halo: glow() abre un trazado nuevo de radio 1,6·cr y el stroke lo dibujaba como un aro blanco sobre los nombres
+    const obs = CORE.modUnlocked('observatorio'); const cr = R * .36; g.fillStyle = obs ? '#141838' : '#0a0716'; g.beginPath(); g.arc(X, Y, cr, 0, 7); g.fill(); g.strokeStyle = obs ? '#eef3ff' : 'rgba(255,255,255,.1)'; g.lineWidth = 2; g.stroke(); if (obs) glow(g, X, Y, cr + 8, '#eef3ff', .15 + (rm() ? 0 : .05 * pulse)); // halo ≤ 8 px y alfa ≈ .15: no tapa los nombres // el borde se traza antes del halo: glow() abre un trazado nuevo de radio 1,6·cr y el stroke lo dibujaba como un aro blanco sobre los nombres
     g.save(); g.beginPath(); g.arc(X, Y, cr - 3, 0, 7); g.clip(); for (let i = 0; i < 40; i++) { const a = i * 2.4, r = Math.sqrt(i / 40) * cr; g.fillStyle = `rgba(230,235,255,${obs ? .7 : .15})`; g.fillRect(X + Math.cos(a + tm * .05) * r, Y + Math.sin(a + tm * .05) * r, 1.6, 1.6); } g.restore();
     text(g, I18N.t('m.observatorio').toUpperCase(), X, Y + cr * .55, { s: Math.max(9, R * .055), w: 700, c: obs ? '#eef3ff' : '#4a4458' });
     // astronauta flotando en el sector actual

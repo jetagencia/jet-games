@@ -90,7 +90,7 @@
   }
   function detailsBox(g, cx, x, y, w, det) {
     const L = cx.lang; const rows = Object.entries(det).map(([k, v]) => [t('tr.' + k), k === 'hand' ? t('tr.' + v) : k === 'mug' ? t('tr.' + v) : k === 'boots' ? t('tr.' + v) : String(v), k === 'mug' ? MUG[v] : null]);
-    const h = 30 + rows.length * 24; plate(g, x, y, w, h, { top: '#1a1030', bot: '#100a20', edge: 'rgba(0,242,207,.4)', rivets: false }); text(g, t('tr.seen').toUpperCase(), x + 12, y + 15, { s: 10, a: 'left', c: COL.cy, w: 700 });
+    const h = 30 + rows.length * 24; plate(g, x, y, w, h, { top: '#171D29', bot: '#10151F', edge: 'rgba(0,242,207,.4)', rivets: false }); text(g, t('tr.seen').toUpperCase(), x + 12, y + 15, { s: 10, a: 'left', c: COL.cy, w: 700 });
     rows.forEach(([k, v, sw], i) => { const yy = y + 36 + i * 24; text(g, k, x + 12, yy, { s: 13, a: 'left', c: COL.dim }); text(g, v, x + w - 12, yy, { s: 14, a: 'right', w: 800, c: COL.ink }); if (sw) { g.fillStyle = sw; g.beginPath(); g.arc(x + w - 24 - g.measureText(v).width, yy, 6, 0, 7); g.fill(); } }); return h;
   }
   function fileOverlay(g, cx, w, h) {
@@ -174,7 +174,7 @@
     tools(cx) { return [{ id: 'photo', label: t('t.photometer'), on: cx.ui.photo }, { id: 'erase', label: t('t.erase') }]; },
     tool(cx, id) { if (id === 'photo') cx.ui.photo = !cx.ui.photo; else { cx.ui.lines = []; cx.sel = null; } cx.sfx('tap'); cx.save(); },
     draw(g, cx, tm) {
-      const { w, h } = cx; bg(g, w, h, '#1a2050'); const bh = 54;
+      const { w, h } = cx; bg(g, w, h, '#0B172B'); const bh = 54; // VIS-06: fondo azul negro; posiciones, glifos y conexiones intactos
       cx.groups.forEach(gr => gr.hidden = !cx.ui.pin[gr.mod]);
       STARS.starField(g, Object.assign(cx, { h: h - bh }), null, cx.groups, cx.bgs, { top: 0, tm }); cx.h = h;
       const P = cx.P;
@@ -184,7 +184,7 @@
       CORE.MODS.forEach(m => { if (!cx.ui.pin[m]) return; const [x, y] = P(WP[m][0] - 2, WP[m][1] - 4); text(g, CORE.META_WORD[m], x, y, { s: 11, w: 800, c: '#ffe08a', a: 'left' }); });
       // palabras recuperadas para fijar
       cx.hits = []; const bw = Math.min(110, (w - 20) / 6 - 6); const y = h - bh + 8;
-      CORE.MODS.forEach((m, i) => { const x = w / 2 + (i - 2.5) * (bw + 6) - bw / 2; const on = cx.ui.pin[m]; plate(g, x, y, bw, bh - 16, { r: 10, top: on ? '#2a2060' : '#141030', bot: '#0b0820', rivets: false, glow: on ? '#ffe08a' : null }); text(g, CORE.META_WORD[m], x + bw / 2, y + (bh - 16) / 2, { s: Math.min(14, bw * .16), w: 800, c: on ? '#ffe08a' : COL.ink }); cx.hits.push({ x, y, w: bw, h: bh - 16, m }); });
+      CORE.MODS.forEach((m, i) => { const x = w / 2 + (i - 2.5) * (bw + 6) - bw / 2; const on = cx.ui.pin[m]; plate(g, x, y, bw, bh - 16, { r: 10, top: on ? '#2a2060' : '#0B172B', bot: '#08111F', edge: on ? '#ffe08a' : '#3F5879', rivets: false, glow: on ? '#ffe08a' : null, gb: 8 }); text(g, CORE.META_WORD[m], x + bw / 2, y + (bh - 16) / 2, { s: Math.min(14, bw * .16), w: 800, c: on ? '#ffe08a' : COL.ink }); cx.hits.push({ x, y, w: bw, h: bh - 16, m }); });
       if (!all && !Object.keys(cx.ui.pin).length) text(g, t('obs.tap'), w / 2, y - 16, { s: 12, c: COL.dim, f: 'pop', w: 500 });
     },
     down(cx, x, y) { const hh = (cx.hits || []).find(r => inR(x, y, r)); if (hh) { if (!cx.ui.pin[hh.m]) { cx.ui.pin[hh.m] = true; cx.sfx('glyph'); cx.vib(12); cx.save(); } return; } STARS.starTap(cx, cx.groups, x, y); },

@@ -16,7 +16,8 @@ window.PZ = window.PZ || {};
       const { w, h } = cx; bg(g, w, h, '#1d2a5a');
       const B = box(w, h, 1.55, 18); cx.B = B;
       // marco de la cápsula
-      g.save(); rrect(g, B.x - 10, B.y - 10, B.w + 20, B.h + 20, B.h * .32); const fr = g.createLinearGradient(0, B.y, 0, B.y + B.h); fr.addColorStop(0, '#d9deef'); fr.addColorStop(1, '#7d86a8'); g.fillStyle = fr; g.fill(); g.restore();
+      // VIS-ESTACION-04 · sólo el borde de la cápsula: acero #B8C8D5→#708698 y sombra 8 px; espejo, vaho, cobertura y 6 s intactos
+      g.save(); g.shadowColor = 'rgba(0,0,0,.5)'; g.shadowBlur = 8; g.shadowOffsetY = 2; rrect(g, B.x - 10, B.y - 10, B.w + 20, B.h + 20, B.h * .32); const fr = g.createLinearGradient(0, B.y, 0, B.y + B.h); fr.addColorStop(0, '#B8C8D5'); fr.addColorStop(1, '#708698'); g.fillStyle = fr; g.fill(); g.restore();
       g.save(); rrect(g, B.x, B.y, B.w, B.h, B.h * .28); g.clip();
       const gr = g.createRadialGradient(B.x + B.w * .5, B.y + B.h * .55, 10, B.x + B.w * .5, B.y + B.h * .5, B.w * .6); gr.addColorStop(0, '#3a5fae'); gr.addColorStop(.6, '#152049'); gr.addColorStop(1, '#070a1c'); g.fillStyle = gr; g.fillRect(B.x, B.y, B.w, B.h);
       for (let i = 0; i < 26; i++) { const px = B.x + ((i * 97) % 100) / 100 * B.w, py = B.y + ((i * 53) % 100) / 100 * B.h; g.fillStyle = 'rgba(200,220,255,.35)'; g.beginPath(); g.arc(px, py + Math.sin(tm * .4 + i) * 3, 1.2, 0, 7); g.fill(); }
@@ -42,6 +43,11 @@ window.PZ = window.PZ || {};
     },
     wipe(cx, x, y) { const B = cx.B; if (!B) return; const u = (x - B.x) / B.w * 160, v = (y - B.y) / B.h * 100; if (u < -10 || v < -10 || u > 170 || v > 110) return; const f = cx.fg; f.globalCompositeOperation = 'destination-out'; const gr = f.createRadialGradient(u, v, 0, u, v, 16); gr.addColorStop(0, 'rgba(0,0,0,1)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); f.fillStyle = gr; f.beginPath(); f.arc(u, v, 16, 0, 7); f.fill(); cx.wiped++; },
     down(cx, x, y) { this.wipe(cx, x, y); }, move(cx, x, y, e, dn) { this.wipe(cx, x, y); }, hover(cx, x, y) { this.wipe(cx, x, y); },
+    // PLAY-ESTACION-03 · equivalente con teclado: una pasada de limpieza por el centro del cristal (misma operación que el dedo; no invierte ni resuelve la inscripción; el vaho vuelve igual)
+    a11y(cx, host) {
+      host.innerHTML = `<button type="button" class="tool" data-k="wipe">${t('fog.kb')}</button>`;
+      host.querySelector('[data-k=wipe]').onclick = () => { const B = cx.B; if (!B) return; for (const v of [34, 50, 66]) for (let u = 6; u <= 154; u += 7) this.wipe(cx, B.x + u / 160 * B.w, B.y + v / 100 * B.h); cx.sfx('key'); };
+    },
   };
 
   // ================= P2 · Luces (interruptores) =================
@@ -71,7 +77,7 @@ window.PZ = window.PZ || {};
       const by = h - swH - 14; cx.hits = [];
       for (let k = 0; k < 3; k++) {
         const bw = Math.min(110, (w - 60) / 3), x = w / 2 + (k - 1) * (bw + 14) - bw / 2, on = sw >> k & 1;
-        plate(g, x, by, bw, swH, { top: on ? '#2a1f4a' : '#171125', bot: '#0e0919', glow: on ? COL.cy : null });
+        plate(g, x, by, bw, swH, { top: on ? '#22313F' : '#18232E', bot: '#0F171F', edge: '#6D8194', lw: 1.5, inner: true, glow: on ? COL.cy : null }); // VIS-04: carcasa carbón; el encendido conserva su halo (es estado)
         SYM(g, k, x + bw / 2, by + swH * .28, Math.min(26, swH * .24), on ? COL.cy : '#8b7fb0');
         const lx = x + bw / 2, ly = by + swH * .68; g.fillStyle = '#0a0612'; rrect(g, lx - 14, ly - 22, 28, 44, 10); g.fill();
         g.fillStyle = on ? COL.cy : '#5c5478'; rrect(g, lx - 10, on ? ly - 19 : ly + 1, 20, 18, 7); g.fill();
@@ -79,9 +85,22 @@ window.PZ = window.PZ || {};
       }
       if (cx.flash > 0) { g.fillStyle = `rgba(255,240,200,${cx.flash * .12})`; g.fillRect(0, 0, w, h); cx.flash = Math.max(0, cx.flash - .08); }
     },
-    toggle(cx, k) { cx.ui.sw ^= (1 << k); cx.flash = 1; cx.sfx('toggle', cx.ui.sw >> k & 1); cx.vib(8); cx.save(); },
+    toggle(cx, k) { cx.ui.sw ^= (1 << k); cx.flash = 1; cx.sfx('toggle', cx.ui.sw >> k & 1); cx.vib(8); cx.save(); this.sync(cx); },
     down(cx, x, y) { const hh = (cx.hits || []).find(r => inR(x, y, r)); if (hh) this.toggle(cx, hh.k); },
     key(cx, e) { const k = '123'.indexOf(e.key); if (k >= 0) { this.toggle(cx, k); return true; } },
+    // PLAY-ESTACION-03 · tres controles DOM sincronizados con los interruptores del lienzo (aria-pressed + estado en texto).
+    // Sólo se expone la letra del tubo encendido por el estado actual; las combinaciones no visitadas no se revelan.
+    a11y(cx, host) {
+      cx.a11yHost = host;
+      host.innerHTML = [0, 1, 2].map(k => `<button type="button" class="tool swb" data-k="${k}" aria-pressed="false"><span class="sym" aria-hidden="true">${['●', '▲', '■'][k]}</span>${t(['sw.circle', 'sw.tri', 'sw.sq'][k])} · <span class="st"></span></button>`).join('') + '<span class="ia-live" role="status" aria-live="polite"></span>';
+      host.querySelectorAll('.swb').forEach(b => b.onclick = () => this.toggle(cx, +b.dataset.k));
+      this.sync(cx);
+    },
+    sync(cx) {
+      const host = cx.a11yHost; if (!host || !host.isConnected) return; const sw = cx.ui.sw;
+      host.querySelectorAll('.swb').forEach(b => { const on = sw >> +b.dataset.k & 1; b.setAttribute('aria-pressed', on ? 'true' : 'false'); b.querySelector('.st').textContent = t(on ? 'sw.on' : 'sw.off'); });
+      const live = host.querySelector('.ia-live'); if (live) live.textContent = sw ? `${t('sw.on')}: ${cx.d.map[sw] || ''}` : '';
+    },
   };
 
   // ================= P3 · Compuerta (tres fuentes parciales, sala ancha) =================
@@ -99,14 +118,14 @@ window.PZ = window.PZ || {};
       for (let x = 0; x < CW; x += 160) { g.fillStyle = (x / 160) % 2 ? '#120c22' : '#150e28'; g.fillRect(x, 0, 160, h * .78); g.fillStyle = 'rgba(255,255,255,.04)'; g.fillRect(x, 0, 2, h * .78); }
       g.fillStyle = '#0b0716'; g.fillRect(0, h * .78, CW, h * .22); g.fillStyle = 'rgba(0,242,207,.18)'; g.fillRect(0, h * .78, CW, 2);
       // compuerta en el centro de la sala
-      const hx = CW * .5 - 70; plate(g, hx, h * .2, 140, h * .58, { top: '#25203a', bot: '#120d20' }); text(g, '▮▮', hx + 70, h * .3, { s: 12, c: '#ff4466' });
+      const hx = CW * .5 - 70; plate(g, hx, h * .2, 140, h * .58, { top: '#18232E', bot: '#0F171F', edge: '#6D8194', lw: 1.5, inner: true }); text(g, '▮▮', hx + 70, h * .3, { s: 12, c: '#ff4466' });
       const word = d.w; const L = (s) => s;
       const [pSign, pPatch, pMug] = d.pos;
       // cartel institucional rayado
       { const cxp = CW * pSign, sw2 = Math.min(560, w * 1.1), sh2 = h * .2, x = cxp - sw2 / 2, y = h * .08; plate(g, x, y, sw2, sh2, { top: '#f2efe6', bot: '#d8d2c2', edge: 'rgba(0,0,0,.3)' }); text(g, t('p3.sign'), cxp, y + sh2 * .2, { s: Math.max(10, sh2 * .12), c: '#5a5040', w: 700, ls: 3 });
         const m = d.src[0]; const fs = Math.min(sh2 * .45, sw2 * .9 / word); for (let i = 0; i < word; i++) { const lx = cxp - (word - 1) / 2 * fs * .8 + i * fs * .8, ly = y + sh2 * .62; if (m[i] !== '_') text(g, m[i], lx, ly, { s: fs, w: 800, f: 'pop', c: '#2a2338' }); else { g.strokeStyle = 'rgba(90,70,60,.75)'; g.lineWidth = 2; for (let k = 0; k < 4; k++) { g.beginPath(); g.moveTo(lx - fs * .3 + k * 3, ly - fs * .32); g.lineTo(lx + fs * .25 + k * 2, ly + fs * .3 - k * 4); g.stroke(); } } } }
       // casillero con el parche del traje (letras pequeñas: hace falta acercar)
-      { const cxp = CW * pPatch, x = cxp - 70, y = h * .3; plate(g, x, y, 140, h * .48, { top: '#2c2448', bot: '#191230' }); g.fillStyle = '#e8ebf5'; rrect(g, x + 22, y + 26, 96, h * .4, 20); g.fill();
+      { const cxp = CW * pPatch, x = cxp - 70, y = h * .3; plate(g, x, y, 140, h * .48, { top: '#18232E', bot: '#0F171F', edge: '#6D8194', lw: 1.5, inner: true }); g.fillStyle = '#e8ebf5'; rrect(g, x + 22, y + 26, 96, h * .4, 20); g.fill();
         const r = 26, py = y + 26 + h * .14; g.fillStyle = '#1b1240'; g.beginPath(); g.arc(cxp, py, r, 0, 7); g.fill(); g.strokeStyle = COL.cy; g.lineWidth = 2; g.stroke();
         text(g, t('p3.patch'), cxp, py - 11, { s: 6, c: COL.cy, w: 700 });
         const m = d.src[1]; text(g, [...m].map(c => c === '_' ? '·' : c).join(''), cxp, py + 4, { s: 7.5, c: '#fff', w: 800 }); }
@@ -146,7 +165,7 @@ window.PZ = window.PZ || {};
       });
       if (cx.ui.sign) {
         const cols = w > h ? 6 : 4, rows = Math.ceil(d.table.length / cols); const bw = Math.min(88, (w - 30) / cols), bh = bw * .9; const tw = cols * bw, th = rows * bh + 30, x0b = (w - tw) / 2, y0b = (h - th) / 2;
-        plate(g, x0b - 10, y0b - 6, tw + 20, th + 14, { top: '#0e2420', bot: '#081512', edge: 'rgba(63,224,176,.4)' }); text(g, t('sign.elements'), w / 2, y0b + 10, { s: 11, c: '#3fe0b0', w: 700, ls: 2 });
+        plate(g, x0b - 10, y0b - 6, tw + 20, th + 14, { top: '#12372E', bot: '#0A241F', edge: '#507D6C' }); text(g, t('sign.elements'), w / 2, y0b + 10, { s: 11, c: '#3fe0b0', w: 700, ls: 2 });
         d.table.forEach(([s, es, en, z], i) => { const x = x0b + (i % cols) * bw, y = y0b + 24 + Math.floor(i / cols) * bh; g.strokeStyle = 'rgba(63,224,176,.35)'; g.strokeRect(x + 3, y + 3, bw - 6, bh - 6); text(g, String(z), x + 9, y + 12, { s: 9, a: 'left', c: '#7ccfb8' }); text(g, s, x + bw / 2, y + bh * .45, { s: bw * .26, w: 800, f: 'pop' }); text(g, cx.lang === 'en' ? en : es, x + bw / 2, y + bh * .78, { s: Math.min(11, fit(g, cx.lang === 'en' ? en : es, bw - 10, 11)), c: COL.dim }); });
       }
     },
@@ -282,13 +301,13 @@ window.PZ = window.PZ || {};
         else { g.fillStyle = '#3c9a4e'; g.beginPath(); g.ellipse(x, y, 4, 7, 0, 0, 7); g.fill(); }
       }
       // tablero y tuberías
-      plate(g, bx - 8, by - 8, S + 16, S + 16, { top: '#123b33', bot: '#0b241f', edge: 'rgba(63,224,176,.3)' });
+      plate(g, bx - 8, by - 8, S + 16, S + 16, { top: '#12372E', bot: '#0A241F', edge: '#507D6C' }); // VIS-04: soporte verde oscuro; 5×5, letras, conectores y floración intactos
       const cc = (i) => [bx + (i % 5) * c + c / 2, by + Math.floor(i / 5) * c + c / 2];
       const conn = d.pipes.map((p) => { const [sx, sy] = cc(p.start); const out = [[0, -1], [1, 0], [0, 1], [-1, 0]][p.side]; return [sx + out[0] * c * .95, sy + out[1] * c * .95]; });
       d.pipes.forEach((p, f) => {
         if (!cx.owned(f)) return; const col = FRAG_COL[f]; const [cnx, cny] = conn[f];
         g.save(); g.strokeStyle = col; g.lineWidth = c * .16; g.lineCap = 'round'; g.lineJoin = 'round'; g.globalAlpha = .85; g.beginPath(); g.moveTo(cnx, cny); p.path.forEach(i => { const [x, y] = cc(i); g.lineTo(x, y); }); g.stroke();
-        g.setLineDash([c * .12, c * .22]); g.lineDashOffset = -tm * 30; g.strokeStyle = 'rgba(255,255,255,.7)'; g.lineWidth = c * .05; g.stroke(); g.restore();
+        g.setLineDash([c * .12, c * .22]); g.lineDashOffset = RM() ? 0 : -tm * 30; g.strokeStyle = 'rgba(255,255,255,.45)'; g.lineWidth = c * .05; g.stroke(); g.restore(); // VIS-04: brillo de ruta .45; bajo «reducir movimiento» sólo se detiene el guion decorativo, no la floración
       });
       // las tomas van encima de su tubería, para que su letra se lea siempre
       d.pipes.forEach((p, f) => { const own = cx.owned(f), col = FRAG_COL[f]; const [cnx, cny] = conn[f]; g.fillStyle = own ? col : '#2a3a36'; g.beginPath(); g.arc(cnx, cny, c * .28, 0, 7); g.fill(); g.strokeStyle = 'rgba(0,0,0,.35)'; g.lineWidth = 2; g.stroke(); text(g, 'ABCD'[f], cnx, cny + 1, { s: c * .28, w: 800, c: own ? '#06201a' : '#5c6f6a' }); });
@@ -306,7 +325,7 @@ window.PZ = window.PZ || {};
       const { w, h, d } = cx; bg(g, w, h, '#4a2a0a'); const n = d.al.length; const land = w > h;
       const topP = land ? 0 : Math.min(h * .36, 70 + Math.min(54, w * .8 / 4.5) * 1.9 + 40); const R = land ? Math.min(h * .44, w * .3) : Math.min(w * .43, (h - topP) * .45), cxw = land ? w * .34 : w / 2, cyw = land ? h / 2 : topP + (h - topP) / 2 + 6; cx.W = { x: cxw, y: cyw, R };
       let da = cx.ui.rot - cx.ang; if (da > n / 2) da -= n; if (da < -n / 2) da += n; cx.ang += da * Math.min(1, dt * 16); cx.ang = ((cx.ang % n) + n) % n;
-      g.fillStyle = '#1d1408'; g.beginPath(); g.arc(cxw, cyw, R + 8, 0, 7); g.fill(); g.fillStyle = '#e9dcc0'; g.beginPath(); g.arc(cxw, cyw, R, 0, 7); g.fill();
+      g.fillStyle = '#2E2B25'; g.beginPath(); g.arc(cxw, cyw, R + 8, 0, 7); g.fill(); g.strokeStyle = '#A6997D'; g.lineWidth = 1; g.stroke(); g.fillStyle = '#e9dcc0'; g.beginPath(); g.arc(cxw, cyw, R, 0, 7); g.fill();
       g.fillStyle = '#2b2214'; g.beginPath(); g.arc(cxw, cyw, R * .72, 0, 7); g.fill();
       const step = Math.PI * 2 / n;
       for (let i = 0; i < n; i++) { const a = -Math.PI / 2 + i * step; text(g, d.al[i], cxw + Math.cos(a) * R * .86, cyw + Math.sin(a) * R * .86, { s: Math.min(R * .13, 18), w: 800, c: '#2a1f10' }); g.strokeStyle = 'rgba(0,0,0,.2)'; g.beginPath(); g.moveTo(cxw + Math.cos(a + step / 2) * R * .74, cyw + Math.sin(a + step / 2) * R * .74); g.lineTo(cxw + Math.cos(a + step / 2) * R, cyw + Math.sin(a + step / 2) * R); g.stroke(); }
@@ -340,7 +359,7 @@ window.PZ = window.PZ || {};
       const { w, h, d } = cx; bg(g, w, h, '#3a1d08'); cx.hits = [];
       const tw = Math.min(84, (w - 30) / 5), th = tw * 1.15; const x0 = (w - tw * 5 - 4 * 6) / 2;
       d.b.forEach((b, i) => {
-        const x = x0 + i * (tw + 6), y = 10, sel = cx.ui.sel === i, ok = this.solved(cx, i); plate(g, x, y, tw, th, { top: sel ? '#3a2a12' : '#1d1408', bot: '#120c04', glow: sel ? COL.amber : ok ? '#7dff9a' : null, rivets: false });
+        const x = x0 + i * (tw + 6), y = 10, sel = cx.ui.sel === i, ok = this.solved(cx, i); plate(g, x, y, tw, th, { top: sel ? '#3a2a12' : '#2E2B25', bot: '#1E1C18', edge: '#A6997D', glow: sel ? COL.amber : ok ? '#7dff9a' : null, rivets: false });
         g.fillStyle = '#0a0703'; rrect(g, x + 8, y + 8, tw - 16, th * .44, 5); g.fill(); if (ok) text(g, b.L, x + tw / 2, y + 8 + th * .22, { s: th * .34, w: 800, c: '#7dff9a', glow: '#7dff9a' });
         const ms = (tw - 20) / 4; for (let c = 0; c < 16; c++) { g.fillStyle = cx.ui.b[i][c] === '1' ? COL.amber : 'rgba(255,255,255,.1)'; g.fillRect(x + 10 + (c % 4) * ms, y + th * .56 + Math.floor(c / 4) * ms * .82, ms - 2, ms * .82 - 2); }
         text(g, String(i + 1), x + tw - 10, y + 10, { s: 9, c: COL.dim });
@@ -353,7 +372,7 @@ window.PZ = window.PZ || {};
       const compact = rw > w - 20;
       for (let k = 1; k <= b.rule; k++) { icon(k, rx + rs / 2, top + rs / 2, rs); if (!compact) text(g, t('rule.' + k), rx + rs + 4, top + rs / 2, { s: 10, a: 'left', c: '#e6c58f' }); rx += compact ? rs + 10 : rs + 70; }
       const S = Math.min(w - 40, h - top - rs - 30), bx = (w - S) / 2, by = top + rs + 14, c = S / 4; cx.B = { x: bx, y: by, c };
-      const ok = this.solved(cx, i); plate(g, bx - 8, by - 8, S + 16, S + 16, { top: '#24180a', bot: '#140d05', glow: ok ? '#7dff9a' : null });
+      const ok = this.solved(cx, i); plate(g, bx - 8, by - 8, S + 16, S + 16, { top: '#2E2B25', bot: '#1E1C18', edge: '#A6997D', glow: ok ? '#7dff9a' : null });
       for (let q = 0; q < 16; q++) { const x = bx + (q % 4) * c, y = by + Math.floor(q / 4) * c, on = cx.ui.b[i][q] === '1'; g.fillStyle = on ? (ok ? '#7dff9a' : COL.amber) : '#2a1e10'; rrect(g, x + 4, y + 4, c - 8, c - 8, 8); g.fill(); if (on) { g.save(); g.globalAlpha = .4; glow(g, x + c / 2, y + c / 2, c * .6, ok ? '#7dff9a' : COL.amber); g.restore(); } if (b.bolts.includes(q)) { g.fillStyle = '#9aa2b8'; g.beginPath(); g.arc(x + c / 2, y + c / 2, c * .16, 0, 7); g.fill(); g.strokeStyle = '#333'; g.lineWidth = 2; g.beginPath(); g.moveTo(x + c / 2 - c * .1, y + c / 2); g.lineTo(x + c / 2 + c * .1, y + c / 2); g.stroke(); } }
     },
     down(cx, x, y) {
@@ -376,7 +395,7 @@ window.PZ = window.PZ || {};
       const { w, h, d } = cx; bg(g, w, h, '#3a1d08'); const word = [...d.w]; const n = word.length;
       const rows = (w < h && n > 5) ? 2 : 1, per = Math.ceil(n / rows);
       const unit = Math.min((w - 40) / (per * 3.4 + 2), (h - 40) / (rows * 4.6 + 1)); const gx = (w - (per * 3.4 + 2) * unit) / 2, gy = (h - (rows * 4.6 + 1) * unit) / 2;
-      plate(g, gx - unit * .4, gy - unit * .4, (per * 3.4 + 2) * unit + unit * .8, (rows * 4.6 + 1) * unit + unit * .8, { top: '#4a4f5c', bot: '#2c3039', edge: 'rgba(255,255,255,.15)' });
+      plate(g, gx - unit * .4, gy - unit * .4, (per * 3.4 + 2) * unit + unit * .8, (rows * 4.6 + 1) * unit + unit * .8, { top: '#1F262E', bot: '#141A20', edge: '#3C485C' }); // VIS-04: marco oscuro mate; puntos Braille intactos
       const L = cx.lp, R = Math.max(54, Math.min(w, h) * .16); cx.riv = [];
       for (let i = 0; i < n; i++) {
         const row = Math.floor(i / per), col = i % per; const ox = gx + unit * 1.3 + col * 3.4 * unit, oy = gy + unit * 1.1 + row * 4.6 * unit; const pat = C.braille[word[i]] || '';
@@ -446,7 +465,7 @@ window.PZ = window.PZ || {};
       const sy = y0 + dh + 50, sw = Math.min(90, (w - 40) / 4.4); cx.hits = [];
       for (let f = 0; f < 4; f++) {
         const x = w / 2 + (f - 1.5) * sw * 1.2 - sw / 2, own = cx.owned(f), ins = cx.ui.ins[f];
-        plate(g, x, sy, sw, sw * 1.15, { top: ins ? '#3a2a12' : '#1d1408', bot: '#120c04', glow: ins ? COL.amber : null });
+        plate(g, x, sy, sw, sw * 1.15, { top: ins ? '#3a2a12' : '#2E2B25', bot: '#1E1C18', edge: '#A6997D', glow: ins ? COL.amber : null });
         fuseShape(g, f, x + sw / 2, sy + sw * .45, sw * .55, ins ? COL.amber : 'rgba(255,255,255,.25)', ins);
         text(g, ins ? '◉' : own ? (cx.lang === 'en' ? 'insert' : 'insertar') : t('frag.missing'), x + sw / 2, sy + sw * .98, { s: 10, c: own ? (ins ? COL.amber : COL.ink) : COL.dim });
         cx.hits.push({ x, y: sy, w: sw, h: sw * 1.15, f });

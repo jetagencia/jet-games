@@ -2,14 +2,19 @@
 'use strict';
 const DR = (() => {
   const COL = { bg: '#050108', bg2: '#0a0418', ink: '#f5f0ff', dim: '#b5a8d8', cy: '#00f2cf', vi: '#7700f4', red: '#ff4466', amber: '#ffb347', mono: "'JetBrains Mono',ui-monospace,monospace", pop: "Poppins,system-ui,sans-serif" };
+  // VIS-ESTACION-03 · tokens decorativos (opt-in por función): fondo, tinta, marcos. No tocan RAINBOW/FRAG_COL/FONT5 ni colores de señales.
+  const ART = { bg: '#090F18', ink: '#EDF4F8', dim: '#B3C1CF', plateTop: '#253240', plateBot: '#15202C', edge: '#52677A', gridA: 0.025 };
   const RAINBOW = ['#ff4d5e', '#ff9a3d', '#ffe14d', '#4be37a', '#2fe6f0', '#4d7dff', '#b46bff'];
   const FONT5 = { A: '01110100011000111111100011000110001', B: '11110100011000111110100011000111110', C: '01111100001000010000100001000001111', D: '11110100011000110001100011000111110', E: '11111100001000011110100001000011111', F: '11111100001000011110100001000010000', G: '01111100001000010011100011000101111', H: '10001100011000111111100011000110001', I: '01110001000010000100001000010001110', J: '00111000100001000010000101001001100', K: '10001100101010011000101001001010001', L: '10000100001000010000100001000011111', M: '10001110111010110101100011000110001', N: '10001110011010110011100011000110001', Ñ: '01110000001000111001101011001110001', O: '01110100011000110001100011000101110', P: '11110100011000111110100001000010000', Q: '01110100011000110001101011001001101', R: '11110100011000111110101001001010001', S: '01111100001000001110000010000111110', T: '11111001000010000100001000010000100', U: '10001100011000110001100011000101110', V: '10001100011000110001100010101000100', W: '10001100011000110101101011010101010', X: '10001100010101000100010101000110001', Y: '10001100010101000100001000010000100', Z: '11111000010001000100010001000011111' };
   function rrect(g, x, y, w, h, r) { r = Math.min(r, w / 2, h / 2); g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }
+  // plate: carcasa exterior #253240→#15202C, borde #52677A de 1 px (o.lw), reflejo superior .10; o.inner añade sombra interna de 2 px.
   function plate(g, x, y, w, h, o = {}) {
-    const r = o.r ?? 10; const gr = g.createLinearGradient(x, y, x, y + h); gr.addColorStop(0, o.top || '#1b1330'); gr.addColorStop(1, o.bot || '#0f0a1e');
+    const r = o.r ?? 10; const gr = g.createLinearGradient(x, y, x, y + h); gr.addColorStop(0, o.top || ART.plateTop); gr.addColorStop(1, o.bot || ART.plateBot);
     g.fillStyle = gr; rrect(g, x, y, w, h, r); g.fill();
-    g.strokeStyle = o.edge || 'rgba(255,255,255,.09)'; g.lineWidth = 1; g.stroke();
-    if (o.glow) { g.save(); g.shadowColor = o.glow; g.shadowBlur = 18; g.strokeStyle = o.glow; g.globalAlpha = 0.6; rrect(g, x, y, w, h, r); g.stroke(); g.restore(); }
+    g.strokeStyle = o.edge || ART.edge; g.lineWidth = o.lw || 1; g.stroke();
+    if (o.reflect !== false && h > 10) { g.save(); rrect(g, x, y, w, h, r); g.clip(); g.fillStyle = 'rgba(255,255,255,.10)'; g.fillRect(x + 1, y + 1, w - 2, 1); g.restore(); }
+    if (o.inner) { g.save(); rrect(g, x, y, w, h, r); g.clip(); g.strokeStyle = 'rgba(0,0,0,.35)'; g.lineWidth = 4; rrect(g, x, y, w, h, r); g.stroke(); g.restore(); }
+    if (o.glow) { g.save(); g.shadowColor = o.glow; g.shadowBlur = o.gb || 18; g.strokeStyle = o.glow; g.globalAlpha = 0.6; rrect(g, x, y, w, h, r); g.stroke(); g.restore(); }
     if (o.rivets !== false) { const m = Math.min(9, r); [[x + m, y + m], [x + w - m, y + m], [x + m, y + h - m], [x + w - m, y + h - m]].forEach(([a, b]) => { g.fillStyle = 'rgba(255,255,255,.14)'; g.beginPath(); g.arc(a, b, 2.2, 0, 7); g.fill(); g.fillStyle = 'rgba(0,0,0,.4)'; g.beginPath(); g.arc(a + .6, b + .6, 1.2, 0, 7); g.fill(); }); }
   }
   function text(g, s, x, y, o = {}) {
@@ -22,8 +27,8 @@ const DR = (() => {
   function glow(g, x, y, r, col, a = 1) { const gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, hexA(col, 0.55 * a)); gr.addColorStop(1, hexA(col, 0)); g.fillStyle = gr; g.beginPath(); g.arc(x, y, r, 0, 7); g.fill(); }
   function hexA(hex, a) { if (hex.startsWith('rgba')) return hex; const n = parseInt(hex.slice(1), 16); return `rgba(${n >> 16 & 255},${n >> 8 & 255},${n & 255},${a})`; }
   function mix(h1, h2, t) { const a = parseInt(h1.slice(1), 16), b = parseInt(h2.slice(1), 16); const c = (s) => Math.round(((a >> s) & 255) * (1 - t) + ((b >> s) & 255) * t); return `rgb(${c(16)},${c(8)},${c(0)})`; }
-  function grid(g, w, h, step = 28, a = 0.045) { g.strokeStyle = `rgba(160,140,255,${a})`; g.lineWidth = 1; g.beginPath(); for (let x = (w % step) / 2; x < w; x += step) { g.moveTo(x + .5, 0); g.lineTo(x + .5, h); } for (let y = (h % step) / 2; y < h; y += step) { g.moveTo(0, y + .5); g.lineTo(w, y + .5); } g.stroke(); }
-  function bg(g, w, h, tint) { g.fillStyle = '#07030f'; g.fillRect(0, 0, w, h); const gr = g.createRadialGradient(w * .5, h * .4, 10, w * .5, h * .5, Math.max(w, h) * .75); gr.addColorStop(0, hexA(tint || '#2a1458', 0.35)); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.fillRect(0, 0, w, h); grid(g, w, h); }
+  function grid(g, w, h, step = 28, a = ART.gridA) { g.strokeStyle = `rgba(160,140,255,${a})`; g.lineWidth = 1; g.beginPath(); for (let x = (w % step) / 2; x < w; x += step) { g.moveTo(x + .5, 0); g.lineTo(x + .5, h); } for (let y = (h % step) / 2; y < h; y += step) { g.moveTo(0, y + .5); g.lineTo(w, y + .5); } g.stroke(); }
+  function bg(g, w, h, tint) { g.fillStyle = ART.bg; g.fillRect(0, 0, w, h); const gr = g.createRadialGradient(w * .5, h * .4, 10, w * .5, h * .5, Math.max(w, h) * .75); gr.addColorStop(0, hexA(tint || '#2a1458', 0.35)); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.fillRect(0, 0, w, h); grid(g, w, h); }
   function font5(g, ch, x, y, px, col) { const b = FONT5[ch]; if (!b) return; g.fillStyle = col; for (let i = 0; i < 35; i++) if (b[i] === '1') g.fillRect(x + (i % 5) * px, y + Math.floor(i / 5) * px, px * 0.9, px * 0.9); }
   // display de 9 segmentos (a b c d e f g + h i verticales centrales)
   function seg9(g, x, y, w, h, on, colOn, colOff) {
@@ -65,6 +70,6 @@ const DR = (() => {
     g.restore();
   }
   const FRAG_COL = ['#00f2cf', '#b46bff', '#ffb347', '#ff6fae'];
-  return { COL, RAINBOW, FONT5, rrect, plate, text, fit, glow, hexA, mix, grid, bg, font5, seg9, star, chip, iconBulb, picto, fuseShape, FRAG_COL };
+  return { COL, ART, RAINBOW, FONT5, rrect, plate, text, fit, glow, hexA, mix, grid, bg, font5, seg9, star, chip, iconBulb, picto, fuseShape, FRAG_COL };
 })();
 window.DR = DR;
