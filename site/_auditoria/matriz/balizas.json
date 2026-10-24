@@ -1,0 +1,244 @@
+[
+ {
+  "id": "SRC-BA02",
+  "estado": "implementado",
+  "archivos": [
+   "site/balizas/src/main.js",
+   "site/balizas/index.html",
+   "site/balizas/src/i18n.js",
+   "site/balizas/src/style.css"
+  ],
+  "detalle": "copyText() devuelve éxito sólo con clipboard o execCommand === true (restaurando el foco tras el textarea oculto); si falla, #shareFb (diálogo con textarea readonly, «Copiar texto», «Cerrar») sustituye al toast; «Texto copiado» sólo con copia confirmada; AbortError de navigator.share es silencioso.",
+  "verificacion": "Playwright: con clipboard y execCommand fallando se abre #shareFb con el texto íntegro y sin toast; cerrar devuelve el foco al botón Compartir."
+ },
+ {
+  "id": "PLAY-BALIZAS-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/balizas/src/main.js",
+   "site/balizas/index.html",
+   "site/balizas/src/i18n.js",
+   "site/balizas/src/style.css"
+  ],
+  "detalle": "HUD con #modeTag «Tutorial · práctica local»; la valoración del tutorial se rotula «Valorá esta baliza de práctica» con subtítulo rate_sim, respuesta «Valoración de práctica registrada. No se publica.» y botón «Terminar valoración»; el vuelo oficial conserva «Vuelo oficial»/«Volar el campo de hoy». No se añadió ningún envío: el tutorial usa balizas simuladas y N.queue no cambia.",
+  "verificacion": "Playwright: durante el tutorial no hay POST a api.php y la cola de votos no crece; la preparación oficial se abre sin despegar ni publicar."
+ },
+ {
+  "id": "PLAY-BALIZAS-02",
+  "estado": "implementado",
+  "archivos": [
+   "site/balizas/src/main.js",
+   "site/balizas/index.html"
+  ],
+  "detalle": "show() libera entradas y activa ST.keyGuard: listeners en captura bloquean keydown repetidos y el primer keyup de Espacio/Enter tras cambiar de pantalla; el foco va al encabezado (tabindex=-1) de resultado/valoración/cierre, no a un CTA.",
+  "verificacion": "Playwright: llegar con Espacio mantenido no salta el resumen; soltar o volver a pulsar Espacio sobre el encabezado no cambia de pantalla."
+ },
+ {
+  "id": "PLAY-BALIZAS-03",
+  "estado": "implementado",
+  "archivos": [
+   "site/balizas/src/render.js",
+   "site/balizas/src/style.css"
+  ],
+  "detalle": "Mapa miniatura con tokens R.MAP, ruta sin shadowBlur (ancho ≥ 1.8), nave con contorno oscuro de 1 px, bordes .65; #mini es role=img con nombre «Mapa miniatura», ampliable con teclado (enlarge_map). La niebla jugable no se modificó: sólo el ruido decorativo se congela con movimiento reducido.",
+  "verificacion": "Captura balizas-resultado-390.png y vuelo: el campo se lee sin revelar niebla oculta."
+ },
+ {
+  "id": "PLAY-BALIZAS-04",
+  "estado": "implementado",
+  "archivos": [
+   "site/balizas/src/main.js",
+   "site/balizas/index.html",
+   "site/balizas/src/i18n.js",
+   "site/balizas/src/style.css"
+  ],
+  "detalle": "keysLine(mode) adapta la guía a teclado/táctil (keys_steer/keys_act/touch_steer; la ayuda de escritorio no dice «Arrastra»); #pauseKeys y #dayKeys muestran la leyenda; los avisos (toast) se limpian al cambiar de pantalla y no tapan botones; pausa «Reanudar partida».",
+  "verificacion": "Playwright: pausa con «Reanudar partida», leyenda «E: colocar baliza», toast vacío; ayuda de escritorio sin «Arrastra»."
+ },
+ {
+  "id": "PLAY-BALIZAS-05",
+  "estado": "implementado",
+  "archivos": [
+   "site/balizas/src/main.js",
+   "site/balizas/index.html",
+   "site/balizas/src/i18n.js",
+   "site/balizas/src/style.css"
+  ],
+  "detalle": "Selector radial con aria-modal, botón «Cancelar» visible (#selCancel), título con balizas disponibles, Escape cierra y devuelve el foco al botón de baliza (o al lienzo en escritorio); tras colocar, #undoBar (role=status) ofrece «Deshacer colocación» durante 5 s con «undo_dur» y aviso «undo_expired» al vencer.",
+  "verificacion": "Playwright: abrir selector → Escape → foco en beaconBtn/#cv; colocar baliza muestra Deshacer y vence a los 5 s."
+ },
+ {
+  "id": "PLAY-BALIZAS-06",
+  "estado": "implementado",
+  "archivos": [
+   "site/balizas/index.html",
+   "site/balizas/src/main.js",
+   "site/balizas/src/i18n.js"
+  ],
+  "detalle": "Ajustes con etiquetas por id + aria-labelledby, deslizadores «Volumen de música»/«Volumen de efectos», secciones (.sect) y botón de retorno contextual: «Volver al inicio» / «Volver a la pausa» / «Volver a la ayuda» (openOver fija [data-close]).",
+  "verificacion": "Playwright: nombres distintos en todos los interruptores; [data-close] cambia según el origen."
+ },
+ {
+  "id": "PLAY-BALIZAS-07",
+  "estado": "implementado",
+  "archivos": [
+   "site/balizas/src/main.js",
+   "site/balizas/index.html",
+   "site/balizas/src/i18n.js",
+   "site/balizas/src/style.css"
+  ],
+  "detalle": "Pantalla #tutEnd tras la práctica: «Llegaste a la Puerta Norte», resumen con datos reales (objetivo cumplido, casco %, tesoros opcionales), botones «Revisar la baliza de práctica», «Repetir práctica», «Ver preparación del vuelo oficial» y «Tutorial completado» tras valorar.",
+  "verificacion": "Playwright: resumen con /Casco: \\d+%/ y /Tesoros: \\d\\/\\d/; «Ver preparación…» no despega ni publica."
+ },
+ {
+  "id": "RSP-BALIZAS-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/balizas/index.html",
+   "site/balizas/src/main.js",
+   "site/balizas/src/i18n.js"
+  ],
+  "detalle": "Interruptores de Ajustes con aria-labelledby a su etiqueta visible (lbMini «Mostrar mapa miniatura», etc.).",
+  "verificacion": "Playwright: cada .tog resuelve un nombre único."
+ },
+ {
+  "id": "RSP-BALIZAS-02",
+  "estado": "implementado",
+  "archivos": [
+   "site/balizas/src/main.js",
+   "site/balizas/src/style.css",
+   "site/balizas/index.html"
+  ],
+  "detalle": "positionSelector() usa usableRect() con safe areas: radio = min(112,(uw−84)/2,(uh−84)/2), modo cuadrícula si < 52, centro acotado; #selCancel y #dialCancel explícitos; el foco vuelve al activador visible.",
+  "verificacion": "Capturas balizas-sel-768x390.png: el selector cabe en apaisado corto; Escape/Cancelar devuelven el foco."
+ },
+ {
+  "id": "RSP-GLOBAL-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/balizas/index.html",
+   "site/balizas/src/style.css"
+  ],
+  "detalle": "Viewport sin maximum-scale/user-scalable; .scr con touch-action:pan-y pinch-zoom; el lienzo conserva su control de puntero.",
+  "verificacion": "Playwright: meta viewport sin user-scalable; paneles desplazables."
+ },
+ {
+  "id": "SRC-BA01",
+  "estado": "implementado",
+  "archivos": [
+   "site/balizas/src/i18n.js",
+   "site/balizas/index.html",
+   "site/balizas/src/main.js"
+  ],
+  "detalle": "Modo libre con nota (free_note), «Repetir vuelo», «Reiniciar vuelo», «Abandonar vuelo» con confirmación que explica consecuencias (cons_oficial/cons_libre), «Continuar», «Omitir valoración», «Compartir resultado», «Clasificación».",
+  "verificacion": "Playwright: abandonar abre alertdialog con Cancelar enfocado; textos ES verificados."
+ },
+ {
+  "id": "VIS-BALIZAS-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/balizas/src/render.js"
+  ],
+  "detalle": "Rocas: trazo de cráter .10, puntos .02–.05, borde .60/.16; la silueta navegable no cambia.",
+  "verificacion": "Capturas de vuelo: silueta clara, textura discreta."
+ },
+ {
+  "id": "VIS-BALIZAS-02",
+  "estado": "implementado",
+  "archivos": [
+   "site/balizas/src/render.js"
+  ],
+  "detalle": "Estrellas .18/.28 en vuelo y .25/.40 en menú, niebla .18; pulse() devuelve 1 y el ruido de niebla se congela con movimiento reducido (sin alterar visibilidad jugable).",
+  "verificacion": "Capturas: fondo tranquilo; con reduced motion sin parpadeo."
+ },
+ {
+  "id": "VIS-BALIZAS-03",
+  "estado": "implementado",
+  "archivos": [
+   "site/balizas/src/render.js"
+  ],
+  "detalle": "Balizas: halo 2.2·sz alfa .26·p, glifo con alfa ≥ .8; rango y valoración después del glifo.",
+  "verificacion": "Capturas de vuelo: el glifo domina."
+ },
+ {
+  "id": "VIS-BALIZAS-04",
+  "estado": "implementado",
+  "archivos": [
+   "site/balizas/src/render.js",
+   "site/balizas/src/style.css",
+   "site/balizas/src/main.js"
+  ],
+  "detalle": "Tokens R.MAP compartidos por miniatura y resultado; figura .res-map con leyenda #resRoute «Tu ruta»; leyenda con boya y peligro en SVG.",
+  "verificacion": "Captura balizas-resultado-390.png."
+ },
+ {
+  "id": "VIS-BALIZAS-05",
+  "estado": "implementado",
+  "archivos": [
+   "site/balizas/src/style.css"
+  ],
+  "detalle": "Paneles .card ciruela #100920 con borde y radio 18, .btn.pri sólido #5424a8 (hover #6032b5), .hv neutro, etiquetas 12 px, animación pop reducida a énfasis de color de 180 ms.",
+  "verificacion": "Capturas 320/390/768/1280 del inicio y resultado."
+ },
+ {
+  "id": "SRC-G01",
+  "estado": "no_aplicable",
+  "archivos": [],
+  "detalle": "Balizas · las tarjetas .card[href] están en la home; el regreso del juego usa «Volver a los juegos» conservando idioma.",
+  "verificacion": "—"
+ },
+ {
+  "id": "SRC-G02",
+  "estado": "ya_corregido_verificado",
+  "archivos": [
+   "site/balizas/index.html",
+   "site/balizas/src/main.js"
+  ],
+  "detalle": "Balizas · selector ES/EN existente conservado; relang repinta las pantallas abiertas.",
+  "verificacion": "Playwright: ?lang=en prevalece; textos EN verificados."
+ },
+ {
+  "id": "SRC-G03",
+  "estado": "implementado",
+  "archivos": [
+   "site/balizas/src/i18n.js",
+   "site/balizas/index.html"
+  ],
+  "detalle": "Balizas · «Reanudar partida», «Volver al menú», «Volver a los juegos», «Repetir vuelo», «Reiniciar vuelo»; «Despegar» y «Volar el campo de hoy» conservados.",
+  "verificacion": "Playwright: etiquetas en pausa/resultado."
+ },
+ {
+  "id": "SRC-G04",
+  "estado": "implementado",
+  "archivos": [
+   "site/balizas/src/main.js",
+   "site/balizas/index.html",
+   "site/balizas/src/i18n.js",
+   "site/balizas/src/style.css"
+  ],
+  "detalle": "Balizas · #confirm (alertdialog) «¿Borrar todo el progreso de JET//Balizas?» con enumeración real ({datos concretos}), lo que se conserva, Cancelar enfocado y «Borrar progreso»; vacía también N.queue.",
+  "verificacion": "Playwright: Escape conserva el estado; el primer clic nunca borra."
+ },
+ {
+  "id": "SRC-G05",
+  "estado": "implementado",
+  "archivos": [
+   "site/balizas/index.html",
+   "site/balizas/src/style.css",
+   "site/balizas/src/main.js"
+  ],
+  "detalle": "Balizas · __balizasCarga + #carga con título, mensajes de error de red/interrupción, «Volver a cargar» y «Volver a los juegos»; boot llama listo().",
+  "verificacion": "Playwright: carga normal oculta #carga; smoke sólo con los 404 esperados de api.php."
+ },
+ {
+  "id": "SRC-G06",
+  "estado": "implementado",
+  "archivos": [
+   "site/balizas/src/main.js",
+   "site/balizas/index.html",
+   "site/balizas/src/i18n.js"
+  ],
+  "detalle": "Balizas · ver SRC-BA02: compartir íntegro, éxito veraz, cancelación silenciosa y fallback persistente con «Copiar texto»/«Cerrar».",
+  "verificacion": "Playwright: diálogo de fallback sin toast falso."
+ }
+]

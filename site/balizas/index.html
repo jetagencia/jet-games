@@ -164,7 +164,7 @@
     <p class="badge warn ratesub" id="rateSub" hidden data-t="rate_sim"></p>
     <div class="rcards" id="rCards"></div>
     <p class="note center" id="rateEnd" hidden role="status"></p>
-    <div class="row"><button class="btn" id="rateSkip" data-t="skip" type="button"></button><button class="btn pri" id="rateDone" type="button"></button></div>
+    <div class="row"><button class="btn" id="rateSkip" data-t="skip" type="button"></button><button class="btn pri" id="rateDone" type="button" data-t="done"></button></div>
   </div>
 </section>
 
@@ -188,7 +188,7 @@
     <h2 id="cfTitle" class="ctitle"></h2>
     <p id="cfBody" class="sub small left"></p>
     <p id="cfKeep" class="note" hidden></p>
-    <div class="row"><button class="btn" id="cfCancel" type="button" data-t="cancel"></button><button class="btn danger" id="cfOk" type="button"></button></div>
+    <div class="row"><button class="btn" id="cfCancel" type="button" data-t="cancel"></button><button class="btn danger" id="cfOk" type="button" data-t="reset_do"></button></div>
   </div>
 </section>
 
@@ -209,7 +209,7 @@
     <div class="tabs" role="tablist"><button role="tab" class="tab on" id="tabToday" data-t="tab_today"></button><button role="tab" class="tab" id="tabYest" data-t="tab_yesterday"></button></div>
     <p class="note" id="tabNote" hidden></p>
     <div class="tbl" id="tbl"></div>
-    <div class="alias-row"><span id="myAlias"></span><button class="link" id="rerollBtn"></button></div>
+    <div class="alias-row"><span id="myAlias"></span><button class="link" id="rerollBtn" type="button" data-t="reroll"></button></div>
   </div>
 </section>
 

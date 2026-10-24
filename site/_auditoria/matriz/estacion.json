@@ -1,0 +1,270 @@
+[
+ {
+  "id": "RSP-ESTACION-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/estacion/src/ui.js",
+   "site/estacion/src/style.css",
+   "site/estacion/src/i18n.js"
+  ],
+  "detalle": "Capturas del Cuaderno como tarjeta no interactiva con dos botones hermanos: button.clip-open (imagen + nombre «Abrir captura de {contexto}») y button.clip-delete 44×44 («Eliminar captura de {contexto}»), contexto = P1 · título del enigma. El visor es una pantalla .card.viewer con role=dialog, aria-modal, título visible «Captura de …», botón cerrar 44×44 y clic en el fondo como salida opcional; cerrar devuelve el foco a la captura de origen; eliminar enfoca la siguiente o el encabezado (h2 tabindex=-1).",
+  "verificacion": "Playwright (test_estacion.mjs): abrir/cerrar/eliminar sólo con Tab/Enter/Espacio/Escape; foco de retorno verificado en los tres casos; botones de 44 px sin anidar."
+ },
+ {
+  "id": "RSP-MODALS-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/estacion/src/ui.js",
+   "site/estacion/src/style.css",
+   "site/estacion/index.html"
+  ],
+  "detalle": "screen(html, cls, opener) guarda el activador, marca la .card como role=dialog (alertdialog en confirmaciones) con aria-modal y aria-labelledby a su h2 (id estable dlg-tN), tabindex=-1 en la tarjeta, aplica inert a #insp/#top/#roomList/#roomPan/#hubBar/#plateBar/#bGear/#back y a las capas inferiores (syncInert), enfoca el primer control útil (o [data-focus]) sin condicionar a pointer:fine; Tab/Shift+Tab se contienen en la capa superior (keydown); closeScreen marca inert la capa en salida, restaura inert y devuelve el foco al activador visible, si no al diálogo inferior o al inspector. #insp lleva aria-labelledby=\"iTitle\" y closeInsp enfoca la tarjeta del enigma en lugar de .blur().",
+  "verificacion": "Playwright: Ajustes desde el inicio (nombre, foco dentro, inicio y engranaje inertes, 40 Tabs sin salir, Escape devuelve a #bGear); Pausa → Ajustes → cerrar → foco en el botón Ajustes de la pausa; Ayudas deja #insp inerte y devuelve el foco a #hintBtn."
+ },
+ {
+  "id": "VIS-ESTACION-03",
+  "estado": "implementado",
+  "archivos": [
+   "site/estacion/src/draw.js",
+   "site/estacion/src/style.css"
+  ],
+  "detalle": "DR.ART (bg #090F18, plate #253240→#15202C, borde #52677A 1 px con reflejo .10, grid alfa .025) aplicado por función: bg() y plate() con nuevos valores por defecto y opciones lw/inner/gb/reflect; RAINBOW/FRAG_COL/FONT5/COL de señales intactos. Inspector: h2 18 px/600, .kick 12 px, pregunta 15 px/1.5 sans, .tool radio 8 con activo de 2 px (inset), pista sobre ámbar .08 y 14 px, sello sin scale 1.8 (opacity + 1.04 en 160 ms; nada con html.reduce), escenario con borde #52677A.",
+  "verificacion": "Capturas estacion-p2-{320,390,768,1280}.png; comprobación de animación del sello bajo reduce = none (test). Sin cambios en hit areas ni en geometría de pistas."
+ },
+ {
+  "id": "VIS-ESTACION-04",
+  "estado": "implementado",
+  "archivos": [
+   "site/estacion/src/puzzles-a.js",
+   "site/estacion/src/draw.js"
+  ],
+  "detalle": "fog: sólo borde de cápsula acero #B8C8D5→#708698 con sombra 8 px (espejo, vaho y 6 s intactos). switch/parts: carcasa carbón #18232E, borde 1.5 px #6D8194 y sombra interna; el encendido conserva su halo (estado). grille/pots/bubbles/pipes: soporte #12372E→#0A241F con contorno #507D6C; en pipes el brillo de ruta pasa de .7 a .45 y el guion decorativo se detiene bajo «reducir movimiento» sin tocar la floración. wheel/boards/segments: carcasa #2E2B25 con detalle #A6997D. braille: marco mate #1F262E/#141A20. Morse sin cambios. Ninguna letra, posición, punto, duración ni segmento cambió (los valores de d.* y las rutinas de verificación no se tocaron).",
+  "verificacion": "Capturas estacion-p2-*; node --check; smoke 0 errores. Las serializaciones (cx.ui.*) y los verificadores de core.js no se modificaron."
+ },
+ {
+  "id": "VIS-ESTACION-05",
+  "estado": "implementado",
+  "archivos": [
+   "site/estacion/src/puzzles-b.js"
+  ],
+  "detalle": "spectro: sólo bezel #172B2B/#608B86 (la matriz señal/ruido se dibuja igual, sin suavizado). keypad: marcos #122B29/#527B73, pulsado #16473E, halo ≤ 6 px, misma 3×4 y alturas. dial: borde #8E7F5C, radio 6 y sombra interior; escala marfil y aguja roja intactas. echoes/lyre: tinte de fondo #0D2523 e instrumentos carbón; sin ondas decorativas nuevas. stars/catalog/chart/parallax/atlas: fondo #0B172B, marcos #3F5879, etiquetas #D7E3F4 de 12 px; coordenadas y tamaños intactos.",
+  "verificacion": "node --check; smoke 0 errores; sin cambios en d.band/d.w/pitch/seq ni en los verificadores."
+ },
+ {
+  "id": "VIS-ESTACION-06",
+  "estado": "implementado",
+  "archivos": [
+   "site/estacion/src/style.css",
+   "site/estacion/src/ui.js",
+   "site/estacion/src/puzzles-c.js"
+  ],
+  "detalle": "Lista .pc: fondo #172332, radio 10, borde #394B5E; .lock con fondo #121922 y texto #9EACBA (sin opacity), icono de candado; disponible con punto rojo fijo (sin pulso) y texto «Disponible»; resuelto con check en color de módulo y «Resuelto · {estrellas} estrellas»; nombres completos en dos líneas. Archivo (.ar-e): superficie #171D29, 15 px/1.6, encabezados 12 px mono, separadores #3C485C. Starchart: fondo #0B172B y marcos #3F5879; posiciones, glifos y conexiones intactos. Halo de estrellas y plateGlyph no se tocaron para no alterar el tamaño aparente.",
+  "verificacion": "Playwright: tarjetas con aria-label «Enigma P1: … · Disponible» y «Bloqueado» con opacity 1; capturas estacion-sala-*."
+ },
+ {
+  "id": "PLAY-ESTACION-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/estacion/index.html",
+   "site/estacion/src/style.css",
+   "site/estacion/src/ui.js",
+   "site/estacion/src/i18n.js"
+  ],
+  "detalle": "Columna de lectura continua: enunciado (#iQ) → alternativas → pistas → etiqueta visible «Tu respuesta» (label for=ans) → «Formato de respuesta: {cantidad} letras» (#answerFormat, de cx.V.len del enigma vigente) → campo → estado. En apaisado la rejilla usa filas auto/auto/auto/1fr para que la barra siga al contenido y sólo quede fija cuando éste excede la altura (la columna hace scroll). La indicación de letras es orientativa: no se añadió validación ni se tocó CO.verify.",
+  "verificacion": "Playwright: label «Tu respuesta», aria-describedby=\"iQ answerFormat ansStatus\", formato igual a cx.V.len.es; capturas estacion-p2-1280.png (apaisado) y 320/390."
+ },
+ {
+  "id": "PLAY-ESTACION-02",
+  "estado": "implementado",
+  "archivos": [
+   "site/estacion/src/ui.js",
+   "site/estacion/index.html",
+   "site/estacion/src/style.css",
+   "site/estacion/src/i18n.js"
+  ],
+  "detalle": "#ansStatus (role=status, aria-live) junto al campo: «Esa respuesta no es correcta. Probá otra.» en la rama genérica, el mensaje específico en mid/trap/near/enie/other/repeat y «Respuesta correcta. Sistema reparado.» (diario: «Respuesta correcta.») al acertar; envío vacío muestra «Escribí una respuesta de {cantidad} letras.»; el foco vuelve al campo sin borrarlo; el historial tachado se conserva. Sin cambios en puntuación, normalización, espera ni control de intentos.",
+  "verificacion": "Playwright: tras «ZZZZ» el estado muestra el texto, el valor sigue, el foco está en #ans y #iAtt tiene la ficha."
+ },
+ {
+  "id": "PLAY-ESTACION-03",
+  "estado": "implementado",
+  "archivos": [
+   "site/estacion/src/puzzles-a.js",
+   "site/estacion/src/ui.js",
+   "site/estacion/index.html",
+   "site/estacion/src/style.css",
+   "site/estacion/src/i18n.js"
+  ],
+  "detalle": "PZ.switch.a11y: tres botones DOM «Interruptor círculo/triángulo/cuadrado · Encendido/Apagado» con aria-pressed, sincronizados en ambos sentidos con el lienzo y las teclas 1/2/3 (toggle → sync); un role=status expone sólo la letra del tubo que enciende el estado actual. PZ.fog.a11y: «Limpiar cristal con teclado» ejecuta la misma pasada de limpieza por el centro (sin invertir ni resolver; el vaho vuelve igual). Guía «Arrastrá para limpiar el cristal.» válida para ratón y táctil. Contenedor #iA11y limpiado al cerrar.",
+  "verificacion": "Playwright: pulsar el triángulo deja cx.ui.sw=2, aria-pressed=true y «Encendido: <letra de d.map[2]>»; limpiar con teclado incrementa cx.wiped."
+ },
+ {
+  "id": "PLAY-ESTACION-04",
+  "estado": "implementado",
+  "archivos": [
+   "site/estacion/src/ui.js",
+   "site/estacion/src/i18n.js",
+   "site/estacion/src/style.css"
+  ],
+  "detalle": "Resultado con «Leer transcripción» (abre la Bitácora en modo lectura: texto completo visible, sin audio ni animación) separado de «Reproducir grabación» (icono SVG propio, no emoji); el reproductor rotula «Detener grabación» (detener y volver a reproducir reinicia desde el inicio) y ofrece «Leer transcripción» también desde la Bitácora; leer marca la grabación como escuchada.",
+  "verificacion": "Playwright: en la Bitácora el botón muestra «Detener grabación» durante la reproducción; «Leer transcripción» enciende todas las palabras y detiene la reproducción."
+ },
+ {
+  "id": "PLAY-ESTACION-05",
+  "estado": "implementado",
+  "archivos": [
+   "site/estacion/src/ui.js",
+   "site/estacion/src/i18n.js",
+   "site/estacion/src/style.css"
+  ],
+  "detalle": "Ayudas: botón «Revelar pista · −1 estrella en este enigma» sólo en la rama de campaña con decremento real, «Revelar pista gratis» en p3 elegible (!freeHintUsed), «Revelar método · −1 ★», «Preparar solución · 60 s de espera»; texto de efecto «Esta ayuda reduce en 1 estrella la puntuación máxima de este enigma; no gasta un saldo global.» sólo en el paso activable; pasos revelados muestran «Pista ya revelada» (no se cobran de nuevo). El diario no muestra coste. El resultado muestra «Estrellas obtenidas: {obtenidas} de 3» (role=img en las estrellas) y «Pistas usadas: {cantidad}». La fórmula paid/stars de onSolved no cambió.",
+  "verificacion": "Playwright: p1 → «Revelar pista · −1 estrella…»; p3 → «Revelar pista gratis»; diario → «Revelar pista» sin texto de coste y 2 pasos."
+ },
+ {
+  "id": "PLAY-ESTACION-06",
+  "estado": "implementado",
+  "archivos": [
+   "site/estacion/src/ui.js",
+   "site/estacion/src/i18n.js",
+   "site/estacion/index.html"
+  ],
+  "detalle": "Ajustes/Ayudas/Bitácora/Cuaderno como diálogos (ver RSP-MODALS-01); cada interruptor con aria-labelledby a su etiqueta visible (Música, Efectos, Ambiente, Vibración, Alternativas visuales de audio…), deslizadores «Volumen de música», «Volumen de efectos» y label «Volumen de voces»; botones de cierre «Cerrar ayudas», «Cerrar bitácora», «Cerrar cuaderno»; la capa en animación de cierre queda inert; pausa con foco en «Reanudar partida» y «Volver al menú».",
+  "verificacion": "Playwright: nombres únicos de interruptores; foco inicial en «Reanudar partida»; cierre devuelve el foco al origen."
+ },
+ {
+  "id": "PLAY-ESTACION-07",
+  "estado": "implementado",
+  "archivos": [
+   "site/estacion/src/ui.js",
+   "site/estacion/src/style.css",
+   "site/estacion/index.html",
+   "site/estacion/src/i18n.js",
+   "site/estacion/src/scenes.js"
+  ],
+  "detalle": "Tarjetas de sala con icono + texto de estado derivados del estado real (check «Resuelto · N estrellas», candado «Bloqueado», punto fijo «Disponible»), aria-label «Enigma {número}: {nombre} · estado» y aria-current en el activo; controles visibles #roomPan («Mover vista a la izquierda/derecha», grupo «Mover vista de la sala») cuando la sala excede la pantalla, más flechas ← → en la sala; en Luces la cuadrícula decorativa baja a .025 y los interruptores ganan contorno #6D8194; tubos, cartel, combinaciones y letras intactos.",
+  "verificacion": "Playwright: aria-labels de las tres tarjetas; #roomPan visible a 390 px y › desplaza rs.px; capturas estacion-sala-390/1280."
+ },
+ {
+  "id": "RSP-ESTACION-02",
+  "estado": "implementado",
+  "archivos": [
+   "site/estacion/index.html",
+   "site/estacion/src/ui.js",
+   "site/estacion/src/style.css",
+   "site/estacion/src/i18n.js"
+  ],
+  "detalle": "#insp aria-labelledby=\"iTitle\" (h2 con tabindex=-1 enfocado al abrir en táctil); label visible «Tu respuesta» for=ans; #ans aria-describedby=\"iQ answerFormat ansStatus\"; #answerFormat sincronizado por renderEnum; #enum sigue aria-hidden; errores/aciertos en #ansStatus (role=status) sin anunciar cada tecla; al cerrar se restaura el foco en la tarjeta del enigma.",
+  "verificacion": "Playwright: atributos verificados; cerrar inspector → foco en .pc[data-id]."
+ },
+ {
+  "id": "RSP-GLOBAL-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/estacion/index.html",
+   "site/estacion/src/style.css"
+  ],
+  "detalle": "Viewport sin maximum-scale/user-scalable, conservando viewport-fit=cover e interactive-widget=resizes-content; .scr y #iDom con touch-action:pan-y pinch-zoom; #cv e #iCv conservan touch-action:none.",
+  "verificacion": "Playwright: meta viewport sin user-scalable y con interactive-widget."
+ },
+ {
+  "id": "SRC-ES01",
+  "estado": "implementado",
+  "archivos": [
+   "site/estacion/src/i18n.js",
+   "site/estacion/src/ui.js",
+   "site/estacion/index.html"
+  ],
+  "detalle": "«Comprobar respuesta» en el botón de envío, el tour y la ayuda (verificación local, sin sugerir transmisión); «Pista leve», «Cómo resolverlo», «Ver solución» como acciones distintas; «Revelar pista» / «Revelar pista · −1 estrella en este enigma» / «Revelar pista gratis» según rama real; «Volver al anillo central» ya existía como back.ring; secuencia y espera de 60 s conservadas; cancelar no revela ni cobra.",
+  "verificacion": "Playwright: etiquetas en el inspector y en Ayudas (campaña, p3 y diario)."
+ },
+ {
+  "id": "SRC-ES02",
+  "estado": "implementado",
+  "archivos": [
+   "site/estacion/src/ui.js",
+   "site/estacion/src/i18n.js",
+   "site/estacion/src/style.css"
+  ],
+  "detalle": "Semilla y backup distinguidos: «Código de partida (semilla)», sección «Copia de seguridad de la partida» con «Copiar copia de seguridad», «Restaurar desde una copia de seguridad» y «Restaurar partida». Restaurar valida la copia antes de tocar nada (una inválida no borra: «…Tu partida actual no cambió.») y, si hay partida, confirma «¿Reemplazar el progreso actual?» enumerando lo que se conserva y cambia; «Nueva partida +» explica su efecto real (ajustes, diario y récords se conservan; toda la partida cambia con semilla nueva) y ofrece copiar la copia de seguridad antes; el doble toque (dbl) fue reemplazado por estas confirmaciones.",
+  "verificacion": "Playwright: confirmación de nueva partida con «Se conserva: … Cambia: …» y «Reemplazar»; Escape no cambia nada."
+ },
+ {
+  "id": "VIS-ESTACION-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/estacion/src/scenes.js"
+  ],
+  "detalle": "Salas: pared #101623→#151E2B, uniones #263343 α.45, techo #070B12, suelo #0B1019; cono ambiental máximo .16 (antes .28) con MOD_COL y progreso intactos; carcasa de panel #26313D→#141E29 con borde #556879 y radio 12, pantalla sobre #071016 con los colores de estado existentes; hover halo 10 px CSS; LED con halo ≤ 12 px CSS y pulso .75–1 (estable con reduce); sombra suave bajo cada panel. Geometría, PANELS, st.hot y props no cambiaron.",
+  "verificacion": "Capturas estacion-sala-{320,390,768,1280}.png; los hit boxes se calculan con las mismas coordenadas."
+ },
+ {
+  "id": "VIS-ESTACION-02",
+  "estado": "implementado",
+  "archivos": [
+   "site/estacion/src/scenes.js",
+   "site/estacion/src/style.css"
+  ],
+  "detalle": "Anillo: base #152333 con bordes #52677E de 1 px en R·.47 y R·.97; sector bloqueado #101925/#344454, disponible #253249/#9DAFCA (hover sólo +.06 y borde 2 px, sin pulso), completo MOD_COL a .20 y 1.5 px; iconos 1.5–2 px round; etiquetas Poppins 600 12–14 px; progreso 4 puntos + rombo con borde 1 px; halo del centro ≤ 8 px y alfa .15; barra inferior #121D2B, radio 10, estrellas 16 px mono. hubHit y radios intactos.",
+  "verificacion": "Captura estacion-hub-390.png; hubHit sin cambios."
+ },
+ {
+  "id": "SRC-G01",
+  "estado": "no_aplicable",
+  "archivos": [],
+  "detalle": "Estación · las tarjetas .card[href] viven en la home; el regreso «Volver a los juegos» del estado de carga apunta al catálogo.",
+  "verificacion": "—"
+ },
+ {
+  "id": "SRC-G02",
+  "estado": "ya_corregido_verificado",
+  "archivos": [
+   "site/estacion/src/ui.js",
+   "site/estacion/index.html"
+  ],
+  "detalle": "Estación · selector ES/EN existente (LANG_SEG con aria-pressed, JETIdioma) conservado; onLang repinta las capas abiertas.",
+  "verificacion": "Playwright: ?lang=en muestra «Your answer» / «Check answer» / «Available»."
+ },
+ {
+  "id": "SRC-G03",
+  "estado": "implementado",
+  "archivos": [
+   "site/estacion/src/i18n.js",
+   "site/estacion/src/ui.js"
+  ],
+  "detalle": "Estación · «Reanudar partida» en pausa, «Continuar partida» en el inicio con partida guardada, «Volver al menú», «Volver a los juegos», «Volver a la sala», «Abrir la compuerta»; verbos de dominio («Despertar», «Recibir transmisión») conservados.",
+  "verificacion": "Playwright: pausa y resultado."
+ },
+ {
+  "id": "SRC-G04",
+  "estado": "implementado",
+  "archivos": [
+   "site/estacion/src/ui.js",
+   "site/estacion/src/i18n.js",
+   "site/estacion/src/style.css"
+  ],
+  "detalle": "Estación · «Borrar todo el progreso» abre un alertdialog «¿Borrar todo el progreso de JET//Estación Silencio?» con «Se borrarán la partida, la transmisión del día con su racha y los récords. Esta acción no se puede deshacer.», «Los ajustes y el idioma se conservan.», «Copiar copia de seguridad», Cancelar enfocado y «Borrar progreso»; borra sólo save/daily/records.",
+  "verificacion": "Playwright: primer clic no borra; Escape conserva el estado y devuelve el foco al botón."
+ },
+ {
+  "id": "SRC-G05",
+  "estado": "implementado",
+  "archivos": [
+   "site/estacion/index.html",
+   "site/estacion/src/style.css",
+   "site/estacion/src/ui.js"
+  ],
+  "detalle": "Estación · __estacionCarga + #carga («Cargando JET//Estación Silencio…», error de script → «No pudimos descargar todos los recursos.», timeout 20 s → «La carga se interrumpió…», «Volver a cargar», «Volver a los juegos»); boot() llama listo().",
+  "verificacion": "Playwright: bloqueando ui.js aparece el estado de error (estacion-carga-error-390.png); carga normal oculta #carga."
+ },
+ {
+  "id": "SRC-G06",
+  "estado": "implementado",
+  "archivos": [
+   "site/estacion/src/ui.js",
+   "site/estacion/src/i18n.js",
+   "site/estacion/src/style.css"
+  ],
+  "detalle": "Estación · share(text, opener): navigator.share con AbortError silencioso; copyText() confirma la copia (clipboard o execCommand===true) y sólo entonces «Texto copiado»; si falla, diálogo persistente con el texto íntegro en textarea readonly, «Copiar texto» y «Cerrar», con retorno de foco al botón de compartir. Mismo patrón para copiar la copia de seguridad.",
+  "verificacion": "Playwright: con clipboard y execCommand fallando aparece el diálogo sin toast; cerrar devuelve el foco a «Compartir progreso»."
+ }
+]

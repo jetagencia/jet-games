@@ -1,0 +1,243 @@
+[
+ {
+  "id": "RSP-ANTES-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/antes/src/main.js",
+   "site/antes/index.html",
+   "site/antes/src/textos.js"
+  ],
+  "detalle": "Tab ya no se captura para la vista temporal: el caso Tab del keydown se eliminó; la vista de otro turno se mueve con [ y ] (sólo con el foco en body o en #sala, sin modificadores) y con los botones visibles #bVistaPrev/#bVistaSig de la línea de tiempo. Los textos de ayuda/tutorial (how.ctlKeys, tut.previewKeys) ya no mencionan Tab.",
+  "verificacion": "Playwright: con la partida abierta, Tab recorre controles (reloj, botones) y nunca cambia la vista; ] y [ cambian J.vista y el rótulo «Vista»; Escape devuelve a «Ahora»."
+ },
+ {
+  "id": "RSP-MODALS-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/antes/index.html",
+   "site/antes/src/main.js",
+   "site/antes/src/estilo.css"
+  ],
+  "detalle": "Todos los .ov llevan role=dialog/alertdialog, aria-modal y aria-labelledby a su título; abrir(id, activador) guarda el activador, aplica inert a #juego/#inicio/#capitulos/#topMenu y a las capas inferiores (actualizarInert), enfoca el primer control útil (primerFoco) sin condicionar a puntero fino; el ciclo Tab existente se conservó y su selector incluye textarea y [tabindex=\"0\"]; cerrar(id) restaura inert y devuelve el foco al activador si sigue visible, si no a #sala. Escape cierra sólo la capa superior.",
+  "verificacion": "Playwright: Pausa → Ajustes → cerrar → foco en el botón Ajustes de la pausa; «Reanudar partida» recupera foco en #sala; dos ciclos Tab dentro de Ajustes nunca salen; aria-labelledby resuelve al h2 de cada capa."
+ },
+ {
+  "id": "RSP-NATIVE-KEYS-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/antes/src/main.js"
+  ],
+  "detalle": "El keydown global ignora Enter/Espacio cuando el objetivo es button, a[href], input, textarea, select, summary o contenteditable (guard e.target.closest(...)); los atajos del juego sólo actúan con el foco en body o #sala. Las teclas [ ] no se interpretan sobre controles.",
+  "verificacion": "Playwright: con el foco en #bDeshacer, Enter activa sólo Deshacer (una vez) y no mueve ni rebobina; Espacio sobre #rCompartir no dispara acciones del tablero."
+ },
+ {
+  "id": "SRC-AN01",
+  "estado": "implementado",
+  "archivos": [
+   "site/antes/src/main.js",
+   "site/antes/index.html",
+   "site/antes/src/textos.js"
+  ],
+  "detalle": "#bReiniciar (HUD, act.restartAll «Reiniciar todo») y #pReiniciar (pausa) comparten reiniciarNivel(confirmado): si hay copias/intentos abre #confReinicio (alertdialog, Cancelar enfocado) con texto según el caso (restart.attempt / restart.one / restart.copies con {copias}); la pausa sólo se cierra si el reinicio se confirma. Mantener R abre el mismo flujo (gesto de confirmación de 600 ms con anillo de progreso aria-valuenow).",
+  "verificacion": "Playwright: #pReiniciar abre la confirmación con «Cancelar» enfocado; Cancelar conserva las copias; «Reiniciar nivel» limpia copias y cierra la pausa."
+ },
+ {
+  "id": "PLAY-ANTES-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/antes/src/render.js",
+   "site/antes/src/estilo.css",
+   "site/antes/src/main.js"
+  ],
+  "detalle": "Jerarquía sin cambiar reglas: juntas del suelo en una sola línea de 1 px con alfa .10 cuando cs<24, sombra de muros reducida, cables apagados finos (.25) y encendidos de 2 px con halo acotado, placas con halo ≤ .15·cs, insignias de ecos dibujadas al final con borde oscuro, rótulo «Vista» y marco discontinuo estático para la inspección. No se cambió encuadre ni tamaño de celda: el nivel sigue mostrándose completo.",
+  "verificacion": "Capturas antes-juego-{320,390,768,1280}.png: mecanismos y ecos dominan sobre el suelo; smoke 0 errores. Reglas, semillas y tableros intactos (sin cambios en reglas.js)."
+ },
+ {
+  "id": "PLAY-ANTES-02",
+  "estado": "implementado",
+  "archivos": [
+   "site/antes/src/main.js",
+   "site/antes/index.html",
+   "site/antes/src/textos.js"
+  ],
+  "detalle": "Metas visibles antes del resultado: pintarMetas()/textoMeta(lv) en la pantalla de nivel, en la pausa (#pausaMeta) y en el resultado (#resMeta) con goal.stars/goal.stars1 y el tiempo límite real; el HUD muestra «Tiempo de esta copia: {actual}/{límite} s» (hud.copyTime) y #reloj es role=status; la ayuda explica el reloj simulado y los controles de tiempo (how.timeControls).",
+  "verificacion": "Playwright: la tarjeta de nivel y la pausa muestran la meta de estrellas con los valores de reglas.js; el HUD actualiza el tiempo de la copia por segundo."
+ },
+ {
+  "id": "PLAY-ANTES-03",
+  "estado": "implementado",
+  "archivos": [
+   "site/antes/index.html",
+   "site/antes/src/main.js",
+   "site/antes/src/textos.js",
+   "site/antes/src/estilo.css"
+  ],
+  "detalle": "Deshacer (#bDeshacer, act.undo, anuncia a11y.undo con el segundo restaurado), Rebobinar (#bRebobinar, act.rewind, aria-describedby con la instrucción de mantener, anillo role=progressbar) y Reiniciar todo (#bReiniciar, act.restartAll, con confirmación) tienen nombre, icono y descripción distintos; una pulsación corta de Rebobinar muestra act.holdDur con la duración real (HOLD_R).",
+  "verificacion": "Playwright: los tres botones tienen aria-label distintos; Deshacer retrocede un paso y anuncia en #vivo; pulsación corta de Rebobinar no rebobina y muestra el aviso."
+ },
+ {
+  "id": "PLAY-ANTES-04",
+  "estado": "implementado",
+  "archivos": [
+   "site/antes/src/main.js",
+   "site/antes/index.html",
+   "site/antes/src/estilo.css"
+  ],
+  "detalle": "Durante la repetición la línea de tiempo usa el instante de la repetición (t = J.modoRep.k), el HUD muestra hudRep y los controles #modoRep (role=toolbar: anterior, pausa/continuar, siguiente, reiniciar, 1×/2×, «Salir de la repetición») mantienen el reloj sincronizado; frameRepeticion respeta R.paused.",
+  "verificacion": "Playwright: al iniciar «Ver repetición» el reloj y la línea muestran 0 s y avanzan juntos; pausar detiene ambos; «Salir de la repetición» restaura el HUD."
+ },
+ {
+  "id": "PLAY-ANTES-05",
+  "estado": "implementado",
+  "archivos": [
+   "site/antes/src/main.js",
+   "site/antes/src/estilo.css",
+   "site/antes/src/textos.js"
+  ],
+  "detalle": "Las tarjetas de capítulo muestran estado textual (lvl.status + lvl.available/lvl.locked), estrellas obtenidas y meta; las bloqueadas siguen legibles (borde discontinuo, sin opacity .35) y llevan aria-label completo; capVolver tiene etiqueta dinámica.",
+  "verificacion": "Playwright: tarjetas bloqueadas con aria-disabled y texto «Bloqueado»; las estrellas coinciden con K.prog."
+ },
+ {
+  "id": "PLAY-ANTES-06",
+  "estado": "implementado",
+  "archivos": [
+   "site/antes/index.html",
+   "site/antes/src/main.js",
+   "site/antes/src/textos.js"
+  ],
+  "detalle": "Ajustes: cada interruptor y deslizador tiene etiqueta visible con id y aria-labelledby; los deslizadores se llaman «Volumen de música»/«Volumen de efectos» (set.musicVol/sfxVol) con aria-describedby; el estado del tablero se expone en #mapaA11y (pintarMapaA11y: puertas, placas, salida, bloqueo) y #sala es role=application con nombre a11y.sala.",
+  "verificacion": "Playwright: los controles de Ajustes resuelven nombres distintos; #mapaA11y describe puertas abiertas/cerradas tras cada movimiento."
+ },
+ {
+  "id": "RSP-ANTES-02",
+  "estado": "implementado",
+  "archivos": [
+   "site/antes/index.html",
+   "site/antes/src/main.js",
+   "site/antes/src/estilo.css"
+  ],
+  "detalle": "Etiquetas de Ajustes asociadas por for/id y aria-labelledby; descripciones lk* con aria-describedby; grupos con encabezados; sliders con nombre por canal.",
+  "verificacion": "Playwright: cada control de #ajustes tiene nombre accesible único."
+ },
+ {
+  "id": "RSP-GLOBAL-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/antes/index.html",
+   "site/antes/src/estilo.css",
+   "site/antes/src/main.js"
+  ],
+  "detalle": "Viewport sin maximum-scale ni user-scalable; .scr/.ov con touch-action:pan-y pinch-zoom; el bloqueo de dblclick quedó limitado a #sala,#cv,#ctrl,#barra y se retiró el listener global de gesturestart.",
+  "verificacion": "Playwright: meta viewport sin user-scalable; capas de Ayuda/Ajustes desplazables; smoke en 390/1280."
+ },
+ {
+  "id": "SRC-AN02",
+  "estado": "implementado",
+  "archivos": [
+   "site/antes/src/textos.js",
+   "site/antes/index.html",
+   "site/antes/src/main.js"
+  ],
+  "detalle": "Resultado y repetición con etiquetas concretas: «Siguiente nivel», «Repetir nivel», «Ver repetición», «Compartir resultado», «Salir de la repetición», «Reanudar partida», «Volver al menú», «Volver a los juegos» en ES/EN.",
+  "verificacion": "Playwright: textos de #resultado y #pausa coinciden con los copys ES; EN verificado con ?lang=en."
+ },
+ {
+  "id": "VIS-ANTES-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/antes/src/render.js"
+  ],
+  "detalle": "Suelo: una sola junta de 1 px alfa .10 cuando cs<24 (continue), sombra de muro 0.3→0.2·cs; sin cambios de colores de estado.",
+  "verificacion": "Captura antes-juego-320/390: el suelo retrocede y los mecanismos dominan."
+ },
+ {
+  "id": "VIS-ANTES-02",
+  "estado": "implementado",
+  "archivos": [
+   "site/antes/src/render.js"
+  ],
+  "detalle": "Ecos: 1 silueta de estela si cs<28 (2 si no), ninguna con movimiento reducido, alfas .10/.06; scanlines sólo con cs≥28; insignias numeradas dibujadas tras todas las siluetas con radio 6–9 px, borde oscuro y comprobación de contraste (lum()).",
+  "verificacion": "Captura antes-juego-390/1280: ecos numerados legibles sin parecer actores sólidos."
+ },
+ {
+  "id": "VIS-ANTES-03",
+  "estado": "implementado",
+  "archivos": [
+   "site/antes/src/render.js"
+  ],
+  "detalle": "dibujarCable(c,cb,a,on,tm,pulso): apagado alfa .25 y 1.5 px; encendido 2 px con halo ≤ min(6,.15·cs); el pulso sólo dura 250 ms tras un cambio de estado (V.pkPrev/V.pkT); placas con halo acotado.",
+  "verificacion": "Captura antes-juego-768: circuito causal legible; la codificación (placa→puerta) no cambió."
+ },
+ {
+  "id": "VIS-ANTES-04",
+  "estado": "implementado",
+  "archivos": [
+   "site/antes/src/render.js",
+   "site/antes/src/main.js",
+   "site/antes/index.html"
+  ],
+  "detalle": "La inspección de otro turno muestra un marco discontinuo estático y el rótulo «Vista»/«Ahora · Vista» (tl.view/tl.nowView) en la línea de tiempo y en el lienzo (f.vistaRotulo).",
+  "verificacion": "Playwright: tras pulsar ] aparece el rótulo «Vista» y el marco; Escape vuelve a «Ahora»."
+ },
+ {
+  "id": "SRC-G01",
+  "estado": "no_aplicable",
+  "archivos": [],
+  "detalle": "Antes · las tarjetas .card[href] viven en la home (fuera del alcance de este agente). El enlace de regreso del juego usa «Volver a los juegos» y conserva idioma vía JETIdioma.",
+  "verificacion": "—"
+ },
+ {
+  "id": "SRC-G02",
+  "estado": "ya_corregido_verificado",
+  "archivos": [
+   "site/antes/index.html",
+   "site/antes/src/main.js"
+  ],
+  "detalle": "Antes · el selector ES/EN existente (aria-pressed, JETIdioma) se conserva; no se creó un segundo selector; el cambio en vivo repinta confReinicio/confBorrar/rep.",
+  "verificacion": "Playwright: ?lang=en prevalece; cambio ES↔EN repinta las capas abiertas."
+ },
+ {
+  "id": "SRC-G03",
+  "estado": "implementado",
+  "archivos": [
+   "site/antes/src/textos.js",
+   "site/antes/index.html"
+  ],
+  "detalle": "Antes · pausa «Reanudar partida», «Volver al menú», «Volver a los juegos», «Repetir nivel», «Siguiente nivel»; verbos de dominio conservados.",
+  "verificacion": "Playwright: etiquetas en #pausa/#resultado."
+ },
+ {
+  "id": "SRC-G04",
+  "estado": "implementado",
+  "archivos": [
+   "site/antes/index.html",
+   "site/antes/src/main.js",
+   "site/antes/src/textos.js",
+   "site/antes/src/estilo.css"
+  ],
+  "detalle": "Antes · #confBorrar (alertdialog) con «¿Borrar todo el progreso de JET//Antes?», enumeración de datos (progreso, partida guardada, diario, metas; se conservan idioma y audio), Cancelar enfocado y botón de peligro «Borrar progreso»; borra sólo K.prog/partida/diario/visto/met.",
+  "verificacion": "Playwright: el primer clic no borra; Escape conserva; confirmar borra sólo las claves enumeradas."
+ },
+ {
+  "id": "SRC-G05",
+  "estado": "implementado",
+  "archivos": [
+   "site/antes/index.html",
+   "site/antes/src/estilo.css",
+   "site/antes/src/main.js"
+  ],
+  "detalle": "Antes · script inline __antesCarga con #carga (título, «Cargando JET//Antes…», spinner), captura de error de script/promesas y timeout 20 s → «La carga se interrumpió…»/«No pudimos descargar todos los recursos.» con «Volver a cargar» y «Volver a los juegos»; main.js llama listo().",
+  "verificacion": "Playwright: bloqueando main.js aparece el estado de error con ambos botones (antes-carga-error-390.png); en carga normal #carga se oculta."
+ },
+ {
+  "id": "SRC-G06",
+  "estado": "implementado",
+  "archivos": [
+   "site/antes/src/main.js",
+   "site/antes/index.html",
+   "site/antes/src/textos.js"
+  ],
+  "detalle": "Antes · compartir(): navigator.share con cancelación silenciosa; copiarTexto() sólo anuncia «Texto copiado» si clipboard o execCommand confirman; si no, #compartirFb (diálogo con textarea readonly, «Copiar texto», «Cerrar») y el foco vuelve a #rCompartir.",
+  "verificacion": "Playwright: con clipboard/execCommand fallando se abre el diálogo y no aparece «Texto copiado»; cerrar devuelve el foco al botón."
+ }
+]
