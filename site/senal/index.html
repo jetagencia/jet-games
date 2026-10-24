@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>JET//Señal · Descifra la regla secreta</title>
 <meta name="description" content="Una sonda acepta o rechaza filas de piezas según una regla secreta. Arma muestras, escucha sus respuestas y descifra la regla con la menor cantidad de pruebas. Una señal nueva cada día.">
 <meta name="theme-color" content="#050108">
@@ -19,7 +19,45 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="src/style.css?v=5">
+<link rel="stylesheet" href="src/style.css?v=6">
+<script>
+/* SRC-G05 — estados de carga (loading / error / ready) antes del JS del juego. Autónomo a propósito:
+   tiene que funcionar aunque falle src/i18n.js, por eso lleva sus cadenas ES/EN acá. */
+(function () {
+  var L = (document.documentElement.lang === 'en') ? 'en' : 'es';
+  var T = {
+    es: { cargando: 'Cargando Señal…', inter: 'La carga se interrumpió. Podés volver a intentarlo.', red: 'No pudimos descargar todos los recursos.', recargar: 'Volver a cargar', juegos: 'Volver a los juegos' },
+    en: { cargando: 'Loading Signal…', inter: 'Loading was interrupted. You can try again.', red: 'We couldn’t download all resources.', recargar: 'Reload game', juegos: 'Back to games' }
+  }[L];
+  var estado = 'cargando', timer = 0;
+  function caja() { return document.getElementById('carga'); }
+  function pintar() {
+    var c = caja(); if (!c) return;
+    document.documentElement.setAttribute('data-carga', estado);
+    if (estado === 'cargando') { c.innerHTML = '<p class="carga-txt">' + T.cargando + '</p>'; return; }
+    if (estado === 'listo') { c.hidden = true; return; }
+    var catalogo = 'https://jetgames.fun/?lang=' + L;
+    c.innerHTML = '<p class="carga-txt" role="alert">' + (estado === 'red' ? T.red : T.inter) + '</p>' +
+      '<div class="carga-acc"><button type="button" class="btn-pri" id="cargaReintentar">' + T.recargar + '</button>' +
+      '<a class="btn-sec" href="' + catalogo + '" target="_top" rel="noopener">' + T.juegos + '</a></div>';
+    var b = document.getElementById('cargaReintentar');
+    if (b) { b.addEventListener('click', function () { location.reload(); }); b.focus(); }
+  }
+  window.JETCarga = {
+    error: function (tipo) { if (estado === 'listo') return; clearTimeout(timer); estado = tipo === 'red' ? 'red' : 'error'; pintar(); },
+    listo: function () { clearTimeout(timer); estado = 'listo'; pintar(); window.removeEventListener('error', alError, true); }
+  };
+  function alError(e) {
+    if (estado === 'listo') return;
+    var tg = e && e.target;
+    if (tg && tg.tagName === 'SCRIPT') { window.JETCarga.error('red'); return; }
+    if (!tg || tg === window) window.JETCarga.error('error');
+  }
+  window.addEventListener('error', alError, true);
+  timer = setTimeout(function () { if (estado === 'cargando') window.JETCarga.error('error'); }, 15000);
+  document.addEventListener('DOMContentLoaded', pintar);
+})();
+</script>
 </head>
 <body>
 <div id="app">
@@ -39,6 +77,7 @@
         <p class="lema" data-t="lema">Descifra la regla secreta de la Sonda.</p>
       </div>
       <div class="ini-acc">
+        <div id="carga" class="carga" role="status" aria-live="polite"><p class="carga-txt">Cargando Señal…</p></div>
         <div id="rachaIni" class="racha" hidden><span class="pulso"></span><b></b></div>
         <button id="btnPrincipal" class="btn-pri grande" type="button"><span class="bp-t"></span><span class="bp-s"></span></button>
         <div id="tarjetaHoy" class="tarjeta-hoy" hidden>
@@ -59,11 +98,11 @@
   </section>
 
   <!-- JUEGO -->
-  <section id="juego" class="pant" aria-label="JET//Señal">
+  <section id="juego" class="pant" aria-label="JET//Señal" tabindex="-1">
     <div id="zSonda" class="zona">
       <canvas id="cvSonda" aria-hidden="true"></canvas>
       <div class="hud hud-l"><span id="hudTitulo"></span></div>
-      <div class="hud hud-r"><span data-t="muestras">MUESTRAS</span> <b id="hudN" class="odo">0</b><span id="hudDelta" class="delta"></span></div>
+      <div class="hud hud-r" id="hudR"><span id="hudLbl"></span> <b id="hudN" class="odo">0</b><span id="hudTotal" class="hud-sub"></span><span id="hudDelta" class="delta"></span></div>
       <div id="sondaVivo" class="sr" aria-live="polite"></div>
     </div>
     <div id="zRegistro" class="zona">
@@ -71,12 +110,21 @@
       <div class="col rej"><h2><span data-t="rechazadas">RECHAZADAS</span><span class="cnt" id="cntR">0</span></h2><div class="lista" id="listaR" tabindex="0"></div></div>
     </div>
     <div id="zBandeja" class="zona">
-      <div id="bandeja" role="group"></div>
+      <div id="bandeja" role="group" data-ta="escuchaSonda"></div>
+      <div id="ayudaBand" class="ayuda-band" hidden>
+        <p class="ab-t" data-t="armaMuestra">Armá una muestra</p>
+        <p data-t="bandejaVacia">Toca piezas para armar una muestra</p>
+        <p data-t="reemplazarRanura">Tocá una casilla ocupada para reemplazar su pieza.</p>
+        <p data-t="quitarRanura"></p>
+        <p data-t="pulsoDef"></p>
+        <ul class="atajos ab-atajos"><li data-t="atajoEnviar"></li><li data-t="atajoFormular"></li><li data-t="atajoPausa"></li></ul>
+      </div>
     </div>
     <div id="zAcciones" class="zona">
       <button id="btnVaciar" class="btn-ic" type="button" data-ta="vaciarAria"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-      <button id="btnEnviar" class="btn-pri" type="button"><span data-t="enviar">Enviar</span></button>
+      <button id="btnEnviar" class="btn-pri" type="button"><span data-t="enviar">Enviar muestra</span></button>
       <button id="btnFormular" class="btn-form" type="button"><span data-t="formular">Formular regla</span></button>
+      <button id="btnAtajos" class="btn-ic" type="button" data-ta="mostrarAtajos" aria-expanded="false" aria-controls="ayudaBand"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9.6 9.4a2.5 2.5 0 1 1 3.4 2.3c-.7.3-1 .8-1 1.5v.4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="17" r="1.1" fill="currentColor"/></svg></button>
     </div>
     <div id="zPaleta" class="zona"><div id="paleta" role="group"></div></div>
     <div id="panel" class="zona" hidden></div>
@@ -95,12 +143,12 @@
 <noscript><p style="color:#fff;font-family:sans-serif;padding:20px">JET//Señal necesita JavaScript. · JET//Signal needs JavaScript.</p></noscript>
 <script src="src/reglas.js?v=2"></script>
 <script src="src/verificador.js?v=2"></script>
-<script src="src/i18n.js?v=5"></script>
-<script src="src/piezas.js?v=2"></script>
+<script src="src/i18n.js?v=6"></script>
+<script src="src/piezas.js?v=3"></script>
 <script src="src/sonda.js?v=2"></script>
 <script src="src/audio.js?v=4"></script>
 <script src="src/banco.js?v=2" defer></script>
 <script src="src/calendario.js?v=2" defer></script>
-<script src="src/app.js?v=7" defer></script>
+<script src="src/app.js?v=8" defer></script>
 </body>
 </html>

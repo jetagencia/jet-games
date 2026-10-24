@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -46,12 +46,15 @@
   * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; -webkit-user-select:none; user-select:none; }
   html, body { width:100%; height:100%; overflow:hidden; background:var(--bg-0); color:var(--ink);
     font-family:'Poppins', system-ui, sans-serif; overscroll-behavior:none; -webkit-font-smoothing:antialiased; }
-  body { display:flex; flex-direction:column; align-items:center; padding: var(--st) var(--sr) var(--sb) var(--sl); touch-action:none; }
+  body { display:flex; flex-direction:column; align-items:center; padding: var(--st) var(--sr) var(--sb) var(--sl); }
+  /* RSP-GLOBAL-01: el control de puntero sólo mientras se juega; menús y paneles admiten pinch-zoom */
+  body.playing { touch-action:none; }
+  body.no-motion *, body.no-motion *::before, body.no-motion *::after { animation:none !important; }
   body::before { content:''; position:fixed; inset:0; z-index:-2; pointer-events:none;
     background: radial-gradient(ellipse at 20% 10%, rgba(119,0,244,0.20), transparent 50%),
       radial-gradient(ellipse at 80% 90%, rgba(0,242,207,0.15), transparent 55%),
       radial-gradient(ellipse at 50% 50%, rgba(20,5,40,0.6), var(--bg-0) 80%); }
-  button { font:inherit; color:inherit; }
+  button { font:inherit; color:inherit; touch-action:manipulation; }
   button:focus-visible, a:focus-visible, input:focus-visible { outline:2px solid var(--cyan); outline-offset:2px; }
 
   #back-portfolio { position:fixed; top:calc(8px + var(--st)); left:calc(8px + var(--sl)); z-index:150;
@@ -102,7 +105,9 @@
     body { flex-direction:row; align-items:stretch; }
     #top { width:172px; max-width:172px; flex:none; padding:48px 8px 8px; justify-content:center; gap:5px; }
     #tier-strip { padding:0; flex-direction:column; min-height:0; }
-    #btn-pause { position:static; width:100%; height:34px; order:10; margin-top:4px; }
+    /* RSP-ROCKET-01: el botón vuelve a ser el contexto del ::before; su zona activa es el propio botón */
+    #btn-pause { position:relative; top:auto; right:auto; width:100%; height:44px; min-height:44px; order:10; margin-top:4px; }
+    #btn-pause::before { inset:0; }
     #btn-pause::after { content:attr(data-label); margin-left:6px; font-family:'JetBrains Mono', monospace; font-size:10px; letter-spacing:.15em; text-transform:uppercase; }
     #hud { flex-direction:column; gap:4px; }
     .pill { flex:none; flex-direction:row; justify-content:space-between; border-radius:10px; padding:6px 10px; }
@@ -126,7 +131,7 @@
   .ov { position:fixed; inset:0; background:rgba(5,1,8,0.95); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
     display:none; flex-direction:column; align-items:center; text-align:center;
     padding:calc(3.2rem + var(--st)) calc(1rem + var(--sr)) calc(1.5rem + var(--sb)) calc(1rem + var(--sl));
-    z-index:100; overflow-y:auto; -webkit-overflow-scrolling:touch; touch-action:pan-y; }
+    z-index:100; overflow-y:auto; -webkit-overflow-scrolling:touch; touch-action:pan-y pinch-zoom; }
   .ov.show { display:flex; }
   .ov > * { flex:none; }
   .ov .spacer { flex:1 1 auto; }
@@ -159,6 +164,7 @@
     display:flex; flex-direction:column; align-items:center; gap:3px; transition:all .18s; }
   .mode-btn small { font-family:'JetBrains Mono', monospace; font-size:11px; letter-spacing:.05em; text-transform:none; opacity:.75; font-weight:500; }
   .mode-btn.active { background:rgba(0,242,207,0.16); border-color:var(--cyan); color:var(--cyan); box-shadow:0 0 16px rgba(0,242,207,0.4); }
+  .mode-desc { font-family:'Inter', sans-serif; font-size:.8rem; color:var(--ink-2); line-height:1.45; min-height:2.9em; }
   .btn { background:rgba(15,5,40,0.6); border:1px solid var(--card-border); color:var(--ink); padding:12px 18px; border-radius:11px;
     font-size:.78rem; font-weight:600; letter-spacing:.1em; text-transform:uppercase; cursor:pointer; transition:all .18s; min-height:46px; }
   .btn:hover { border-color:rgba(0,242,207,.6); }
@@ -167,6 +173,10 @@
     background:linear-gradient(90deg, #7700f4 0%, #00f2cf 100%); border:none; color:#050108; border-radius:16px;
     box-shadow:0 0 30px rgba(0,242,207,0.40), 0 0 60px rgba(119,0,244,0.35), 0 6px 18px rgba(0,0,0,0.5); }
   .btn.small-primary { background:linear-gradient(90deg, #7700f4 0%, #00f2cf 100%); color:#050108; border:none; font-weight:800; }
+  .btn.danger { border-color:rgba(255,68,102,.6); color:var(--danger); }
+  .btn.danger:hover { border-color:var(--danger); background:rgba(255,68,102,.08); }
+  .ov-score-lbl { font-family:'JetBrains Mono', monospace; font-size:.66rem; letter-spacing:.3em; color:var(--ink-2); text-transform:uppercase; font-weight:700; margin-top:.2rem; }
+  .ov-status { font-family:'Inter', sans-serif; font-size:.82rem; color:var(--grn); min-height:1.2em; }
   .btn-row { display:flex; gap:10px; flex-wrap:wrap; justify-content:center; width:100%; max-width:420px; }
   .btn-row .btn { flex:1 1 120px; }
   .btn-col { display:flex; flex-direction:column; gap:10px; width:100%; max-width:420px; }
@@ -182,8 +192,11 @@
   .sector .st { font-size:.8rem; letter-spacing:.1em; color:rgba(181,168,216,.25); }
   .sector .st b { color:var(--yel); font-weight:400; }
   .sector.next { border-color:var(--cyan); box-shadow:0 0 0 1px rgba(0,242,207,.4), 0 0 22px rgba(0,242,207,.25); }
-  .sector.locked { opacity:.38; cursor:default; }
-  .sector.locked .n { color:var(--dim); }
+  .sector.locked { opacity:.8; cursor:default; border-style:dashed; background:rgba(15,5,40,.45); }
+  .sector.locked .n { color:var(--ink-2); }
+  .sector.locked .nm { color:var(--ink-2); }
+  .sector .lock-msg { font-family:'Inter', sans-serif; font-size:9.5px; line-height:1.2; letter-spacing:0; color:var(--ink-2); text-align:center; }
+  @media (max-width:340px) { .sector .lock-msg { font-size:8.5px; } }
   .sector.final .n { color:var(--mag); }
   @media (min-width:600px) and (min-height:600px) { .sectors { grid-template-columns:repeat(4, 1fr); max-width:560px; } }
 
@@ -214,6 +227,16 @@
   .menu-lang { margin-top:.9rem; }
   /* cómo jugar */
   .help-list { list-style:none; display:flex; flex-direction:column; gap:.6rem; }
+  .help-sec { font-size:.78rem; letter-spacing:.26em; color:var(--cyan); text-transform:uppercase; font-weight:700; margin-bottom:.5rem; }
+  .help-adv { width:100%; max-width:420px; margin-bottom:.8rem; }
+  .help-adv summary { list-style:none; cursor:pointer; display:flex; justify-content:space-between; align-items:center; gap:8px; padding:.85rem 1.1rem; min-height:46px;
+    border:1px solid var(--card-border); background:var(--card-bg); border-radius:14px; font-size:.78rem; letter-spacing:.2em; text-transform:uppercase; font-weight:700; color:var(--ink); }
+  .help-adv summary::-webkit-details-marker { display:none; }
+  .help-adv summary::after { content:'+'; font-family:'JetBrains Mono', monospace; font-size:1rem; color:var(--cyan); }
+  .help-adv[open] summary::after { content:'–'; }
+  .help-adv[open] summary { border-radius:14px 14px 0 0; border-bottom-color:transparent; }
+  .help-adv .card { border-radius:0 0 14px 14px; margin-bottom:0; }
+  .help-adv summary:focus-visible { outline:2px solid var(--cyan); outline-offset:2px; }
   .help-list li { display:flex; gap:.7rem; align-items:flex-start; font-family:'Inter', sans-serif; font-size:.84rem; color:var(--ink-2); line-height:1.45; }
   .help-list li b { color:var(--ink); font-weight:600; }
   .help-list svg { flex:none; width:26px; height:26px; margin-top:1px; }
@@ -254,7 +277,7 @@
   <div id="powerups"></div>
 </div>
 
-<div id="stage"><canvas id="grid" aria-label="Tablero de JET//Rocket" data-i18n-aria="board"></canvas></div>
+<div id="stage"><canvas id="grid" tabindex="-1" aria-label="Tablero de JET//Rocket" data-i18n-aria="board"></canvas></div>
 
 <!-- MENÚ -->
 <div class="ov show" id="ov-menu">
@@ -292,7 +315,7 @@
   <div class="ov-title" data-i18n="chooseSector">Elige sector</div>
   <div class="ov-msg" id="sectors-msg" style="margin-bottom:.8rem"></div>
   <div class="sectors" id="sectors"></div>
-  <div class="btn-row"><button class="btn" data-back="ov-menu" data-i18n="back2">Volver</button></div>
+  <div class="btn-row"><button class="btn" data-back="ov-menu" data-i18n="menu">Volver al menú</button></div>
 </div>
 
 <!-- BRIEFING DE SECTOR -->
@@ -307,24 +330,36 @@
   </div>
   <div class="btn-col">
     <button class="btn primary" id="btn-brief-go" data-primary data-i18n="launch">Despegar</button>
-    <button class="btn" data-back="ov-sectors" data-i18n="sectors">Sectores</button>
+    <button class="btn" data-back="ov-sectors" data-i18n="backSectors">Volver a sectores</button>
   </div>
   <div class="spacer"></div>
 </div>
 
 <!-- PAUSA -->
-<div class="ov dim" id="ov-pause">
+<div class="ov dim" id="ov-pause" role="dialog" aria-modal="true" aria-labelledby="pause-title">
   <div class="spacer"></div>
   <div class="ov-eyebrow" data-i18n="pauseLow">pausa</div>
-  <div class="ov-title" id="pause-title" data-i18n="pauseTitle">Nave en espera</div>
+  <div class="ov-title" id="pause-title" tabindex="-1" data-i18n="pauseTitle">Nave en espera</div>
   <div class="ov-msg" id="pause-msg"></div>
   <div class="btn-col">
-    <button class="btn primary" id="btn-resume" data-primary data-i18n="resume">Continuar</button>
+    <button class="btn primary" id="btn-resume" data-primary data-i18n="resume">Reanudar partida</button>
     <div class="btn-row">
-      <button class="btn" id="btn-restart" data-i18n="restart">Reiniciar</button>
+      <button class="btn" id="btn-restart" data-i18n="restart">Reiniciar recorrido</button>
       <button class="btn" id="btn-pause-settings" data-i18n="settings">Ajustes</button>
-      <button class="btn" id="btn-pause-menu" data-i18n="menu">Menú</button>
+      <button class="btn" id="btn-pause-menu" data-i18n="menu">Volver al menú</button>
     </div>
+  </div>
+  <div class="spacer"></div>
+</div>
+
+<!-- CONFIRMACIÓN (salir/reiniciar desde pausa, borrar progreso) -->
+<div class="ov dim" id="ov-confirm" role="dialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-msg">
+  <div class="spacer"></div>
+  <div class="ov-title" id="confirm-title" tabindex="-1"></div>
+  <div class="ov-msg" id="confirm-msg"></div>
+  <div class="btn-col">
+    <button class="btn primary" id="btn-confirm-cancel" data-i18n="cancel">Cancelar</button>
+    <button class="btn" id="btn-confirm-ok"></button>
   </div>
   <div class="spacer"></div>
 </div>
@@ -333,14 +368,15 @@
 <div class="ov" id="ov-lose">
   <div class="spacer"></div>
   <div class="ov-eyebrow" id="lose-eyebrow"></div>
-  <div class="ov-title" id="lose-title"></div>
+  <div class="ov-title" id="lose-title" tabindex="-1"></div>
+  <div class="ov-score-lbl" data-i18n="pointsCaps">Puntos</div>
   <div class="ov-score" id="lose-score">0</div>
   <div class="ov-msg" id="lose-msg"></div>
   <div class="btn-col">
-    <button class="btn primary" id="btn-retry" data-primary data-i18n="retry">Reintentar</button>
+    <button class="btn primary" id="btn-retry" data-primary>Reintentar recorrido</button>
     <div class="btn-row">
-      <button class="btn" id="btn-lose-alt" data-i18n="sectors">Sectores</button>
-      <button class="btn" id="btn-lose-menu" data-i18n="menu">Menú</button>
+      <button class="btn" id="btn-lose-alt" data-i18n="otherSector">Elegir otro sector</button>
+      <button class="btn" id="btn-lose-menu" data-i18n="menu">Volver al menú</button>
     </div>
   </div>
   <div class="spacer"></div>
@@ -350,15 +386,16 @@
 <div class="ov" id="ov-win">
   <div class="spacer"></div>
   <div class="ov-eyebrow" id="win-eyebrow"></div>
-  <div class="ov-title" id="win-title"></div>
+  <div class="ov-title" id="win-title" tabindex="-1"></div>
   <div class="stars" id="win-stars"></div>
+  <div class="ov-score-lbl" data-i18n="pointsCaps">Puntos</div>
   <div class="ov-score" id="win-score">0</div>
   <div class="ov-msg" id="win-msg"></div>
   <div class="btn-col">
     <button class="btn primary" id="btn-next" data-primary data-i18n="nextSector">Siguiente sector</button>
     <div class="btn-row">
-      <button class="btn" id="btn-win-retry" data-i18n="replay">Repetir</button>
-      <button class="btn" data-back="ov-sectors" data-i18n="sectors">Sectores</button>
+      <button class="btn" id="btn-win-retry" data-i18n="replay">Repetir sector</button>
+      <button class="btn" data-back="ov-sectors" data-i18n="otherSector">Elegir otro sector</button>
     </div>
   </div>
   <div class="spacer"></div>
@@ -373,16 +410,16 @@
   <div class="stars" id="end-stars"></div>
   <div class="ov-msg" id="end-msg"></div>
   <div class="btn-col">
-    <button class="btn primary" data-back="ov-sectors" data-primary data-i18n="sectors">Sectores</button>
-    <button class="btn" data-back="ov-menu" data-i18n="menu">Menú</button>
+    <button class="btn primary" data-back="ov-sectors" data-primary data-i18n="viewSectors">Ver sectores</button>
+    <button class="btn" data-back="ov-menu" data-i18n="menu">Volver al menú</button>
   </div>
   <div class="spacer"></div>
 </div>
 
 <!-- AJUSTES -->
-<div class="ov" id="ov-settings">
+<div class="ov" id="ov-settings" role="dialog" aria-modal="true" aria-labelledby="settings-title">
   <div class="ov-eyebrow" data-i18n="settingsLow">ajustes</div>
-  <div class="ov-title" data-i18n="cockpit">Cabina</div>
+  <div class="ov-title" id="settings-title" tabindex="-1" data-i18n="cockpit">Cabina</div>
   <div class="card">
     <div class="set-row"><label for="s-music" data-i18n="music">Música</label><div class="ctl"><input type="range" id="s-musicvol" min="0" max="100" aria-label="Volumen de música" data-i18n-aria="musicVol"><button class="toggle" id="s-music" role="switch" aria-label="Música" data-i18n-aria="music"></button></div></div>
     <div class="set-row"><label for="s-sfx" data-i18n="sfx">Efectos</label><div class="ctl"><input type="range" id="s-sfxvol" min="0" max="100" aria-label="Volumen de efectos" data-i18n-aria="sfxVol"><button class="toggle" id="s-sfx" role="switch" aria-label="Efectos" data-i18n-aria="sfx"></button></div></div>
@@ -392,26 +429,35 @@
   </div>
   <div class="btn-col">
     <button class="btn primary" id="btn-settings-back" data-primary data-i18n="done">Listo</button>
-    <button class="btn" id="btn-reset">Borrar progreso</button>
+    <button class="btn danger" id="btn-reset" data-i18n="reset">Borrar progreso</button>
+    <div class="ov-status" id="reset-status" role="status" aria-live="polite"></div>
   </div>
 </div>
 
 <!-- CÓMO JUGAR -->
-<div class="ov" id="ov-help">
+<div class="ov" id="ov-help" role="dialog" aria-modal="true" aria-labelledby="help-title">
   <div class="ov-eyebrow" data-i18n="howToLow">cómo jugar</div>
-  <div class="ov-title" data-i18n="manual">Manual de vuelo</div>
+  <div class="ov-title" id="help-title" tabindex="-1" data-i18n="manual">Manual de vuelo</div>
   <div class="card">
+    <div class="help-sec" data-i18n="controls">Controles</div>
     <ul class="help-list">
       <li><svg viewBox="0 0 26 26"><path d="M5 13h16M15 7l6 6-6 6" stroke="#00f2cf" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n-html="help1"><b>Pilota.</b> Desliza el dedo en cualquier parte de la pantalla, o toca a un lado de la nave para girar hacia ese lado. En teclado: <kbd>←</kbd><kbd>↑</kbd><kbd>→</kbd><kbd>↓</kbd> o <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>. Con el puntero: haz clic o arrastra.</span></li>
+      <li><svg viewBox="0 0 26 26"><path d="M7 18l6-12 6 12z" fill="none" stroke="#ffe14a" stroke-width="2"/></svg><span data-i18n-html="help8"><b>Campaña:</b> reúne la carga de cristales del sector. Las estrellas premian los puntos. <b>Pausa:</b> botón arriba a la derecha, <kbd>P</kbd> o <kbd>Esc</kbd>.</span></li>
+      <li><svg viewBox="0 0 26 26"><rect x="4" y="4" width="18" height="18" rx="3" fill="#15082a" stroke="#9a3eff" stroke-width="2"/></svg><span data-i18n-html="help7"><b>Muros y bordes:</b> chocar termina la partida, igual que morderte la cola.</span></li>
+    </ul>
+  </div>
+  <details class="help-adv" id="help-adv">
+    <summary data-i18n="advancedRules">Reglas avanzadas</summary>
+    <div class="card">
+    <ul class="help-list">
       <li><svg viewBox="0 0 26 26"><path d="M13 3l7 10-7 10-7-10z" fill="#00f2cf"/></svg><span data-i18n-html="help2"><b>Cristal cian:</b> +10 y la nave crece. <b style="color:#ff2bd6">Núcleo magenta:</b> +30 y crece el doble.</span></li>
       <li><svg viewBox="0 0 26 26"><text x="13" y="18" text-anchor="middle" font-family="JetBrains Mono" font-weight="700" font-size="12" fill="#ffe14a">×3</text></svg><span data-i18n-html="help3"><b>Combo:</b> encadena cristales en menos de 2,5 s para multiplicar los puntos hasta ×3.</span></li>
       <li><svg viewBox="0 0 26 26"><polygon points="13,3 22,8 22,18 13,23 4,18 4,8" fill="#00ff9c"/></svg><span data-i18n-html="help4"><b>Mejoras:</b> <b style="color:#00ff9c">escudo</b> (absorbe un golpe y te desvía de un muro), <b style="color:#ffe14a">cámara lenta</b> y <b style="color:#b07bff">puntos ×2</b>.</span></li>
       <li><svg viewBox="0 0 26 26"><circle cx="13" cy="13" r="9" stroke="#7700f4" stroke-width="2.5" fill="none"/><circle cx="13" cy="13" r="3" fill="#fff"/></svg><span data-i18n-html="help5"><b>Portales:</b> entra por uno y sales por su pareja. Se cierran tras cuatro usos.</span></li>
-      <li><svg viewBox="0 0 26 26"><polygon points="13,4 21,9 20,19 12,22 5,16 6,8" fill="#1f0612" stroke="#ff4466" stroke-width="2"/></svg><span data-i18n-html="help6"><b>Asteroides:</b> te arrancan dos segmentos; en Sobrevivir y en Tormenta destruyen la nave.</span></li>
-      <li><svg viewBox="0 0 26 26"><rect x="4" y="4" width="18" height="18" rx="3" fill="#15082a" stroke="#9a3eff" stroke-width="2"/></svg><span data-i18n-html="help7"><b>Muros y bordes:</b> chocar termina la partida, igual que morderte la cola.</span></li>
-      <li><svg viewBox="0 0 26 26"><path d="M7 18l6-12 6 12z" fill="none" stroke="#ffe14a" stroke-width="2"/></svg><span data-i18n-html="help8"><b>Campaña:</b> reúne la carga de cristales del sector. Las estrellas premian los puntos. <b>Pausa:</b> botón arriba a la derecha, <kbd>P</kbd> o <kbd>Esc</kbd>.</span></li>
+      <li><svg viewBox="0 0 26 26"><polygon points="13,4 21,9 20,19 12,22 5,16 6,8" fill="#1f0612" stroke="#ff4466" stroke-width="2"/></svg><span data-i18n-html="help6"><b>Asteroides:</b> te arrancan dos segmentos; en Supervivencia y en Tormenta destruyen la nave.</span></li>
     </ul>
-  </div>
+    </div>
+  </details>
   <div class="btn-col"><button class="btn primary" id="btn-help-back" data-primary data-i18n="gotIt">Entendido</button></div>
 </div>
 
