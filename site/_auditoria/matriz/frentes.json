@@ -1,0 +1,163 @@
+[
+  {
+    "id": "RSP-FRENTES-01",
+    "estado": "implementado",
+    "archivos": ["site/frentes/index.html", "site/frentes/src/game.js", "site/frentes/src/ui.css"],
+    "detalle": "frentes: #shConfirm, #shKeypad y #shMsg nacen con hidden e inert (y role dialog/alertdialog + aria-modal + aria-labelledby). openSheet quita hidden, fuerza un frame en la posición inicial, quita inert y añade .on; guarda el activador y enfoca el botón primario/título. closeSheet pone inert de inmediato, retira .on, pone hidden al terminar la transición (320 ms; inmediato con movimiento reducido) y devuelve el foco al activador. Se conserva [hidden]{display:none!important}. #sheetBg sigue siendo un div sin tabulación. Escape cierra la hoja; Enter ya no dispara confirmLaunch desde cualquier foco: lo hace el botón nativo «Lanzar flota».",
+    "verificacion": "Playwright 390: al cargar, las tres hojas están hidden+inert; 25 Tab desde el inicio nunca entran en bCfGo/bCfNo/bKpNo/bKpOk. Al abrir el diálogo de borrado el foco va a Cancelar y al cerrar con Escape vuelve a «Borrar progreso» con la hoja hidden."
+  },
+  {
+    "id": "RSP-MODALS-01",
+    "estado": "implementado",
+    "archivos": ["site/frentes/src/game.js", "site/frentes/index.html", "site/frentes/src/ui.css"],
+    "detalle": "frentes: openOv/closeOv guardan el activador (ACT) y sincInert() pone inert en #sHome, #sBoard, #back, #topR, #banner, #toast y en las superposiciones inferiores (y en todo lo que no sea la hoja activa cuando hay hoja). Las ocho .scr llevan role=dialog + aria-modal + aria-labelledby (ya tenían título con id). Foco inicial en el h2 del diálogo sin condicionar a hover:hover; al cerrar, foco al activador o al título de la capa revelada / carril seleccionado. closeAllOv limpia inert y la pausa heredada.",
+    "verificacion": "Playwright: Ajustes abre con foco en su título; Escape cierra y el foco vuelve al carril seleccionado del tablero; con la pausa abierta sBoard.inert=true. Tab recorre sólo la capa superior (ver RSP-FRENTES-01)."
+  },
+  {
+    "id": "RSP-NATIVE-KEYS-01",
+    "estado": "implementado",
+    "archivos": ["site/frentes/src/game.js"],
+    "detalle": "frentes (aplicación del ID común): en el keydown global, Enter/Espacio sobre button, a[href], summary, [role=button|switch], input, textarea o select ya no se consumen (el control nativo hace su click: Lanzar flota, Reanudar partida, ±, etc.); durante la batalla Espacio/Enter sólo aceleran si el foco no está en un botón. Las teclas de juego (flechas, 1-5, letras, PageUp/Down, Home/End, #) siguen funcionando con el carril (role=slider) enfocado y no se aplican dentro de campos de texto.",
+    "verificacion": "node --check y recorrido Playwright sin errores; Enter sobre el botón de la hoja de confirmación lo activa una sola vez (confirmLaunch guarda el disabled)."
+  },
+  {
+    "id": "VIS-FRENTES-03",
+    "estado": "implementado",
+    "archivos": ["site/frentes/src/ui.css"],
+    "detalle": "frentes: .lcol base #101A27, borde 1 px #3C5067, radio 8; .lfill degradado corto #1AA899→#58D8C5 sin shadowBlur y línea superior 1 px #BCFFF3 (::before); segmentos conservan var(--seg) con trazo 1 px negro .22; marca rival roja discontinua y umbral intactos; .lnum 24 px peso 700 tabular-nums, fondo #1C2C3E, borde #4D657E, seleccionado con borde cian 2 px (inset) sin mover geometría; botones ± de 44 px con iconos 22 px y radio 8; reserva con la misma barra de divisiones al 1 %; estado cero mantiene el texto a opacidad completa (sólo la barra baja a .5). Alturas, cantidades, límites de arrastre y realimentación de sobreasignación no cambian.",
+    "verificacion": "Capturas frentes-ronda-390.png y frentes-analisis-1280.png: columnas con el nuevo material; valores 1/1/32/37/29 coinciden con la altura de relleno; locked/battle se ven no editables (fondo #0E1722)."
+  },
+  {
+    "id": "PLAY-FRENTES-01",
+    "estado": "implementado",
+    "archivos": ["site/frentes/src/game.js", "site/frentes/index.html", "site/frentes/src/i18n.js", "site/frentes/src/ui.css"],
+    "detalle": "frentes: goHome() y boardSetup() ponen G.paused=false (ninguna sesión nueva hereda la pausa); closeAllOv() la limpia si la pausa estaba abierta (cerrar superposiciones al cambiar de flujo no es reanudar, pero la nueva partida arranca limpia). La pausa real se mantiene mientras el modal está abierto: battleStep sigue retornando con G.paused. En la pausa durante una batalla se muestra «La animación está pausada.» y «Ver resultado» sólo si bt.rec ya existe (resultado calculado): acelera la animación (speed 60) sin fabricar resultados ni tocar la evaluación. Botón «Reanudar partida».",
+    "verificacion": "Playwright: tutorial 3/3 → pausa en batalla (nota visible, «Ver resultado» visible, label «Reanudar partida») → Ver resultado → fin del tutorial → pausa → Volver al menú → Ronda rápida → Lanzar: el resultado llega en ~140 ms sin ninguna pausa residual (paused=false). No se envió ninguna jugada diaria."
+  },
+  {
+    "id": "PLAY-FRENTES-02",
+    "estado": "implementado",
+    "archivos": ["site/frentes/src/game.js", "site/frentes/src/i18n.js", "site/frentes/src/ui.css"],
+    "detalle": "frentes: al terminar el paso 3 el tablero pasa a estado «Tutorial completado»: se retira el botón Lanzar flota (B.cfg.launch=null), se vacía la barra de herramientas (sin «Saltar tutorial»), el título cambia y la burbuja del Comandante ofrece tres destinos separados: «Ver el frente de hoy» (sólo abre el informe; no publica jugada), «Practicar una ronda» (ronda rápida local) y «Volver al menú». bubble() admite varios botones. El tutorial queda marcado como hecho en cualquiera de las tres salidas.",
+    "verificacion": "Playwright: tras la batalla del paso 3, bLaunch.hidden=true, 0 botones en #toolsX, título «Tutorial completado», burbuja con los tres botones. Captura frentes-tutfin-390.png."
+  },
+  {
+    "id": "PLAY-FRENTES-03",
+    "estado": "implementado",
+    "archivos": ["site/frentes/src/game.js", "site/frentes/src/i18n.js"],
+    "detalle": "frentes: aviso inicial «Arrastra hacia arriba para sumar naves.» (una vez, en el primer tablero vacío de frente o ronda rápida; tono de tú del juego). Cada carril expone sus controles con el planeta: +/− «Sumar una nave a {planeta}» / «Quitar una nave de {planeta}», número «Naves en {planeta}: {n}» (Enter o doble toque abre el teclado numérico con su máximo), «Asignar la reserva a {planeta}»; el slider del carril añade «Reserva: {n} naves» a su etiqueta y el valor del planeta lleva title «Valor: {puntos} puntos». Cuando no queda reserva, al intentar sumar se explica la política vigente: «Reserva: 0 naves. Quita naves de otro planeta para sumar aquí.» (no se redistribuye nada automáticamente; suma total intacta).",
+    "verificacion": "Playwright: aria-label del + del primer carril «Sumar una nave a Aria»; teclado numérico y flechas ya existentes siguen operativos."
+  },
+  {
+    "id": "PLAY-FRENTES-04",
+    "estado": "implementado",
+    "archivos": ["site/frentes/src/game.js", "site/frentes/src/i18n.js", "site/frentes/index.html", "site/frentes/src/ui.css", "site/frentes/src/render.js"],
+    "detalle": "frentes: leyenda con muestras en el informe («Promedio de naves rivales · Rivales con 0 naves (%)»), en el resumen lateral (línea discontinua = promedio; vacío en %) y en el resultado («Tu flota» línea cian · «Distribución rival» barras). Cada planeta del resultado muestra «Valor: {puntos} puntos» y «Tu flota: {n} naves» en texto; las unidades de naves y porcentajes quedan separadas. Zona de datos de la batalla con línea base 1 px #5A7086 y fondo #0E1722 en las columnas; brillo de la línea del jugador reducido a 4 px. Identidad, orden y valores de planetas intactos.",
+    "verificacion": "Capturas frentes-resultado-390.png (leyenda «Tu flota / Distribución rival») y frentes-ronda-390.png (líneas de promedio). Equivalente textual presente en cada fila del resultado."
+  },
+  {
+    "id": "PLAY-FRENTES-05",
+    "estado": "implementado",
+    "archivos": ["site/frentes/src/game.js", "site/frentes/src/i18n.js"],
+    "detalle": "frentes: los títulos derivan del modo real: en Ronda rápida el tablero y el resultado dicen «Ronda rápida · rivales de práctica», el análisis «Análisis de práctica · no cambia el resultado de esta ronda» (banner y título); el análisis del frente diario dice «Frente diario · tu jugada oficial no cambia». La confirmación diaria explica el efecto antes de publicar: «Después de lanzar, no podrás cambiar tu jugada oficial.»; la ronda rápida no muestra esa advertencia. Analizar nunca envía jugadas (sin cambios en la red).",
+    "verificacion": "Playwright ronda rápida: título «Ronda rápida · rivales de práctica · RONDA R-7F3A»; análisis «Análisis de práctica · no cambia el resultado de esta ronda». Captura frentes-analisis-1280.png."
+  },
+  {
+    "id": "PLAY-FRENTES-06",
+    "estado": "implementado",
+    "archivos": ["site/frentes/src/game.js", "site/frentes/src/i18n.js"],
+    "detalle": "frentes: una sola función fmtRend (una cifra decimal cuando no es entero, separador por idioma, sin % en el valor) en titular del resultado, análisis en vivo, mejor reparto, historial y récord de ronda rápida; el cálculo (core.evaluar: (w + 0,5·d)/N·100) no se toca. Titular «Rendimiento frente a estos rivales: {p}%» con la regla «Cada victoria cuenta como 1 y cada empate como 0,5.» y victorias/empates/derrotas por separado. «Mejor reparto encontrado» (kick, texto y botón del análisis, antes «La mejor») sin afirmar óptimo global; cada cantidad va con su planeta («Aria: 13 naves · …»); «Comparar mi reparto».",
+    "verificacion": "Playwright: titular 62,7% y análisis 62,7% para el mismo reparto (antes 63 vs 62,7); con 1 empate la línea dice «125 victorias · 1 empate · 74 derrotas»; mejor reparto listado por planeta."
+  },
+  {
+    "id": "PLAY-FRENTES-07",
+    "estado": "implementado",
+    "archivos": ["site/frentes/src/game.js", "site/frentes/src/i18n.js", "site/frentes/src/ui.css", "site/frentes/index.html"],
+    "detalle": "frentes: recuento como «{victorias} victorias · {empates} empates · {derrotas} derrotas» con singular por componente, y «Tu reparto se comparó con {rivales} rivales de práctica.» (o la línea de jugadas reales + rivales en el frente diario), sin «200 JUGADAS». Barra de acciones sticky al pie de la tarjeta (no tapa el contenido al desplazarse) con prioridad «Jugar otra ronda» / «Analizar reparto» y «Compartir resultado» secundario; en el diario «Analizar reparto» es primario y compartir secundario. «Ver criterios de medallas» despliega: «Las medallas usan el rendimiento redondeado al entero más cercano. Bronce: desde 50%. Plata: desde 75%. Oro: desde 90%.» y, sólo fuera de Ronda rápida, «Mando perfecto: supera el rendimiento del mejor reparto encontrado.» (medalla(pct, null) en rápida respetada). Umbrales y Math.round de core.js sin cambios.",
+    "verificacion": "Playwright: botones ['Jugar otra ronda','Analizar reparto','Compartir resultado','Volver al menú']; criterios mostrados sin Mando perfecto en ronda rápida. Capturas frentes-resultado-390.png y frentes-compartir-1280.png."
+  },
+  {
+    "id": "RSP-GLOBAL-01",
+    "estado": "implementado",
+    "archivos": ["site/frentes/index.html", "site/frentes/src/ui.css"],
+    "detalle": "frentes: meta viewport sin maximum-scale ni user-scalable. .scr (paneles desplazables) con touch-action: pan-y pinch-zoom; el control de puntero (touch-action:none) queda sólo en el lienzo, los carriles y el número arrastrable; botones manipulation. No había bloqueos de gesturestart/dblclick a nivel documento.",
+    "verificacion": "Smoke 390/1280 sin errores de maquetación; capturas frentes-390.png y frentes-1280.png."
+  },
+  {
+    "id": "SRC-FR01",
+    "estado": "implementado",
+    "archivos": ["site/frentes/src/i18n.js", "site/frentes/src/game.js", "site/frentes/index.html"],
+    "detalle": "frentes: «Distribuir naves» (antes Al despliegue), «Quitar todas las naves» (Vaciar, con Deshacer), «Asignar reserva aquí» (Resto aquí: sólo usa la reserva disponible), «Mejor reparto encontrado» (La mejor). Panel con «Reserva: {n} naves» (aria) y nuevo «Total asignado: {n} naves». Advertencia de carácter definitivo sólo en la confirmación del frente diario («Después de lanzar, no podrás cambiar tu jugada oficial.»); tutorial, Academia y Ronda rápida no la muestran. Análisis rotulado por modo (ver PLAY-FRENTES-05).",
+    "verificacion": "Playwright: «Total asignado: 0 naves» al abrir la ronda y «Total asignado: 100 naves» en el análisis; herramientas «Comparar mi reparto» / «Mejor reparto encontrado»."
+  },
+  {
+    "id": "SRC-FR02",
+    "estado": "implementado",
+    "archivos": ["site/frentes/src/game.js", "site/frentes/src/i18n.js", "site/frentes/src/ui.css"],
+    "detalle": "frentes: si fallan navigator.share y el portapapeles, en lugar del toast con dos líneas se abre la hoja con «Compartir resultado», «No pudimos copiarlo automáticamente. Selecciona y copia este texto.», textarea con el texto íntegro (título, rendimiento, medalla, planetas, racha y URL), «Copiar texto» (éxito «Texto copiado» sólo si execCommand/clipboard funcionan) y «Cerrar» (vuelve al resultado sin reevaluar ni reenviar). rec.sh (contador anónimo de compartidos) se marca sólo cuando compartir o copiar realmente ocurrió.",
+    "verificacion": "Playwright con clipboard.writeText forzado a fallar: hoja con el texto completo y botones ['Copiar texto','Cerrar']. Captura frentes-compartir-1280.png."
+  },
+  {
+    "id": "VIS-FRENTES-01",
+    "estado": "implementado",
+    "archivos": ["site/frentes/src/render.js", "site/frentes/src/game.js", "site/frentes/src/ui.css"],
+    "detalle": "frentes: buildBg() distingue portada y partida (R.boardMode desde setBase): en el tablero base #080E18 con radial #17243A al .45, nebulosas a .025 y máximo 180 estrellas con alfa .15–.35 (se recompone al cambiar de modo o tamaño). Paneles opacos #121D2B al .96 con borde 1 px #34465B y radio 12 (.bside, .obj, .bubble, .bb-lab); .obj 12/16 px; .bside 12 px (16 px en ≥640); gap 12; carriles con 8 px de separación en pantallas anchas. Objetivo 16/1.4, reserva 28 px mono, ayudas 14/1.5. Los carriles mantienen el layout DOM y data-slot.",
+    "verificacion": "Capturas frentes-ronda-390.png y frentes-analisis-1280.png: planetas alineados con sus columnas tras el cambio de tamaño; fondo de partida sin competencia detrás de columnas y textos."
+  },
+  {
+    "id": "VIS-FRENTES-02",
+    "estado": "implementado",
+    "archivos": ["site/frentes/src/render.js"],
+    "detalle": "frentes: PCOL, texturas, radios y anillos de Eco intactos. Atmósfera de shade() a .22 con alcance 1.18 r; terminador con extremo rgba(5,1,12,.72) (antes .88) manteniendo la luz superior izquierda. Planeta seleccionado: aro cian 2 px a 6 px con cuatro segmentos estáticos (sin círculo punteado vibrante); los no seleccionados sin aura extra. Enjambres: misma cantidad, órbitas, caps y orden; chevrones con borde oscuro .6 px y alfas .5 (atrás) / 1 (delante); con movimiento reducido la órbita ya quedaba congelada.",
+    "verificacion": "Capturas frentes-analisis-1280.png (Eco con anillos delante/detrás, selección en Aria) y frentes-tutfin-390.png. Conteo de naves por planeta igual al valor (sl.shown sin cambios)."
+  },
+  {
+    "id": "VIS-FRENTES-04",
+    "estado": "implementado",
+    "archivos": ["site/frentes/src/render.js", "site/frentes/src/ui.css"],
+    "detalle": "frentes: histograma y transformación Math.pow(h/maxH,.55) intactos; zona de resultados con fondo #0E1722 (columnas en batalla/locked) y línea base 1 px #5A7086; barras conservan rojo/cian/blanco y alfas; línea del jugador 2 px con halo 4 px; chips rival/perdido/empatado con los mismos colores, radio 6 y padding 4/6. CTA listo: cian sólido con texto #052F2B, sin sweep infinito, una entrada de 180 ms (sin animación bajo reduced-motion). Lluvia de victoria: 40 partículas, ≤ 700 ms, desde arriba del todo; sin lluvia ni paralaje con movimiento reducido (ya existente).",
+    "verificacion": "Playwright: batallas de tutorial y ronda rápida completas sin errores; capturas del tablero muestran la zona de resultados. No se midió frame a frame la fase de revelación (lógica de fases sin cambios)."
+  },
+  {
+    "id": "SRC-G03",
+    "estado": "implementado",
+    "archivos": ["site/frentes/src/i18n.js", "site/frentes/src/game.js"],
+    "detalle": "frentes (común): pausa «Reanudar partida» (Continuar), «Volver al menú» (Salir al inicio / Inicio), Academia «Repetir misión» tras ganar y «Reintentar misión» tras perder (antes «Otra vez»), duelo «Otro duelo», ronda rápida «Jugar otra ronda». Verbos de dominio conservados (Lanzar flota, Comprobar, Desplegar flota, Distribuir naves).",
+    "verificacion": "Playwright: #bResume «Reanudar partida»; botones del resultado y del fin del tutorial con los destinos explícitos."
+  },
+  {
+    "id": "SRC-G04",
+    "estado": "implementado",
+    "archivos": ["site/frentes/src/game.js", "site/frentes/src/i18n.js", "site/frentes/src/ui.css"],
+    "detalle": "frentes (común): «Borrar progreso» deja el doble toque de 4 s y abre una hoja alertdialog «¿Borrar todo el progreso de JET//Frentes?» / «Se borrarán tus frentes jugados, el historial, la racha, la Academia, el récord de ronda rápida y los borradores. Esta acción no se puede deshacer.», con «Cancelar» enfocado al abrir y botón peligro «Borrar progreso». Se conservan id y prefs (idioma/audio no se prometen), como ya hacía el código.",
+    "verificacion": "Playwright: hoja shMsg role=alertdialog, foco en Cancelar; Escape cancela sin borrar y devuelve el foco a «Borrar progreso»."
+  },
+  {
+    "id": "SRC-G05",
+    "estado": "implementado",
+    "archivos": ["site/frentes/index.html", "site/frentes/src/game.js"],
+    "detalle": "frentes (común): #carga con título JET//Frentes y «Cargando JET//Frentes…» (ES/EN por JETIdioma) visible antes de los módulos; error recuperable: descarga fallida de un <script> → «No pudimos descargar todos los recursos.», error de ejecución o arranque que no termina en 12 s → «La carga se interrumpió. Puedes volver a intentarlo.», con «Volver a cargar» y «Volver a los juegos» (conserva ?lang). boot() llama __frCargaLista() al final: loading/error/ready excluyentes. Botones que se rellenaban tarde (Lanzar flota, Siguiente, serie) tienen texto/aria inicial.",
+    "verificacion": "Smoke: 0 botones vacíos, sin errores salvo el 404 esperado de api.php; Playwright: #carga eliminado tras cargar."
+  },
+  {
+    "id": "SRC-G06",
+    "estado": "implementado",
+    "archivos": ["site/frentes/src/game.js", "site/frentes/src/i18n.js"],
+    "detalle": "frentes (común): ver SRC-FR02: compartir sólo por acción del usuario, éxito veraz («Texto copiado»), cancelación de navigator.share silenciosa, fallback persistente con texto íntegro, «Copiar texto» y «Cerrar».",
+    "verificacion": "Playwright: fallback mostrado al fallar el portapapeles; cerrar vuelve al resultado."
+  },
+  {
+    "id": "SRC-G01",
+    "estado": "no_aplicable",
+    "archivos": [],
+    "detalle": "frentes (común): corresponde a las tarjetas de la home. El juego conserva «Volver a JET//Games» (#back) con target=_top.",
+    "verificacion": "Sin cambios."
+  },
+  {
+    "id": "SRC-G02",
+    "estado": "ya_corregido_verificado",
+    "archivos": [],
+    "detalle": "frentes (común): selector ES/EN con aria-pressed en inicio y Ajustes, JETIdioma (?lang > cookie/localStorage > navegador) y migración de prefs.lang ya presentes.",
+    "verificacion": "Playwright con ?lang=es y smoke en EN (navegador): la interfaz adopta el idioma pedido."
+  }
+]
