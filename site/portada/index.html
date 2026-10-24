@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>JET//Portada · Arma la portada del diario</title>
+<meta name="description" content="Rompecabezas editorial: encaja titulares, notas, fotos y publicidades en la portada del diario de la colonia. Los vecinos suman o restan. Edición diaria, modo libre y reglas de redacción que se acumulan.">
+<meta name="theme-color" content="#050108">
+<meta property="og:title" content="JET//Portada">
+<meta property="og:description" content="Arma la portada perfecta del diario de la colonia espacial. Edición nueva cada día.">
+<meta property="og:image" content="https://jetgames.fun/portada/captura-home.jpg">
+<meta property="og:url" content="https://jetgames.fun/portada/">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png" sizes="192x192">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="src/style.css?v=5">
+<script src="src/jet-idioma.js?v=1"></script>
+</head>
+<body>
+<a id="back" href="https://jetgames.fun/" target="_top" rel="noopener" data-ta="back" aria-label="Volver a JET//Games">‹ JET<i>//</i>Games</a>
+<div id="tr">
+ <button class="ib" id="bPause" hidden data-ta="pause" aria-label="Pausa"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1.2"/><rect x="14" y="5" width="4" height="14" rx="1.2"/></svg></button>
+ <button class="ib" id="bGear" data-ta="settings" aria-label="Ajustes"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+</div>
+<canvas id="bg" aria-hidden="true"></canvas>
+
+<main id="game" hidden aria-label="Mesa de redacción" data-ta="a_desk">
+ <div id="score" class="score" aria-live="polite">
+  <div class="ed" id="edLbl"></div>
+  <div class="sc-main"><span class="sc-k" data-t="copies">Tirada</span><span class="sc-n" id="scN">0</span><span class="sc-d" id="scD"></span></div>
+  <div class="sc-bar" id="scBar"><i id="scFill"></i><b id="scGoalMark"></b><span class="sc-goal" id="scGoal"></span></div>
+ </div>
+ <div id="chips" class="chips"></div>
+ <div id="paperBox">
+  <div id="paper">
+   <div id="mast"><div class="m-top"><span id="mDate"></span><span id="mNum"></span></div><div class="m-name" id="mName">El Eco Orbital</div><div class="m-bot"><span id="mYear"></span><span id="mPrice"></span></div></div>
+   <div id="board"><div id="cells"></div><div id="pieces"></div><div id="ghost"></div><div id="tags"></div><div id="kcur"></div><div id="hl"></div></div>
+  </div>
+  <div id="press" hidden><div id="roller"></div><div id="stamp"></div></div>
+ </div>
+ <div id="trayBox"><div id="trayHead"><span data-t="tray">Mesa</span><span id="trayN"></span></div><div id="tray" role="list"></div></div>
+ <div id="side"><div class="side-t" data-t="table">Pares de vecinos</div><div id="pairT"></div></div>
+ <div id="bar">
+  <button class="bb" id="bUndo" data-ta="undo" aria-label="Deshacer"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg><span data-t="undo">Deshacer</span></button>
+  <button class="bb" id="bRedo" data-ta="redo" aria-label="Rehacer"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14l5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg><span data-t="redo">Rehacer</span></button>
+  <button class="bb" id="bRot" hidden data-ta="rotate" aria-label="Girar"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 4v5h-5"/></svg><span data-t="rotate">Girar</span></button>
+  <div id="msg" aria-live="polite"></div>
+  <button class="bb pri" id="bPrint"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M7 14h10v7H7z"/></svg><span data-t="print">Imprimir</span></button>
+ </div>
+</main>
+<div id="dragLayer" aria-hidden="true"></div>
+<div id="fx" aria-hidden="true"></div>
+
+<div id="tut" hidden role="status"><canvas id="tutAstro" width="120" height="120"></canvas><div class="tut-b"><div id="tutTxt"></div><button class="lnk" id="tutSkip" data-t="skip_tut">Saltar el tutorial</button></div></div>
+
+<!-- Inicio -->
+<section class="scr" id="sTitle" aria-label="Inicio" data-ta="a_home">
+ <div class="card title">
+  <div class="tl">
+  <div class="kick" data-t="kick">Rompecabezas editorial</div>
+  <h1 class="logo">JET<i>//</i>Portada</h1>
+  <p class="sub" data-t="tagline">Arma la portada del diario de la colonia.</p>
+  <button class="btn res" id="bResume" hidden><span id="resT"></span><small id="resD"></small></button>
+  <button class="btn pri big" id="bMain"><span id="mainT"></span><small id="mainS"></small></button>
+  </div>
+  <div class="tr2">
+  <div class="menu2">
+   <button class="btn" id="bFree" data-t="free">Modo libre</button>
+   <button class="btn" id="bHow" data-t="how">Cómo jugar</button>
+   <button class="btn" id="bArch" data-t="archive">Hemeroteca</button>
+   <button class="btn" id="bSet" data-t="settings">Ajustes</button>
+  </div>
+  <div class="fsrow">
+  <button class="btn ghost" id="bFsT" hidden><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg><span data-t="fullscreen">Pantalla completa</span></button>
+   <div class="seg langT" id="langSegT" data-lang role="group" aria-label="Idioma / Language"><button data-l="es" lang="es" aria-label="Español">ES</button><button data-l="en" lang="en" aria-label="English">EN</button></div>
+  </div>
+  <div class="prog" id="prog"></div>
+  </div>
+ </div>
+</section>
+
+<!-- Modo libre -->
+<section class="scr" id="sFree" aria-label="Modo libre" data-ta="free_t">
+ <div class="card">
+  <div class="top"><h2 data-t="free_t">Modo libre</h2><button class="x" data-back data-ta="close" aria-label="Cerrar">✕</button></div>
+  <div id="diffs" class="diffs" role="radiogroup"></div>
+  <label class="code"><input id="code" maxlength="6" autocomplete="off" autocapitalize="characters" spellcheck="false" data-tp="code_ph" placeholder="Código de 6 letras (opcional)"><small data-t="code_hint">Juega la misma edición que un amigo.</small></label>
+  <button class="btn pri" id="bNewRun" data-t="new_run">Nueva partida</button>
+ </div>
+</section>
+
+<!-- Elección de regla -->
+<section class="scr" id="sRules" aria-label="Reglas de redacción" data-ta="a_rules">
+ <canvas id="rulesBg" aria-hidden="true"></canvas>
+ <div class="rules-wrap">
+  <div class="kick" id="rulesKick"></div>
+  <h2 class="rules-t" data-t="pick_rule">Elige una regla de redacción</h2>
+  <p class="rules-h" data-t="pick_hint"></p>
+  <div id="cards" class="cards"></div>
+  <div id="secPick" class="secpick" hidden></div>
+  <button class="btn pri" id="bChoose" disabled data-t="choose">Elegir</button>
+ </div>
+</section>
+
+<!-- Presentación de edición -->
+<section class="scr lite" id="sIntro" aria-label="Edición" data-ta="a_edition">
+ <div class="intro" id="introBox"></div>
+</section>
+
+<!-- Resultado de edición -->
+<section class="scr" id="sEd" aria-label="Resultado de la edición" data-ta="a_edres">
+ <div class="card wide" id="edCard"></div>
+</section>
+
+<!-- Resultado final -->
+<section class="scr" id="sFinal" aria-label="Resultado final" data-ta="final">
+ <div class="card wide" id="finCard"></div>
+</section>
+
+<!-- Pausa -->
+<section class="scr" id="sPause" aria-label="Pausa" data-ta="pause">
+ <div class="card">
+  <div class="top"><h2 data-t="pause">Pausa</h2></div>
+  <p class="note" id="pauseNote"></p>
+  <button class="btn pri" id="bCont" data-t="continue">Continuar</button>
+  <button class="btn" id="bRestart" data-t="restart_ed">Reiniciar edición</button>
+  <div class="menu2"><button class="btn" id="bHowP" data-t="how">Cómo jugar</button><button class="btn" id="bSetP" data-t="settings">Ajustes</button></div>
+  <button class="btn" id="bHome" style="margin-top:10px" data-t="home">Salir al inicio</button>
+  <p class="note small" data-t="saved_note"></p>
+ </div>
+</section>
+
+<!-- Cómo jugar -->
+<section class="scr" id="sHelp" aria-label="Cómo jugar" data-ta="help_t">
+ <div class="card wide">
+  <div class="top"><h2 data-t="help_t">Cómo jugar</h2><button class="x" data-back data-ta="close" aria-label="Cerrar">✕</button></div>
+  <div class="hcar" id="hcar"></div>
+  <div class="dots" id="hdots"></div>
+  <details class="tbl"><summary data-t="help_table">Ver la tabla completa</summary><div id="helpTable"></div></details>
+  <p class="note small keys" data-t="help_keys"></p>
+  <button class="btn pri" id="bPractice" data-t="practice">Practicar</button>
+ </div>
+</section>
+
+<!-- Ajustes -->
+<section class="scr" id="sSet" aria-label="Ajustes" data-ta="settings_t">
+ <div class="card">
+  <div class="top"><h2 data-t="settings_t">Ajustes</h2><button class="x" data-back data-ta="close" aria-label="Cerrar">✕</button></div>
+  <div class="set"><label for="tMusic" data-t="music">Música</label><input type="range" id="vMusic" min="0" max="100" data-ta="vol_music" aria-label="Volumen de la música"><button class="tog" id="tMusic" role="switch"></button></div>
+  <div class="set"><label for="tSfx" data-t="sfx">Efectos</label><input type="range" id="vSfx" min="0" max="100" data-ta="vol_sfx" aria-label="Volumen de los efectos"><button class="tog" id="tSfx" role="switch"></button></div>
+  <div class="set"><label for="tVib" data-t="vibration">Vibración</label><button class="tog" id="tVib" role="switch"></button></div>
+  <div class="set"><label for="tTags" data-t="tags">Mostrar fichas de vecinos</label><button class="tog" id="tTags" role="switch"></button></div>
+  <div class="set"><label for="tCon" data-t="contrast">Alto contraste</label><button class="tog" id="tCon" role="switch"></button></div>
+  <div class="set"><label data-t="language">Idioma</label><div class="seg" id="langSeg" data-lang role="group" aria-label="Idioma / Language"><button data-l="es" lang="es" aria-label="Español">ES</button><button data-l="en" lang="en" aria-label="English">EN</button></div></div>
+  <div class="set" id="fsRow"><label data-t="fullscreen">Pantalla completa</label><button class="tog" id="tFs" role="switch"></button></div>
+  <button class="btn danger" id="bErase" data-t="erase">Borrar progreso</button>
+ </div>
+</section>
+
+<!-- Hemeroteca -->
+<section class="scr" id="sArch" aria-label="Hemeroteca" data-ta="archive_t">
+ <div class="card wide">
+  <div class="top"><h2 data-t="archive_t">Hemeroteca</h2><button class="x" data-back data-ta="close" aria-label="Cerrar">✕</button></div>
+  <div id="archGrid" class="agrid"></div>
+ </div>
+</section>
+
+<!-- Vista de una portada -->
+<section class="scr" id="sView" aria-label="Portada" data-ta="a_page">
+ <div class="view">
+  <div class="top"><h2 id="viewT"></h2><button class="x" data-back data-ta="close" aria-label="Cerrar">✕</button></div>
+  <div id="viewBox"><div id="viewPaper"></div></div>
+  <button class="btn pri" id="bViewShare" data-t="share">Compartir</button>
+ </div>
+</section>
+
+<!-- Detalle de pieza / diálogos -->
+<section class="scr" id="sModal" role="dialog" aria-modal="true" aria-label="Aviso" data-ta="a_notice">
+ <div class="card" id="modalCard"></div>
+</section>
+
+<div id="toast" role="status" aria-live="polite"></div>
+<noscript><p style="color:#fff;text-align:center;padding:40px">JET//Portada necesita JavaScript. · JET//Portada needs JavaScript.</p></noscript>
+
+<script src="src/astronauta-oficial.js?v=1"></script>
+<script src="src/content.js?v=1"></script>
+<script src="src/content2.js?v=2"></script>
+<script src="src/core.js?v=2"></script>
+<script src="src/i18n.js?v=5"></script>
+<script src="src/art.js?v=2"></script>
+<script src="src/audio.js?v=2"></script>
+<script src="src/ui.js?v=6"></script>
+</body>
+</html>

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>JET//Rocket</title>
+<link rel="canonical" href="https://jetgames.fun/rocket/">
+<noscript><meta http-equiv="refresh" content="0; url=https://jetgames.fun/rocket/"></noscript>
+<style>html,body{margin:0;height:100%;background:#050108;color:#b5a8d8;font:500 12px/1.4 'JetBrains Mono',monospace;display:flex;align-items:center;justify-content:center;letter-spacing:.2em;text-transform:uppercase}a{color:#00f2cf}</style>
+</head>
+<body>
+<a href="https://jetgames.fun/rocket/" id="ir">JET//Rocket</a>
+<script>
+/* Puente de mudanza (2026-10-22): JET//Rocket vive ahora en https://jetgames.fun/rocket/.
+   Si esta página se abre en el subdominio viejo, su localStorage (récords, campaña, ajustes) viaja
+   en #jet-migrar=<JSON codificado> y el juego nuevo lo importa solo si aún no existe allí. */
+(function () {
+  var destino = 'https://jetgames.fun/rocket/' + location.search;
+  var hash = '', MARCA = 'jet-migrado-rocket';
+  var subdominio = location.hostname !== 'jetgames.fun';
+  /* El progreso viaja UNA sola vez: luego queda la marca y no se reenvía (así un «Borrar progreso»
+     en el juego nuevo no se deshace al volver a entrar por la dirección vieja). */
+  if (subdominio) {
+    try {
+      if (!localStorage.getItem(MARCA)) {
+        var data = {}, n = 0;
+        for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); if (k == null || k === 'jet_lang' || k === MARCA) continue; data[k] = localStorage.getItem(k); n++; }
+        if (n) hash = '#jet-migrar=' + encodeURIComponent(JSON.stringify(data));
+        localStorage.setItem(MARCA, new Date().toISOString());
+      }
+    } catch (e) {}
+  }
+  /* Solo los service workers de esta ubicación vieja. En jetgames.fun/jetrocket/ el origen es el de
+     todo el sitio: no se tocan los de la portada ni los de otros juegos. */
+  try {
+    if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) navigator.serviceWorker.getRegistrations().then(function (rs) {
+      rs.forEach(function (r) { var p = new URL(r.scope).pathname; if (subdominio || p.indexOf('/jetrocket/') === 0) r.unregister(); });
+    });
+  } catch (e) {}
+  document.getElementById('ir').href = destino + hash;
+  location.replace(destino + hash);
+})();
+</script>
+</body>
+</html>

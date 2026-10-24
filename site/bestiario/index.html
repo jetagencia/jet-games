@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<!-- idioma común de jetgames.fun (copia tal cual de _shared/jet-idioma.js): va primero, antes de pintar cualquier texto -->
+<script src="jet-idioma.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0d1219">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>JET//Bestiario</title>
+<meta name="description" content="JET//Bestiario: cría 17 criaturas temibles desde el huevo, entrénalas y vence a los ocho maestros de la Liga para coronarte Campeón del Bestiario. Gratis, en el navegador." data-en-content="JET//Bestiary: raise 17 fearsome creatures from the egg, train them and defeat the eight League masters to be crowned Bestiary Champion. Free, in your browser.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=JetBrains+Mono:wght@600;700&display=swap" media="print" onload="this.media='all'">
+<link rel="icon" type="image/svg+xml" href="icon.svg">
+<link rel="stylesheet" href="src/ui.css?v=20261022i">
+<script type="importmap">{"imports":{"three":"./vendor/three.module.js","three/addons/":"./vendor/addons/"}}</script>
+<link rel="modulepreload" href="vendor/three.module.js"><link rel="modulepreload" href="src/main.js">
+<script>
+  // La portada muestra al fénix: su modelo se pide ya, en paralelo con el motor 3D, en la calidad que usará este equipo
+  // (misma regla que src/quality.js). model3d.js y main.js toman estas descargas de window.__pre en lugar de repetirlas.
+  // (se lanza tras el primer cuadro, para no quitarle ancho de banda a la hoja de estilos que pinta la pantalla de carga)
+  window.__preFenix = function () {
+    try {
+      var q = new URLSearchParams(location.search); if (q.has('sinportada')) return;
+      var st = null; try { st = localStorage.getItem('criaturas.calidad'); } catch (e) { /* sin almacenamiento */ }
+      var want = q.get('calidad') || (st === 'baja' || st === 'alta' ? st : null), mem = navigator.deviceMemory;
+      var low = want === 'baja' ? true : want === 'alta' ? false : matchMedia('(pointer: coarse)').matches || !!(mem && mem <= 4);
+      var P = window.__pre = {}, lod = low ? 'sd' : 'hd';
+      ['json', 'glb'].forEach(function (ext) {
+        var u = 'assets/fenix-' + lod + '.' + ext;
+        P[u] = fetch(u).then(function (r) { if (!r.ok) throw new Error(r.status); return ext === 'json' ? r.json() : r.arrayBuffer(); });
+        P[u].catch(function () { /* si falla, el juego lo pide de nuevo por su cuenta */ });
+      });
+    } catch (e) { /* sin precarga: el juego carga igual */ }
+  };
+</script>
+<style>
+  :root {
+    --glass: rgba(9, 11, 15, .74);
+    --edge: rgba(255, 255, 255, .09);
+    --ink: #e9e6df;
+    --font: "Poppins", system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
+    font-family: var(--font);
+  }
+  button, input { font-family: inherit; }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; height: 100%; overflow: hidden; background: #0d1219;
+    overscroll-behavior: none; touch-action: none;
+    -webkit-user-select: none; user-select: none;
+    -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent;
+  }
+  #gl { position: fixed; inset: 0; width: 100%; height: 100%; display: block; outline: none; }
+  /* pantalla de arranque: se ve desde el primer instante, antes de que cargue el módulo de Three.js */
+  #boot {
+    position: fixed; inset: 0; z-index: 50; display: grid; place-content: center; gap: 8px; text-align: center; padding: 24px;
+    background: #0d1219; color: var(--ink); transition: opacity .5s;
+  }
+  #boot { background: radial-gradient(120% 70% at 50% 110%, rgba(119,0,244,.3), transparent 60%), #0d1219; }
+  #boot b { font-weight: 800; font-size: clamp(36px, 9vw, 58px); letter-spacing: .02em; line-height: 1; color: #fff; }
+  #boot b i { font-style: normal; color: #00f2cf; margin: 0 .04em; }
+  #boot b em { font-style: normal; background: linear-gradient(180deg, #ffe4a8, #e8a84a 60%, #b8642a); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  #boot span { font-size: 14px; opacity: .78; max-width: 34ch; line-height: 1.4; margin: 6px auto 0; }
+  #boot .bar { width: min(220px, 60vw); height: 4px; margin: 10px auto 0; border-radius: 4px; background: rgba(255,255,255,.1); overflow: hidden; }
+  #boot .bar::after { content: ""; display: block; width: 40%; height: 100%; border-radius: 4px; background: linear-gradient(90deg, #7700f4, #00f2cf); animation: bootbar 1.1s ease-in-out infinite; }
+  @keyframes bootbar { from { transform: translateX(-100%); } to { transform: translateX(250%); } }
+  #boot.err .bar { display: none; }
+  #boot.err b { color: #ff9a7a; } #boot.err span { opacity: .95; }
+  body.ready #boot { opacity: 0; pointer-events: none; }
+  :focus-visible { outline: 2px solid #f0d49a; outline-offset: 2px; }
+  #gl:focus-visible { outline: none; }
+
+  /* nombres de zona flotando sobre el mundo (o pegados al borde si están fuera de pantalla) */
+  #labels { position: fixed; inset: 0; pointer-events: none; overflow: hidden; }
+  .lbl {
+    position: absolute; left: 0; top: 0; display: flex; align-items: center; gap: 6px;
+    padding: 4px 11px 4px 9px; border-radius: 999px; background: var(--glass); color: var(--ink);
+    border: 1px solid var(--edge);
+    font-size: 12px; font-weight: 650; letter-spacing: .09em; text-transform: uppercase; white-space: nowrap;
+    backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+    will-change: transform; transition: opacity .25s;
+  }
+  .lbl i { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+  .lbl .arr { display: none; font-size: 10px; line-height: 1; }
+  .lbl .dist { display: none; font-weight: 500; opacity: .75; font-size: 12px; text-transform: none; letter-spacing: 0; }
+  .lbl.edge .arr, .lbl.edge .dist { display: inline-block; }
+
+  /* aviso de zona: arriba al centro, no tapa el juego */
+  #zone {
+    position: fixed; left: 50%; top: max(12px, env(safe-area-inset-top));
+    transform: translate(-50%, -160%); opacity: 0;
+    display: flex; align-items: center; gap: 10px; padding: 9px 16px 9px 12px;
+    border-radius: 12px; background: var(--glass); color: var(--ink); border: 1px solid var(--edge);
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    transition: transform .35s cubic-bezier(.2,.9,.3,1.2), opacity .25s;
+    pointer-events: none; max-width: calc(100vw - 24px);
+  }
+  #zone.show { transform: translate(-50%, 0); opacity: 1; }
+  #zone .dot { width: 12px; height: 12px; border-radius: 50%; flex: none; box-shadow: 0 0 10px currentColor; }
+  #zone > div { min-width: 0; }
+  #zone b { display: block; font-size: 16px; line-height: 1.15; letter-spacing: .1em; text-transform: uppercase; }
+  #zone small { display: block; font-size: 13px; opacity: .8; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #zone .soon {
+    margin-left: 4px; padding: 3px 8px; border-radius: 999px; font-size: 11px; font-weight: 600;
+    background: rgba(255,255,255,.16); white-space: nowrap;
+  }
+
+  #hint {
+    position: fixed; left: 50%; bottom: max(22px, env(safe-area-inset-bottom));
+    transform: translateX(-50%); padding: 8px 16px; border-radius: 999px;
+    background: var(--glass); color: var(--ink); font-size: 14px; font-weight: 550;
+    backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+    transition: opacity .6s; pointer-events: none; text-align: center; max-width: calc(100vw - 24px);
+  }
+  #hint.off { opacity: 0; }
+
+  /* joystick flotante: aparece donde se apoya el dedo */
+  #stick { position: fixed; left: 0; top: 0; width: 0; height: 0; pointer-events: none; opacity: 0; transition: opacity .15s; }
+  #stick.on { opacity: 1; }
+  #stick .base {
+    position: absolute; width: 108px; height: 108px; margin: -54px 0 0 -54px; border-radius: 50%;
+    background: rgba(255,255,255,.14); border: 2px solid rgba(255,255,255,.5);
+  }
+  #stick .knob {
+    position: absolute; width: 48px; height: 48px; margin: -24px 0 0 -24px; border-radius: 50%;
+    background: rgba(255,255,255,.62); box-shadow: 0 2px 10px rgba(0,0,0,.25);
+  }
+
+  #fs {
+    position: fixed; right: calc(max(12px, env(safe-area-inset-right)) + 104px); top: max(12px, env(safe-area-inset-top));
+    width: 44px; height: 44px; border: 0; border-radius: 12px; background: var(--glass); color: var(--ink);
+    display: none; place-items: center; cursor: pointer; padding: 0;
+    backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  }
+  #fs.ok { display: grid; }
+  #fs svg { width: 20px; height: 20px; fill: currentColor; }
+
+  #esc {
+    position: fixed; left: max(12px, env(safe-area-inset-left)); top: max(12px, env(safe-area-inset-top));
+    display: flex; align-items: center; gap: 8px; height: 44px; padding: 0 12px; cursor: pointer;
+    border: 1px solid var(--edge); border-radius: 12px; background: var(--glass); color: var(--ink);
+    font: 600 12px/1 system-ui, "Segoe UI", sans-serif; letter-spacing: .08em; text-transform: uppercase;
+    backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  }
+  #esc svg { width: 20px; height: 20px; fill: currentColor; flex: none; }
+  #esc span { display: none; }
+  @media (min-width: 720px) { #esc span { display: inline; } }
+  #esc-panel {
+    position: fixed; left: max(12px, env(safe-area-inset-left)); top: calc(max(12px, env(safe-area-inset-top)) + 54px);
+    width: min(340px, calc(100vw - 24px)); max-height: calc(100vh - 140px); overflow: auto; padding: 6px;
+    border: 1px solid var(--edge); border-radius: 14px; background: rgba(9, 11, 15, .92); color: var(--ink);
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  }
+  #esc-panel[hidden] { display: none; }
+  #esc-panel button { display: flex; gap: 12px; align-items: flex-start; width: 100%; text-align: left; padding: 10px 12px; min-height: 44px; border: 0; border-radius: 10px; background: transparent; color: inherit; cursor: pointer; font: inherit; }
+  #esc-panel button:hover, #esc-panel button.sel { background: rgba(255,255,255,.09); }
+  #esc-panel i { width: 14px; height: 14px; border-radius: 50%; margin-top: 3px; flex: none; border: 1px solid rgba(255,255,255,.4); }
+  #esc-panel b { display: block; font-size: 14px; letter-spacing: .04em; }
+  #esc-panel button.sel b::after { content: " ✓"; color: #aee8b8; }
+  #esc-panel small { display: block; margin-top: 2px; font-size: 12px; line-height: 1.35; opacity: .8; }
+  #esc-panel .foot { position: sticky; bottom: -6px; margin: 4px -6px -6px; padding: 8px 12px; font-size: 12px; opacity: .85; background: rgba(9, 11, 15, .96); border-top: 1px solid var(--edge); }
+  #cam {
+    position: fixed; right: calc(max(12px, env(safe-area-inset-right)) + 52px); top: max(12px, env(safe-area-inset-top));
+    width: 44px; height: 44px; border: 1px solid var(--edge); border-radius: 12px; background: var(--glass); color: var(--ink);
+    display: grid; place-items: center; cursor: pointer; padding: 0;
+    backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  }
+  #cam svg { width: 22px; height: 22px; fill: currentColor; }
+  #menu {
+    position: fixed; right: max(12px, env(safe-area-inset-right)); top: max(12px, env(safe-area-inset-top)); z-index: 3;
+    width: 44px; height: 44px; border: 1px solid rgba(185,140,255,.45); border-radius: 12px; background: var(--glass); color: var(--ink);
+    display: grid; place-items: center; cursor: pointer; padding: 0;
+    backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  }
+  #menu svg { width: 22px; height: 22px; fill: currentColor; }
+  body.in-battle #menu, body.modal-open #menu, body.title-on #menu { opacity: 0; pointer-events: none; }
+  #cam-panel {
+    position: fixed; right: max(12px, env(safe-area-inset-right)); top: calc(max(12px, env(safe-area-inset-top)) + 54px);
+    width: min(330px, calc(100vw - 24px)); padding: 6px; border: 1px solid var(--edge); border-radius: 14px;
+    background: rgba(9, 11, 15, .92); color: var(--ink); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  }
+  #cam-panel[hidden] { display: none; }
+  #cam-panel button { display: block; width: 100%; text-align: left; padding: 10px 12px; min-height: 44px; border: 0; border-radius: 10px; background: transparent; color: inherit; cursor: pointer; font: inherit; }
+  #cam-panel button:hover, #cam-panel button.sel { background: rgba(255,255,255,.09); }
+  #cam-panel b { display: block; font-size: 14px; letter-spacing: .04em; }
+  #cam-panel small { display: block; margin-top: 2px; font-size: 12px; line-height: 1.35; opacity: .8; }
+  /* avisos: arriba, bajo la tarjeta de zona, para no tapar el botón de acción ni la pista de abajo */
+  #toast {
+    position: fixed; left: 50%; top: calc(max(12px, env(safe-area-inset-top)) + 72px); transform: translateX(-50%); z-index: 7;
+    padding: 8px 16px; border-radius: 999px; background: var(--glass); color: var(--ink); border: 1px solid var(--edge);
+    font-size: 14px; font-weight: 600; letter-spacing: .04em; opacity: 0; transition: opacity .3s; pointer-events: none; text-align: center; max-width: calc(100vw - 24px);
+  }
+  #toast.show { opacity: 1; }
+  body.in-battle #toast { display: none; }
+  body.has-act #hint { opacity: 0; }
+
+  /* objetivo guiado: una línea que dice qué hacer ahora (toca para destacar el lugar) */
+  #goal {
+    position: fixed; left: max(12px, env(safe-area-inset-left)); top: calc(max(12px, env(safe-area-inset-top)) + 116px); z-index: 2;
+    display: flex; align-items: center; gap: 8px; min-height: 44px; max-width: min(360px, calc(100vw - 24px)); padding: 6px 14px 6px 10px; text-align: left; cursor: pointer;
+    border: 1px solid rgba(232,192,90,.45); border-radius: 12px; background: var(--glass); color: var(--ink); font: 600 13px/1.25 system-ui, "Segoe UI", sans-serif;
+    backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  }
+  #goal[hidden] { display: none; }
+  #goal-arr { display: none; width: 18px; height: 18px; flex: none; fill: #e8c05a; filter: drop-shadow(0 0 4px rgba(232,192,90,.5)); }
+  #goal.nav i { display: none; } #goal.nav #goal-arr { display: block; }
+  .lbl.goal { border-color: rgba(232,192,90,.85); box-shadow: 0 0 0 2px rgba(232,192,90,.25); }
+  #goal i { width: 10px; height: 10px; border-radius: 50%; flex: none; background: #e8c05a; box-shadow: 0 0 0 3px rgba(232,192,90,.25); }
+  body.modal-open #goal { opacity: 0; pointer-events: none; }
+  .lbl.pulse { animation: lblpulse .7s ease-in-out 5; z-index: 3; }
+  @keyframes lblpulse { 50% { box-shadow: 0 0 0 6px rgba(232,192,90,.55); } }
+
+  /* cabecera por filas: 1 = escenario · monedas (en teléfono) · pantalla completa · vista; 2 = monedas (en pantallas anchas) y tarjeta de zona */
+  @media (max-width: 899px) { #zone { top: calc(max(12px, env(safe-area-inset-top)) + 64px); } #toast { top: calc(max(12px, env(safe-area-inset-top)) + 128px); } }
+  @media (min-width: 561px) and (max-width: 899px) { #zone { max-width: calc(100vw - 2 * (max(12px, env(safe-area-inset-left)) + 200px)); } }
+  @media (max-width: 560px) {
+    #coins { top: max(12px, env(safe-area-inset-top)) !important; left: calc(max(12px, env(safe-area-inset-left)) + 52px) !important; }
+    #goal { top: calc(max(12px, env(safe-area-inset-top)) + 64px); max-width: calc(100vw - 24px); }
+    body:has(#zone.show) #goal { opacity: 0; pointer-events: none; }
+  }
+  /* teléfono en horizontal: el aviso sube a la fila de botones (no pisa el objetivo) y el botón de acción va al pulgar derecho, sobre el giro de cámara */
+  @media (max-height: 460px) and (min-width: 561px) {
+    #toast { top: calc(max(12px, env(safe-area-inset-top)) + 2px); max-width: calc(100vw - 2 * (max(12px, env(safe-area-inset-left)) + 190px)); }
+    #act { left: auto; right: max(12px, env(safe-area-inset-right)); bottom: calc(max(18px, env(safe-area-inset-bottom)) + 58px); transform: translateY(24px); max-width: min(46vw, 380px); }
+    #act.show { transform: none; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition-duration: .01ms !important; animation-duration: .01ms !important; } }
+  /* portada: logotipo, progreso y cuatro botones; el pueblo gira despacio detrás */
+  #title {
+    position: fixed; inset: 0; z-index: 25; display: grid; place-items: center; padding: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom));
+    background: radial-gradient(120% 80% at 50% 110%, rgba(119,0,244,.28), transparent 60%), linear-gradient(180deg, rgba(8,10,15,.55), rgba(8,10,15,.2) 40%, rgba(8,10,15,.75));
+    color: var(--ink); overflow: auto;
+  }
+  #title[hidden] { display: none; }
+  @media (min-aspect-ratio: 23/20) { #title { justify-items: start; padding-left: max(5vw, env(safe-area-inset-left)); background: linear-gradient(90deg, rgba(8,10,15,.7), rgba(8,10,15,.15) 55%, transparent), radial-gradient(90% 70% at 20% 110%, rgba(119,0,244,.3), transparent 60%); } }
+  @media (max-aspect-ratio: 1/1) { #title { align-items: end; } }
+  #title .tcard { width: min(460px, 100%); text-align: center; padding: 26px 22px 18px; border-radius: 24px; background: rgba(9,11,15,.66); border: 1px solid rgba(255,255,255,.1); box-shadow: 0 30px 90px rgba(0,0,0,.55); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); animation: tin .7s cubic-bezier(.2,.9,.3,1) both; }
+  @keyframes tin { from { opacity: 0; transform: translateY(14px); } }
+  #title .tlogo { margin: 0; font-weight: 800; font-size: clamp(30px, 9vw, 58px); letter-spacing: .02em; line-height: 1; text-shadow: 0 6px 30px rgba(0,0,0,.7); }
+  #title .tlogo .j { color: #fff; } #title .tlogo .s { color: #00f2cf; margin: 0 .04em; } #title .tlogo .b { background: linear-gradient(180deg, #ffe4a8, #e8a84a 60%, #b8642a); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  #title .ttag { margin: 12px auto 16px; max-width: 34ch; font-size: 15px; line-height: 1.45; opacity: .9; text-shadow: 0 2px 10px rgba(0,0,0,.8); }
+  #tprog { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin: 0 0 16px; }
+  #tprog[hidden] { display: none; }
+  #tprog span { padding: 5px 11px; border-radius: 999px; background: rgba(9,11,15,.7); border: 1px solid var(--edge); font: 700 12px/1.2 var(--mono); letter-spacing: .02em; }
+  #title .tbtns { display: grid; gap: 10px; }
+  #title button { min-height: 50px; border-radius: 14px; border: 1px solid rgba(255,255,255,.18); background: rgba(14,17,23,.82); color: var(--ink); font: 600 16px/1 var(--font); cursor: pointer; letter-spacing: .02em; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); transition: transform .12s, background .2s, border-color .2s; }
+  #title button:hover { background: rgba(40,30,60,.9); border-color: rgba(185,140,255,.6); }
+  #title button:active { transform: scale(.98); }
+  #title button.big { min-height: 58px; font-size: 18px; font-weight: 800; border: 0; color: #fff; background: linear-gradient(135deg, #7700f4, #4b1fd0 55%, #00a9a0); box-shadow: 0 10px 34px rgba(119,0,244,.45); }
+  #title button[hidden] { display: none; }
+  #title .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  #title .tfoot { display: block; margin-top: 16px; font-size: 12px; opacity: .6; }
+  @media (max-height: 520px) { #title .tcard { width: min(560px, 100%); padding: 14px 18px 14px; } #title .tlogo { font-size: 34px; } #title .ttag { margin: 6px auto 10px; font-size: 13px; max-width: 48ch; } #title .tbtns { grid-template-columns: repeat(3, 1fr); gap: 8px; } #title button { min-height: 46px; font-size: 14px; } #title button.big { grid-column: 1 / -1; min-height: 50px; font-size: 17px; } #title .row2 { display: contents; } #tprog { margin-bottom: 10px; } #title .tfoot { display: none; } }
+  @media (max-height: 520px) { #title:has(#t-new[hidden]) .tbtns { grid-template-columns: 1fr 1fr; } }
+  /* teléfono en horizontal: tarjeta angosta a la izquierda, el fénix queda a la vista a la derecha */
+  @media (max-height: 520px) and (min-aspect-ratio: 23/20) { #title .tcard { width: min(420px, 50vw); } #title .ttag { max-width: 40ch; } #title button { font-size: 13px; padding: 0 6px; } }
+  @media (max-width: 360px) { #title .tcard { padding: 20px 14px 14px; } #title .tfoot { font-size: 11px; } }
+  body.title-on #labels, body.title-on #zone, body.title-on #rot, body.title-on #coins, body.title-on #goal, body.title-on #act, body.title-on #esc, body.title-on #esc-panel, body.title-on #cam, body.title-on #cam-panel, body.title-on #fs, body.title-on #hint, body.title-on #toast { opacity: 0 !important; pointer-events: none !important; }
+  /* vuelta a la portada de JET//Games: arriba a la izquierda, durante el arranque y en la portada del juego */
+  #back {
+    position: fixed; top: max(12px, env(safe-area-inset-top)); left: max(12px, env(safe-area-inset-left)); z-index: 60;
+    display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 14px 0 12px; border-radius: 999px;
+    background: rgba(10,5,18,.72); border: 1px solid rgba(119,0,244,.4); color: #d9d3ee; text-decoration: none;
+    font: 600 12px/1 var(--mono); letter-spacing: .06em; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  }
+  #back i { font-style: normal; color: #00f2cf; }
+  #back:hover, #back:focus-visible { color: #fff; border-color: #00f2cf; outline: none; box-shadow: 0 0 14px rgba(0,242,207,.3); }
+  body.ready:not(.title-on) #back { display: none; }
+  body.modal-open #back { display: none; }   /* con un menú abierto (Ajustes desde la portada) no pisa las pestañas; el menú tiene su propio «Salir a JET//Games» */
+  /* el fénix de la portada todavía en camino: una línea discreta en la tarjeta */
+  #tload { display: flex; align-items: center; justify-content: center; gap: 8px; margin: -6px 0 12px; font-size: 12px; opacity: .75; }
+  #tload i { width: 56px; height: 3px; border-radius: 3px; background: rgba(255,255,255,.12); overflow: hidden; }
+  #tload i::after { content: ""; display: block; width: 40%; height: 100%; background: linear-gradient(90deg, #7700f4, #00f2cf); animation: bootbar 1.1s ease-in-out infinite; }
+  body.hero-on #tload { display: none; }
+  /* selector de idioma ES | EN (igual en todos los juegos de jetgames.fun): en la portada, bajo los botones */
+  #t-lang { display: inline-flex; margin: 14px auto 0; padding: 3px; gap: 2px; border-radius: 999px; border: 1px solid rgba(255,255,255,.16); background: rgba(9,11,15,.6); }
+  #title #t-lang button { min-height: 40px; min-width: 52px; padding: 0 14px; border: 0; border-radius: 999px; background: transparent; color: #b5a8d8; font: 700 13px/1 var(--mono); letter-spacing: .08em; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
+  #title #t-lang button:hover { background: rgba(119,0,244,.18); color: #f5f0ff; }
+  #title #t-lang button[aria-pressed="true"] { background: linear-gradient(135deg, #7700f4, #00f2cf); color: #fff; }
+  @media (max-height: 520px) { #t-lang { margin-top: 8px; } #title #t-lang button { min-height: 36px; } }
+  #fps { position: fixed; left: 8px; bottom: 8px; font: 12px monospace; color: #fff; background: rgba(0,0,0,.5); padding: 2px 6px; border-radius: 4px; display: none; }
+</style>
+</head>
+<body>
+<div id="boot" role="status"><b>JET<i>//</i><em data-en="Bestiary">Bestiario</em></b><span id="boot-msg" data-en="Loading the village…">Cargando el pueblo…</span><div class="bar"></div></div>
+<a id="back" href="https://jetgames.fun/" target="_top" rel="noopener" aria-label="Volver a JET//Games" data-en-aria-label="Back to JET//Games">‹ JET<i>//</i>Games</a>
+<noscript><style>#boot span { display: none; } #boot::after { content: "Este juego necesita JavaScript para funcionar. · This game needs JavaScript to run."; font-size: 14px; opacity: .9; }</style></noscript>
+<script>
+  // Textos fijos de la página en los dos idiomas: cada elemento con data-en lleva su versión inglesa (data-en = texto,
+  // data-en-<atributo> = atributo). La versión española se guarda la primera vez en data-es. Se repinta en vivo con 'jet-idioma'.
+  (function () {
+    var ATTRS = ['aria-label', 'title', 'content'];
+    function paint() {
+      var en = window.JETIdioma && window.JETIdioma.get() === 'en';
+      document.title = en ? 'JET//Bestiary' : 'JET//Bestiario';
+      var els = document.querySelectorAll('[data-en],[data-en-aria-label],[data-en-title],[data-en-content]');
+      for (var i = 0; i < els.length; i++) {
+        var el = els[i];
+        if (el.hasAttribute('data-en')) { if (!el.hasAttribute('data-es')) el.setAttribute('data-es', el.textContent); el.textContent = el.getAttribute(en ? 'data-en' : 'data-es'); }
+        for (var k = 0; k < ATTRS.length; k++) {
+          var a = ATTRS[k]; if (!el.hasAttribute('data-en-' + a)) continue;
+          if (!el.hasAttribute('data-es-' + a)) el.setAttribute('data-es-' + a, el.getAttribute(a) || '');
+          el.setAttribute(a, el.getAttribute((en ? 'data-en-' : 'data-es-') + a));
+        }
+      }
+      var seg = document.querySelectorAll('#t-lang [data-lang]');
+      for (var j = 0; j < seg.length; j++) seg[j].setAttribute('aria-pressed', String(seg[j].getAttribute('data-lang') === (en ? 'en' : 'es')));
+    }
+    window.__paintStatic = paint;
+    paint();
+    addEventListener('jet-idioma', paint);
+    addEventListener('DOMContentLoaded', paint);
+  })();
+</script>
+<script>
+  // Si algo impide arrancar (módulo caído, navegador sin WebGL 2 o sin import maps, carga eterna) se dice con claridad en vez de dejar la pantalla negra.
+  (function () {
+    var boot = document.getElementById('boot'), msg = document.getElementById('boot-msg'), EN = window.JETIdioma && window.JETIdioma.get() === 'en';
+    function fail(text) {
+      if (document.body.classList.contains('ready') || (!text && boot.className === 'err')) return;   // un mensaje concreto no se pisa con el genérico
+      boot.className = 'err'; boot.firstChild.textContent = EN ? 'Couldn’t start' : 'No se pudo iniciar'; msg.textContent = text || (EN ? 'Reload the page; if nothing changes, try another browser.' : 'Recarga la página; si sigue igual, prueba con otro navegador.');
+    }
+    window.__bootFail = fail;
+    addEventListener('error', function (e) { if (e.target === window || (e.target && (e.target.tagName === 'SCRIPT' || e.target.tagName === 'LINK'))) fail(); }, true);
+    addEventListener('unhandledrejection', function () { fail(); });
+    try {
+      var c = document.createElement('canvas');
+      if (!(c.getContext && c.getContext('webgl2'))) fail(EN ? 'Your browser can’t display 3D graphics (WebGL 2 is missing). Turn on hardware acceleration or use an up-to-date Chrome, Safari or Firefox.' : 'Tu navegador no puede mostrar gráficos 3D (falta WebGL 2). Activa la aceleración por hardware o usa Chrome, Safari o Firefox actualizados.');
+      else if (!HTMLScriptElement.supports || !HTMLScriptElement.supports('importmap')) fail(EN ? 'Your browser is too old for this game (it needs Safari 16.4, Chrome 89 or Firefox 108, or newer).' : 'Tu navegador es demasiado antiguo para este juego (hace falta Safari 16.4, Chrome 89 o Firefox 108, o superior).');
+    } catch (e) { /* si la prueba falla, que decida el arranque real */ }
+    setTimeout(function () { if (!document.body.classList.contains('ready') && boot.className !== 'err') msg.textContent = EN ? 'This is taking longer than usual. Check your connection…' : 'Está tardando más de lo normal. Revisa tu conexión…'; }, 12000);
+  })();
+</script>
+<canvas id="gl" tabindex="-1" aria-label="Vista del pueblo. Muévete con las teclas de dirección o arrastrando el dedo." data-en-aria-label="View of the village. Move with the arrow keys or by dragging your finger."></canvas>
+<div id="labels" aria-hidden="true"></div>
+
+<div id="zone" aria-live="polite">
+  <span class="dot" id="zone-dot"></span>
+  <div><b id="zone-name"></b><small id="zone-desc"></small></div>
+  <span class="soon" id="zone-soon" style="display:none"></span>
+</div>
+
+<div id="rot" data-ui>
+  <button id="rot-l" type="button" aria-label="Girar la cámara a la izquierda (Q)" title="Girar cámara (Q)" data-en-aria-label="Rotate the camera left (Q)" data-en-title="Rotate camera (Q)"><svg viewBox="0 0 24 24"><path d="M12 5.2a6.8 6.8 0 1 0 6.8 6.8" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" transform="scale(-1 1) translate(-24 0)"/><path d="M12 1.2 7.6 5.2 12 9.2z" fill="currentColor" transform="scale(-1 1) translate(-24 0)"/></svg></button>
+  <button id="compass" type="button" aria-label="Volver a la vista original" title="Norte. Toca para volver a la vista original." data-en-aria-label="Back to the original view" data-en-title="North. Tap to return to the original view."><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.2" fill="none" stroke="currentColor" stroke-opacity=".45" stroke-width="1.6"/><g id="needle" style="transform-origin:12px 12px"><path d="M12 3.4 15.2 12H8.8z" fill="#ff6a4c"/><path d="M12 20.6 8.8 12h6.4z" fill="currentColor" fill-opacity=".5"/></g></svg></button>
+  <button id="rot-r" type="button" aria-label="Girar la cámara a la derecha (E)" title="Girar cámara (E)" data-en-aria-label="Rotate the camera right (E)" data-en-title="Rotate camera (E)"><svg viewBox="0 0 24 24"><path d="M12 5.2a6.8 6.8 0 1 0 6.8 6.8" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><path d="M12 1.2 7.6 5.2 12 9.2z" fill="currentColor"/></svg></button>
+</div>
+
+<button id="coins" data-ui aria-label="Mochila y monedas (B)" title="Mochila (B)" data-en-title="Backpack (B)"><span class="ic"></span><span id="coins-n">0</span><span id="coins-badge" class="badge" hidden></span><small data-en="· Backpack">· Mochila</small></button>
+<button id="goal" data-ui type="button" hidden aria-label="Objetivo: toca para ver dónde" data-en-aria-label="Goal: tap to see where"><i></i><svg id="goal-arr" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5 19.5 20 12 15.6 4.5 20z"/></svg><span id="goal-text" aria-live="polite"></span></button>
+<button id="act" data-ui type="button" tabindex="-1"><span class="dotz"></span><span id="act-text"></span><kbd aria-hidden="true" data-en="Space">Espacio</kbd></button>
+
+<div id="modal" data-ui hidden role="dialog" aria-modal="true" aria-labelledby="mtitle">
+  <div id="mcard">
+    <div id="mhead"><span class="dot" id="mdot"></span><div><h2 id="mtitle"></h2><small id="mwho"></small></div><span class="sp"></span><span id="mcoins"></span><button id="mclose" type="button" aria-label="Cerrar" data-en-aria-label="Close">×</button>
+      <div id="mtabs" role="tablist"></div></div>
+    <div id="mbody" role="tabpanel" tabindex="0" aria-label="Contenido" data-en-aria-label="Content"></div>
+    <div id="mmsg" class="say" aria-live="polite"></div>
+  </div>
+</div>
+
+<div id="hint"></div>
+
+<div id="stick"><div class="base"></div><div class="knob"></div></div>
+
+<button id="esc" data-ui aria-haspopup="true" aria-expanded="false" aria-label="Cambiar de escenario" title="Cambiar de escenario" data-en-aria-label="Change scenery" data-en-title="Change scenery">
+  <svg viewBox="0 0 24 24"><path d="M3 19 9.5 8l3.2 5.2 2.3-3.2L21 19z"/></svg><span id="esc-name"></span>
+</button>
+<div id="esc-panel" data-ui role="menu" hidden></div>
+
+<button id="cam" data-ui aria-haspopup="true" aria-expanded="false" aria-label="Cambiar la vista (C)" title="Vista (C)" data-en-aria-label="Change the view (C)" data-en-title="View (C)">
+  <svg viewBox="0 0 24 24"><path d="M12 5C6.5 5 2.7 8.6 1.2 12c1.5 3.4 5.3 7 10.8 7s9.3-3.6 10.8-7C21.3 8.6 17.5 5 12 5zm0 11.2a4.2 4.2 0 1 1 0-8.4 4.2 4.2 0 0 1 0 8.4zm0-6.4a2.2 2.2 0 1 0 0 4.4 2.2 2.2 0 0 0 0-4.4z"/></svg>
+</button>
+<div id="cam-panel" data-ui role="menu" hidden></div>
+<button id="menu" data-ui type="button" aria-label="Menú: ajustes, cómo jugar y partida (Esc)" title="Menú (Esc)" data-en-aria-label="Menu: settings, how to play and game (Esc)" data-en-title="Menu (Esc)">
+  <svg viewBox="0 0 24 24"><path d="M4 6.2h16v2.2H4zm0 4.7h16v2.2H4zm0 4.7h16v2.2H4z"/></svg>
+</button>
+<div id="toast" aria-live="polite"></div>
+<div id="title" data-ui role="dialog" aria-label="JET//Bestiario" data-en-aria-label="JET//Bestiary" hidden>
+  <div class="tcard">
+    <h1 class="tlogo"><span class="j">JET</span><span class="s">//</span><span class="b" data-en="Bestiary">Bestiario</span></h1>
+    <p class="ttag" data-en="Raise fearsome creatures from the egg, train them and defeat the eight League masters.">Cría criaturas temibles desde el huevo, entrénalas y vence a los ocho maestros de la Liga.</p>
+    <div id="tprog" hidden></div>
+    <div id="tload" role="status"><i></i><span data-en="Waking the phoenix…">Despertando al fénix…</span></div>
+    <div class="tbtns">
+      <button id="t-play" class="big" type="button">Jugar</button>
+      <button id="t-new" type="button" hidden data-en="New game">Nueva partida</button>
+      <div class="row2"><button id="t-help" type="button" data-en="How to play">Cómo jugar</button><button id="t-set" type="button" data-en="Settings">Ajustes</button></div>
+    </div>
+    <div id="t-lang" role="group" aria-label="Idioma · Language"><button type="button" data-lang="es" lang="es" aria-label="Español" aria-pressed="false">ES</button><button type="button" data-lang="en" lang="en" aria-label="English" aria-pressed="false">EN</button></div>
+    <small class="tfoot" data-en="jetgames.fun · original creatures and music">jetgames.fun · criaturas y música originales</small>
+  </div>
+</div>
+
+<button id="fs" data-ui aria-label="Pantalla completa" title="Pantalla completa (F)" data-en-aria-label="Full screen" data-en-title="Full screen (F)">
+  <svg viewBox="0 0 24 24"><path d="M4 4h6v2H6v4H4zm10 0h6v6h-2V6h-4zM4 14h2v4h4v2H4zm14 0h2v6h-6v-2h4z"/></svg>
+</button>
+<div id="fps"></div>
+
+<script>
+  // El juego arranca después del primer cuadro: la pantalla de carga se pinta al instante aunque el motor ya esté descargado (modulepreload).
+  requestAnimationFrame(function () { if (window.__preFenix) window.__preFenix(); setTimeout(function () { import('./src/main.js').catch(function () { if (window.__bootFail) window.__bootFail(); }); }, 0); });
+</script>
+</body>
+</html>

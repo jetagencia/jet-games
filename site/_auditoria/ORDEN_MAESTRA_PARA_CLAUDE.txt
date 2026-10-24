@@ -1,0 +1,97 @@
+JETGAMES / ORDEN DE IMPLEMENTACIÓN DE INTERFACES Y DIRECCIÓN EDITORIAL
+Fecha de revisión: 22 de octubre de 2026.
+
+OBJETIVO
+Aplicar los cambios individualizados en el catálogo de incidencias y en los 22 briefs editoriales. Corregir estados, navegación, textos y jerarquía visual conservando las mecánicas, el progreso y la personalidad de cada juego. Este encargo es de interfaz y presentación; no sustituye las partituras ni el trabajo musical, ni autoriza reescribir las mecánicas para simplificar la implementación.
+
+CÓMO LEER LA EVIDENCIA
+OBSERVADO: se vio en una pasada interactiva o en una captura indicada.
+FUENTE: el comportamiento o regla se identificó en el código público, sin afirmar una reproducción interactiva.
+PROPUESTA: decisión editorial o de diseño; no implica que el estado anterior sea un fallo funcional.
+BLOQUEADO: no se pudo probar ese estado en el entorno indicado. Nunca convertirlo en prueba aprobada.
+La cobertura detalla los estados realmente alcanzados. Dos pasadas no equivalen a completar todos los niveles ni a probar todos los dispositivos.
+
+ANTES DE MODIFICAR
+1. Abrí cada ruta y localizá la pantalla, selector y texto indicados. Las líneas describen la versión revisada, no garantizan que la versión actual no haya cambiado.
+2. Si una incidencia ya está corregida, comprobá su criterio de aceptación y marcala resuelta sin aplicar un parche duplicado.
+3. Conservá traducciones y detección/elección de idioma. El español de las nuevas cadenas será coherente con es-AR; mantené las equivalentes en inglés. No traduzcas automáticamente nombres propios de juegos ni uses el inglés visible como prueba de un fallo de idioma.
+4. No borres partidas guardadas, récords, ajustes, selecciones ni claves de almacenamiento para conseguir una captura limpia. Usá un perfil de prueba separado.
+5. No modifiques reglas de puntuación, dificultad, física, economía o desbloqueo salvo donde la instrucción describa explícitamente una corrección de interfaz dependiente de ellas. Si hay que cambiarlas, separá la decisión y pedí validación.
+
+ORDEN DE TRABAJO
+A. Bloqueos de carga y acciones equivocadas o destructivas.
+B. Navegación y estados: inicio, juego, pausa, cierre, victoria, derrota, reintento y continuación.
+C. Controles operables con teclado/tacto y semántica accesible.
+D. Textos exactos, jerarquía y disposición responsive.
+E. Fondos, tableros, líneas, piezas, paneles y demás dirección visual interna de los 22 juegos.
+F. Portadas editoriales y coherencia de cards en la home.
+G. Regresión por juego y revisión cruzada del catálogo.
+
+CONTRATO DE CADA CAMBIO
+Usá su identificador estable. Implementá el texto, ubicación y comportamiento especificados, no una interpretación vaga de 'mejorar'. Verificá los pasos de aceptación. Documentá el archivo y componente realmente modificados. Conservá la evidencia antes/después y el resultado de la prueba. Si la evidencia es de fuente, primero intentá reproducir y distinguí la prueba nueva de la auditoría original.
+No confundas una recomendación visual con una causa técnica confirmada. No informes 'resuelto' sólo porque compiló o porque cambió una clase CSS.
+
+REGLAS COMUNES DE VALIDACIÓN
+- Probar anchos 320, 360, 390, 768, 1024 y 1440 píxeles CSS; incluir altura compacta de 568 píxeles y orientación horizontal. Estos son tamaños de prueba requeridos, no una afirmación de que ya fueron probados.
+- Respetar safe areas cuando correspondan. No solapar HUD, acciones de juego, mensajes y controles del navegador.
+- Recorrer la interfaz con Tab, Shift+Tab, Enter, Espacio y Escape. El foco debe ser visible; los paneles cerrados no deben recibirlo; cerrar un diálogo debe devolverlo al control que lo abrió.
+- No cambiar atajos esenciales sin actualizar la ayuda visible antes de iniciar y durante la pausa.
+- Probar cadenas más largas en ambos idiomas y zoom al 200 % en menús/documentos. Limitar gestos sólo sobre superficies de juego que lo necesiten, no en todo el documento.
+- Desactivar animaciones no esenciales con prefers-reduced-motion. Nunca esconder una instrucción crítica en una animación o en un aviso efímero.
+- Verificar éxito y fallo de carga, retorno a catálogo, reintento repetido, clic doble y cancelación sin duplicar bucles/eventos.
+- No emitir mensajes de éxito antes de confirmar la operación. Si una función no está disponible, ofrecer una salida útil y mantener la información recuperable.
+- No añadir reproducción automática audible como efecto secundario de esta revisión.
+
+CIERRE
+Entregar una matriz por ID: implementado / ya corregido y verificado / pendiente por decisión / bloqueado, con motivo y evidencia. Informar explícitamente los juegos o estados no probados. Mantener la estructura del catálogo de cambios para que ninguno se pierda entre arreglos globales y excepciones locales.
+
+DECISIONES DE COORDINACIÓN QUE PREVALECEN SOBRE ALTERNATIVAS
+1. Los identificadores de fuente se exportan como SRC-..., los de interacción como PLAY-..., los de responsive como RSP-... y los de dirección visual como VIS-.... No confundir IDs cortos de documentos históricos.
+2. Etiqueta de pausa común: Reanudar partida. Continuar partida se reserva para recuperar un guardado. Las citas de la interfaz actual no son textos nuevos para copiar literalmente.
+3. Jump: CTA Volver a cargar; columna centrada dentro de .load-in; separación de 16 CSS px desde el mensaje al bloque de acciones; botón de altura mínima 48 CSS px, ancho máximo 260 CSS px, sin desbordar el contenedor. Loading, error y ready son estados excluyentes. Ocultar realmente los controles inactivos; ignorar progreso tardío tras error. Error WebGL no es error de conexión. El cálculo done/total es correcto en el código revisado: el desfase de la captura no prueba una fórmula errónea. Evaluar el progreso estabilizado y el efecto de la transición de 250 ms.
+4. Ball: botón principal Siguiente nivel; el número de destino se indica como texto secundario Nivel {n}. Avance automático desactivado por defecto, activable explícitamente y cancelable con Detener avance. No iniciar el siguiente nivel por dos rutas simultáneas. Las ayudas de poderes dependen del modo: Zen no genera poderes, por lo que no debe decirle al jugador que los junte allí.
+5. Nueva partida inicia una sesión desde su estado inicial. No significa inventar un nuevo tablero, cambiar una semilla fija o introducir aleatoriedad donde no existe.
+6. Telemetría: en la rama no tutorial, usar una pista limita las estrellas a un máximo de 2; no resta siempre una estrella. Conservar resultados 0, 1 y 2; limitar 3 a 2 cuando corresponda. Los tutoriales identificados como tut 1 o 2 asignan 3 por victoria y 0 por derrota, fuera de esa rama. En los demás casos, la victoria puntúa según prec (>=95: 3; >=80: 2; resto: 1), no según minutos restantes; la derrota da 0. prec es el puntaje estimado de decisiones calculado por el juego, comparado con la referencia del piloto y la información disponible antes de cada acción; no es un porcentaje de reparaciones acertadas ni una garantía de optimalidad. No modificar la fórmula para justificar textos erróneos y no anunciar como definitivo un resultado aún en cálculo.
+7. Un atajo nuevo propuesto requiere implementar su manejador, documentarlo en ES/EN y comprobar que no secuestre campos ni controles. No anunciar atajos inexistentes como si estuvieran disponibles.
+8. Los ejemplos de puntaje, tiempo, nivel, vidas y porcentaje son datos de la sesión de prueba. Implementar plantillas con datos reales: Nivel {n}; Vidas: {n}; Capturado: {pct}% · Meta: {target}%; Tiempo restante: {s} s. No hardcodear 1943 puntos, 83 segundos ni un nivel observado.
+9. El tutorial guiado de Rocket, si se adopta, debe ser una práctica separada u opcional. No alterar física o dificultad de la partida ordinaria para simplificar la explicación.
+10. Las instrucciones de silencio/valores iniciales de audio son decisiones propuestas, no evidencia de que se haya oído reproducción automática. No usar la revisión visual para certificar sonido.
+11. La fuente revisada ya incorpora selector ES/EN; Slalom ya usa Empezar en su briefing; Words ya conserva la práctica. SRC-G02, SRC-S01 y SRC-W01 son preservación/regresión, no tres fallos pendientes. Verificar su estado antes de tocarlo.
+
+12. Box: usar Objetivo para explicar el par; plantilla Objetivo: {par} movimientos. El número proviene del nivel y la frase no nombra una casilla del tablero. No cambiar el conteo ni los umbrales de estrellas.
+13. Escudos: etiqueta canónica Simular resultados pendientes. Antes de prometer que conserva elecciones, implementar y verificar ese comportamiento también en F1. Resimular todo es otra acción, destructiva, con confirmación y recuperación mediante snapshot.
+
+DIRECCIÓN VISUAL SIN ALTERAR EL JUEGO
+Mejorar fondos, tableros, grillas, líneas, rótulos, materiales, jerarquía y estados según los briefs VIS. No aplicar un filtro común sobre todo ni convertir las portadas en una promesa de gráficos que no existen.
+El plano aportado por el usuario pertenece a Cráter, no a Estación Silencio. Sus formas, tamaños, conectividad y saliencia participan en la mecánica de la ronda. Conservar los datos y las relaciones de ronda.op y ronda.pasillos; no añadir iconos únicos ni normalizar tamaños porque parezcan desparejos. Si cambia la saliencia editorial de una ronda, versionar el estilo y no mezclar sus resultados con otra presentación sin validación.
+En todos los puzzles, preservar colores que codifican reglas, conteos, posiciones, orientaciones, letras, estados y pistas. Un cambio visual debe mantener la información jugable, no sólo pasar una prueba de captura.
+
+VERSIONADO Y CÓDIGO DE REFERENCIA
+El sitio cambió durante la auditoría. Los manifiestos distinguen fuentes iniciales, migraciones y revalidaciones. Los archivos descargados sirven como evidencia: NO reemplazar el repositorio actual con esas copias. Aplicar parches semánticos sobre la versión vigente y preservar cambios posteriores del usuario. Usar las rutas canónicas actuales; las antiguas subdominios pueden ser puentes de migración, no el archivo que se debe editar.
+
+CONTROL DE FIDELIDAD VISUAL
+- El cuerpo visible de obstáculos, paredes, plataformas y piezas debe seguir correspondiendo con su geometría jugable y área de interacción. No aprobar un cambio sólo porque las hitboxes no cambiaron: comprobar también que el nuevo dibujo no promete un paso libre o una colisión distinta. Separar halos decorativos de bordes físicos.
+- Las dimensiones de interfaz se expresan en píxeles CSS salvo indicación explícita. En canvas, distinguir coordenadas lógicas, tamaño de backing store y DPR; no aplicar dos veces el escalado ni evaluar una línea de 1 píxel de backing como si fuera 1 CSS px.
+- Cada número de ejemplo en la evidencia se mantiene como dato observado, no como cadena fija del producto. Los textos nuevos usan los valores y reglas reales del modo correspondiente.
+- Implementar por bloques verificables, no como una sustitución masiva del sitio. Al terminar cada juego, revisar los IDs comunes aplicables y sus IDs propios; conservar un registro que permita saber qué quedó pendiente.
+
+CADENAS LITERALES Y TRADUCCIONES
+Usar COPYS_ES_EN.json y COPYS_ES_EN.txt como repertorio de cadenas literales, con sus condiciones, contexto y trazabilidad. Los campos de texto del catálogo que describen una regla o un criterio no son etiquetas para mostrar al usuario. Mantener iguales los nombres de parámetros entre idiomas; interpolarlos con datos reales y resolver singular/plural. No activar una etiqueta de una función nueva antes de implementar y validar esa función. No inventar soporte EN donde todavía no existe: respetar la condición de localización de cada entrada. Si una cadena o condición contradice las reglas del juego vigente, detener ese cambio y resolver la discrepancia, no modificar la mecánica para justificar el texto.
+
+AMPLIACIONES OPCIONALES Y UNIDADES DE DATOS
+La propuesta de una práctica local completa de siete rondas en Cráter es una ampliación opcional de producto, pendiente de decisión. No es una función existente ni un requisito para corregir el onboarding del Ensayo actual. Separarla de los cambios puramente visuales y de texto; nunca sustituirla por un simple renombrado. La práctica, si se aprueba, no debe enviar ni encolar votos del diario. Su salida se llama Volver al menú.
+En Cráter, respuestas registradas y participantes únicos son unidades distintas. Mostrar cada etiqueta sólo si corresponde al dato efectivamente devuelto y documentado; no deducir usuarios únicos a partir del número de respuestas. Separar de forma inequívoca cualquier muestra simulada de las respuestas reales.
+
+REGLAS VERIFICADAS DE TELEMETRÍA Y PORTADA
+Telemetría: el coste total de reparación correcta es caso.R; el de reparación incorrecta es caso.R + caso.Rx. No presentar ese total como una penalización adicional al coste base. Los valores varían por caso: 8/20 sólo describe los casos iniciales comprobados, no todo el juego. La lógica actual evalúa aire <= 0 antes de comprobar que no quedan averías: acertar y llegar exactamente a cero termina en derrota. Explicarlo sin modificar esa precedencia. Una reparación correcta no equivale a ganar el caso. Los avisos previos sólo pueden usar tiempo y costes visibles, nunca revelar la avería real.
+Portada: bossDiff compara el aporte de la misma pieza entre ambas portadas; no calcula el efecto neto de reemplazar una pieza por otra. No sustituir automáticamente el +3 observado por el delta global +5. Cuando falta la pieza en la portada del jugador, se puede mostrar su aporte absoluto en la del jefe; cuando existe en ambas, distinguir diferencia de aportes de aporte absoluto. Separar aportes de piezas, vecindad y total, incluyendo también los demás términos reales del score (extras, reglas globales, penalización de huecos, multiplicadores y redondeos cuando apliquen). La suma piezas + vecinos sólo describe el tutorial observado, no una fórmula universal. Si se desea prometer una mejora por sustitución, calcular un contrafactual completo y tratarlo como función adicional opcional. Editar o reimprimir debe respetar las reglas de cierre y persistencia de cada modo; no abrir el diario silenciosamente.
+
+CAJA NEGRA Y FRENTES
+Caja Negra: etiquetas canónicas Verificar informe e Intentos anteriores. El historial debe conservar una copia de la hipótesis enviada en cada intento y su resultado agregado, sin señalar cuáles de sus campos ocultos son incorrectos ni modificar intentos antiguos al editar la hipótesis actual.
+Frentes: usar Mejor reparto encontrado, sin prometer un óptimo global. La pausa residual reproducida al salir al inicio y lanzar una ronda nueva es un defecto de estado recuperable, no un fallo de red ni un bloqueo permanente. Limpiar el estado transitorio al iniciar la nueva sesión y comprobar la salida del menú, sin reanudar una partida detrás de un diálogo de pausa abierto.
+El porcentaje de Frentes es (victorias + 0,5 × empates) / N × 100. Rotular Rendimiento frente a estos rivales: {porcentaje}% y explicar que cada victoria cuenta como 1 y cada empate como 0,5. No presentarlo como tasa pura de victorias ni probabilidad de ganar. Distinguir rivales simulados cuando corresponda; conservar el conteo real de victorias como métrica separada. El análisis y el resultado deben usar el mismo criterio y formato de precisión.
+
+WORDS, ESTACIÓN Y ESTADOS DE CARGA
+Words: una casilla gris puede representar una copia excedente de una letra que sí aparece en la solución. Anuncio canónico por casilla: {letra}: sin coincidencia para esta copia. Separarlo del estado agregado del teclado; construir ambos sólo con resultados ya revelados, sin consultar la solución oculta ni cambiar la evaluación de letras repetidas.
+Estación: etiquetas canónicas Comprobar respuesta y Revelar pista. Mostrar coste de ayuda sólo cuando realmente se aplique; Revelar pista gratis sólo en el caso p3 elegible. No imponer una penalización ficticia de estrellas al diario. Método y solución son acciones distintas. La grabación actual se detiene y al iniciar vuelve al principio: usar Detener grabación; Pausar grabación requiere implementar una pausa real. No convertir una longitud sugerida de respuesta en una validación bloqueante nueva.
+Raid ya muestra un error explícito y un botón de reintento centrado; no trasladarle el defecto de alineación de Jump. Bestiario ya contiene guardias de importación y WebGL: conservarlas. Su error puede ser sobrescrito por el repintado de traducciones estáticas; los estados loading/error/ready deben gobernar el texto y el idioma debe traducir el estado vigente, sin volver a mostrar Cargando encima de un error. Los fallos de WebGL del entorno de prueba no demuestran que el juego esté roto en todos los navegadores.

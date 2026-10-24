@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>JET//Words</title>
+<link rel="canonical" href="https://jetgames.fun/words/">
+<noscript><meta http-equiv="refresh" content="0; url=https://jetgames.fun/words/"></noscript>
+<style>html,body{margin:0;height:100%;background:#0a0512;color:#9a90b8;font:14px system-ui,sans-serif;display:flex;align-items:center;justify-content:center}a{color:#00f2cf}</style>
+<script>
+/* Puente de mudanza (2026-10-22): JET//Words vive ahora en https://jetgames.fun/words/.
+   Desde el subdominio viejo, el progreso guardado (localStorage) no viaja solo porque cambia el origen:
+   se empaqueta en #jet-migrar=<base64url de JSON> y el juego nuevo importa solo las claves que no tenga.
+   Se conservan la ruta interior y la consulta (?lang=, etc.). */
+(function () {
+  var dest = 'https://jetgames.fun/words/' + location.search;
+  try {
+    if (location.hostname !== 'jetgames.fun') { /* subdominio y www: otro origen, el progreso viaja en el # */
+      var d = {}, n = 0;
+      for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); d[k] = localStorage.getItem(k); n++; }
+      if (n) dest += '#jet-migrar=' + btoa(unescape(encodeURIComponent(JSON.stringify(d)))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    }
+  } catch (e) {}
+  location.replace(dest);
+})();
+</script>
+</head>
+<body><p>JET//Words → <a href="https://jetgames.fun/words/">jetgames.fun/words</a></p></body>
+</html>

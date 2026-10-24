@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>JET//Slalom</title>
+<link rel="canonical" href="https://jetgames.fun/slalom/">
+<style>
+  html, body { margin:0; height:100%; background:#050108; color:#b5a8d8; }
+  body { display:flex; align-items:center; justify-content:center; padding:16px; box-sizing:border-box; text-align:center;
+    font:500 14px/1.5 'Poppins', system-ui, sans-serif; }
+  a { color:#00f2cf; }
+</style>
+<script>
+/* Puente de mudanza (2026-10-22): jetslalom.jetgames.fun → https://jetgames.fun/slalom/.
+   El localStorage no cruza de origen: se lleva en #jet-migrar=<base64url(JSON)> y el juego nuevo
+   lo importa solo si esas claves aún no existen allá. Se conservan la ruta interior y la consulta. */
+(function () {
+  var destino = 'https://jetgames.fun/slalom/';
+  var resto = location.pathname.replace(/^\/(jetslalom\/)?/, '').replace(/(^|\/)index\.html$/, '$1');
+  var hash = location.hash;
+  if (location.hostname !== 'jetgames.fun') {
+    var datos = {}, n = 0;
+    try {
+      for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); datos[k] = localStorage.getItem(k); n++; }
+    } catch (e) {}
+    if (n) {
+      try {
+        var bytes = new TextEncoder().encode(JSON.stringify(datos)), bin = '';
+        for (var j = 0; j < bytes.length; j++) bin += String.fromCharCode(bytes[j]);
+        hash = '#jet-migrar=' + btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+      } catch (e) {}
+    }
+  }
+  var url = destino + resto + location.search + hash;
+  var ido = false;
+  function ir() { if (!ido) { ido = true; location.replace(url); } }
+  /* Desinstala el service worker viejo y sus cachés antes de irse (con tope de tiempo). */
+  setTimeout(ir, 900);
+  try {
+    var tareas = [];
+    if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
+      tareas.push(navigator.serviceWorker.getRegistrations().then(function (rs) { return Promise.all(rs.map(function (r) { return r.unregister(); })); }));
+    }
+    if (window.caches && caches.keys) {
+      tareas.push(caches.keys().then(function (ks) { return Promise.all(ks.filter(function (k) { return k.indexOf('jetslalom') === 0; }).map(function (k) { return caches.delete(k); })); }));
+    }
+    Promise.all(tareas).then(ir, ir);
+  } catch (e) { ir(); }
+})();
+</script>
+<noscript><meta http-equiv="refresh" content="0;url=https://jetgames.fun/slalom/"></noscript>
+</head>
+<body>
+<p>JET//Slalom ahora está en <a href="https://jetgames.fun/slalom/">jetgames.fun/slalom</a><br>JET//Slalom has moved to <a href="https://jetgames.fun/slalom/">jetgames.fun/slalom</a></p>
+</body>
+</html>

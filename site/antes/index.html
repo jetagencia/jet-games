@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>JET//Antes · Tu pasado es tu equipo</title>
+<meta name="description" id="metaDesc" content="Cada intento se queda en la estación como un eco que repite lo que hiciste. Un puzle de planificación temporal con 40 salas y un reto diario.">
+<meta name="theme-color" content="#050108">
+<meta property="og:title" content="JET//Antes">
+<meta property="og:description" content="Tu pasado es tu equipo. Un puzle temporal por turnos: coordina a tus propios ecos.">
+<meta property="og:image" content="https://jetgames.fun/antes/captura-home.jpg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<script src="src/jet-idioma.js"></script>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="src/estilo.css?v=4">
+</head>
+<body>
+<canvas id="cv" aria-hidden="true"></canvas>
+<div id="vivo" class="sr" aria-live="polite"></div>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-gear" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></symbol>
+  <symbol id="i-pause" viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1.2" fill="currentColor"/><rect x="14" y="5" width="4" height="14" rx="1.2" fill="currentColor"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M12 5l7 8h-4.5v6h-5v-6H5z" fill="currentColor"/></symbol>
+  <symbol id="i-wait" viewBox="0 0 24 24"><path d="M7 3h10M7 21h10M8 3c0 5 8 5 8 9s-8 4-8 9M16 3c0 5-8 5-8 9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 7H5V3M5.5 7.5A8 8 0 1 1 4 13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-rew" viewBox="0 0 24 24"><path d="M11 6L3 12l8 6zM21 6l-8 6 8 6z" fill="currentColor"/></symbol>
+  <symbol id="i-restart" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.3-5.6M4 4v4h4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-full" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2" fill="currentColor"/><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6L2.5 9.4l6.6-.8z" fill="#fdd835"/></symbol>
+</svg>
+
+<!-- marco común: arriba a la izquierda, la vuelta a JET//Games -->
+<div class="top" id="topMenu">
+  <a class="pill" href="https://jetgames.fun/" id="backMenu"><i>‹</i> JET<i>//</i><span class="lg">Games</span></a>
+  <span class="sp"></span>
+  <button class="ico" id="bFullMenu" data-ta="btn.fullscreen"><svg><use href="#i-full"/></svg></button>
+  <button class="ico" id="bAjMenu" data-ta="btn.settings"><svg><use href="#i-gear"/></svg></button>
+</div>
+
+<!-- INICIO -->
+<section class="scr" id="inicio">
+  <div class="menu">
+    <div class="hero">
+      <div class="kick" data-t="title.kick"></div>
+      <h1 class="logo">JET<i>//</i>Antes</h1>
+      <p class="tag" data-t="title.tag"></p>
+      <p class="pitch" data-t="title.pitch"></p>
+    </div>
+    <button class="btn pri" id="bJugar"></button>
+    <button class="btn" id="bDiario"><span data-t="btn.daily"></span><span class="b" id="diarioInfo"></span></button>
+    <div class="row">
+      <button class="btn" id="bCapitulos" data-t="btn.chapters"></button>
+      <button class="btn" id="bComo" data-t="btn.how"></button>
+    </div>
+    <div class="foot"><span id="estrellasTot"></span><span id="rachaTot"></span><div class="seg seg-lang" id="segLangIni" role="group" data-ta="set.language"><button data-v="es" lang="es">ES</button><button data-v="en" lang="en">EN</button></div></div>
+  </div>
+</section>
+
+<!-- CAPÍTULOS -->
+<section class="scr" id="capitulos">
+  <div style="width:100%;max-width:1100px;margin:0 auto">
+    <div class="hd"><button class="x" id="capVolver" data-ta="btn.back"><svg><use href="#i-back"/></svg></button><h2 id="capTit" data-t="chap.title"></h2><span class="foot" id="capStars" style="margin:0"></span></div>
+    <div class="caps" id="listaCaps"></div>
+    <div id="vistaCap" style="display:none">
+      <div class="log" id="capLog"></div>
+      <div class="grid" id="gridNiv"></div>
+    </div>
+  </div>
+</section>
+
+<!-- JUEGO -->
+<section id="juego">
+  <div id="hud">
+    <a class="pill" href="https://jetgames.fun/"><i>‹</i> JET<i>//</i><span class="lg">Games</span></a>
+    <div class="nom" id="nomNivel"></div><span class="sp2"></span>
+    <button class="ico" id="bPausa" data-ta="btn.pause"><svg><use href="#i-pause"/></svg></button>
+    <button class="ico" id="bAjJuego" data-ta="btn.settings"><svg><use href="#i-gear"/></svg></button>
+  </div>
+  <div id="sala"></div>
+  <div id="barra"><div id="copias"></div><canvas id="tl"></canvas><div id="reloj"></div></div>
+  <div id="ctrl">
+    <div id="acc">
+      <button class="cb" id="bDeshacer"><svg><use href="#i-undo"/></svg><span data-t="btn.undo"></span></button>
+      <button class="cb" id="bEsperar"><svg><use href="#i-wait"/></svg><span data-t="btn.wait"></span></button>
+      <button class="cb" id="bRebobinar"><i class="ring"></i><svg><use href="#i-rew"/></svg><span data-t="btn.rewind"></span></button>
+    </div>
+    <div id="pad">
+      <button class="cb" data-d="U" aria-label="↑"><svg><use href="#i-arrow"/></svg></button>
+      <button class="cb" data-d="L" aria-label="←"><svg style="transform:rotate(-90deg)"><use href="#i-arrow"/></svg></button>
+      <span class="mid"></span>
+      <button class="cb" data-d="R" aria-label="→"><svg style="transform:rotate(90deg)"><use href="#i-arrow"/></svg></button>
+      <button class="cb" data-d="D" aria-label="↓"><svg style="transform:rotate(180deg)"><use href="#i-arrow"/></svg></button>
+    </div>
+  </div>
+  <div id="lado">
+    <div class="tit" data-t="hud.copies"></div>
+    <div class="lista" id="ladoCopias"></div>
+    <button class="cb" id="bReiniciar" style="width:100%"><svg><use href="#i-restart"/></svg><span id="txtReiniciar" data-t="btn.restart"></span></button>
+    <div class="keys" id="ladoKeys"></div>
+  </div>
+  <div id="modoRep"><span id="repTxt"></span><button class="btn" id="bFinRep" data-t="btn.stopReplay"></button></div>
+</section>
+<div id="tostada" role="status"></div>
+
+<!-- PAUSA -->
+<div class="ov" id="pausa"><div class="card">
+  <div class="hd"><h2 data-t="pause.title"></h2></div>
+  <p class="note" id="pausaDonde" style="margin:-6px 0 14px"></p>
+  <button class="btn pri" id="pContinuar" data-t="btn.resume"></button>
+  <div class="row"><button class="btn" id="pPista" data-t="btn.hint"></button><button class="btn" id="pReiniciar" data-t="btn.restart"></button></div>
+  <div class="row"><button class="btn" id="pComo" data-t="btn.how"></button><button class="btn" id="pAjustes" data-t="btn.settings"></button></div>
+  <button class="btn" id="pSaltar" data-t="btn.skip" style="display:none"></button>
+  <div id="pSaltarConf" style="display:none"><p class="note" id="pSaltarTxt" style="margin:0 0 10px"></p><div class="row"><button class="btn" id="pSaltarSi" data-t="btn.skipConfirm"></button><button class="btn" id="pSaltarNo" data-t="btn.cancel"></button></div></div>
+  <button class="btn" id="pSalir" data-t="btn.exitChapters"></button>
+</div></div>
+
+<!-- PISTA -->
+<div class="ov" id="pista"><div class="card">
+  <div class="hd"><h2 data-t="hint.title"></h2><button class="x" id="pistaX" data-ta="btn.close"><svg><use href="#i-x"/></svg></button></div>
+  <div id="pistaCuerpo"></div>
+  <button class="btn" id="pistaMas"></button>
+</div></div>
+
+<!-- RESULTADO -->
+<div class="ov lite" id="resultado"><div class="card">
+  <div class="res-izq">
+  <div style="text-align:center"><span class="badge" id="resBadge" style="display:none"></span></div>
+  <h2 class="res-t" id="resTit"></h2>
+  <p class="res-s" id="resSub"></p>
+  <div class="stars" id="resStars"><svg><use href="#i-star"/></svg><svg><use href="#i-star"/></svg><svg><use href="#i-star"/></svg></div>
+  <div class="metas" id="resMetas"></div>
+  <p class="hintline" id="resHint"></p>
+  </div>
+  <div class="res-der">
+  <button class="btn pri" id="rSiguiente" data-t="btn.next"></button>
+  <div class="row"><button class="btn" id="rOtra" data-t="btn.again"></button><button class="btn" id="rRep" data-t="btn.replay"></button></div>
+  <div class="row"><button class="btn" id="rCompartir" data-t="btn.share"></button><button class="btn" id="rCaps" data-t="btn.chapters"></button></div>
+  </div>
+</div></div>
+
+<!-- CÓMO JUGAR -->
+<div class="ov" id="como"><div class="card wide">
+  <div class="hd"><h2 data-t="how.title"></h2><button class="x" id="comoX" data-ta="btn.close"><svg><use href="#i-x"/></svg></button></div>
+  <div class="lam" id="laminas"></div>
+  <details id="comoEls"><summary data-t="how.elements"></summary><div class="els" id="elsLista"></div></details>
+  <details><summary data-t="how.controls"></summary><p class="ctl" id="ctlTxt"></p></details>
+  <button class="btn pri" id="comoOk" data-t="btn.ok" style="margin-top:14px"></button>
+</div></div>
+
+<!-- AJUSTES -->
+<div class="ov" id="ajustes"><div class="card">
+  <div class="hd"><h2 data-t="set.title"></h2><button class="x" id="ajX" data-ta="btn.close"><svg><use href="#i-x"/></svg></button></div>
+  <div class="set"><label data-t="set.music"></label><input type="range" min="0" max="100" id="volMus"><button class="tog" id="tgMus"></button></div>
+  <div class="set"><label data-t="set.sfx"></label><input type="range" min="0" max="100" id="volSfx"><button class="tog" id="tgSfx"></button></div>
+  <p class="note" id="avisoAudio" style="display:none;margin:2px 0 8px;color:var(--cyan)" data-t="audio.tap"></p>
+  <div class="set" id="filaVib"><label data-t="set.vibration"></label><button class="tog" id="tgVib"></button></div>
+  <div class="set"><label data-t="set.language"></label><div class="seg seg-lang" id="segLang" role="group"><button data-v="es">ES</button><button data-v="en">EN</button></div></div>
+  <div class="set" id="filaFull"><label data-t="set.fullscreen"></label><button class="tog" id="tgFull"></button></div>
+  <div class="set solo-tactil"><label data-t="set.left"></label><button class="tog" id="tgZurdo"></button></div>
+  <div class="set"><label data-t="set.preview"></label><button class="tog" id="tgPrev"></button></div>
+  <div class="set"><label data-t="set.speed"></label><div class="seg" id="segVel"><button data-v="normal" data-t="set.speedNormal"></button><button data-v="rapida" data-t="set.speedFast"></button></div></div>
+  <div class="set"><label data-t="set.contrast"></label><button class="tog" id="tgHc"></button></div>
+  <div class="sect" data-t="set.unlocks"></div>
+  <div class="set"><label><span data-t="set.palette"></span><small id="lkAurora"></small></label><button class="tog" id="tgAurora"></button></div>
+  <div class="set"><label><span data-t="set.trail"></span><small id="lkTrail"></small></label><button class="tog" id="tgTrail"></button></div>
+  <div class="set"><label><span data-t="set.longTheme"></span><small id="lkLargo"></small></label><button class="tog" id="tgLargo"></button></div>
+  <p class="note" id="sinGuardar" style="display:none;margin:10px 0" data-t="save.none"></p>
+  <button class="btn peligro" id="bBorrar" style="margin-top:14px" data-t="set.erase"></button>
+</div></div>
+
+<!-- RETO DIARIO -->
+<div class="ov" id="diario"><div class="card">
+  <div class="hd"><h2 data-t="daily.title"></h2><button class="x" id="diaX" data-ta="btn.close"><svg><use href="#i-x"/></svg></button></div>
+  <p class="note" data-t="daily.sub" style="margin:-6px 0 10px"></p>
+  <div class="diario-cab"><b id="diaNum" style="font:800 15px var(--mono)"></b><span class="note" id="diaGoal" style="min-height:20px"></span></div>
+  <div class="racha"><div><b id="diaRacha">0</b><span data-t="daily.streak"></span></div><div><b id="diaMejor">0</b><span data-t="daily.best"></span></div></div>
+  <div id="diaRes"></div>
+  <div id="diaCarga" style="display:none"><div class="spinner"></div><p class="note" style="text-align:center" data-t="daily.preparing"></p></div>
+  <button class="btn pri" id="diaJugar" data-t="btn.playDaily"></button>
+  <button class="btn" id="diaCompartir" data-t="btn.share" style="display:none"></button>
+</div></div>
+
+<!-- FIN DE CAPÍTULO -->
+<div class="ov" id="finCap"><div class="card">
+  <div class="kick" id="fcKick" style="text-align:left"></div>
+  <h2 class="res-t" id="fcTit" style="text-align:left;margin:4px 0 10px"></h2>
+  <div class="log" id="fcLog"></div>
+  <div class="meta" id="fcMeta"><span data-t="end.stars"></span><span class="v" id="fcStars"></span></div>
+  <div class="compuerta" id="fcPuerta"><span id="fcNext"></span><i></i><em></em></div>
+  <button class="btn pri" id="fcSeguir"></button>
+  <button class="btn" id="fcCaps"></button>
+</div></div>
+
+<!-- FINAL -->
+<div class="ov" id="final">
+  <canvas id="finalCv" style="position:absolute;inset:0;width:100%;height:100%"></canvas>
+  <div class="cred" id="finalCred">
+    <div class="kick" data-t="final.thanks"></div>
+    <h1 class="logo">JET<i>//</i>Antes</h1>
+    <p class="tag" id="finalLog"></p>
+    <p class="note" data-t="final.credits"></p>
+    <button class="btn pri" id="finalDiario" data-t="btn.daily"></button>
+    <button class="btn" id="finalMenu" data-t="btn.menu"></button>
+  </div>
+</div>
+
+<script type="module" src="src/main.js?v=5"></script>
+</body>
+</html>

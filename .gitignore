@@ -43,3 +43,4 @@ android/
 *.tmp
 .cache/
 jetjump/JETJumpSim-plugin.zip
+site/_auditoria/_smoke/

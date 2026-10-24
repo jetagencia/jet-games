@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>JET//Señal · Descifra la regla secreta</title>
+<meta name="description" content="Una sonda acepta o rechaza filas de piezas según una regla secreta. Arma muestras, escucha sus respuestas y descifra la regla con la menor cantidad de pruebas. Una señal nueva cada día.">
+<meta name="theme-color" content="#050108">
+<meta property="og:title" content="JET//Señal">
+<meta property="og:description" content="Descifra la regla secreta de la Sonda. Una señal nueva cada día.">
+<meta property="og:image" content="https://jetgames.fun/senal/captura-home.jpg">
+<meta property="og:url" content="https://jetgames.fun/senal/">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<script src="src/jet-idioma.js?v=1"></script>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="src/style.css?v=5">
+</head>
+<body>
+<div id="app">
+  <a id="back" href="https://jetgames.fun/" target="_top" rel="noopener" data-ta="volver">‹ JET<i>//</i>Games</a>
+  <div id="barraDer">
+    <button id="btnFs" class="ib" type="button" data-ta="pantallaCompleta" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    <button id="btnPausa" class="ib" type="button" data-ta="pausa" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1.2" fill="currentColor"/><rect x="14" y="5" width="4" height="14" rx="1.2" fill="currentColor"/></svg></button>
+    <button id="btnAjustes" class="ib" type="button" data-ta="ajustes"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8.6a3.4 3.4 0 1 0 0 6.8 3.4 3.4 0 0 0 0-6.8Zm8.2 4.7-.1-2.6 2-1.6-2-3.4-2.4.9a8 8 0 0 0-2.2-1.3L15.1 2.8h-4l-.4 2.5a8 8 0 0 0-2.2 1.3l-2.4-.9-2 3.4 2 1.6a8 8 0 0 0 0 2.6l-2 1.6 2 3.4 2.4-.9a8 8 0 0 0 2.2 1.3l.4 2.5h4l.4-2.5a8 8 0 0 0 2.2-1.3l2.4.9 2-3.4Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></button>
+  </div>
+
+  <!-- INICIO -->
+  <section id="inicio" class="pant on" aria-labelledby="tituloInicio">
+    <canvas id="cvFondo" aria-hidden="true"></canvas>
+    <div class="ini-col">
+      <div class="ini-cab">
+        <h1 id="tituloInicio" class="logo">JET<i>//</i><span data-t="titulo">Señal</span></h1>
+        <p class="lema" data-t="lema">Descifra la regla secreta de la Sonda.</p>
+      </div>
+      <div class="ini-acc">
+        <div id="rachaIni" class="racha" hidden><span class="pulso"></span><b></b></div>
+        <button id="btnPrincipal" class="btn-pri grande" type="button"><span class="bp-t"></span><span class="bp-s"></span></button>
+        <div id="tarjetaHoy" class="tarjeta-hoy" hidden>
+          <div class="th-txt"><b></b><span></span></div>
+          <button class="btn-sec chico" type="button" data-acc="verHoy" data-t="verResultado">Ver resultado</button>
+          <button class="btn-sec chico" type="button" data-acc="compartirHoy" data-t="compartir">Compartir</button>
+        </div>
+        <div class="ini-sec">
+          <button class="btn-sec" type="button" data-acc="practica"><span class="bs-t" data-t="practica">Práctica</span><span class="bs-s" id="rangoIni"></span></button>
+          <button class="btn-sec" type="button" data-acc="archivo"><span class="bs-t" data-t="archivo">Archivo</span></button>
+          <button class="btn-sec" type="button" data-acc="stats"><span class="bs-t" data-t="estadisticas">Estadísticas</span></button>
+          <button class="btn-sec" type="button" data-acc="como"><span class="bs-t" data-t="comoJugar">Cómo jugar</span></button>
+        </div>
+        <p id="avisoGuardado" class="aviso" hidden data-t="sinGuardado"></p>
+        <div class="seg seg-idioma ini-idioma" role="group" data-ta="idioma"><button type="button" data-lang="es" lang="es" aria-label="Español">ES</button><button type="button" data-lang="en" lang="en" aria-label="English">EN</button></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- JUEGO -->
+  <section id="juego" class="pant" aria-label="JET//Señal">
+    <div id="zSonda" class="zona">
+      <canvas id="cvSonda" aria-hidden="true"></canvas>
+      <div class="hud hud-l"><span id="hudTitulo"></span></div>
+      <div class="hud hud-r"><span data-t="muestras">MUESTRAS</span> <b id="hudN" class="odo">0</b><span id="hudDelta" class="delta"></span></div>
+      <div id="sondaVivo" class="sr" aria-live="polite"></div>
+    </div>
+    <div id="zRegistro" class="zona">
+      <div class="col acc"><h2><span data-t="aceptadas">ACEPTADAS</span><span class="cnt" id="cntA">0</span></h2><div class="lista" id="listaA" tabindex="0"></div></div>
+      <div class="col rej"><h2><span data-t="rechazadas">RECHAZADAS</span><span class="cnt" id="cntR">0</span></h2><div class="lista" id="listaR" tabindex="0"></div></div>
+    </div>
+    <div id="zBandeja" class="zona">
+      <div id="bandeja" role="group"></div>
+    </div>
+    <div id="zAcciones" class="zona">
+      <button id="btnVaciar" class="btn-ic" type="button" data-ta="vaciarAria"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <button id="btnEnviar" class="btn-pri" type="button"><span data-t="enviar">Enviar</span></button>
+      <button id="btnFormular" class="btn-form" type="button"><span data-t="formular">Formular regla</span></button>
+    </div>
+    <div id="zPaleta" class="zona"><div id="paleta" role="group"></div></div>
+    <div id="panel" class="zona" hidden></div>
+  </section>
+
+  <!-- capa de modales -->
+  <div id="velo" hidden>
+    <div id="modal" class="card" role="dialog" aria-modal="true" tabindex="-1"></div>
+  </div>
+  <div id="menuTarj" class="menu-tarj" hidden></div>
+  <div id="toast" role="status" aria-live="polite"></div>
+  <div id="globo" hidden><canvas id="cvAstro" width="72" height="72" aria-hidden="true"></canvas><div class="gl-cuerpo"><p id="globoTxt"></p><button id="globoBtn" class="btn-pri chico" type="button" hidden></button><button id="btnSaltarTut" class="saltar" type="button" hidden data-t="saltarTut">Saltar tutorial</button></div></div>
+  <div id="vuelo" aria-hidden="true"></div>
+  <canvas id="cvResAstro" aria-hidden="true" hidden></canvas>
+</div>
+<noscript><p style="color:#fff;font-family:sans-serif;padding:20px">JET//Señal necesita JavaScript. · JET//Signal needs JavaScript.</p></noscript>
+<script src="src/reglas.js?v=2"></script>
+<script src="src/verificador.js?v=2"></script>
+<script src="src/i18n.js?v=5"></script>
+<script src="src/piezas.js?v=2"></script>
+<script src="src/sonda.js?v=2"></script>
+<script src="src/audio.js?v=4"></script>
+<script src="src/banco.js?v=2" defer></script>
+<script src="src/calendario.js?v=2" defer></script>
+<script src="src/app.js?v=7" defer></script>
+</body>
+</html>

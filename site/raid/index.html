@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#050d14">
+<title>JET//Raid</title>
+<meta name="description" content="JET//Raid: pilota un aerodeslizador, captura banderas, corre contra el reloj y rescata suministros en 16 misiones sobre el agua. Un juego de JET//Games." data-en-content="JET//Raid: pilot a hovercraft, capture flags, race against the clock and rescue supplies in 16 missions on the water. A JET//Games game.">
+<script src="jet-idioma.js"></script>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<canvas id="gl"></canvas>
+
+<!-- ============ LOADING ============ -->
+<section class="screen loading on" id="s-loading">
+  <div class="load-inner">
+    <div class="logo big"><span>JET</span><i>//</i><span>RAID</span></div>
+    <div class="bar"><i id="load-bar"></i></div>
+    <p id="load-text" data-en="Loading the game…">Cargando el juego…</p>
+  </div>
+</section>
+
+<!-- ============ TITLE ============ -->
+<section class="screen title" id="s-title">
+  <div class="title-shade"></div>
+  <div class="title-tools"><div class="lang-seg" data-lang-seg></div><button class="btn icon sm fs-btn title-fs" data-act="fullscreen" title="Pantalla completa (F)" data-en-title="Full screen (F)" aria-label="Pantalla completa" data-en-aria-label="Full screen"><svg class="fs-in" viewBox="0 0 24 24"><path d="M4 4h6v2H6v4H4zm10 0h6v6h-2V6h-4zM4 14h2v4h4v2H4zm14 0h2v6h-6v-2h4z"/></svg><svg class="fs-out" viewBox="0 0 24 24"><path d="M8 4h2v6H4V8h4zm6 0h2v4h4v2h-6zM4 14h6v6H8v-4H4zm10 0h6v2h-4v4h-2z"/></svg></button></div>
+  <div class="title-col">
+    <div class="eyebrow" data-en="JET//GAMES PRESENTS">JET//GAMES PRESENTA</div>
+    <div class="logo huge"><span>JET</span><i>//</i><span>RAID</span></div>
+    <p class="tagline" data-en="Pilot, capture and escape. 16 missions on the water.">Pilota, captura y escapa. 16 misiones sobre el agua.</p>
+    <nav class="menu" data-menu>
+      <button class="btn primary xl" data-act="continue"><span class="lbl" id="continue-lbl" data-en="Start campaign">Empezar campaña</span><small id="continue-sub" data-en="Mission 1 of 16 · North Harbor">Misión 1 de 16 · Puerto Norte</small></button>
+      <button class="btn" data-act="campaign" data-en="Choose mission">Elegir misión</button>
+      <button class="btn" data-act="practice" data-en="Practice">Práctica</button>
+      <div class="menu-sub">
+        <button class="btn ghost" data-act="howto" data-en="How to play">Cómo jugar</button>
+        <button class="btn ghost" data-act="settings" data-en="Settings">Ajustes</button>
+        <button class="btn ghost" data-act="credits" data-en="Credits">Créditos</button>
+      </div>
+    </nav>
+    <div class="title-foot"><span id="title-progress"></span><a href="https://jetgames.fun/" class="link">‹ JET//Games</a></div>
+  </div>
+</section>
+
+<!-- ============ CAMPAIGN ============ -->
+<section class="screen panel-screen" id="s-campaign">
+  <header class="top"><button class="btn icon" data-act="back" aria-label="Volver" data-en-aria-label="Back"><svg viewBox="0 0 24 24"><path d="M15 5 8 12l7 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button><h2 data-en="Campaign">Campaña</h2><div class="stars-total" id="stars-total"></div></header>
+  <div class="cards" id="cards" data-menu></div>
+</section>
+
+<!-- ============ BRIEFING ============ -->
+<section class="screen panel-screen" id="s-brief">
+  <header class="top"><button class="btn icon" data-act="back" aria-label="Volver a elegir misión" data-en-aria-label="Back to mission select"><svg viewBox="0 0 24 24"><path d="M15 5 8 12l7 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button><h2 id="b-num"></h2></header>
+  <div class="brief">
+    <div class="brief-visual">
+      <div class="thumb" id="b-thumb"></div>
+      <p class="brief-lore" id="b-lore"></p>
+      <section class="brief-sum" aria-labelledby="b-sum-t">
+        <h3 id="b-sum-t" data-en="Mission summary">Resumen de misión</h3>
+        <div class="legend" id="b-legend"></div>
+        <p class="sum-note" id="b-note"></p>
+        <div class="deploy-row"><span id="b-seed" class="seed"></span><button type="button" class="linkbtn" data-act="redeploy" id="b-redeploy" data-en="New deployment">Nuevo despliegue</button></div>
+      </section>
+    </div>
+    <div class="brief-info">
+      <div class="chips" id="b-chips"></div>
+      <h1 id="b-name" data-en="North Harbor">Puerto Norte</h1>
+      <p class="place" id="b-place"></p>
+      <div class="objective-card" id="b-obj"></div>
+      <p class="brief-text" id="b-text"></p>
+      <p class="brief-tip" id="b-tip"></p>
+      <div class="brief-row"><div class="times" id="b-times"></div></div>
+      <div class="diff" id="b-diff" role="radiogroup" aria-label="Dificultad" data-en-aria-label="Difficulty"></div>
+      <button class="btn primary xl block" data-act="launch" id="b-launch"><span class="lbl" data-en="Start mission">Iniciar misión</span></button>
+    </div>
+  </div>
+</section>
+
+<!-- ============ HUD ============ -->
+<section class="hud" id="hud">
+  <div class="h-vig" data-h="vig"></div>
+  <div class="h-markers" data-h="markers"></div>
+  <div class="h-top-left" hidden><b data-h="mission"></b><span data-h="mode"></span></div>
+  <div class="h-top">
+    <div class="h-top-row">
+      <div class="h-score" data-h="score"></div>
+      <div class="h-timer"><small data-h="sub" data-en="TIME">TIEMPO</small><div class="timer" data-h="timer">0:00.0</div></div>
+      <div class="h-place" data-h="place" hidden></div>
+    </div>
+    <div class="h-objective" data-h="objective"></div>
+  </div>
+  <div class="h-top-right">
+    <canvas class="h-mini" data-h="mini" width="190" height="190" hidden></canvas>
+    <div class="h-btns"><button class="btn icon sm ping-btn" data-act="ping" title="Orientación [H]" data-en-title="Orientation [H]" aria-label="Orientación [H]" data-en-aria-label="Orientation [H]"><svg viewBox="0 0 24 24"><path d="M12 2l2.4 7.1L22 12l-7.6 2.9L12 22l-2.4-7.1L2 12l7.6-2.9z"/></svg><i class="cd"></i><span class="cdn" aria-hidden="true"></span></button><button class="btn icon sm" data-act="camera" title="Cambiar cámara [C]" data-en-title="Change camera [C]" aria-label="Cambiar cámara" data-en-aria-label="Change camera"><svg viewBox="0 0 24 24"><path d="M4 7h3l2-2h6l2 2h3v12H4zM12 9a4 4 0 1 0 0 8 4 4 0 0 0 0-8z"/></svg></button><button class="btn icon sm fs-btn" data-act="fullscreen" title="Pantalla completa (F)" data-en-title="Full screen (F)" aria-label="Pantalla completa" data-en-aria-label="Full screen"><svg class="fs-in" viewBox="0 0 24 24"><path d="M4 4h6v2H6v4H4zm10 0h6v6h-2V6h-4zM4 14h2v4h4v2H4zm14 0h2v6h-6v-2h4z"/></svg><svg class="fs-out" viewBox="0 0 24 24"><path d="M8 4h2v6H4V8h4zm6 0h2v4h4v2h-6zM4 14h6v6H8v-4H4zm10 0h6v2h-4v4h-2z"/></svg></button><button class="btn icon sm" data-act="pause" title="Pausar [Esc]" data-en-title="Pause [Esc]" aria-label="Pausar" data-en-aria-label="Pause"><svg viewBox="0 0 24 24"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg></button></div>
+  </div>
+  <div class="h-alert" data-h="alert" data-en-html="&lt;span class=&quot;dot&quot;&gt;&lt;/span&gt;Rival capturing your flag! &lt;b&gt;0%&lt;/b&gt;"><span class="dot"></span>¡Rival capturando tu bandera! <b>0%</b></div>
+  <div class="h-toasts" data-h="toasts"></div>
+  <div class="count" data-h="count"></div>
+  <div class="h-card" data-h="card"></div>
+  <div class="h-hint" data-h="hint"></div>
+  <div class="h-state" data-h="state" role="status"></div>
+  <div class="h-speed">
+    <div class="gauge" data-h="gauge"><svg viewBox="0 0 120 120"><circle class="g-bg" cx="60" cy="60" r="50"/><circle class="g-fg" cx="60" cy="60" r="50"/></svg>
+      <div class="g-val"><b data-h="speed">0</b><span data-en="KNOTS">NUDOS</span></div></div>
+    <div class="boost" data-h="boost"><i></i><span data-en="BOOST">TURBO</span></div>
+  </div>
+  <div class="h-item empty" data-h="item"><div class="ico"><span>?</span></div><div class="it-txt"><b data-h="itemname" data-en="No equipment">Sin equipo</b><kbd data-h="itemkey" data-en="SPACE">ESPACIO</kbd></div></div>
+  <div class="h-cam" data-h="cam"></div>
+  <div class="h-fps" data-h="fps" hidden></div>
+  <div class="h-fullmap" data-h="fullmap" hidden><canvas data-h="fullcanvas"></canvas></div>
+  <div class="touch" id="touch">
+    <div class="touch-zone" data-zone></div>
+    <div class="tc tc-steer" data-tc="steer" aria-hidden="true"><i class="ring"></i><i class="knob"></i></div>
+    <div class="tc tc-drive" data-tc="drive" aria-hidden="true"><i class="cap"><b class="t" data-en="BOOST">TURBO</b><b class="g" data-en="GO">ACELERA</b><b class="b" data-en="BRAKE">FRENA</b></i><i class="knob"></i></div>
+    <div class="touch-guide" data-h="guide" aria-hidden="true">
+      <div class="tg-card tg-s"><div class="tg-ring"><span>◀</span><i></i><span>▶</span></div><b data-en="Steer">Gira</b><p data-en="Rest your thumb and slide sideways">Apoya el pulgar y desliza hacia los lados</p></div>
+      <div class="tg-card tg-d"><div class="tg-cap"><em data-en="Boost">Turbo</em><em data-en="Go">Acelera</em><em data-en="Brake">Frena</em></div><b data-en="Drive">Conduce</b><p data-en="Rest to accelerate. Up: boost. Down: brake.">Apoya para acelerar. Sube: turbo. Baja: frena.</p></div>
+    </div>
+    <button class="tbtn use" data-btn="use" data-en="GEAR">EQUIPO</button>
+  </div>
+  <div class="cockpit-strip" data-h="cockpit">
+    <div class="ck-cell"><small data-en="SPEED">VELOCIDAD</small><b data-ck="speed">0</b><span data-en="KNOTS">NUDOS</span></div>
+    <div class="ck-cell wide"><small data-en="HEADING">RUMBO</small><div class="ck-tape" data-ck="tape"></div><div class="ck-bar"><i data-ck="boost"></i></div><span data-ck="thr" data-en="THRUST 0%">EMPUJE 0%</span></div>
+    <div class="ck-cell"><small data-en="GEAR">EQUIPO</small><b data-ck="item" data-en="No equipment">Sin equipo</b><span data-ck="sys" data-en="Operational">Operativo</span></div>
+  </div>
+</section>
+
+<!-- ============ PAUSE ============ -->
+<section class="screen modal" id="s-pause">
+  <div class="modal-card">
+    <div class="eyebrow" data-en="PAUSED">PAUSA</div>
+    <h2 id="p-name"></h2>
+    <p class="muted" id="p-obj"></p>
+    <p class="muted seedline" id="p-seed"></p>
+    <nav class="menu" data-menu>
+      <button class="btn primary" data-act="resume" data-en="Resume game">Reanudar partida</button>
+      <button class="btn" data-act="restart" data-en="Restart attempt">Reiniciar intento</button>
+      <button class="btn" data-act="settings" data-en="Settings">Ajustes</button>
+      <button class="btn" data-act="howto" data-en="How to play">Cómo jugar</button>
+      <button class="btn ghost" data-act="quit" data-en="Leave mission">Salir de la misión</button>
+    </nav>
+  </div>
+</section>
+
+<!-- ============ RESULTS ============ -->
+<section class="screen modal results" id="s-results">
+  <div class="modal-card wide">
+    <div class="res-banner" id="r-banner" data-en="Mission complete">Misión completada</div>
+    <p class="muted" id="r-reason"></p>
+    <p class="res-detail" id="r-detail"></p>
+    <div class="res-stars" id="r-stars"><i></i><i></i><i></i></div>
+    <div class="res-time"><b id="r-time">0:00.0</b><span id="r-record"></span></div>
+    <div class="res-goals" id="r-goals"></div>
+    <div class="res-stats" id="r-stats"></div>
+    <nav class="menu row" data-menu>
+      <button class="btn primary" data-act="next" id="r-next" data-en="Next mission">Siguiente misión</button>
+      <button class="btn" data-act="retry" id="r-retry" data-en="Retry mission">Reintentar misión</button>
+      <button class="btn" data-act="redeploy" id="r-redeploy" data-en="New deployment">Nuevo despliegue</button>
+      <button class="btn ghost" data-act="tocampaign" data-en="Back to missions">Volver a misiones</button>
+    </nav>
+  </div>
+</section>
+
+<!-- ============ CONFIRM ============ -->
+<section class="screen modal" id="s-confirm" role="alertdialog" aria-labelledby="c-title" aria-describedby="c-text">
+  <div class="modal-card">
+    <div class="eyebrow" id="c-eyebrow" data-en="LEAVE">SALIR</div>
+    <h2 id="c-title" data-en="Leave the mission?">¿Salir de la misión?</h2>
+    <p class="muted" id="c-text" style="text-align:center"></p>
+    <nav class="menu" data-menu>
+      <button class="btn primary" data-act="confirm-primary" id="c-primary" data-en="Resume">Reanudar</button>
+      <button class="btn" data-act="confirm-secondary" id="c-secondary" data-en="Leave mission">Salir de la misión</button>
+    </nav>
+  </div>
+</section>
+
+<!-- ============ SETTINGS ============ -->
+<section class="screen modal" id="s-settings">
+  <div class="modal-card">
+    <div class="eyebrow" data-en="SETTINGS">AJUSTES</div>
+    <div class="settings" id="settings"></div>
+    <nav class="menu" data-menu><button class="btn primary" data-act="back" data-en="Back">Volver</button></nav>
+  </div>
+</section>
+
+<!-- ============ HOW TO ============ -->
+<section class="screen modal" id="s-howto">
+  <div class="modal-card wide scroll">
+    <div class="eyebrow" data-en="HOW TO PLAY">CÓMO JUGAR</div>
+    <div class="tabs" role="tablist" aria-label="Dispositivo de control" data-en-aria-label="Control device" id="ht-tabs"></div>
+    <div class="howto">
+      <div class="ht-col">
+        <h3 data-en="Controls">Controles</h3>
+        <table class="keys" id="ht-keys"><thead><tr><th scope="col" data-en="Action">Acción</th><th scope="col" data-en="Control">Control</th></tr></thead><tbody></tbody></table>
+        <p class="muted" id="ht-note"></p>
+      </div>
+      <div class="ht-col">
+        <section id="ht-mission"></section>
+        <h3 data-en="Game modes">Modos de juego</h3>
+        <div id="ht-modes"></div>
+        <h3 data-en="Equipment">Equipo</h3>
+        <div class="ht-items" id="ht-items"></div>
+        <h3 data-en="Stars">Estrellas</h3>
+        <p class="muted" data-en="You earn 1 star for completing the mission, and 2 or 3 if you beat the times set for that mission.">Ganas 1 estrella al completar la misión, y 2 o 3 si mejoras los tiempos indicados para esa misión.</p>
+      </div>
+    </div>
+    <nav class="menu" data-menu><button class="btn" data-act="practice" id="ht-practice" data-en="Try it in practice">Probar en la práctica</button><button class="btn primary" data-act="back" data-en="Back">Volver</button></nav>
+  </div>
+</section>
+
+<!-- ============ CREDITS ============ -->
+<section class="screen modal" id="s-credits">
+  <div class="modal-card wide">
+    <div class="eyebrow" data-en="CREDITS">CRÉDITOS</div>
+    <h2>JET//Raid</h2>
+    <p class="credit-lead" data-en="Design and development: JET//Games.">Diseño y desarrollo: JET//Games.</p>
+    <div class="credit-cols">
+      <section><h3 data-en="Technology">Tecnología</h3>
+        <p class="muted" data-en-html="Graphics engine: &lt;a href=&quot;https://threejs.org&quot; target=&quot;_blank&quot; rel=&quot;noopener&quot;&gt;three.js&lt;/a&gt; (&lt;a href=&quot;https://github.com/mrdoob/three.js/blob/dev/LICENSE&quot; target=&quot;_blank&quot; rel=&quot;noopener&quot;&gt;MIT&lt;/a&gt; license). Water: Water.js from the three.js examples (MIT). Sky, music and sound effects: generated by the game itself. Phone as controller: &lt;a href=&quot;https://peerjs.com&quot; target=&quot;_blank&quot; rel=&quot;noopener&quot;&gt;PeerJS&lt;/a&gt; (MIT) and &lt;a href=&quot;https://github.com/kazuhikoarase/qrcode-generator&quot; target=&quot;_blank&quot; rel=&quot;noopener&quot;&gt;qrcode-generator&lt;/a&gt; (MIT).">Motor 3D: <a href="https://threejs.org" target="_blank" rel="noopener">three.js</a> (licencia <a href="https://github.com/mrdoob/three.js/blob/dev/LICENSE" target="_blank" rel="noopener">MIT</a>). Agua: Water.js de los ejemplos de three.js (MIT). Cielo, música y efectos de sonido: generados por el propio juego. Teléfono como mando: <a href="https://peerjs.com" target="_blank" rel="noopener">PeerJS</a> (MIT) y <a href="https://github.com/kazuhikoarase/qrcode-generator" target="_blank" rel="noopener">qrcode-generator</a> (MIT).</p></section>
+      <section><h3 data-en="Graphics">Recursos gráficos</h3>
+        <p class="muted" data-en-html="Metal, concrete, stone and rock textures: &lt;a href=&quot;https://polyhaven.com&quot; target=&quot;_blank&quot; rel=&quot;noopener&quot;&gt;Poly Haven&lt;/a&gt; (&lt;a href=&quot;https://creativecommons.org/publicdomain/zero/1.0/&quot; target=&quot;_blank&quot; rel=&quot;noopener&quot;&gt;CC0&lt;/a&gt;). Armor: texture made for JET//Games.">Texturas de metal, hormigón, piedra y roca: <a href="https://polyhaven.com" target="_blank" rel="noopener">Poly Haven</a> (<a href="https://creativecommons.org/publicdomain/zero/1.0/" target="_blank" rel="noopener">CC0</a>). Blindaje: textura generada para JET//Games.</p></section>
+      <section class="wide-sec"><h3 data-en="Music">Música</h3>
+        <p class="muted credits-music" data-en="“Assault Tide”, an original JET//Games soundtrack for JET//Raid: menu theme, mission briefing, mission music that builds with the action, victory and defeat. It is composed and played in real time inside the game, with no recordings.">«Marea de asalto», banda sonora original de JET//Games para JET//Raid: tema de menú, informe de misión, música de misión que crece con la acción, victoria y derrota. Se compone y se toca en tiempo real dentro del juego, sin grabaciones.</p></section>
+    </div>
+    <nav class="menu" data-menu><button class="btn primary" data-act="back" data-en="Back">Volver</button></nav>
+  </div>
+</section>
+
+<div class="rotate" id="rotate"><div><svg viewBox="0 0 64 64"><rect x="20" y="8" width="24" height="44" rx="4" fill="none" stroke="currentColor" stroke-width="3"/><path d="M50 40a18 18 0 0 1-14 14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><path d="M36 50l0 5 5-1" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg><b data-en="Turn your device">Gira el dispositivo</b><p data-en="JET//Raid is played in landscape.">JET//Raid se juega en horizontal.</p></div></div>
+<div class="navhint" id="navhint" data-en-html="&lt;span&gt;Arrows to move&lt;/span&gt;&lt;span&gt;&lt;kbd&gt;Enter&lt;/kbd&gt; to open&lt;/span&gt;&lt;span&gt;&lt;kbd&gt;Esc&lt;/kbd&gt; to go back&lt;/span&gt;"><span>Flechas para navegar</span><span><kbd>Enter</kbd> para abrir</span><span><kbd>Esc</kbd> para volver</span></div>
+<div class="fatal" id="fatal" hidden role="alertdialog" aria-labelledby="fatal-title" aria-describedby="fatal-msg"><div>
+  <h2 id="fatal-title" data-en="We could not start the graphics">No pudimos iniciar los gráficos</h2>
+  <p id="fatal-msg" data-en="Try reloading. If it continues, check that your browser is up to date and has graphics acceleration available.">Prueba a recargar. Si continúa, revisa que el navegador esté actualizado y tenga aceleración gráfica disponible.</p>
+  <details id="fatal-details"><summary data-en="See help and details">Ver ayuda y detalles</summary>
+    <ul class="fatal-help"><li data-en="Update your browser to its latest version.">Actualiza el navegador a su última versión.</li><li data-en="Turn on hardware acceleration in your browser settings.">Activa la aceleración por hardware en la configuración del navegador.</li><li data-en="Try another browser or device.">Prueba con otro navegador o dispositivo.</li></ul>
+    <pre id="fatal-detail"></pre></details>
+  <div class="fatal-btns"><button class="btn primary" id="fatal-retry" type="button" data-en="Try again">Reintentar</button><button class="btn" id="fatal-continue" type="button" hidden data-en="Play without them">Jugar sin ellas</button></div>
+</div></div>
+<script type="module" src="raid.js?v=fc7c3538ee29"></script>
+<script>if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js');</script>
+</body>
+</html>

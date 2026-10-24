@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>JET//Flow</title>
+<link rel="canonical" href="https://jetgames.fun/flow/">
+<style>html,body{margin:0;height:100%;background:#050108;color:#b5a8d8;font:500 14px system-ui,sans-serif;display:grid;place-items:center}a{color:#00f2cf}</style>
+<script>
+/* Puente de mudanza (2026-10-22): JET//Flow ahora vive en https://jetgames.fun/flow/.
+   Este origen (jetflow.jetgames.fun) tiene su propio localStorage: se manda entero en #jet-migrar=
+   y el juego nuevo importa solo las claves que aún no tiene. Se conservan la ruta y la consulta. */
+(function () {
+  var dest = 'https://jetgames.fun/flow/' + location.search;
+  var d = {}, n = 0;
+  try { for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); d[k] = localStorage.getItem(k); n++; } } catch (e) {}
+  if (n) { try { dest += '#jet-migrar=' + encodeURIComponent(btoa(unescape(encodeURIComponent(JSON.stringify(d))))); } catch (e) {} }
+  location.replace(dest);
+})();
+</script>
+<noscript><meta http-equiv="refresh" content="0;url=https://jetgames.fun/flow/"></noscript>
+</head>
+<body><a href="https://jetgames.fun/flow/">JET//Flow</a></body>
+</html>

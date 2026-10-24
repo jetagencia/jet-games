@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>JET//Caja Negra · Reconstruye el incidente</title>
+<meta name="description" content="Llega la caja negra de una misión con un incidente. Cruza la radio, la foto, la telemetría y la bitácora, completa el informe y fírmalo. Un caso nuevo cada día.">
+<meta name="theme-color" content="#050108">
+<meta property="og:title" content="JET//Caja Negra">
+<meta property="og:description" content="Reconstruye el incidente. Firma el informe. Un caso nuevo cada día.">
+<meta property="og:image" content="https://jetgames.fun/cajanegra/captura-home.jpg">
+<meta property="og:url" content="https://jetgames.fun/cajanegra/">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+<script src="src/jet-idioma.js?v=1"></script>
+<link rel="stylesheet" href="src/estilo.css?v=6">
+</head>
+<body>
+<canvas id="fondo" aria-hidden="true"></canvas>
+<a id="back" href="https://jetgames.fun/" target="_top" rel="noopener"><span class="flecha">‹</span> JET<i>//</i>Games</a>
+<div id="topR"><button class="ibtn" id="bFS" type="button"></button><button class="ibtn" id="bAj" type="button"></button></div>
+
+<main id="app">
+  <section class="scr" id="sInicio"></section>
+  <section class="scr" id="sCampana"></section>
+  <section class="scr" id="sPractica"></section>
+  <section class="scr" id="sStats"></section>
+  <section class="scr" id="sAyuda"></section>
+  <section class="scr" id="sResultado"></section>
+  <section id="sJuego" aria-hidden="true"></section>
+</main>
+
+<section class="capa" id="sAjustes" role="dialog" aria-modal="true"></section>
+<div class="capa velo" id="pausa" role="dialog" aria-modal="true"></div>
+<div class="capa" id="dialogo" role="alertdialog" aria-modal="true"></div>
+<div class="capa" id="historial" role="dialog" aria-modal="true"></div>
+<div class="capa" id="lupa" role="dialog" aria-modal="true"></div>
+<div id="apertura" aria-hidden="true"></div>
+<div id="menuHueco" role="menu"></div>
+<div id="globo" role="status"></div>
+<div id="toast" role="status" aria-live="polite"></div>
+<div id="vivo" class="sr" aria-live="polite"></div>
+<div id="fantasma" aria-hidden="true"></div>
+<noscript><p style="color:#f5f0ff;font-family:sans-serif;padding:24px">JET//Caja Negra necesita JavaScript. · JET//Black Box needs JavaScript.</p></noscript>
+
+<script src="src/rng.js?v=1"></script>
+<script src="src/mundo.js?v=2"></script>
+<script src="src/textos-casos.js?v=2"></script>
+<script src="src/solucionador.js?v=1"></script>
+<script src="src/generador.js?v=3"></script>
+<script src="src/campana.js?v=2"></script>
+<script src="src/calendario.js?v=1"></script>
+<script src="src/i18n.js?v=5"></script>
+<script src="src/astronauta-oficial.js?v=1"></script>
+<script src="src/dibujo.js?v=1"></script>
+<script src="src/audio.js?v=3"></script>
+<script src="src/registros.js?v=1"></script>
+<script src="src/app.js?v=9"></script>
+</body>
+</html>

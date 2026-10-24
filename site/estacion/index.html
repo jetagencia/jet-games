@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<script src="src/jet-idioma.js?v=6"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
+<title>JET//Estación Silencio · Escape room en 34 enigmas</title>
+<meta name="description" content="Despiertas en una estación a la deriva y no recuerdas tu nombre. Un escape room de 34 enigmas para teléfono, tablet y computadora.">
+<meta name="theme-color" content="#050108">
+<meta property="og:title" content="JET//Estación Silencio">
+<meta property="og:description" content="Un escape room en 34 enigmas. Despiertas sin recordar tu nombre.">
+<meta property="og:image" content="https://jetgames.fun/estacion/captura-home.jpg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="src/style.css?v=6">
+</head>
+<body>
+<canvas id="cv" aria-hidden="true"></canvas>
+<a id="back" href="https://jetgames.fun/" target="_top" rel="noopener" data-a="back.games">‹ <span class="bl">JET<i>//</i>Games</span></a>
+
+<header id="top" hidden>
+  <button id="bRing" class="pill" type="button" data-a="back.ring"><span class="chev" aria-hidden="true">‹</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 6l-5 6 5 6"/><circle cx="16" cy="12" r="5"/><circle cx="16" cy="12" r="1.6"/></svg><span class="lbl" data-t="back.ring"></span></button>
+  <div id="roomTitle" class="rtitle"></div>
+  <div class="tbtns">
+    <button id="bMap" class="ib" type="button" data-a="map" title="Alt+M"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg></button>
+    <button id="bNote" class="ib" type="button" data-a="notebook" title="Alt+N"><svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h4"/></svg></button>
+    <button id="bLog" class="ib" type="button" data-a="log" title="Alt+B"><svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="11" rx="2"/><circle cx="8" cy="12.5" r="2"/><circle cx="16" cy="12.5" r="2"/></svg><i class="dot" id="logDot"></i></button>
+    <button id="bPause" class="ib" type="button" data-a="pause" title="P"><svg viewBox="0 0 24 24"><path d="M9 6v12M15 6v12"/></svg></button>
+  </div>
+</header>
+<button id="bGear" class="ib gear" type="button" data-a="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+
+<div id="plateBar" hidden><span class="pl-k" data-t="plate"></span><canvas id="plateCv" width="300" height="40"></canvas><span id="plateMiss" class="pl-m" data-t="plate.missing"></span></div>
+<nav id="roomList" hidden></nav>
+<div id="hubBar" hidden><span id="hubStars" class="stars-n"></span><button class="btn sm" id="hNote" type="button" data-t="notebook"></button><button class="btn sm" id="hLog" type="button" data-t="log"></button></div>
+
+<section id="insp" hidden aria-modal="true" role="dialog">
+  <div class="i-head"><div class="i-tt"><span id="iTag" class="kick"></span><h2 id="iTitle"></h2></div><button id="iClose" class="x" type="button" data-a="close">×</button></div>
+  <div class="i-stage" id="iStage"><canvas id="iCv"></canvas><div id="iDom"></div><div id="iStamp" class="stamp"></div><div id="iZoom" class="zoomtag"></div></div>
+  <div class="i-side">
+    <p id="iAmb" class="amb"></p><p id="iQ" class="iq"></p>
+    <div id="iTools" class="tools"></div>
+    <div id="iHints" class="hints"></div>
+    <div id="iAtt" class="att"></div>
+  </div>
+  <div id="offer" class="offer" hidden><button type="button" id="offerBtn"></button></div>
+  <form id="bar" autocomplete="off" novalidate>
+    <div id="enum" class="enum" aria-hidden="true"></div>
+    <div class="bar-row">
+      <input id="ans" type="text" maxlength="32" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" enterkeyhint="send" inputmode="text" aria-describedby="enum">
+      <button type="button" id="enie" class="ib sm" aria-label="Ñ">Ñ</button>
+      <button type="button" id="hintBtn" class="ib sm bulb" data-a="hints" title="Alt+H"><svg viewBox="0 0 24 24"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2V16h5v-.1c0-.8.4-1.5 1-2A6 6 0 0 0 12 3z"/></svg></button>
+      <button type="submit" id="send" class="send"><span data-t="answer.send"></span><i class="ring"></i></button>
+    </div>
+    <div class="scan"></div>
+  </form>
+</section>
+
+<div id="toasts" aria-live="polite"></div>
+<div id="layer"></div>
+<div id="fade"></div>
+
+<script src="src/content.js?v=6"></script>
+<script src="src/core.js?v=6"></script>
+<script src="src/i18n.js?v=6"></script>
+<script src="src/audio.js?v=6"></script>
+<script src="src/astro.js?v=6"></script>
+<script src="src/draw.js?v=6"></script>
+<script src="src/puzzles-a.js?v=6"></script>
+<script src="src/puzzles-b.js?v=6"></script>
+<script src="src/puzzles-c.js?v=6"></script>
+<script src="src/scenes.js?v=6"></script>
+<script src="src/ui.js?v=6"></script>
+</body>
+</html>

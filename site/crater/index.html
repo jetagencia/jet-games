@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>JET//Cráter · Coincide con el mundo</title>
+<meta name="description" content="Siete aterrizajes al día: elige dónde aterrizará la mayoría, sin poder hablar con nadie. A medianoche se levanta el polvo y ves el mapa del mundo.">
+<meta name="theme-color" content="#050108">
+<meta property="og:type" content="website">
+<meta property="og:title" content="JET//Cráter">
+<meta property="og:description" content="7 aterrizajes al día. Coincide con el mundo.">
+<meta property="og:url" content="https://jetgames.fun/crater/">
+<meta property="og:image" content="https://jetgames.fun/crater/captura-home.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<script src="src/jet-idioma.js?v=1"></script>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="src/estilo.css?v=6">
+</head>
+<body>
+<div id="sCarga" aria-hidden="true"><h1 class="logo">JET<i>//</i><span data-t="name">Cráter</span></h1><div class="pulso"></div></div>
+<script>if(window.JETIdioma&&JETIdioma.get()==='en'){document.title='JET//Crater · Sync with the world';document.querySelector('#sCarga span').textContent='Crater';}</script>
+<canvas id="fondo" aria-hidden="true"></canvas>
+<a id="back" href="https://jetgames.fun/" target="_top" rel="noopener" data-ta="back">‹ JET<i>//</i>Games</a>
+<div id="tr">
+ <button class="ico" id="bPausa" hidden data-ta="pause"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.2"/><rect x="14" y="5" width="4" height="14" rx="1.2"/></svg></button>
+ <div class="seg segLang segTop" id="segLang2" role="group" data-ta="language"><button data-l="es" lang="es">ES</button><button data-l="en" lang="en">EN</button></div>
+ <button class="ico" id="bAjustes" data-ta="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+</div>
+<div id="pill" hidden role="status"></div>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<!-- INICIO -->
+<section class="scr" id="sInicio" aria-labelledby="hLogo">
+ <div class="hero">
+  <div class="marca">
+  <div class="kick" id="iKick"></div>
+  <h1 class="logo" id="hLogo">JET<i>//</i><span data-t="name">Cráter</span></h1>
+  <p class="tag" data-t="tagline"></p>
+  <div class="chips" id="chips"></div>
+  </div>
+  <button class="btn pri grande" id="bJugar"><span id="bJugarT"></span><small id="bJugarS"></small></button>
+  <button class="tarj" id="tRevela"><span class="ic" id="tRevelaIc"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#00f2cf" stroke-width="2"><circle cx="12" cy="12" r="8"/><path d="M8 13a4 4 0 0 0 8 0"/><circle cx="9" cy="9.5" r="1" fill="#00f2cf"/></svg></span><span><b id="tRevelaT"></b><span id="tRevelaS"></span></span></button>
+  <div class="sec4">
+   <button class="btn" id="bComo" data-t="howTo"></button>
+   <button class="btn" id="bArchivo" data-t="archive"></button>
+   <button class="btn" id="bPerfil" data-t="profile"></button>
+   <button class="btn" id="bAjustes2" data-t="settings"></button>
+  </div>
+  <button class="btn" id="bPantalla"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg><span id="bPantallaT"></span></button>
+ </div>
+</section>
+
+<!-- RONDA -->
+<section class="scr" id="sRonda" aria-label="">
+ <div class="juego">
+  <div class="consigna">
+   <div class="r1"><span class="kick" id="rKick"></span><span class="lunas" id="rLunas" aria-hidden="true"></span></div>
+   <h2 data-t="prompt" id="rPrompt"></h2>
+   <p id="rCtx"></p>
+   <button class="saltar" id="bSaltar" hidden data-t="skipTut"></button>
+  </div>
+  <div class="area" id="area">
+   <div class="lista" id="lista" role="radiogroup"></div>
+   <canvas id="cv" tabindex="0" role="application"></canvas>
+   <div class="sr" id="srOps" role="radiogroup"></div>
+  </div>
+  <div class="accion" id="accion">
+   <div class="res" id="rRes" hidden><span class="dot">✓</span><span id="rResT"></span></div>
+   <button class="btn pri" id="bAterrizar" disabled></button>
+  </div>
+ </div>
+</section>
+
+<!-- LECTURA TEMPRANA -->
+<section class="scr" id="sLectura" aria-labelledby="lTit">
+ <div class="card ancha" style="display:flex;flex-direction:column;gap:14px;align-items:center">
+  <div class="kick" id="lKick"></div>
+  <h2 class="titular" id="lTit"></h2>
+  <div class="sub" id="lPts"></div>
+  <div class="minis" id="lMinis"></div>
+  <div class="sub" id="lNota" hidden></div>
+  <div style="text-align:center" id="lReloj"><div class="sub" id="lDust"></div><div class="cuenta" id="lCuenta"></div></div>
+  <button class="btn pri" id="bLRevela" hidden data-t="seeReveal"></button>
+  <button class="btn pri" id="bCompartir" data-t="share"></button>
+  <div class="fila" style="width:100%"><button class="btn" id="bLBrujula" data-t="myCompass"></button><button class="btn" id="bLInicio" data-t="home"></button></div>
+  <details class="porque" id="lPorque"><summary data-t="whyTitle"></summary><div class="pasos" id="lPasos"></div></details>
+ </div>
+</section>
+
+<!-- REVELACIÓN -->
+<section class="scr" id="sRevela" aria-labelledby="rvKick">
+ <div class="rev">
+  <div class="cab"><span class="kick" id="rvKick"></span><span class="chip" id="rvEstado"></span></div>
+  <div id="rvFinal" hidden class="card ancha" style="margin:0 auto;display:flex;flex-direction:column;gap:14px;align-items:center"></div>
+  <div class="escena" id="rvEscena">
+   <div class="lienzo"><canvas id="cvR" aria-hidden="true"></canvas><div id="rvLista"></div></div>
+   <div class="lado">
+    <div class="kick" id="rvRonda"></div>
+    <div class="veredicto" id="rvVer"></div>
+    <div class="linea" id="rvLinea"></div>
+    <div class="linea" id="rvPocos" style="font-size:13.5px;color:var(--dim)"></div>
+    <div class="leyenda" id="rvLey"></div>
+    <div class="set" id="rvSolo" style="border:0;padding:0"><span class="et" data-t="onlyReal" style="font-size:14px"></span><button class="tog" id="tSoloR" data-ta="onlyReal"></button></div>
+    <div class="nav3"><button class="btn" id="bRvAnt" data-t="prevR"></button><button class="btn" id="bRvTodo" data-t="seeAll"></button><button class="btn pri" id="bRvSig" data-t="nextR"></button></div>
+   </div>
+  </div>
+ </div>
+</section>
+
+<!-- ARCHIVO -->
+<section class="scr" id="sArchivo" aria-labelledby="aTit">
+ <div class="card">
+  <div class="top"><h2 id="aTit" data-t="archiveTitle"></h2><button class="x" data-volver data-ta="home">✕</button></div>
+  <p class="sub" style="text-align:left;margin-bottom:12px" data-t="archiveNote"></p>
+  <div class="dias" id="aDias"></div>
+ </div>
+</section>
+
+<!-- PERFIL -->
+<section class="scr" id="sPerfil" aria-labelledby="pTit">
+ <div class="card ancha">
+  <div class="top"><h2 id="pTit" data-t="profileTitle"></h2><button class="x" data-volver data-ta="home">✕</button></div>
+  <div class="stats" id="pStats"></div>
+  <div class="bloque"><h3 data-t="avg30"></h3><p data-t="avg30Note"></p><div class="barras" id="pBarras"></div></div>
+  <div class="bloque"><h3 data-t="compass"></h3><p data-t="compassNote"></p><canvas id="cvBrujula" aria-hidden="true"></canvas><p id="pBrujulaTxt" class="sr"></p></div>
+  <div class="bloque"><h3 data-t="notebook"></h3><p data-t="notebookNote"></p><div class="cuaderno" id="pCuaderno"></div></div>
+ </div>
+</section>
+
+<!-- CÓMO JUGAR -->
+<section class="scr modal" id="sComo" aria-labelledby="cTit">
+ <div class="card">
+  <div class="top"><h2 id="cTit" data-t="howTitle"></h2><button class="x" data-volver data-ta="done">✕</button></div>
+  <div class="laminas" id="cLam">
+   <div class="lamina"><canvas data-l="0"></canvas><h3 data-t="how1"></h3><p data-t="how1b"></p></div>
+   <div class="lamina"><canvas data-l="1"></canvas><h3 data-t="how2"></h3><p data-t="how2b"></p></div>
+   <div class="lamina"><canvas data-l="2"></canvas><h3 data-t="how3"></h3><p data-t="how3b"></p></div>
+  </div>
+  <div class="puntos" id="cPuntos"></div>
+  <div class="pie">
+   <button class="btn pri" id="bComoSig"></button>
+   <div class="fila"><button class="btn" id="bComoPorque" data-t="howWhy"></button><button class="btn" id="bComoEnsayo" data-t="howWarmup"></button></div>
+  </div>
+ </div>
+</section>
+
+<!-- ¿POR QUÉ COINCIDIMOS? -->
+<section class="scr modal" id="sPorque" aria-labelledby="wTit">
+ <div class="card">
+  <div class="top"><h2 id="wTit" data-t="whyTitle"></h2><button class="x" data-volver data-ta="done">✕</button></div>
+  <div class="pasos" id="wPasos"></div>
+  <button class="btn pri" data-volver data-t="gotIt"></button>
+ </div>
+</section>
+
+<!-- AJUSTES -->
+<section class="scr modal" id="sAjustes" aria-labelledby="sTit">
+ <div class="card">
+  <div class="top"><h2 id="sTit" data-t="setTitle"></h2><button class="x" data-volver data-ta="done">✕</button></div>
+  <div class="set"><label for="rMus" data-t="music"></label><input type="range" id="rMus" min="0" max="100"><button class="tog" id="tMus" data-ta="music"></button></div>
+  <div class="set"><label for="rSfx" data-t="sfx"></label><input type="range" id="rSfx" min="0" max="100"><button class="tog" id="tSfx" data-ta="sfx"></button></div>
+  <div class="set"><span class="et" data-t="vibration"></span><button class="tog" id="tVib" data-ta="vibration"></button></div>
+  <div class="set"><span class="et" data-t="autoAdvance"></span><button class="tog" id="tAuto" data-ta="autoAdvance"></button></div>
+  <div class="set"><span class="et" data-t="reducedMotion"></span><button class="tog" id="tMov" data-ta="reducedMotion"></button></div>
+  <div class="set"><span class="et" data-t="onlyReal"></span><button class="tog" id="tSolo" data-ta="onlyReal"></button></div>
+  <div class="set"><span class="et" data-t="language"></span><div class="seg segLang" id="segLang" role="group" data-ta="language"><button data-l="es" lang="es">ES</button><button data-l="en" lang="en">EN</button></div></div>
+  <div class="pie">
+   <button class="btn" id="bPantalla2"></button>
+   <button class="btn peligro" id="bBorrar"></button>
+   <button class="btn pri" data-volver data-t="done"></button>
+  </div>
+ </div>
+</section>
+
+<!-- PAUSA -->
+<section class="scr modal" id="sPausa" aria-labelledby="zTit">
+ <div class="card" style="display:flex;flex-direction:column;gap:10px">
+  <div class="kick" id="zKick"></div>
+  <h2 id="zTit" style="font-size:28px;font-weight:800" data-t="paused"></h2>
+  <p class="sub" style="text-align:left" data-t="pauseNote"></p>
+  <button class="btn pri" id="bSeguir" data-t="continue"></button>
+  <div class="rejilla2"><button class="btn" id="bPComo" data-t="howTo"></button><button class="btn" id="bPAjustes" data-t="settings"></button></div>
+  <button class="btn" id="bPInicio" data-t="home"></button>
+ </div>
+</section>
+
+<script src="src/bancos.js?v=1"></script>
+<script src="src/horno.js?v=1"></script>
+<script src="src/gen.js?v=1"></script>
+<script src="src/textos.js?v=3"></script>
+<script src="src/audio.js?v=3"></script>
+<script src="src/mapa.js?v=1"></script>
+<script src="src/estado.js?v=1"></script>
+<script src="src/red.js?v=2"></script>
+<script src="src/ui.js?v=6"></script>
+</body>
+</html>

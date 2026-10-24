@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<script>
+/* Mudanza desde jetwords.jetgames.fun (2026-10-22): el puente de la dirección vieja manda el progreso
+   en #jet-migrar=<base64url de un JSON {clave:valor}>; se importan solo las claves que aún no existen. */
+(function(){var m=location.hash.match(/^#jet-migrar=([A-Za-z0-9_-]+)/);if(!m)return;
+try{var b=m[1].replace(/-/g,'+').replace(/_/g,'/');while(b.length%4)b+='=';var d=JSON.parse(decodeURIComponent(escape(atob(b))));
+for(var k in d){if(Object.prototype.hasOwnProperty.call(d,k)&&typeof d[k]==='string'&&localStorage.getItem(k)===null)localStorage.setItem(k,d[k]);}}catch(e){}
+try{history.replaceState(null,'',location.pathname+location.search);}catch(e){}})();
+</script>
+<script src="jet-idioma.js"></script>
+<title>JET//Words</title>
+<meta name="description" content="Adivina la palabra de cinco letras en seis intentos. Una palabra nueva cada día, en español y en inglés, y práctica sin límite.">
+<meta name="theme-color" content="#0a0512">
+<meta property="og:title" content="JET//Words"><meta property="og:description" content="Una palabra de cinco letras por día, en español y en inglés."><meta property="og:url" content="https://jetgames.fun/words/">
+<link rel="manifest" href="manifest.json"><link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=JetBrains+Mono:wght@600;700&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%230a0512'/><rect x='10' y='10' width='20' height='20' rx='4' fill='%2300f2cf'/><rect x='34' y='10' width='20' height='20' rx='4' fill='%23fdd835'/><rect x='10' y='34' width='20' height='20' rx='4' fill='%237700f4'/><rect x='34' y='34' width='20' height='20' rx='4' fill='%23ffffff' opacity='.25'/></svg>">
+<style>
+:root{--bg:#0a0512;--bg2:#120a22;--card:#1a1030;--line:rgba(245,240,255,.12);--ink:#f5f2ff;--dim:#9a90b8;--cyan:#00f2cf;--violet:#7700f4;--yellow:#fdd835;--green:#3ddc84;--sat:env(safe-area-inset-top,0px);--sab:env(safe-area-inset-bottom,0px);--sal:env(safe-area-inset-left,0px);--sar:env(safe-area-inset-right,0px)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+html,body{margin:0;height:100%;background:radial-gradient(120% 80% at 50% -10%,#241145 0%,var(--bg) 60%);background-color:var(--bg);color:var(--ink);font-family:Poppins,system-ui,sans-serif;overflow:hidden;overscroll-behavior:none}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;margin:0;cursor:pointer;touch-action:manipulation}
+button:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+#app{height:100%;height:100dvh;display:flex;flex-direction:column;max-width:560px;margin:0 auto;padding:calc(6px + var(--sat)) calc(10px + var(--sar)) calc(6px + var(--sab)) calc(10px + var(--sal))}
+header{display:grid;grid-template-columns:auto 1fr auto;grid-template-areas:"back . tools" "brand modes modes";align-items:center;column-gap:10px;row-gap:6px;padding:4px 2px}
+#back{grid-area:back;display:inline-flex;align-items:center;gap:4px;height:40px;padding:0 12px 0 8px;margin:-2px 0;border-radius:99px;background:rgba(10,5,18,.6);border:1px solid rgba(119,0,244,.4);color:#d9d3ee;font:600 12px 'JetBrains Mono',monospace;letter-spacing:.04em;text-decoration:none;white-space:nowrap;position:relative;touch-action:manipulation}
+#back::before{content:'';position:absolute;inset:-2px 0}
+#back svg{width:14px;height:14px}#back i{font-style:normal;color:var(--cyan)}
+#back:hover,#back:focus-visible{color:#fff;border-color:var(--cyan);outline:none}
+.tools{grid-area:tools;display:flex;gap:6px;align-items:center}
+.brand{grid-area:brand}
+.brand{font-weight:800;font-size:22px;letter-spacing:-.02em;white-space:nowrap}.brand .sl{color:var(--cyan)}
+.spacer{flex:1}
+.ib{width:42px;height:42px;position:relative;border-radius:10px;background:var(--card);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:var(--dim);flex:none}
+.ib:hover{color:var(--ink)}
+.ib svg{width:17px;height:17px;display:block}
+.ib::before,.lang::before,.x::before,.tog::before{content:'';position:absolute;inset:-3px}
+.modes{grid-area:modes;display:flex;gap:4px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:3px;margin:0;font-size:13px;font-weight:600;min-width:0}
+.modes button{flex:1 1 auto;min-width:0;min-height:38px;padding:0 8px;border-radius:9px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.modes button.on{background:var(--violet);color:#fff}
+.sub{text-align:center;font-size:11px;color:var(--dim);letter-spacing:.08em;text-transform:uppercase;min-height:16px;margin-top:2px}
+.play{flex:1;min-height:0;display:flex;flex-direction:column}
+#board{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;padding:6px 0}
+.grid{display:grid;grid-template-rows:repeat(6,1fr);gap:6px;height:min(100%,420px,96vw);aspect-ratio:5/6;perspective:600px}
+.row{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.cell{display:flex;align-items:center;justify-content:center;border:2px solid var(--line);border-radius:10px;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:clamp(18px,6vw,32px);text-transform:uppercase;background:rgba(255,255,255,.02);transition:background-color .05s,border-color .05s}
+.cell.filled{border-color:var(--dim)}.cell.pop{animation:pop .12s}
+.cell.absent{background:#2a2140;border-color:#2a2140;color:#7d7396}.cell.present{background:var(--yellow);border-color:var(--yellow);color:#1a1200}.cell.correct{background:var(--green);border-color:var(--green);color:#052d18}
+.cell.flip{animation:flip .5s ease-in-out}
+.row.win .cell{animation:hop .5s ease both}
+@keyframes pop{from{transform:scale(.85)}to{transform:scale(1)}}@keyframes flip{0%{transform:rotateX(0)}50%{transform:rotateX(90deg)}100%{transform:rotateX(0)}}
+@keyframes hop{0%,100%{transform:translateY(0)}40%{transform:translateY(-22%)}70%{transform:translateY(4%)}}
+.row.shake{animation:shake .4s}@keyframes shake{20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+#kb{display:flex;flex-direction:column;gap:6px;padding:4px 0 2px}
+.krow{display:flex;gap:5px;justify-content:center}
+.key{flex:1;max-width:44px;height:54px;border-radius:9px;background:#2b2044;font-weight:600;font-size:15px;text-transform:uppercase;display:flex;align-items:center;justify-content:center;color:var(--ink);transition:background-color .2s,color .2s}
+.key.wide{max-width:70px;flex:1.6;font-size:12px}
+.key.absent{background:#17102a;color:#5a5275}.key.present{background:var(--yellow);color:#1a1200}.key.correct{background:var(--green);color:#052d18}
+.key:active,.key.down{transform:scale(.94);filter:brightness(1.25)}
+.toast{position:fixed;left:50%;top:calc(104px + var(--sat));transform:translateX(-50%);background:#fff;color:#111;font-weight:700;padding:10px 16px;border-radius:12px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:40;font-size:14px;white-space:nowrap;box-shadow:0 8px 30px rgba(0,0,0,.4)}
+.toast.show{opacity:1}
+.modal-bg{position:fixed;inset:0;background:rgba(5,2,12,.72);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;padding:16px;z-index:20}.modal-bg.show{display:flex}
+.modal{position:relative;background:var(--bg2);border:1px solid var(--line);border-radius:20px;padding:20px;width:min(440px,100%);max-height:calc(100dvh - 32px);overflow:auto;animation:rise .22s ease}
+@keyframes rise{from{transform:translateY(12px);opacity:0}to{transform:none;opacity:1}}
+.modal h2{margin:0 0 6px;font-size:22px;padding-right:44px}.modal p{color:var(--dim);margin:6px 0;font-size:14px;line-height:1.5}
+.x{position:absolute;top:10px;right:10px;width:44px;height:44px;border-radius:10px;color:var(--dim);font-size:20px;display:flex;align-items:center;justify-content:center}
+.x:hover{color:var(--ink);background:var(--card)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:12px 0}.stat{background:var(--card);border-radius:12px;padding:10px 6px;text-align:center}.stat b{display:block;font-size:22px;font-family:'JetBrains Mono',monospace}.stat span{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.06em}
+.dist{display:flex;flex-direction:column;gap:4px;margin:8px 0 12px}.dist div{display:flex;align-items:center;gap:8px;font-family:'JetBrains Mono',monospace;font-size:12px}.dist i{display:block;height:18px;background:#2b2044;border-radius:4px;min-width:18px;text-align:right;padding-right:6px;font-style:normal;line-height:18px}.dist i.hi{background:var(--green);color:#052d18}
+.acts{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}.btn{flex:1;padding:12px;border-radius:12px;background:var(--card);border:1px solid var(--line);font-weight:700;text-align:center;white-space:nowrap}.btn.primary{background:var(--cyan);color:#052d18;border-color:transparent}
+/* en pantallas bajas, el botón de la ayuda queda siempre a la vista */
+#mHelp .acts{position:sticky;bottom:-20px;margin:10px -20px -20px;padding:14px 20px 18px;background:linear-gradient(rgba(18,10,34,0),var(--bg2) 35%)}
+.answer{font-family:'JetBrains Mono',monospace;font-size:28px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--yellow);margin:8px 0}
+.answer:empty{display:none}
+.ex{display:inline-flex;gap:4px;margin:4px 0}.ex span{width:30px;height:30px;border-radius:6px;border:1.5px solid var(--line);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-weight:700;text-transform:uppercase}
+.ex span.c{background:var(--green);border-color:var(--green);color:#052d18}.ex span.p{background:var(--yellow);border-color:var(--yellow);color:#1a1200}.ex span.a{background:#2a2140;border-color:#2a2140;color:#7d7396}
+.timer{text-align:center;font-family:'JetBrains Mono',monospace;color:var(--ink)!important;font-size:15px!important}
+.timer small{display:block;font-family:Poppins,sans-serif;color:var(--dim);font-size:11px;letter-spacing:.08em;text-transform:uppercase}
+.set{display:grid;grid-template-columns:1fr auto;grid-template-areas:"lbl tog" "rng rng";align-items:center;column-gap:12px;row-gap:4px;padding:12px 0;border-bottom:1px solid var(--line)}
+.set .lbl{grid-area:lbl}.set .tog{grid-area:tog}.set input[type=range]{grid-area:rng;width:100%}
+.set:last-of-type{border-bottom:0}
+.set .lbl{flex:1;font-weight:600;font-size:14px}.set .lbl small{display:block;color:var(--dim);font-weight:400;font-size:12px}
+.tog{width:52px;height:30px;border-radius:15px;background:#2b2044;position:relative;flex:none;transition:background .2s}
+.tog::after{content:'';position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;transition:transform .2s}
+.tog[aria-checked="true"]{background:var(--violet)}.tog[aria-checked="true"]::after{transform:translateX(22px)}
+.tog::before{inset:-7px -4px}
+input[type=range]{-webkit-appearance:none;appearance:none;width:110px;height:36px;background:transparent;flex:none;touch-action:none}
+input[type=range]::-webkit-slider-runnable-track{height:6px;border-radius:3px;background:linear-gradient(90deg,var(--cyan) var(--v,50%),#2b2044 var(--v,50%))}
+input[type=range]::-moz-range-track{height:6px;border-radius:3px;background:#2b2044}input[type=range]::-moz-range-progress{height:6px;border-radius:3px;background:var(--cyan)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:#fff;margin-top:-7px;border:0}
+input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:#fff;border:0}
+input[type=range]:disabled{opacity:.35}
+footer{font-size:11px;color:var(--dim);text-align:center;padding-top:4px}footer a{color:var(--cyan);text-decoration:none}
+.lang{position:relative;display:flex;height:42px;border-radius:10px;background:var(--card);border:1px solid var(--line);padding:3px;gap:2px;font-size:12px;font-weight:700;flex:none}
+.lang button{position:relative;display:flex;align-items:center;justify-content:center;min-width:44px;padding:0 10px;border-radius:7px;color:var(--dim)}.lang button.on{background:var(--violet);color:#fff}
+.set .lang{grid-area:tog;height:44px}
+#btnLang button{min-width:34px;padding:0 8px}
+@media(max-width:400px){header{column-gap:8px}.tools{gap:4px}.brand{font-size:19px}.ib{width:38px;height:38px}.lang{height:38px}#btnLang button{min-width:30px;padding:0 6px}#back{padding:0 10px 0 6px;font-size:11px;letter-spacing:.02em}.modes{font-size:12px}.modes button{padding:0 6px}}
+@media(max-width:350px){header{column-gap:6px}.tools{gap:3px}.brand{font-size:17px}.ib{width:36px;height:36px}.lang{height:36px;padding:2px}#btnLang button{min-width:28px;padding:0 5px;font-size:11px}#back{height:36px;padding:0 8px 0 5px;font-size:10.5px;letter-spacing:0}.modes{font-size:11px}.modes button{padding:0 4px}}
+@media(max-height:680px){.key{height:46px}}
+@media(max-width:380px){.stat span{font-size:11px;letter-spacing:0;display:block;line-height:1.2}.stat b{font-size:19px}}
+@media(max-height:560px) and (orientation:portrait){.sub,footer{display:none}.key{height:40px}}
+/* teléfono o tablet acostada con poca altura: tablero a la izquierda, teclado a la derecha */
+@media(orientation:landscape) and (max-height:560px){
+  #app{max-width:none;padding-top:calc(4px + var(--sat));padding-bottom:calc(4px + var(--sab))}
+  header{padding:0 2px 4px;grid-template-columns:auto auto auto 1fr auto;grid-template-areas:"back brand modes . tools";row-gap:0}.brand{font-size:18px}.ib,.lang{height:38px}.ib{width:38px}#back{height:38px}
+  .modes{padding:2px}.modes button{min-height:32px;padding:0 12px;min-width:max-content}
+  .sub,footer{display:none}
+  .play{flex-direction:row;gap:clamp(14px,4vw,48px);align-items:center;justify-content:center}
+  #board{flex:0 0 auto;height:100%;padding:0}
+  .grid{height:100%;gap:4px}.row{gap:4px}.cell{border-radius:7px;font-size:clamp(14px,5.2vh,26px)}
+  #kb{flex:0 1 auto;width:min(560px,58vw);justify-content:center;gap:5px;padding:0}
+  .key{height:min(15vh,52px);max-width:none;font-size:14px}.key.wide{max-width:none}
+  .toast{top:calc(46px + var(--sat))}
+}
+@media(max-height:360px) and (orientation:landscape){.modes{display:none}}
+@media(prefers-reduced-motion:reduce){.cell.flip,.row.win .cell,.cell.pop,.row.shake,.modal{animation:none!important}}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <a id="back" href="https://jetgames.fun/" target="_top" rel="noopener" aria-label="Volver a JET//Games"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>JET<i>//</i>Games</a>
+    <h1 class="brand" style="margin:0">JET<span class="sl">//</span>Words</h1>
+    <nav class="modes" id="modes" aria-label="Modo"><button id="mDaily" class="on">Palabra del día</button><button id="mFree">Práctica</button></nav>
+    <div class="tools">
+    <div class="lang" id="btnLang" role="group" aria-label="Idioma / Language"><button data-l="es" lang="es">ES</button><button data-l="en" lang="en">EN</button></div>
+    <button class="ib" id="btnStats" aria-label="Estadísticas"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="8" width="3" height="6.5" rx="1" fill="currentColor"/><rect x="6.5" y="4" width="3" height="10.5" rx="1" fill="currentColor"/><rect x="11.5" y="1.5" width="3" height="13" rx="1" fill="currentColor"/></svg></button>
+    <button class="ib" id="btnSet" aria-label="Ajustes"><svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M2 4.2h7.1a2.2 2.2 0 0 1 4.2 0H14a.8.8 0 0 1 0 1.6h-.7a2.2 2.2 0 0 1-4.2 0H2a.8.8 0 0 1 0-1.6Zm9.2 1.4a.6.6 0 1 0 0-1.2.6.6 0 0 0 0 1.2ZM2 10.2h.7a2.2 2.2 0 0 1 4.2 0H14a.8.8 0 0 1 0 1.6H6.9a2.2 2.2 0 0 1-4.2 0H2a.8.8 0 0 1 0-1.6Zm2.8 1.4a.6.6 0 1 0 0-1.2.6.6 0 0 0 0 1.2Z"/></svg></button>
+    <button class="ib" id="btnHelp" aria-label="Cómo jugar">?</button>
+    </div>
+  </header>
+  <div class="sub" id="sub"></div>
+  <div class="play">
+    <div id="board"><div class="grid" id="grid"></div></div>
+    <div id="kb"></div>
+  </div>
+  <footer>© 2026 JETCompany OÜ · <a href="https://jetgames.fun/">jetgames.fun</a></footer>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="modal-bg" id="mHelp"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="hTitle"><button class="x" data-close aria-label="Cerrar">×</button><h2 id="hTitle">Cómo jugar</h2><div id="hBody"></div><div class="acts"><button class="btn primary" data-close id="hOk">A jugar</button></div></div></div>
+<div class="modal-bg" id="mEnd"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="eTitle"><button class="x" data-close aria-label="Cerrar">×</button><h2 id="eTitle"></h2><div class="answer" id="eWord"></div><p id="eMsg"></p><div class="stats" id="eStats"></div><div class="dist" id="eDist"></div><div class="acts"><button class="btn" id="eShare">Compartir</button><button class="btn primary" id="eNext">Otra palabra</button></div><p class="timer" id="eTimer"></p></div></div>
+<div class="modal-bg" id="mSet"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="sTitle"><button class="x" data-close aria-label="Cerrar">×</button><h2 id="sTitle">Ajustes</h2>
+  <div class="set"><div class="lbl" id="sMusL">Música<small id="sMusS">Composición original, suave, para pensar</small></div><input type="range" id="sMusV" min="0" max="100" step="1" aria-labelledby="sMusL"><button class="tog" id="sMus" role="switch" aria-checked="true" aria-labelledby="sMusL"></button></div>
+  <div class="set"><div class="lbl" id="sSfxL">Efectos<small id="sSfxS">Teclas y fichas</small></div><input type="range" id="sSfxV" min="0" max="100" step="1" aria-labelledby="sSfxL"><button class="tog" id="sSfx" role="switch" aria-checked="true" aria-labelledby="sSfxL"></button></div>
+  <div class="set"><div class="lbl" id="sLangL">Idioma<small id="sLangS">También cambia la lista de palabras y se aplica a todo JET//Games.</small></div><div class="lang" id="sLang" role="group" aria-labelledby="sLangL"><button data-l="es" lang="es">ES</button><button data-l="en" lang="en">EN</button></div></div>
+  <div class="acts"><button class="btn primary" data-close id="sOk">Listo</button></div></div></div>
+<script src="palabras.js?v=20261022w"></script>
+<script src="musica.js?v=20261022w"></script>
+<script>
+(function(){
+'use strict';
+const $=id=>document.getElementById(id);
+const HELP_ES='<p>Adivina la palabra de <b>cinco letras</b> en seis intentos. Después de cada intento los colores te guían:</p><div class="ex"><span class="c">p</span><span>l</span><span>a</span><span>t</span><span>o</span></div><p><b>Verde</b>: la letra está en la palabra y en ese lugar.</p><div class="ex"><span>c</span><span class="p">a</span><span>m</span><span>p</span><span>o</span></div><p><b>Amarillo</b>: la letra está, pero en otro lugar.</p><div class="ex"><span>n</span><span>u</span><span>b</span><span class="a">e</span><span>s</span></div><p><b>Gris</b>: la letra no está.</p><p>Las tildes no cuentan (escribe <b>arbol</b> para árbol) y la <b>ñ</b> es una letra más. Se aceptan plurales y verbos conjugados. Hay una palabra nueva cada día y práctica sin límite.</p><p>Teclado: escribe, <b>Enter</b> para enviar, <b>Retroceso</b> para borrar.</p><p style="font-size:11px">Diccionarios: Hunspell RLA-ES (MPL), Wiktionary vía Kaikki (CC BY-SA 4.0), ENABLE y SCOWL. Música original de JET.</p>';
+const HELP_EN='<p>Guess the <b>five-letter</b> word in six tries. After each guess the colors guide you:</p><div class="ex"><span class="c">p</span><span>l</span><span>a</span><span>n</span><span>t</span></div><p><b>Green</b>: the letter is in the word and in the right spot.</p><div class="ex"><span>c</span><span class="p">a</span><span>m</span><span>p</span><span>s</span></div><p><b>Yellow</b>: the letter is in the word but elsewhere.</p><div class="ex"><span>b</span><span>o</span><span>a</span><span class="a">r</span><span>d</span></div><p><b>Gray</b>: the letter is not in the word.</p><p>A new word every day, plus unlimited practice. Keyboard: type, <b>Enter</b> to submit, <b>Backspace</b> to delete.</p><p style="font-size:11px">Word lists: ENABLE, SCOWL, Hunspell RLA-ES (MPL) and Wiktionary via Kaikki (CC BY-SA 4.0). Original music by JET.</p>';
+const T={
+ es:{sub:['Palabra del día · {d}','Práctica · sin límite'],modes:['Palabra del día','Práctica'],short:'Faltan letras',bad:'No está en la lista',win:['¡Genial!','¡Impresionante!','¡Excelente!','¡Muy bien!','¡Bien!','¡Por poco!'],lose:'La palabra era',stats:['Jugadas','Victorias','Racha','Mejor racha'],statsT:'Estadísticas',share:'Copiado al portapapeles',shareB:'Compartir',next:'Otra palabra',practice:'Práctica',close:'Cerrar',nextIn:'Próxima palabra en',help:HELP_ES,helpT:'Cómo jugar',helpOk:'A jugar',keys:['qwertyuiop','asdfghjklñ','⏎zxcvbnm⌫'],enter:'Enviar',del:'Borrar',set:'Ajustes',mus:'Música',musS:'Composición original, suave, para pensar',sfx:'Efectos',sfxS:'Teclas y fichas',ok:'Listo',tries:'{n} de 6 intentos',lang:'Idioma',langS:'También cambia la lista de palabras y se aplica a todo JET//Games.',back:'Volver a JET//Games',modeNav:'Modo',title:'JET//Words · La palabra del día',desc:'Adivina la palabra de cinco letras en seis intentos. Una palabra nueva cada día, en español y en inglés, y práctica sin límite.',langB:'Idioma'},
+ en:{sub:['Word of the day · {d}','Practice · unlimited'],modes:['Word of the day','Practice'],short:'Not enough letters',bad:'Not in word list',win:['Genius!','Brilliant!','Impressive!','Very good!','Nice!','Just in time!'],lose:'The word was',stats:['Played','Wins','Streak','Best streak'],statsT:'Statistics',share:'Copied to clipboard',shareB:'Share',next:'Another word',practice:'Practice',close:'Close',nextIn:'Next word in',help:HELP_EN,helpT:'How to play',helpOk:'Play',keys:['qwertyuiop','asdfghjkl','⏎zxcvbnm⌫'],enter:'Enter',del:'Delete',set:'Settings',mus:'Music',musS:'Original score, calm, made for thinking',sfx:'Sound effects',sfxS:'Keys and tiles',ok:'Done',tries:'{n} of 6 tries',lang:'Language',langS:'Also switches the word list and applies across JET//Games.',back:'Back to JET//Games',modeNav:'Mode',title:'JET//Words · Word of the day',desc:'Guess the five-letter word in six tries. A new word every day, in English and Spanish, plus unlimited practice.',langB:'Language'}
+};
+const store={get(k,d){try{const v=localStorage.getItem('jetwords.'+k);return v==null?d:JSON.parse(v);}catch(e){return d;}},set(k,v){try{localStorage.setItem('jetwords.'+k,JSON.stringify(v));}catch(e){}}};
+// listas: el diccionario de intentos viene concatenado de a 5 letras
+const DICT={};
+function dict(l){if(!DICT[l]){const L=window.WORDS[l];const s=new Set(L.ok.match(/.{5}/gu));L.ans.forEach(w=>s.add(w));L.daily.forEach(w=>s.add(w));DICT[l]=s;}return DICT[l];}
+const strip=s=>s.replace(/ñ/g,'\0').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\0/g,'ñ');
+// Idioma: uno solo para todo jetgames.fun (JETIdioma, _shared/jet-idioma.js). La preferencia vieja
+// jetwords.lang se migra una vez, solo si no hay una elección guardada para el sitio, y se borra.
+(function(){try{let o=localStorage.getItem('jetwords.lang');if(o===null)return;localStorage.removeItem('jetwords.lang');o=JSON.parse(o);
+  if(!/(?:^|;\s*)jet_lang=(es|en)\b/.test(document.cookie)&&(o==='es'||o==='en'))JETIdioma.set(o);}catch(e){}})();
+let lang=JETIdioma.get()==='en'?'en':'es';
+let mode=store.get('mode','daily');if(mode!=='daily'&&mode!=='free')mode='daily';
+let answer='',rows=[],cur='',done=false,won=false,keyState={},busy=false;
+// Índice del día: días de calendario desde el 01-01-2026 en la hora local. Hasta el día del cambio
+// (22-10-2026) se conserva la cuenta anterior, que en horario de verano cambiaba a la 1:00.
+function dayIndex(){const n=new Date();const cal=Math.round((Date.UTC(n.getFullYear(),n.getMonth(),n.getDate())-Date.UTC(2026,0,1))/864e5);const last=window.WORDS.es.legacyLast;if(cal<=last)return Math.min(cal,Math.floor((Date.now()-new Date(2026,0,1).getTime())/864e5));return cal;}
+const dayLabel=()=>new Date().toLocaleDateString(lang==='en'?'en-GB':'es',{day:'numeric',month:'short'});
+function pickAnswer(){const L=window.WORDS[lang];if(mode==='daily'){const o=L.daily,d=dayIndex();return o[((d%o.length)+o.length)%o.length];}let w;do{w=L.ans[Math.floor(Math.random()*L.ans.length)];}while(w===answer&&L.ans.length>1);return w;}
+const shown=w=>(lang==='es'&&window.WORDS.es.disp[w])||w;
+function stateKey(){return 'state.'+lang+'.'+(mode==='daily'?'d'+dayIndex():'free');}
+let playingDay=null;
+// La partida en curso se guarda por idioma y modo (jetwords.state.<lang>.d<día> | .free): cambiar de
+// idioma o recargar nunca la pierde; al volver al idioma anterior sigue donde estaba.
+// keep=false (botón «Otra palabra») empieza una práctica nueva; noEnd evita abrir el resultado encima de Ajustes.
+function newGame(keep,noEnd){
+  if(keep===undefined)keep=true;
+  rows=[];cur='';done=false;won=false;keyState={};busy=false;playingDay=mode==='daily'?dayIndex():null;
+  let s=null;
+  if(mode==='daily'){answer=pickAnswer();s=store.get(stateKey(),null);if(s&&s.answer!==answer)s=null;}
+  else{s=keep?store.get(stateKey(),null):null;if(!(s&&typeof s.answer==='string'&&window.WORDS[lang].ans.includes(s.answer)&&!s.done))s=null;answer=s?s.answer:pickAnswer();}
+  if(s&&Array.isArray(s.rows)){rows=s.rows.filter(r=>typeof r==='string'&&r.length===5).slice(0,6);done=!!s.done;won=!!s.won;rows.forEach(r=>markKeys(r));
+    if(!done&&typeof s.cur==='string'&&/^[a-zñ]{0,5}$/.test(s.cur))cur=s.cur;}
+  saveState();renderAll();paintTexts();
+  if(done&&!noEnd)setTimeout(()=>{if(!modalOpen())showEnd();},300);
+}
+function saveState(){store.set(stateKey(),{answer,rows,cur,done,won});}
+function evalGuess(g){const res=Array(5).fill('absent'),left=answer.split('');for(let i=0;i<5;i++)if(g[i]===answer[i]){res[i]='correct';left[i]=null;}for(let i=0;i<5;i++){if(res[i]==='correct')continue;const j=left.indexOf(g[i]);if(j>=0){res[i]='present';left[j]=null;}}return res;}
+const RANK={absent:1,present:2,correct:3};
+function markKeys(g){const r=evalGuess(g);for(let i=0;i<5;i++){const k=g[i];if(!keyState[k]||RANK[r[i]]>RANK[keyState[k]])keyState[k]=r[i];}}
+function renderAll(hideRow){
+  const grid=$('grid');grid.innerHTML='';
+  for(let r=0;r<6;r++){const row=document.createElement('div');row.className='row';row.id='row'+r;const g=rows[r]||(r===rows.length?cur:'');const res=rows[r]&&r!==hideRow?evalGuess(rows[r]):null;
+    for(let i=0;i<5;i++){const c=document.createElement('div');c.className='cell'+(g[i]?' filled':'')+(res?' '+res[i]:'');c.textContent=g[i]||'';row.appendChild(c);}grid.appendChild(row);}
+  renderKb();
+}
+function renderCur(){const row=$('row'+rows.length);if(!row)return;[...row.children].forEach((c,i)=>{const ch=cur[i]||'';if(c.textContent!==ch){c.textContent=ch;c.classList.toggle('filled',!!ch);c.classList.remove('pop');if(ch){void c.offsetWidth;c.classList.add('pop');}}});}
+function renderKb(){const kb=$('kb');kb.innerHTML='';T[lang].keys.forEach(r=>{const row=document.createElement('div');row.className='krow';[...r].forEach(k=>{const b=document.createElement('button');const wide=k==='⏎'||k==='⌫';b.className='key'+(wide?' wide':'')+(keyState[k]?' '+keyState[k]:'');b.textContent=k==='⏎'?T[lang].enter:k;if(k==='⌫')b.setAttribute('aria-label',T[lang].del);b.dataset.k=k;b.tabIndex=-1;b.addEventListener('pointerdown',e=>{e.preventDefault();window.JWAudio&&JWAudio.unlock();press(k);});row.appendChild(b);});kb.appendChild(row);});}
+let toastT=null;function toast(m,ms){const t=$('toast');t.textContent=m;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),ms||1400);}
+const sfx=(n,a,b)=>{try{window.JWAudio&&JWAudio.sfx(n,a,b);}catch(e){}};
+function press(k){
+  if(done||busy)return;
+  if(k==='⌫'){if(cur){cur=cur.slice(0,-1);renderCur();sfx('del');saveState();}return;}
+  if(k==='⏎'){submit();return;}
+  if(!/^[a-zñ]$/.test(k)||(lang==='en'&&k==='ñ'))return;
+  if(cur.length<5){cur+=k;renderCur();sfx('key');saveState();}
+}
+function submit(){
+  if(cur.length<5){toast(T[lang].short);shakeRow();sfx('bad');return;}
+  if(!dict(lang).has(cur)){toast(T[lang].bad);shakeRow();sfx('bad');return;}
+  const g=cur,ri=rows.length;rows.push(g);cur='';
+  if(g===answer){done=true;won=true;}else if(rows.length>=6){done=true;won=false;}
+  saveState();if(done)recordStats();
+  busy=true;renderAll(ri);
+  const res=evalGuess(g),cells=[...$('row'+ri).children],STEP=reduced?0:260;
+  cells.forEach((c,i)=>{setTimeout(()=>{c.classList.add('flip');setTimeout(()=>{c.classList.add(res[i]);sfx('tile',res[i],i);},reduced?0:250);},i*STEP);});
+  setTimeout(()=>{markKeys(g);busy=false;renderKb();
+    // si pidieron otro idioma durante la animación, se aplica ahora (la partida ya quedó guardada)
+    if(pendLang){const nl=pendLang;pendLang=null;applyLang(nl);return;}
+    if(done){if(won){$('row'+ri).classList.add('win');sfx('win');}else{sfx('lose');toast(shown(answer).toUpperCase(),2200);}setTimeout(()=>showEnd(),won?900:1300);}
+  },4*STEP+(reduced?0:520));
+}
+const reduced=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+function shakeRow(){const row=$('row'+rows.length);if(!row)return;row.classList.remove('shake');void row.offsetWidth;row.classList.add('shake');setTimeout(()=>row.classList.remove('shake'),450);}
+// estadísticas por idioma y modo (mismas claves de siempre: jetwords.stats.<lang>.<mode>)
+const EMPTY=()=>({played:0,wins:0,streak:0,best:0,dist:[0,0,0,0,0,0]});
+function statsKey(){return 'stats.'+lang+'.'+mode;}
+function getStats(){const s=Object.assign(EMPTY(),store.get(statsKey(),{}));if(!Array.isArray(s.dist)||s.dist.length!==6)s.dist=[0,0,0,0,0,0];return s;}
+function recordStats(){const s=getStats();
+  // la racha diaria se corta si quedó un día sin jugar
+  if(mode==='daily'){const d=dayIndex();if(s.lastDay!=null&&d-s.lastDay>1)s.streak=0;s.lastDay=d;}
+  s.played++;if(won){s.wins++;s.streak++;s.best=Math.max(s.best,s.streak);s.dist[rows.length-1]++;}else s.streak=0;store.set(statsKey(),s);}
+function paintStats(hi){const s=getStats(),t=T[lang];
+  if(mode==='daily'&&s.lastDay!=null&&dayIndex()-s.lastDay>1)s.streak=0;
+  $('eStats').innerHTML=[s.played,s.played?Math.round(s.wins/s.played*100)+'%':'0%',s.streak,s.best].map((v,i)=>`<div class="stat"><b>${v}</b><span>${t.stats[i]}</span></div>`).join('');
+  const mx=Math.max(1,...s.dist);$('eDist').innerHTML=s.dist.map((n,i)=>`<div><span>${i+1}</span><i class="${hi===i?'hi':''}" style="width:${Math.max(8,n/mx*100)}%">${n}</i></div>`).join('');}
+function showEnd(){
+  const t=T[lang];
+  $('eTitle').textContent=won?t.win[Math.min(rows.length-1,5)]:t.lose;$('eWord').textContent=shown(answer);$('eMsg').textContent=won?t.tries.replace('{n}',rows.length):'';
+  paintStats(won?rows.length-1:-1);$('eShare').style.display='';$('eShare').textContent=t.shareB;
+  $('eNext').textContent=mode==='daily'?t.practice:t.next;$('eNext').dataset.act=mode==='daily'?'practice':'next';
+  tickTimer();openModal('mEnd');
+}
+function tickTimer(){const el=$('eTimer');
+  if(mode!=='daily'||!$('eWord').textContent){el.innerHTML='';return;}
+  const n=new Date(),m=new Date(n.getFullYear(),n.getMonth(),n.getDate()+1),s=Math.max(0,Math.floor((m-n)/1000));
+  const p=x=>String(x).padStart(2,'0');el.innerHTML=`<small>${T[lang].nextIn}</small>${p(Math.floor(s/3600))}:${p(Math.floor(s/60)%60)}:${p(s%60)}`;}
+setInterval(()=>{if($('mEnd').classList.contains('show'))tickTimer();
+  // pasó la medianoche con el juego abierto: palabra nueva
+  if(mode==='daily'&&playingDay!=null&&dayIndex()!==playingDay&&!busy){closeAll();newGame();}},1000);
+function shareText(){const sq={correct:'🟩',present:'🟨',absent:'⬛'};const g=rows.map(r=>evalGuess(r).map(x=>sq[x]).join('')).join('\n');return `JET//Words ${lang.toUpperCase()} ${mode==='daily'?'#'+dayIndex():'·'} ${won?rows.length:'X'}/6\n${g}\nhttps://jetgames.fun/words/`;}
+$('eShare').onclick=async()=>{const txt=shareText();try{if(navigator.share&&matchMedia('(pointer:coarse)').matches){await navigator.share({text:txt});return;}}catch(e){if(e&&e.name==='AbortError')return;}try{await navigator.clipboard.writeText(txt);toast(T[lang].share);}catch(e){toast(txt.split('\n')[0]);}};
+$('eNext').onclick=()=>{closeModal('mEnd');const a=$('eNext').dataset.act;if(a==='practice')setMode('free');else if(a==='next')newGame(false);};
+// modales
+function openModal(id){closeAll();clearTimeout(toastT);$('toast').classList.remove('show');$(id).classList.add('show');const f=$(id).querySelector('.btn.primary');if(f&&matchMedia('(pointer:fine)').matches)f.focus({preventScroll:true});}
+function closeModal(id){$(id).classList.remove('show');if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();}
+function closeAll(){document.querySelectorAll('.modal-bg.show').forEach(m=>closeModal(m.id));}
+const modalOpen=()=>!!document.querySelector('.modal-bg.show');
+document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>closeModal(b.closest('.modal-bg').id)));
+document.querySelectorAll('.modal-bg').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)closeModal(m.id);}));
+$('btnHelp').onclick=()=>{$('hTitle').textContent=T[lang].helpT;$('hBody').innerHTML=T[lang].help;$('hOk').textContent=T[lang].helpOk;openModal('mHelp');sfx('ui');};
+$('btnStats').onclick=()=>{const t=T[lang];$('eTitle').textContent=t.statsT;$('eWord').textContent='';$('eMsg').textContent='';paintStats(-1);$('eShare').style.display='none';$('eNext').textContent=t.close;$('eNext').dataset.act='close';$('eTimer').innerHTML='';openModal('mEnd');sfx('ui');};
+// Selector ES | EN (cabecera y Ajustes): solo llama a JETIdioma.set; el cambio llega por el evento
+// 'jet-idioma' y se aplica en vivo, sin recargar. En este juego el idioma también elige la lista de palabras.
+$('btnLang').onclick=e=>{const t=e.target.closest('button');if(t)JETIdioma.set(t.dataset.l);};
+$('sLang').onclick=e=>{const t=e.target.closest('button');if(t)JETIdioma.set(t.dataset.l);};
+let pendLang=null;
+function applyLang(nl){
+  if((nl!=='es'&&nl!=='en')||nl===lang)return;
+  if(busy){pendLang=nl;return;}
+  saveState();lang=nl;
+  if($('mEnd').classList.contains('show'))closeModal('mEnd'); // estadísticas del otro idioma: se cierran
+  newGame(true,true);sfx('ui');
+}
+window.addEventListener('jet-idioma',e=>applyLang(e.detail));
+function paintTexts(){const t=T[lang];document.documentElement.lang=lang;
+  document.title=t.title;const md=document.querySelector('meta[name="description"]');if(md)md.content=t.desc;
+  $('back').setAttribute('aria-label',t.back);$('modes').setAttribute('aria-label',t.modeNav);
+  document.querySelectorAll('#btnLang button,#sLang button').forEach(x=>{const on=x.dataset.l===lang;x.classList.toggle('on',on);x.setAttribute('aria-pressed',on);});
+  $('sLangL').firstChild.textContent=t.lang;$('sLangS').textContent=t.langS;$('btnLang').setAttribute('aria-label',t.langB);
+  if($('mHelp').classList.contains('show')){$('hTitle').textContent=t.helpT;$('hBody').innerHTML=t.help;$('hOk').textContent=t.helpOk;}
+  $('mDaily').textContent=t.modes[0];$('mFree').textContent=t.modes[1];$('mDaily').classList.toggle('on',mode==='daily');$('mFree').classList.toggle('on',mode==='free');
+  $('sub').textContent=t.sub[mode==='daily'?0:1].replace('{d}',dayLabel());
+  $('btnStats').setAttribute('aria-label',t.statsT);$('btnStats').title=t.statsT;$('btnHelp').setAttribute('aria-label',t.helpT);$('btnHelp').title=t.helpT;$('btnSet').setAttribute('aria-label',t.set);$('btnSet').title=t.set;
+  $('sTitle').textContent=t.set;$('sMusL').firstChild.textContent=t.mus;$('sMusS').textContent=t.musS;$('sSfxL').firstChild.textContent=t.sfx;$('sSfxS').textContent=t.sfxS;$('sOk').textContent=t.ok;
+  document.querySelectorAll('.x').forEach(x=>x.setAttribute('aria-label',t.close));}
+function setMode(m){if(busy)return;mode=m;store.set('mode',m);newGame();}
+$('mDaily').onclick=()=>{if(mode!=='daily'){setMode('daily');sfx('ui');}};$('mFree').onclick=()=>{if(mode!=='free'){setMode('free');sfx('ui');}else if(done)newGame(false);};
+// ajustes de sonido (se recuerdan en jetwords.audio)
+const audio=Object.assign({music:true,mv:55,sfx:true,sv:80},store.get('audio',{}));
+function applyAudio(){const A=window.JWAudio;if(!A)return;A.setMusicVol(audio.mv/100);A.setSfxVol(audio.sv/100);A.setMusic(audio.music);A.setSfx(audio.sfx);}
+function paintAudio(){$('sMus').setAttribute('aria-checked',audio.music);$('sSfx').setAttribute('aria-checked',audio.sfx);$('sMusV').value=audio.mv;$('sSfxV').value=audio.sv;$('sMusV').disabled=!audio.music;$('sSfxV').disabled=!audio.sfx;$('sMusV').style.setProperty('--v',audio.mv+'%');$('sSfxV').style.setProperty('--v',audio.sv+'%');}
+$('btnSet').onclick=()=>{paintAudio();openModal('mSet');sfx('ui');};
+$('sMus').onclick=()=>{audio.music=!audio.music;store.set('audio',audio);paintAudio();applyAudio();};
+$('sSfx').onclick=()=>{audio.sfx=!audio.sfx;store.set('audio',audio);paintAudio();applyAudio();sfx('ui');};
+$('sMusV').oninput=e=>{audio.mv=+e.target.value;paintAudio();applyAudio();};$('sMusV').onchange=()=>store.set('audio',audio);
+$('sSfxV').oninput=e=>{audio.sv=+e.target.value;paintAudio();applyAudio();};$('sSfxV').onchange=()=>{store.set('audio',audio);sfx('tile','correct',2);};
+// el audio arranca con el primer gesto (política de reproducción automática)
+function firstGesture(){if(!window.JWAudio)return;applyAudio();JWAudio.unlock();applyAudio();}
+['pointerdown','keydown','touchstart'].forEach(ev=>window.addEventListener(ev,firstGesture,{capture:true,passive:true}));
+// teclado físico
+window.addEventListener('keydown',e=>{
+  if(e.ctrlKey||e.metaKey||e.altKey)return;
+  if(e.key==='Escape'){if(modalOpen()){e.preventDefault();closeAll();}return;}
+  if(modalOpen()){if(e.key==='Enter'&&$('mEnd').classList.contains('show')&&document.activeElement===document.body){e.preventDefault();$('eNext').click();}return;}
+  const tgt=e.target;if(tgt&&tgt.tagName==='INPUT')return;
+  let k=e.key;if(k==='Enter'){e.preventDefault();press('⏎');return;}if(k==='Backspace'){e.preventDefault();press('⌫');return;}
+  if(!k||k.length!==1)return;k=strip(k.toLowerCase());if(e.key.toLowerCase()==='ñ')k='ñ';
+  if(/^[a-zñ]$/.test(k)){e.preventDefault();press(k);const b=document.querySelector('.key[data-k="'+k+'"]');if(b){b.classList.add('down');setTimeout(()=>b.classList.remove('down'),110);}}
+});
+// los botones no se quedan con el foco (Enter enviaría el intento y además los activaría)
+document.querySelectorAll('header button').forEach(b=>b.addEventListener('mouseup',()=>b.blur()));
+newGame();
+if(!store.get('seenHelp',false)){store.set('seenHelp',true);$('btnHelp').click();}
+// caché sin conexión (sw.js con alcance relativo: /words/)
+if('serviceWorker' in navigator&&location.protocol==='https:')window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{});});
+window.JETWORDS={get answer(){return answer;},get rows(){return rows.slice();},get done(){return done;},get busy(){return busy;},dayIndex,press,dict:()=>dict(lang),get lang(){return lang;},get mode(){return mode;}};
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,42 @@
+JETGAMES — EVALUACIÓN LOCAL Y PUBLICACIÓN: LÍMITES DE LA PRUEBA
+Trazas de código público del 22/10/2026. No prueban recepción de datos por el servidor.
+Los archivos indicados y sus aliases se localizan en 08_MAPA_DE_REFERENCIAS.json.
+No son instrucciones para publicar datos de prueba.
+
+CRÁTER — source_review/crater_1504 (15:04–15:07 UTC)
+Aterrizar en modo hoy llama RED.votar: guarda una cola e intenta POST api.php?a=votar.
+No espera a Compartir; desconectar no lo convierte en práctica porque quedan reintentos.
+Fuentes: src__ui.js:208–220; src__red.js:24–50. Abrir/reconectar puede procesar cola previa.
+Cómo jugar → Repetir el ensayo usa una ronda TUT, no agrega votos nuevos; no desactiva
+la red global. Base es ronda 6, no parte del ensayo. No usar hooks/fecha/storage para saltar
+esta restricción. src__ui.js:113–115,249–254,549–558,613; src__gen.js:7–8,153,265–270.
+
+PORTADA — source_review/network_1531
+Imprimir evalúa y guarda localmente; Compartir es otra acción. No se detectaron envíos
+fetch/XHR/beacon/WebSocket/POST en HTML y scripts enlazados de esa revisión.
+Fuente: portada_ui.js:799–893,1090–1101,1176.
+
+CAJA NEGRA — source_review/network_1531
+Verificar informe y finalizar caso comparan/guardan localmente. P.envios es el historial
+local de intentos, no una cola de publicación. Compartir es independiente.
+Fuente: cajanegra_app.js:18,407 y siguientes,844–894,998 y siguientes,1141.
+
+FRENTES — source_review/network_1531
+Tutorial, Academia y Ronda rápida evalúan localmente. Confirmar el lanzamiento diario
+hace POST api.php?a=jugar. Una cola previa puede reenviarse al cargar o reconectar.
+Fuente: frentes_game.js:190–198,641–647,885–905,1007–1022,1041–1092,1196,1200,1323.
+
+BALIZAS — source_review/network_1531
+El tutorial usa balizas simuladas (tut:1); sus valoraciones no llaman a N.send. El vuelo
+libre guarda su marca local, PERO votar balizas reales sí publica. El vuelo oficial envía
+despegue y vuelo (también al abandonar); cambiar alias publica. Hay cola y reintentos.
+El final del tutorial abre preparación oficial, no despegar para una prueba local.
+Fuente: balizas_main.js:273–275,663–690,733–777,817; balizas_net.js:35,45–65.
+
+ESTACIÓN SILENCIO — source_review/network_1531
+Enviar una respuesta verifica el puzzle y actualiza el estado local. Compartir es separado.
+Fuente: estacion_ui.js:93,259–285; estacion_core.js:59–78.
+
+«Local» describe estas acciones concretas según código; no ausencia de GET, descargas,
+recursos o métricas de alojamiento. No se ensayaron POST para confirmar su recepción.
+Antes de nuevas pruebas, volver a revisar la versión vigente y las colas preexistentes.

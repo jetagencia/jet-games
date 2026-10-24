@@ -1,0 +1,622 @@
+[
+  {
+    "n": 1,
+    "slug": "ball",
+    "source": "index.html:516–602; SVG inline. Juego: jetball.html.",
+    "diagnosis": "La representación vectorial de paredes/zonas es pertinente, pero se lee como un diagrama pequeño frente a covers mucho más cargados. El movimiento no debe ser necesario para entenderla; el recorte ancho puede dejar solo una cruz y perder bolas o tramo en construcción.",
+    "retain": "Tablero oscuro, división de zonas, bolas cian/amarilla/blanca y pared activa. Conservar separación entre zonas capturadas y activas; ninguna bola debe atravesar una pared acabada.",
+    "brief": "Diseñar una viñeta vectorial cercana de una jugada de Ball: dos paredes terminadas delimitan tres zonas visibles, una pared corta en construcción avanza hacia una bola cercana y una zona capturada se diferencia con relleno violeta tenue. La tensión es construir sin tocar una bola, no un pinball. Engrosar lo suficiente paredes y bolas para sobrevivir al tamaño card, sin convertirlas en esferas 3D ni añadir una nave.",
+    "composition": "N: intersección en (52,50), bola de riesgo en (43,56), otra en (69,43); recorrido esencial centrado. F: extender zonas hacia los lados, no agrandar ni cortar verticalmente el tablero; intersección (50,50). M: conservar dos zonas y pared activa en centro; recortar zona decorativa antes que bola/colisión.",
+    "palette": "Base #101225, cian #00F2CF, violeta #7700F4 y amarillo funcional #FDD835; halo contenido solo en acción activa, no en cada línea del grid.",
+    "remove": "No HUD ni porcentaje gigante. No grid brillante en todo el fondo, sombras 3D o degradado idéntico en cada forma.",
+    "check": "A 260 px se distinguen pared completa, pared creciendo y bola. Un frame estático funciona sin esperar la animación. F no se reduce a una cruz vacía.",
+    "title": "JET//Ball",
+    "current_art_type": "inline_svg",
+    "current_url": "https://jetgames.fun/ [inline .card-art svg]",
+    "current_file": "ui_audit/editorial_cards/assets/01.svg",
+    "current_dimensions": null,
+    "current_art_line_latest": 570,
+    "fallback": "Usar versión SVG estática legible con bolas y pared activa en coordenadas iniciales; contain si el ancho elimina bolas. No capturar el frame vacío del inicio.",
+    "proposed_outputs": [
+      "ball-normal",
+      "ball-mobile",
+      "ball-featured"
+    ],
+    "preview_dimensions": [
+      960,
+      540
+    ],
+    "source_viewBox": [
+      0,
+      0,
+      320,
+      180
+    ],
+    "dimensions_note": "SVG original has a 320×180 viewBox; 960×540 is audit-render preview, not source raster resolution."
+  },
+  {
+    "n": 2,
+    "slug": "astro",
+    "source": "index.html:612; juego astro.html, draw()/drawAstronaut()/drawAstro().",
+    "diagnosis": "El JPG tiene protagonista muy pequeño a la izquierda, un Júpiter dominante y puntuación incrustada arriba a la derecha. En wide el recorte disputa espacio entre planeta, suelo y astronauta.",
+    "retain": "Astronauta oficial pequeño/blanco con visor cian, propulsión, asteroides y Júpiter; plataforma/recorrido lateral si forman parte de la escena real.",
+    "brief": "Componer el instante de un impulso por encima de un asteroide. Astronauta reconocible en primer plano, un obstáculo por delante y Júpiter parcial de segundo plano. Extraer el dibujo oficial desde el juego y conservar su estilo 2D. La portada debe decir “calcular un salto”, no “exploración espacial realista”.",
+    "composition": "N: astronauta (37,49), 36% de alto; obstáculo (65,65), Júpiter (80,29), parcialmente fuera de escena solo el planeta. F: astronauta y obstáculo en una misma franja central, suelo y propulsor completos; extender cielo lateralmente. M: astronauta 42% de alto, un solo asteroide y fragmento de planeta; no minificar toda la captura.",
+    "palette": "Cielo índigo, cian/blanco del astronauta y naranja de Júpiter como acento propio. Júpiter no debe ser el elemento más luminoso después del personaje.",
+    "remove": "27 PUNTOS, RÉCORD 27 y su panel, asteroides repetidos innecesarios, exceso de vacío entre sujeto y obstáculo.",
+    "check": "El personaje es identificable sin zoom; el impulso y obstáculo se ven en los tres ratios. No eliminar suelo de forma que parezca otro género.",
+    "title": "JET//Astro",
+    "current_art_type": "jpg",
+    "current_url": "https://jetgames.fun/img/astro.jpg?v=2",
+    "current_file": "ui_audit/editorial_cards/assets/02_astro.jpg",
+    "current_dimensions": [
+      800,
+      450
+    ],
+    "current_art_line_latest": 666,
+    "fallback": "En la portada antigua no hay recorte ancho que conserve simultáneamente astronauta, Júpiter y suelo con buena escala. Mantener 16:9 completo/contain y retirar span temporalmente; no centrar solo en Júpiter.",
+    "proposed_outputs": [
+      "astro-normal",
+      "astro-mobile",
+      "astro-featured"
+    ]
+  },
+  {
+    "n": 3,
+    "slug": "rocket",
+    "source": "index.html:621–733; SVG inline. Juego jetrocket.html.",
+    "diagnosis": "El SVG tiene una nave-chevron pequeña, cristales dispersos y una cola animada; una captura t=0 puede ocultar la nave fuera del encuadre. Falta una imagen estática autosuficiente de la mecánica de cola creciente.",
+    "retain": "Nave triangular cian real, segmentos de cola, cristales cian, núcleo magenta y asteroide si se usa. Mantener lectura cenital y gráfica.",
+    "brief": "Construir un primer plano cenital de la nave completando una curva cerrada pero todavía segura alrededor de su propia cola. Mostrar 6–8 segmentos legibles y un cristal al final de la dirección de avance; un asteroide secundario como referencia, no como conflicto principal. El motor visual es “girar sin chocar con la cola”. No sustituir la nave por un cohete NASA ni un caza detallado.",
+    "composition": "N: cabeza (63,46), cola dibuja C desde (28,65) a (54,47), cristal (77,40). F si se usa: desplegar C horizontal y mantener separación visible entre cabeza/cola. M: reducir segmentos decorativos, no su grosor; mantener cabeza, giro, cristal dentro de x=15–85 y y=20–80.",
+    "palette": "Índigo profundo, cian para nave/cola, un cristal casi blanco y magenta secundario. Fondo con pocas estrellas; no nebulosa protagonista.",
+    "remove": "Partículas/escombros genéricos. No dejar la nave fuera de cuadro en un poster estático. No efectos que sugieran combate.",
+    "check": "Se entiende la relación nave-cola de un vistazo; cabeza nunca se confunde con un cristal; la cola queda realmente detrás en la composición final.",
+    "title": "JET//Rocket",
+    "current_art_type": "inline_svg",
+    "current_url": "https://jetgames.fun/ [inline .card-art svg]",
+    "current_file": "ui_audit/editorial_cards/assets/03.svg",
+    "current_dimensions": null,
+    "current_art_line_latest": 675,
+    "fallback": "Fijar pose visible de nave/cola dentro del viewport; no usar un frame t=0 con nave fuera de cuadro. Mantener el SVG completo hasta recomponer.",
+    "proposed_outputs": [
+      "rocket-normal",
+      "rocket-mobile"
+    ],
+    "preview_dimensions": [
+      960,
+      540
+    ],
+    "source_viewBox": [
+      0,
+      0,
+      320,
+      180
+    ],
+    "dimensions_note": "SVG original has a 320×180 viewBox; 960×540 is audit-render preview, not source raster resolution."
+  },
+  {
+    "n": 4,
+    "slug": "slalom",
+    "source": "index.html:739–804; SVG inline. Juego jetslalom.html.",
+    "diagnosis": "El SVG es muy esquemático: jugador triangular, postes y árboles mínimos. En una portada estática aislada el triángulo podría confundirse con otra nave, y el jugador queda bajo en el encuadre.",
+    "retain": "Avatar/esquiador gráfico del juego, dos huellas, puertas cian/magenta, descenso y obstáculos de pista. No inventar un personaje humano fotorrealista.",
+    "brief": "Mostrar una curva de slalom inequívoca: esquiador gráfico ligeramente descentrado, dos huellas suaves detrás y una puerta por delante que obliga a la curva. Incluir un pino o roca real del juego fuera de la línea segura. Hacer una viñeta de pista, no un póster de montaña extrema. Conservar la lógica de paso de banderas del juego.",
+    "composition": "N: jugador (46,54), puerta objetivo entre (60,32) y (76,32); huellas hacia (30,74). F si se usa: diagonal suave de izquierda a derecha; no jugador pegado al borde inferior. M: solo puerta activa, jugador y huellas; eliminar segunda puerta antes de cortar el esquiador.",
+    "palette": "Azul nieve #17324D con zonas frías más claras, cian/magenta originales de las puertas. El blanco del rastro no debe competir con el jugador.",
+    "remove": "Bosque de postes, fondo vacío excesivo, niebla/DOF fotográfico y cima alpina no existente. No cambiar el color de banderas por “coherencia de marca”.",
+    "check": "Se reconoce esquí/descenso por pistas y puertas, no un juego espacial. Nada crucial depende de un frame específico de SMIL.",
+    "title": "JET//Slalom",
+    "current_art_type": "inline_svg",
+    "current_url": "https://jetgames.fun/ [inline .card-art svg]",
+    "current_file": "ui_audit/editorial_cards/assets/04.svg",
+    "current_dimensions": null,
+    "current_art_line_latest": 793,
+    "fallback": "Fijar una pose con jugador y puerta visibles; no conservar únicamente la mitad inferior con triángulo y ninguna puerta. Contain antes que mutilar la pista.",
+    "proposed_outputs": [
+      "slalom-normal",
+      "slalom-mobile"
+    ],
+    "preview_dimensions": [
+      960,
+      540
+    ],
+    "source_viewBox": [
+      0,
+      0,
+      320,
+      180
+    ],
+    "dimensions_note": "SVG original has a 320×180 viewBox; 960×540 is audit-render preview, not source raster resolution."
+  },
+  {
+    "n": 5,
+    "slug": "flow",
+    "source": "index.html:811; juego jetflow.html, drawBoard(), drawTube(), drawFluid(), drawHud().",
+    "diagnosis": "Es una captura completa con bandeja de piezas, puntos, nivel, progreso, pausa y botón “Acelerar”. La tubería, que debería explicar el juego, ocupa una fracción del thumbnail.",
+    "retain": "Tuberías reales, uniones, plasma cian, placas oscuras de nave y pieza necesaria/obstáculo del juego. Astronauta solo si ayuda a la escala, no obligatorio.",
+    "brief": "Aislar un módulo de tablero con una ruta de plasma en desarrollo: tramo lleno de cian que llega a una curva, una pieza recién colocada y un tramo aún vacío visible por delante. Mantener conectividad correcta y distinguir tubería vacía de tubería llena. Usar el dibujo del juego; no convertirlo en instalación industrial realista.",
+    "composition": "N: ruta ocupa x=20–80%, y=20–80%, con punto de avance (58,49). F si se usa: ruta serpentea horizontalmente con dos giros; sin cortar extremos relevantes. M: encuadre más cercano de tres conexiones y destino inmediato; fuente y avance continúan visibles.",
+    "palette": "Placas violeta/gris, metal neutro del juego y cian del flujo. Amarillo de precaución en un único rincón, no marco industrial completo.",
+    "remove": "Bandeja de la izquierda, puntos 1100, circuito14/36, progreso9/15, pausa y Acelerar; no conservar textos a tamaño ilegible.",
+    "check": "Las tuberías conectan de verdad; se ve por dónde progresa el plasma. No mostrar un circuito cerrado decorativo que contradiga el objetivo del nivel.",
+    "title": "JET//Flow",
+    "current_art_type": "jpg",
+    "current_url": "https://jetgames.fun/img/jetflow.jpg",
+    "current_file": "ui_audit/editorial_cards/assets/05_jetflow.jpg",
+    "current_dimensions": [
+      800,
+      450
+    ],
+    "current_art_line_latest": 865,
+    "fallback": "Recortar el área central del tablero puede servir en N si ruta y extremos quedan íntegros; en M/F usar contain del módulo, no capture del dashboard completo disminuido.",
+    "proposed_outputs": [
+      "flow-normal",
+      "flow-mobile"
+    ]
+  },
+  {
+    "n": 6,
+    "slug": "match",
+    "source": "index.html:820; juego jetmatch.html, drawIcon()/render()/drawFx().",
+    "diagnosis": "Tablero vertical de gemas con mucho negro a los lados; es reconocible, pero el inventario entero compite por igual y se siente como una lámina de componentes.",
+    "retain": "Las cuatro familias de gemas visibles —cuadrado amarillo, círculo cian, triángulo verde y rombo magenta— y su forma/contraste funcional, según estado real del juego.",
+    "brief": "Acercar una zona del tablero que contiene una jugada legible: dos gemas iguales contiguas y una tercera preparada para formar el trío con un intercambio válido. Resto de celdas visible pero subordinado. Conservar piezas planas brillantes del juego, sin convertirlas en joyas caras ni inventar un cofre.",
+    "composition": "N: módulo cuadrado de 5×5 celdas o recorte equivalente dentro de x=25–75 y y=12–88, trío potencial alrededor de (52,49). F si se usa: extender filas laterales, no cortar gemas por la mitad en el núcleo. M: mostrar 5×3 o detalle equivalente, manteniendo la jugada completa.",
+    "palette": "Conservar los cuatro colores semánticos, reducir halo de las piezas secundarias en vez de desaturarlas. Fondo azul negro, borde de celda discreto.",
+    "remove": "Brillo uniforme máximo, partículas de premio sin una jugada, barras/score, marco cian sobreactuado.",
+    "check": "Se reconocen formas además de colores; hay un intercambio legal, no un tablero inventado con reglas incompatibles. El módulo no queda diminuto dentro de márgenes negros.",
+    "title": "JET//Match",
+    "current_art_type": "jpg",
+    "current_url": "https://jetgames.fun/img/jetmatch.jpg",
+    "current_file": "ui_audit/editorial_cards/assets/06_jetmatch.jpg",
+    "current_dimensions": [
+      960,
+      540
+    ],
+    "current_art_line_latest": 874,
+    "fallback": "Mantener tablero completo en N; M puede usar un detalle de filas con jugada completa, pero no cortar por mitad las gemas protagonistas. F no se necesita hoy.",
+    "proposed_outputs": [
+      "match-normal",
+      "match-mobile"
+    ]
+  },
+  {
+    "n": 7,
+    "slug": "words",
+    "source": "index.html:842–912; SVG inline. Juego jetwords.html y jetwords__palabras.js.",
+    "diagnosis": "Actualmente aparecen PLAYS/GAMES y una fila JET, con casillas vacías; mezcla idioma y marca dentro del objeto jugable. La marca JET no debe parecer una palabra objetivo de tres letras en un juego de cinco.",
+    "retain": "Cinco columnas, seis intentos como regla aunque no sea necesario dibujar las seis filas, estados gris/amarillo/cian y letras claras. Color debe acompañar la posición de letras, no ser aleatorio.",
+    "brief": "Crear un detalle vectorial de tres filas de cinco casillas: dos intentos completos y un intento en curso, con un objetivo ficticio válido del diccionario del juego. Calcular los colores usando su evaluador real; no asignarlos “porque quedan lindos”. Preparar variantes ES/EN si hay palabras legibles. No usar la palabra del desafío diario actual ni revelar su solución.",
+    "composition": "N: bloque de casillas centrado, x=24–76%, y=20–80%; letras grandes, separaciones regulares. F si se usa: mantener cinco columnas y dos filas, no estirar las casillas. M: dos filas completas y comienzo de tercera solo si no se corta; priorizar cinco columnas legibles.",
+    "palette": "Fondo índigo, neutral gris, amarillo y cian funcionales actuales. No añadir verde arbitrario porque otros Wordle lo usan. Texto oscuro en fichas claras y claro en oscuras.",
+    "remove": "PLAYS/GAMES si no coincide el locale, JET como solución corta, logo y slogan; no falsos estados de evaluación.",
+    "check": "Cada intento completo tiene cinco letras; feedback coincide con respuesta de prueba y duplicados. ES/EN funciona sin texto horneado en el idioma contrario.",
+    "title": "JET//Words",
+    "current_art_type": "inline_svg",
+    "current_url": "https://jetgames.fun/ [inline .card-art svg]",
+    "current_file": "ui_audit/editorial_cards/assets/07.svg",
+    "current_dimensions": null,
+    "current_art_line_latest": 896,
+    "fallback": "No cortar columnas para llenar el ancho. Mantener bloque completo de cinco columnas centrado en fondo sólido; si no puede localizarse el texto, conservar vector y preparar letras por locale.",
+    "proposed_outputs": [
+      "words-normal",
+      "words-mobile"
+    ],
+    "preview_dimensions": [
+      960,
+      540
+    ],
+    "source_viewBox": [
+      0,
+      0,
+      320,
+      180
+    ],
+    "dimensions_note": "SVG original has a 320×180 viewBox; 960×540 is audit-render preview, not source raster resolution."
+  },
+  {
+    "n": 8,
+    "slug": "box",
+    "source": "index.html:918–969; SVG inline. Juego jetbox.html.",
+    "diagnosis": "La ilustración demuestra bien el puzzle, pero hay demasiado muro/grilla y el personaje queda reducido frente a otros protagonistas. El recorte móvil puede ocultar la meta o la relación de empuje.",
+    "retain": "Astronauta oficial, contenedores con color/marca, pad circular, muros y suelo del juego. Mostrar empuje, nunca una cuerda o gesto que sugiera que se puede tirar.",
+    "brief": "Componer un pequeño puzzle espacial con astronauta detrás de un contenedor alineado con un pad libre. Un segundo contenedor ya resuelto puede indicar el objetivo. Mantener una disposición jugable, sin caja bloqueada contra un rincón salvo que ese sea el propósito explícito de la escena. El icono del objetivo debe seguir siendo reconocible.",
+    "composition": "N: astronauta (34,54), caja (49,54), pad (65,54); muros arriba/abajo delimitan camino sin comerse el cuadro. F si se usa: secuencia de empuje horizontal. M: conservar esa secuencia y quitar el contenedor secundario antes de encogerla.",
+    "palette": "Índigo/violeta mate, blanco del personaje/cajas, cian del pad y amarillo existente. Evitar plástico brillante o luces nuevas de ciencia ficción.",
+    "remove": "Exceso de pared rayada, viewport demasiado alejado, marca incrustada, flechas no existentes que parezcan nuevos controles.",
+    "check": "Empujar lleva la caja al pad; no se sugiere una mecánica de tirar. Personaje, caja y destino no se solapan ni salen del recorte.",
+    "title": "JET//Box",
+    "current_art_type": "inline_svg",
+    "current_url": "https://jetgames.fun/ [inline .card-art svg]",
+    "current_file": "ui_audit/editorial_cards/assets/08.svg",
+    "current_dimensions": null,
+    "current_art_line_latest": 972,
+    "fallback": "Mantener personaje-caja-pad dentro de un mismo recorte; contain del módulo si el pad superior se pierde. No aumentar zoom solo al personaje.",
+    "proposed_outputs": [
+      "box-normal",
+      "box-mobile"
+    ],
+    "preview_dimensions": [
+      960,
+      540
+    ],
+    "source_viewBox": [
+      0,
+      0,
+      320,
+      180
+    ],
+    "dimensions_note": "SVG original has a 320×180 viewBox; 960×540 is audit-render preview, not source raster resolution."
+  },
+  {
+    "n": 9,
+    "slug": "salchidrez",
+    "source": "index.html:976; juego salchidrez.html, drawDog(), drawDogHead(), drawCrown() y demás funciones de piezas.",
+    "diagnosis": "Portada partida en logo grande a la izquierda y tablero a la derecha. El título se repite con el HTML; las piezas resultan pequeñas y la larga pieza/perro inferior amenaza con salir del encuadre.",
+    "retain": "Perros salchicha dibujados por el juego, disfraces/piezas de ajedrez, tablero verde y personalidades. No reemplazarlos por fotos de mascotas ni figuras genéricas.",
+    "brief": "Acercar un fragmento real del tablero con tres piezas protagonistas inequívocas: rey/perro con corona, caballo/caballero y una pieza de apoyo del bando rival. Mantener siluetas alargadas y humor. Elegir una posición válida o demostrativa del aprendizaje, no una pelea física entre perros. El sujeto son las piezas y la lógica del ajedrez, no el logo.",
+    "composition": "N: módulo de tablero ocupa x=14–86%, y=16–84%; pieza principal en (45,55), otras en (66,34) y (72,65). F si se usa: desplegar la relación horizontal sin estirar casillas. M: dos protagonistas y una tercera secundaria; garantizar cabeza, cola y coronas completas.",
+    "palette": "Verdes originales del tablero, marrones/cremas cálidos de los perros y pequeños acentos cian/magenta existentes. Fondo circundante grafito suave, no espacio estrellado.",
+    "remove": "SALCHIDREZ incrustado, separación artificial banner/tablero, casillas vacías que achican las piezas.",
+    "check": "Se reconoce ajedrez y perros salchicha a primera vista; conservar aspecto amable y singular. No recortar una cola/corona para hacerlo encajar.",
+    "title": "Salchidrez",
+    "current_art_type": "jpg",
+    "current_url": "https://jetgames.fun/img/salchidrez.jpg",
+    "current_file": "ui_audit/editorial_cards/assets/09_salchidrez.jpg",
+    "current_dimensions": [
+      960,
+      540
+    ],
+    "current_art_line_latest": 1030,
+    "fallback": "El JPG actual no admite eliminar logo y conservar todas las piezas con un simple crop 16:9. Usar detalle válido de tablero como transición o contain; no estirar la mitad derecha.",
+    "proposed_outputs": [
+      "salchidrez-normal",
+      "salchidrez-mobile"
+    ]
+  },
+  {
+    "n": 10,
+    "slug": "escudos",
+    "source": "index.html:985; juego escudos.html, renderLanding()/renderLeagueKo()/renderCup().",
+    "diagnosis": "Mosaico de 24 escudos sobre rectángulos blancos: parece directorio de logos y es el bloque más claro de la colección. Comunica selecciones, no escribir el resultado de un torneo.",
+    "retain": "Escudos exactos ya usados por el producto, sin redibujarlos ni deformarlos. Retener competición y llave; utilizar assets cuya disponibilidad y uso en el juego estén verificados.",
+    "brief": "Sustituir el muro de logos por una pequeña llave de torneo con cuatro participantes y dos conexiones claras hacia un encuentro central. Las mini tarjetas usan fondo claro controlado si el escudo lo requiere; el conjunto descansa sobre una superficie oscura. La lectura es elegir ganadores y avanzar, no controlar jugadores en una cancha. No inventar alianza comercial con una federación.",
+    "composition": "N: cuatro escudos periféricos entre x=23–77%, y=25–75%, llave hacia (50,50). F si se usa: dos mini cruces horizontales y final en centro. M: un cruce y avance a siguiente ronda; no comprimir los 24 escudos.",
+    "palette": "Base grafito/azul tinta, líneas cian discretas y colores originales de escudos. Máximo 25–30% del área global en superficies blancas; sin filtros de marca sobre los logos.",
+    "remove": "Mosaico masivo, marcos blancos repetidos, marcadores de partidos reales no verificados, trofeo fotorrealista ajeno.",
+    "check": "Todos los logos mantienen proporción y detalle suficiente. Se entiende simulación de resultados/llave, no fútbol de acción. Ningún resultado ilustrativo parece información deportiva actual.",
+    "title": "JET//Escudos",
+    "current_art_type": "jpg",
+    "current_url": "https://jetgames.fun/img/escudos.jpg",
+    "current_file": "ui_audit/editorial_cards/assets/10_escudos.jpg",
+    "current_dimensions": [
+      960,
+      540
+    ],
+    "current_art_line_latest": 1039,
+    "fallback": "Mantener proporciones de escudos; si no se rehace la composición, usar detalle de pocos logos sin bordes partidos. F no se necesita hoy; no paneo arbitrario sobre el mosaico.",
+    "proposed_outputs": [
+      "escudos-normal",
+      "escudos-mobile"
+    ]
+  },
+  {
+    "n": 11,
+    "slug": "senal",
+    "source": "index.html:995; juego senal__senal__src__sonda.js, piezas.js, app.js y reglas.js.",
+    "diagnosis": "Captura de aplicación completa: listas aceptadas/rechazadas, historial, inventario y botones. El dispositivo alienígena que define el juego queda pequeño entre controles.",
+    "retain": "Sonda central hexagonal/circular, muestras con formas/colores/texturas reales y contraste entre aceptado/rechazado. Preservar los patrones visuales relevantes a las reglas.",
+    "brief": "Mostrar la sonda examinando una muestra de tres objetos; a un lado una muestra anterior aceptada, al otro una rechazada. Usar señales visuales reales sin cifras ni texto extenso. Mantener una hipótesis coherente con una regla real del juego. No convertir la sonda en un robot humanoide o un arma.",
+    "composition": "N: sonda (52,45), muestra activa abajo en (52,68), dos testigos pequeños a izquierda/derecha. F: secuencia muestra→sonda→respuesta a lo ancho, no inventario entero. M: sonda y muestra activa; conservar solo dos marcas mínimas de resultado, sin columnas.",
+    "palette": "Índigo, núcleo cian, piezas violeta/cian/ámbar con sus texturas originales. Aceptación/rechazo también con forma/símbolo si existe; no depender solo de verde/rojo.",
+    "remove": "Enviar, Formular regla, listas numeradas, Muestras9, Señal#1, scroll/paneles de escritorio.",
+    "check": "Se entiende experimentar/descubrir una regla. Las texturas de las piezas sobreviven a 260 px; no parecer otro match3.",
+    "title": "JET//Señal",
+    "current_art_type": "jpg",
+    "current_url": "https://jetgames.fun/img/senal.jpg",
+    "current_file": "ui_audit/editorial_cards/assets/11_senal.jpg",
+    "current_dimensions": [
+      800,
+      450
+    ],
+    "current_art_line_latest": 1049,
+    "fallback": "No usar crop de la sonda sola: desaparecería el acto de probar muestras. Contain de sonda+muestra o N temporal hasta disponer de composición F/M.",
+    "proposed_outputs": [
+      "senal-normal",
+      "senal-mobile",
+      "senal-featured"
+    ]
+  },
+  {
+    "n": 12,
+    "slug": "antes",
+    "source": "index.html:1004; antes__antes__src__render.js, astro.js, niveles.js y reglas.js.",
+    "diagnosis": "Logo enorme y slogan ocupan la parte superior; el pequeño escenario con ecos queda en la mitad inferior, muy vulnerable al recorte32:9.",
+    "retain": "Astronauta oficial, ecos semitransparentes, placas, puerta y conexiones de colores. Conservar que los ecos son versiones temporales del mismo astronauta, no compañeros independientes.",
+    "brief": "Componer un corredor corto con astronauta actual a punto de atravesar una puerta mientras dos ecos de movimientos pasados sostienen placas. Diferenciar cuerpo actual opaco de ecos cian/violeta o amarillo según paleta real. Mostrar una relación causal limpia: placa activa, conexión encendida, puerta abierta. No multiplicar clones como un ejército.",
+    "composition": "N: eco en (25,57), segundo eco (47,57), protagonista (68,49), salida (80,50). F: escena horizontal completa dentro de y=25–75%; sin header. M: un eco y protagonista, con placa y puerta presentes; antes quitar eco secundario que perder la causalidad.",
+    "palette": "Arquitectura índigo mate, actor blanco/cian y ecos diferenciados según COLOR_ECO del renderer. El halo de ecos es menor que el contraste del actor actual.",
+    "remove": "JET//Antes incrustado, “Tu pasado es tu equipo”, gran franja vacía superior, numeración minúscula no imprescindible.",
+    "check": "El lector identifica cooperación con huellas temporales, no multijugador ni teleportación. La puerta y al menos una placa se ven en cada ratio.",
+    "title": "JET//Antes",
+    "current_art_type": "jpg",
+    "current_url": "https://jetgames.fun/img/antes.jpg",
+    "current_file": "ui_audit/editorial_cards/assets/12_antes.jpg",
+    "current_dimensions": [
+      800,
+      450
+    ],
+    "current_art_line_latest": 1058,
+    "fallback": "No existe un recorte center-cover F adecuado del JPG con logo arriba y escena abajo. Mantener escena inferior completa mediante composición limpia; hasta entonces N/contain sin span.",
+    "proposed_outputs": [
+      "antes-normal",
+      "antes-mobile",
+      "antes-featured"
+    ]
+  },
+  {
+    "n": 13,
+    "slug": "telemetria",
+    "source": "index.html:1013; telemetria__telemetria__src__cabina.js, nucleo.js, ui.js y estilos.css.",
+    "diagnosis": "Dashboard completo con columnas, tablas y oxígeno. La miniatura parece una herramienta administrativa; texto y barras compiten sin un punto focal.",
+    "retain": "Silueta/esquema de nave por secciones, sensores e incertidumbre de lecturas, reserva de oxígeno. Mantener símbolos funcionales reales.",
+    "brief": "Construir un recorte editorial del diagnóstico: esquema lateral de la nave con una sección destacada y dos lecturas que generan duda; la reserva de oxígeno aparece como un indicador secundario sencillo. Usar las formas auténticas de la cabina, no una cabina fotográfica ni tripulación en emergencia. El drama está en decidir qué medir, no en explosiones.",
+    "composition": "N: nave (40,54), sensor destacado (67,42), segunda lectura (70,63); oxígeno pequeño arriba sin números. F si se usa: nave al centro y sensores a extremos cercanos. M: esquema compacto con dos lecturas; quitar paneles antes que hacerlos ilegibles.",
+    "palette": "Grafito violeta, cian instrumental, un ámbar de alerta/duda y neutros para sensores normales. No rojo catastrófico global.",
+    "remove": "Lista de ocho sistemas, registro textual, minutos, reparar12min, tabs de zonas y botón de pausa.",
+    "check": "Se reconoce diagnóstico con incertidumbre, no simulador de pilotaje. Una lectura dudosa no se presenta gráficamente como certeza si el juego no la ofrece.",
+    "title": "JET//Telemetría",
+    "current_art_type": "jpg",
+    "current_url": "https://jetgames.fun/img/telemetria.jpg",
+    "current_file": "ui_audit/editorial_cards/assets/13_telemetria.jpg",
+    "current_dimensions": [
+      800,
+      450
+    ],
+    "current_art_line_latest": 1067,
+    "fallback": "No ampliar una lectura suelta y presentarla como portada final. Recorte del esquema más dos sensores si siguen legibles; en caso contrario contain temporal y reemplazo prioritario.",
+    "proposed_outputs": [
+      "telemetria-normal",
+      "telemetria-mobile"
+    ]
+  },
+  {
+    "n": 14,
+    "slug": "portada",
+    "source": "index.html:1022; portada__portada__src__art.js, content.js/content2.js y ui.js.",
+    "diagnosis": "Banner promocional con periódico a la izquierda, logo/slogan y sello de premio a la derecha. Es una dirección de cartel comercial distinta al resto.",
+    "retain": "El periódico “El Eco Orbital”, papel crema, columnas, módulos de noticias/fotos/anuncios y trama de impresión real. El papel claro es identidad, no un error que haya que oscurecer.",
+    "brief": "Hacer protagonista una edición en maquetación: fragmento de primera plana con tres módulos encajados y un bloque auténtico aún separado, listo para colocarse en su hueco. Perspectiva muy leve o vista frontal para que se lea el encaje. Retener tipografía del diario, fotograbado y borde de papel; no inventar portada de un periódico real ni manos/foto de escritorio.",
+    "composition": "N: papel ocupa x=27–70%, y=12–88%; módulo separado en (75,54). F si se usa: detalle horizontal del encaje, no toda una página diminuta. M: recorte de dos columnas y el hueco; texto del diario es textura de contenido auténtico, no lectura obligatoria.",
+    "palette": "Papel #E7DDC2, tinta carbón, acentos cian/amarillo de secciones reales; fondo azul tinta. Una sola gran masa clara equilibrada, sin blanco puro deslumbrante.",
+    "remove": "JET//Portada duplicado, ROMPECABEZAS EDITORIAL, slogan, sello PORTADA DE ORO y 100mil ejemplares. No eliminar el nombre del periódico si está dentro de su objeto.",
+    "check": "Se entiende maquetar/encajar, no solo leer noticias. No falso texto generado; usar titulares del contenido real o una variante localizada revisada.",
+    "title": "JET//Portada",
+    "current_art_type": "jpg",
+    "current_url": "https://jetgames.fun/img/portada.jpg",
+    "current_file": "ui_audit/editorial_cards/assets/14_portada.jpg",
+    "current_dimensions": [
+      800,
+      450
+    ],
+    "current_art_line_latest": 1076,
+    "fallback": "Recortar solo el diario es transición válida si no parece un periódico mutilado; mantener borde/papel completo o un detalle deliberado de módulos. No conservar mitad del logo derecho.",
+    "proposed_outputs": [
+      "portada-normal",
+      "portada-mobile"
+    ]
+  },
+  {
+    "n": 15,
+    "slug": "cajanegra",
+    "source": "index.html:1031; cajanegra__cajanegra__src__dibujo.js, registros.js, textos-casos.js y app.js.",
+    "diagnosis": "Captura dividida entre foto pequeña de cabina, navegación y párrafo de informe con huecos. El alt habla de una caja negra, pero el asset actual muestra investigación en interfaz, no una caja física.",
+    "retain": "Fotograma de la cabina con tripulantes oficiales, evidencia de registro/radio y fragmento de informe con piezas/palabras. No inventar una caja negra física como protagonista sin asset del juego.",
+    "brief": "Crear una mesa visual de evidencias, hecha con los recursos gráficos reales: fotograma de cabina principal, una banda de registro y dos fichas del informe conectadas por la misma pista. Relación visual limpia entre observación y reconstrucción. Texto mínimo auténtico y no revelador; no agregar cinta policial, asesinato, sangre ni expediente de crimen si el caso no lo contiene.",
+    "composition": "N: fotograma x=18–65%, y=20–75%; registro corto (69,33), fichas (71,62). F: evidencia→registro→informe horizontal, cada bloque reconocible. M: fotograma y una ficha/registro, no tres columnas microscópicas.",
+    "palette": "Índigo oscuro, cian de evidencia, ámbar de hora/pista y blanco de astronautas. Resaltar una pista, no todos los marcos.",
+    "remove": "Menús, timeline completa, informe entero, conteo de huecos, bancos de nombres y solución del caso visible.",
+    "check": "Comunica reconstrucción/deducción, no aventura de acción. Ninguna pista inventada revela o contradice una solución. Alt final describe lo que realmente se muestra.",
+    "title": "JET//Caja Negra",
+    "current_art_type": "jpg",
+    "current_url": "https://jetgames.fun/img/cajanegra.jpg",
+    "current_file": "ui_audit/editorial_cards/assets/15_cajanegra.jpg",
+    "current_dimensions": [
+      800,
+      450
+    ],
+    "current_art_line_latest": 1085,
+    "fallback": "Usar la evidencia visual principal como detalle temporal y un registro corto; si no cabe con la ficha/informe, mantener N/contain. No recortar un párrafo a mitad de palabras.",
+    "proposed_outputs": [
+      "cajanegra-normal",
+      "cajanegra-mobile",
+      "cajanegra-featured"
+    ]
+  },
+  {
+    "n": 16,
+    "slug": "crater",
+    "source": "index.html:1053; crater__crater__src__mapa.js, gen.js, ui.js y bancos.js.",
+    "diagnosis": "Captura de resultados con mapa estrecho, porcentajes, estado en vivo, hora y botón Siguiente. Parece historial de una votación más que una decisión de aterrizaje.",
+    "retain": "Mapa de cráteres reales, astronauta/nave de aterrizaje y concentración de elecciones como concepto social. No convertirlo en shooter lunar.",
+    "brief": "Presentar un mapa con tres cráteres candidatos y un marcador de aterrizaje claro; un pequeño grupo de ecos/marcadores puede sugerir coincidencia con otras personas, sin afirmar datos en vivo. Si se representa revelación, usar un estado ilustrativo real del modo práctica y no el resultado diario actual. El acto es elegir dónde cree uno que elegirán los demás.",
+    "composition": "N: cráter elegido (54,48), secundarios (29,66) y (74,29); astronauta visible cerca del elegido. F: expandir terreno lateral con candidato a cada lado. M: tres opciones bien espaciadas; marcador elegido nunca pegado al borde.",
+    "palette": "Terreno azul gris, cráteres violeta y selección cian. Partículas/estrellas muy escasas; contraste por borde y forma además del color.",
+    "remove": "DÍA#19, En vivo, cierra09:00, porcentajes, En sincronía, botones, texto de práctica y resultados como claim promocional.",
+    "check": "No implica población real o participación masiva no comprobada; no dibujar meteoritos explotando. La decisión entre ubicaciones se entiende sin porcentajes.",
+    "title": "JET//Cráter",
+    "current_art_type": "jpg",
+    "current_url": "https://jetgames.fun/img/crater.jpg",
+    "current_file": "ui_audit/editorial_cards/assets/16_crater.jpg",
+    "current_dimensions": [
+      800,
+      450
+    ],
+    "current_art_line_latest": 1107,
+    "fallback": "Usar el mapa como núcleo temporal, excluyendo panel derecho y botones. No ensanchar el mapa por deformación; contain sobre color del terreno si falta margen.",
+    "proposed_outputs": [
+      "crater-normal",
+      "crater-mobile",
+      "crater-featured"
+    ]
+  },
+  {
+    "n": 17,
+    "slug": "frentes",
+    "source": "index.html:1062; frentes__frentes__src__render.js, core.js y game.js.",
+    "diagnosis": "Logo y 96% dominan arriba; abajo hay cinco columnas de datos. Es más un resultado/dashboard que una escena de reparto estratégico. Aun así, los cinco planetas son una estructura identitaria importante.",
+    "retain": "Los cinco planetas diferenciados, flota cian y rival rojo/coral, asignación comparada. Respetar que son cinco frentes, no una batalla con un planeta jefe.",
+    "brief": "Representar cinco planetas en una línea ligeramente arqueada, con pequeños grupos de naves reales asignadas a cada uno y una sola comparación rival destacada. La decisión es repartir recursos entre cinco destinos. Usar una distribución que respete el total del juego si se explicitan cantidades; si no, representar grupos simbólicos sin números. No añadir láseres o explosiones para aparentar combate directo.",
+    "composition": "N: planetas entre x=15–85%, alrededor de y=40%; grupos debajo hasta y=73%. F si se usa: cinco columnas relajadas de igual jerarquía. M: los cinco caben en una franja; reducir naves secundarias y eliminar etiquetas antes de quitar un planeta.",
+    "palette": "Planetas con colores propios, flota cian/rival coral, fondo tinta. El ámbar de Dunas no vuelve toda la imagen amarilla; no porcentajes neón.",
+    "remove": "JET//Frentes96%, porcentajes de victoria, puntos y cinco barras completas. No confundir datos de ejemplo con desempeño real.",
+    "check": "Se ven exactamente cinco destinos y una decisión de reparto. No se interpreta como shooter ni como gráfico financiero.",
+    "title": "JET//Frentes",
+    "current_art_type": "jpg",
+    "current_url": "https://jetgames.fun/img/frentes.jpg",
+    "current_file": "ui_audit/editorial_cards/assets/17_frentes.jpg",
+    "current_dimensions": [
+      800,
+      450
+    ],
+    "current_art_line_latest": 1116,
+    "fallback": "Mantener los cinco planetas juntos; un crop solo de uno contradice reparto. N/contain hasta preparar filas y flotas legibles en M.",
+    "proposed_outputs": [
+      "frentes-normal",
+      "frentes-mobile"
+    ]
+  },
+  {
+    "n": 18,
+    "slug": "balizas",
+    "source": "index.html:1071; balizas__balizas__src__render.js, astro.js y sim.js.",
+    "diagnosis": "Es una pieza ya bastante editorial, pero incorpora logo/slogan y muchos halos de colores. Nave/astronauta, señales y rocas no tienen una jerarquía suficientemente tranquila.",
+    "retain": "Nave/personaje oficial, niebla, asteroides y señales de balizas con sus símbolos/colores reales. La señal dejada para otros es el rasgo diferenciador.",
+    "brief": "Recomponer una ruta segura a través de niebla: nave protagonista que acaba de dejar una baliza, otra señal útil más adelante y dos masas de asteroide que forman un paso. Mantener un símbolo de aviso en segundo plano, no un catálogo de iconos. La niebla oculta contexto, nunca al protagonista o la baliza que cuenta la historia.",
+    "composition": "N: nave (43,55), baliza recién dejada (28,67), útil (66,37); paso diagonal. F si se usa: extender corredor y ruta lateral. M: nave y dos señales; quitar señal de aviso secundaria antes de encoger la ruta.",
+    "palette": "Violeta/azul de niebla, cian de navegación, un amarillo de señal; rojo solo si su símbolo real es necesario. Un halo principal y uno secundario, no cinco focos equivalentes.",
+    "remove": "JET//Balizas, CRUZA LA NIEBLA·DEJA LUZ, exceso de iconos y brillo multicolor indiscriminado.",
+    "check": "Las balizas guían y no parecen coleccionables o armas. La navegación conserva su dirección y el significado real de los símbolos.",
+    "title": "JET//Balizas",
+    "current_art_type": "jpg",
+    "current_url": "https://jetgames.fun/img/balizas.jpg",
+    "current_file": "ui_audit/editorial_cards/assets/18_balizas.jpg",
+    "current_dimensions": [
+      800,
+      450
+    ],
+    "current_art_line_latest": 1125,
+    "fallback": "Puede usarse un recorte del corredor central que excluya logo si conserva nave y dos señales; revisar margen de rocas y no partir un símbolo por la mitad.",
+    "proposed_outputs": [
+      "balizas-normal",
+      "balizas-mobile"
+    ]
+  },
+  {
+    "n": 19,
+    "slug": "estacion",
+    "source": "index.html:1093; estacion__estacion__src__scenes.js, draw.js, astro.js y content.js.",
+    "diagnosis": "La imagen actual muestra cinco consolas repetidas y un astronauta minúsculo al pie. El wide32:9 del screenshot elimina precisamente ese personaje. Las etiquetas de las consolas son ilegibles/recortadas y no construyen misterio.",
+    "retain": "Astronauta oficial, lenguaje 2D de la estación, consola O2/forma de onda, luces y arquitectura dibujada realmente en el juego. Retener silencio/soledad e investigación, no acción armada.",
+    "brief": "Crear una escena editorial cercana dentro de la estación: astronauta frente a una única consola protagonista encendida; segunda consola apagada y puerta/corredor tenue aportan la ausencia de tripulación. La pantalla puede mostrar la forma de onda auténtica, sin dar una respuesta de puzzle. Mantener aspecto gráfico 2D, no generar un interior Unreal hiperrealista.",
+    "composition": "N: astronauta (39,63), consola principal (59,46), puerta lejana (78,43); personaje 32–38% de alto. F: astronauta y consola ocupan y=24–78%, contexto se prolonga a izquierda/derecha; NO cortar la imagen de cinco consolas. M: solo personaje+consola y una referencia de profundidad; ambos completos.",
+    "palette": "Azul petróleo/índigo, cian/verde de O2, violeta apagado en arquitectura. Pantalla principal es el foco; no cinco lámparas idénticas iluminando todo por igual.",
+    "remove": "Fila de cinco monitores casi iguales, rótulos técnicos pequeños, franjas/cables de colores como header y cualquier pista/solución visible.",
+    "check": "El astronauta permanece entero en N/F/M. La sensación es investigar una estación silenciosa, no una captura de un panel de riego. No se promete exploración3D.",
+    "title": "JET//Estación Silencio",
+    "current_art_type": "jpg",
+    "current_url": "https://jetgames.fun/img/estacion.jpg",
+    "current_file": "ui_audit/editorial_cards/assets/19_estacion.jpg",
+    "current_dimensions": [
+      800,
+      450
+    ],
+    "current_art_line_latest": 1147,
+    "fallback": "En el original el personaje está cerca de y=79%; object-position inferior puede recuperarlo pero pierde lámparas/consolas y no resuelve la escala. No recomendar center-cover como solución: usar N/contain o retirar span hasta nueva composición.",
+    "proposed_outputs": [
+      "estacion-normal",
+      "estacion-mobile",
+      "estacion-featured"
+    ]
+  },
+  {
+    "n": 20,
+    "slug": "raid",
+    "source": "index.html:1103; portada se llama img/jetdrive.jpg aunque el título y destino son Raid. Juego raid__raid.js y raid__style.css.",
+    "diagnosis": "Hovercraft con agua, luz y montaña de acabado cinematográfico muy superior en densidad material al resto. No se ha probado que sea IA ni que el modelo sea incorrecto; tampoco se ha verificado su equivalencia con gameplay en esta auditoría.",
+    "retain": "Hovercraft como sujeto, agua/puerto, acción de navegación y una señal de misión real (baliza/flag/destino si existe en escena). Verificar modelo y entorno contra el juego antes de usarlos como referencia final.",
+    "brief": "Preparar una escena editorial con el hovercraft REAL del juego en giro suave sobre agua, estela que señala movimiento y un objetivo visible de misión. Captura o render con los materiales y geometría del producto. Cámara tres cuartos baja pero legible; mantener energía sin perspectiva de tráiler militar. Si la portada actual no corresponde al asset real, no “mejorar” el modelo para igualarla: sustituirla por la escena fiel. Si sí corresponde, basta reencuadrar y moderar postproceso.",
+    "composition": "N: nave (56,56), ocupa55–65% ancho; objetivo (78,38), horizonte alrededor de35%. F: nave 40–50% ancho en (57,55), estela extendida a izquierda; no cortar ventiladores ni faldón. M: nave 60% ancho, un solo objetivo; recortar paisaje, no piezas estructurales.",
+    "palette": "Agua azul petróleo, grises propios del vehículo, luz neutral suave y acento de objetivo. Bajar dominio de sol/flares, no teñir toda el agua de violeta.",
+    "remove": "Paisaje alpino heroico si no pertenece al nivel, microdetalle/armas añadidas, lensflare, cielos épicos y cartel de acción. No cambiar nombre público a JetDrive por nombre del archivo.",
+    "check": "Comparación lado a lado con captura del juego confirma vehículo/entorno. La portada no sugiere shooter militar si la misión es navegación/captura/carrera. Silueta completa en F.",
+    "title": "JET//Raid",
+    "current_art_type": "jpg",
+    "current_url": "https://jetgames.fun/img/jetdrive.jpg",
+    "current_file": "ui_audit/editorial_cards/assets/20_jetdrive.jpg",
+    "current_dimensions": [
+      960,
+      540
+    ],
+    "current_art_line_latest": 1157,
+    "fallback": "Encuadre desplazado hacia el hovercraft puede ser transición, verificando ventiladores y faldón completos. No prometer que object-position soluciona F si el modelo supera la altura disponible: contain o render panorámico.",
+    "proposed_outputs": [
+      "raid-normal",
+      "raid-mobile",
+      "raid-featured"
+    ]
+  },
+  {
+    "n": 21,
+    "slug": "jump",
+    "source": "index.html:1112; jetjump__jetjump__src__main.js:65–70 carga assets/horse/henry-hd5.glb o henry-sd5.glb, assets/rider/rider15.glb, helmet1.glb, venue/venue.glb y fence_parts.glb.",
+    "diagnosis": "Captura amplia de caballo quieto en arena; predomina suelo beige y fondo de árboles/gradas. Es fiel como apariencia, pero no selecciona el momento que comunica salto y vínculo con el caballo.",
+    "retain": "Modelo de caballo Henry y jinete/casco reales, equipo y obstáculo del juego. Conservar proporciones, pelaje, materiales y calidad visual del renderer. No reemplazar por fotografía ecuestre ni caballo generado más detallado.",
+    "brief": "Elegir una pose auténtica de aproximación o salto, cámara lateral tres cuartos, con caballo/jinete claramente protagonistas y un obstáculo real. Preferir una fase de salto que mantenga silueta, patas y barra distinguibles; si la captura disponible no permite eso, usar aproximación con la barra delante antes que fabricar anatomía. Fondo de pista simplificado por encuadre, no por bokeh de fotografía profesional.",
+    "composition": "N: conjunto en (49,51), 60–68% ancho; obstáculo en (68,58), arena como base no más de30% del cuadro. F si se usa: movimiento horizontal con espacio delante, cola/casco/cascos completos. M: acercar el obstáculo al eje del conjunto, mantener caballo entero; nunca recortar patas para llenar el marco.",
+    "palette": "Arena cálida moderada, vegetación real menos dominante y azul del jinete. Luz de día suave, sombra de contacto coherente. No bañarlo en neón para hermanarlo con los juegos espaciales.",
+    "remove": "Exceso de arena, gradas/árboles repetidos que distraen, caballito diminuto centrado y cualquier HUD.",
+    "check": "El caballo real permanece reconocible y anatómicamente consistente; obstáculo no atraviesa patas ni jinete. No fingir capturas nuevas si WebGL impide obtenerlas: dejar tarea de captura explícita.",
+    "title": "JET//Jump",
+    "current_art_type": "jpg",
+    "current_url": "https://jetgames.fun/img/jetjump.jpg",
+    "current_file": "ui_audit/editorial_cards/assets/21_jetjump.jpg",
+    "current_dimensions": [
+      800,
+      450
+    ],
+    "current_art_line_latest": 1166,
+    "fallback": "En N el JPG completo preserva caballo; M21:9 amenaza casco/patas por su altura. Preferir contain o mantener N temporal antes que crop agresivo. No recortar cola ni patas.",
+    "proposed_outputs": [
+      "jump-normal",
+      "jump-mobile"
+    ]
+  },
+  {
+    "n": 22,
+    "slug": "bestiario",
+    "source": "index.html:1121; bestiario__bestiario__src__species.js:16 define dragon, skin ceniza; main.js:86 carga assets/${species.model}-${lod}.glb; model3d.js aplica materiales.",
+    "diagnosis": "Dragón aislado en suelo gris de estudio, pose de catálogo técnico. Gran detalle, pero sin señal de crianza/exploración. No se ha confirmado en runtime que el JPG use exactamente el modelo actual.",
+    "retain": "Dragón de ceniza/brasa del juego, alas, cuernos, proporciones y materiales reales. Huevo/accesorio de crianza solo desde assets o representación auténtica del producto.",
+    "brief": "Mostrar el dragón real en una viñeta de hábitat/recinto del juego, con un huevo o una pequeña señal de cuidado a su lado si está disponible. La criatura sigue siendo el protagonista, pero ya no parece un asset sin contexto. Pose tranquila/curiosa o rugido existente, no ataque cinematográfico. No rediseñar el dragón ni agregar bosque fantasioso ajeno para hacerlo más premium.",
+    "composition": "N: dragón en (51,50), 65–75% ancho con alas dentro de x=10–90; señal de crianza en (29,70). F si se usa: usar pose real de alas parcialmente plegadas o cámara más frontal/abierta según bounds; extender hábitat, no amputar alas. M: priorizar cabeza/cuerpo+contexto, pero encuadrar la criatura completa; si no cabe, cambiar pose auténtica antes que cortar alas.",
+    "palette": "Carbón y brasa/naranja de la criatura, suelo/arquitectura en tonos reales apagados, cian discreto solo si existe en el entorno. Luz amplia que separe alas del fondo sin borde fosforescente.",
+    "remove": "Suelo gris de estudio y horizonte de render de catálogo, sombras negras desmedidas, fuego/armas inventados y reflejos de producto plástico.",
+    "check": "Modelo/materiales coinciden con la especie disponible, alas/cuerno/patas completos. Debe leerse criatura que se cría/explora, no un juego de caza de dragones.",
+    "title": "JET//Bestiario",
+    "current_art_type": "jpg",
+    "current_url": "https://jetgames.fun/img/bestiario.jpg",
+    "current_file": "ui_audit/editorial_cards/assets/22_bestiario.jpg",
+    "current_dimensions": [
+      960,
+      540
+    ],
+    "current_art_line_latest": 1175,
+    "fallback": "La criatura ocupa gran altura del JPG; center-cover M/F puede cortar alas/patas. Usar contain temporal sobre fondo oscuro uniforme, no ampliar para ocultar el suelo gris.",
+    "proposed_outputs": [
+      "bestiario-normal",
+      "bestiario-mobile"
+    ]
+  }
+]

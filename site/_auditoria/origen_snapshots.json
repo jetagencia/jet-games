@@ -1,0 +1,972 @@
+{
+"antes/index.html": {
+"archive": "ui_audit/source_review/final_revalidation/antes.html",
+"url": "https://jetgames.fun/antes/",
+"rank": 4
+},
+"antes/src/astro.js": {
+"archive": "ui_audit/source_review/final_revalidation/antes__antes__src__astro.js",
+"url": "https://jetgames.fun/antes/src/astro.js",
+"rank": 4
+},
+"antes/src/audio.js": {
+"archive": "ui_audit/source_review/final_revalidation/antes__antes__src__audio.js",
+"url": "https://jetgames.fun/antes/src/audio.js",
+"rank": 4
+},
+"antes/src/diario.js": {
+"archive": "ui_audit/source_review/final_revalidation/antes__antes__src__diario.js",
+"url": "https://jetgames.fun/antes/src/diario.js",
+"rank": 4
+},
+"antes/src/estilo.css": {
+"archive": "ui_audit/source_review/final_revalidation/antes__antes__src__estilo.css",
+"url": "https://jetgames.fun/antes/src/estilo.css?v=4",
+"rank": 4
+},
+"antes/src/main.js": {
+"archive": "ui_audit/source_review/final_revalidation/antes__antes__src__main.js",
+"url": "https://jetgames.fun/antes/src/main.js?v=5",
+"rank": 4
+},
+"antes/src/niveles.js": {
+"archive": "ui_audit/source_review/final_revalidation/antes__antes__src__niveles.js",
+"url": "https://jetgames.fun/antes/src/niveles.js",
+"rank": 4
+},
+"antes/src/reglas.js": {
+"archive": "ui_audit/source_review/final_revalidation/antes__antes__src__reglas.js",
+"url": "https://jetgames.fun/antes/src/reglas.js",
+"rank": 4
+},
+"antes/src/render.js": {
+"archive": "ui_audit/source_review/final_revalidation/antes__antes__src__render.js",
+"url": "https://jetgames.fun/antes/src/render.js",
+"rank": 4
+},
+"antes/src/textos.js": {
+"archive": "ui_audit/source_review/final_revalidation/antes__antes__src__textos.js",
+"url": "https://jetgames.fun/antes/src/textos.js",
+"rank": 4
+},
+"astro/index.html": {
+"archive": "ui_audit/source_review/final_revalidation/astro.html",
+"url": "https://jetgames.fun/astro/",
+"rank": 4
+},
+"balizas/index.html": {
+"archive": "ui_audit/source_review/final_revalidation/balizas.html",
+"url": "https://jetgames.fun/balizas/",
+"rank": 4
+},
+"balizas/src/astro.js": {
+"archive": "ui_audit/source_review/final_revalidation/balizas__balizas__src__astro.js",
+"url": "https://jetgames.fun/balizas/src/astro.js?v=7",
+"rank": 4
+},
+"balizas/src/audio.js": {
+"archive": "ui_audit/source_review/final_revalidation/balizas__balizas__src__audio.js",
+"url": "https://jetgames.fun/balizas/src/audio.js?v=7",
+"rank": 4
+},
+"balizas/src/gen.js": {
+"archive": "ui_audit/source_review/final_revalidation/balizas__balizas__src__gen.js",
+"url": "https://jetgames.fun/balizas/src/gen.js?v=7",
+"rank": 4
+},
+"balizas/src/i18n.js": {
+"archive": "ui_audit/source_review/final_revalidation/balizas__balizas__src__i18n.js",
+"url": "https://jetgames.fun/balizas/src/i18n.js?v=7",
+"rank": 4
+},
+"balizas/src/main.js": {
+"archive": "ui_audit/source_review/final_revalidation/balizas__balizas__src__main.js",
+"url": "https://jetgames.fun/balizas/src/main.js?v=7",
+"rank": 4
+},
+"balizas/src/net.js": {
+"archive": "ui_audit/source_review/final_revalidation/balizas__balizas__src__net.js",
+"url": "https://jetgames.fun/balizas/src/net.js?v=7",
+"rank": 4
+},
+"balizas/src/render.js": {
+"archive": "ui_audit/source_review/final_revalidation/balizas__balizas__src__render.js",
+"url": "https://jetgames.fun/balizas/src/render.js?v=7",
+"rank": 4
+},
+"balizas/src/sim.js": {
+"archive": "ui_audit/source_review/final_revalidation/balizas__balizas__src__sim.js",
+"url": "https://jetgames.fun/balizas/src/sim.js?v=7",
+"rank": 4
+},
+"balizas/src/style.css": {
+"archive": "ui_audit/source_review/final_revalidation/balizas__balizas__src__style.css",
+"url": "https://jetgames.fun/balizas/src/style.css?v=7",
+"rank": 4
+},
+"bestiario/index.html": {
+"archive": "ui_audit/source_review/final_revalidation/bestiario.html",
+"url": "https://jetgames.fun/bestiario/",
+"rank": 4
+},
+"bestiario/src/audio.js": {
+"archive": "ui_audit/source_review/final_revalidation/bestiario__bestiario__src__audio.js",
+"url": "https://jetgames.fun/bestiario/src/audio.js",
+"rank": 4
+},
+"bestiario/src/battle-data.js": {
+"archive": "ui_audit/source_review/final_revalidation/bestiario__bestiario__src__battle-data.js",
+"url": "https://jetgames.fun/bestiario/src/battle-data.js",
+"rank": 4
+},
+"bestiario/src/battle.js": {
+"archive": "ui_audit/source_review/final_revalidation/bestiario__bestiario__src__battle.js",
+"url": "https://jetgames.fun/bestiario/src/battle.js",
+"rank": 4
+},
+"bestiario/src/catalog.js": {
+"archive": "ui_audit/source_review/final_revalidation/bestiario__bestiario__src__catalog.js",
+"url": "https://jetgames.fun/bestiario/src/catalog.js",
+"rank": 4
+},
+"bestiario/src/env.js": {
+"archive": "ui_audit/source_review/final_revalidation/bestiario__bestiario__src__env.js",
+"url": "https://jetgames.fun/bestiario/src/env.js",
+"rank": 4
+},
+"bestiario/src/input.js": {
+"archive": "ui_audit/source_review/final_revalidation/bestiario__bestiario__src__input.js",
+"url": "https://jetgames.fun/bestiario/src/input.js",
+"rank": 4
+},
+"bestiario/src/main.js": {
+"archive": "ui_audit/source_review/final_revalidation/bestiario__bestiario__src__main.js",
+"url": "https://jetgames.fun/bestiario/src/main.js",
+"rank": 4
+},
+"bestiario/src/model3d.js": {
+"archive": "ui_audit/source_review/final_revalidation/bestiario__bestiario__src__model3d.js",
+"url": "https://jetgames.fun/bestiario/src/model3d.js",
+"rank": 4
+},
+"bestiario/src/npc.js": {
+"archive": "ui_audit/source_review/final_revalidation/bestiario__bestiario__src__npc.js",
+"url": "https://jetgames.fun/bestiario/src/npc.js",
+"rank": 4
+},
+"bestiario/src/panels.js": {
+"archive": "ui_audit/source_review/final_revalidation/bestiario__bestiario__src__panels.js",
+"url": "https://jetgames.fun/bestiario/src/panels.js",
+"rank": 4
+},
+"bestiario/src/pickups.js": {
+"archive": "ui_audit/source_review/final_revalidation/bestiario__bestiario__src__pickups.js",
+"url": "https://jetgames.fun/bestiario/src/pickups.js",
+"rank": 4
+},
+"bestiario/src/player.js": {
+"archive": "ui_audit/source_review/final_revalidation/bestiario__bestiario__src__player.js",
+"url": "https://jetgames.fun/bestiario/src/player.js",
+"rank": 4
+},
+"bestiario/src/quality.js": {
+"archive": "ui_audit/source_review/final_revalidation/bestiario__bestiario__src__quality.js",
+"url": "https://jetgames.fun/bestiario/src/quality.js",
+"rank": 4
+},
+"bestiario/src/species.js": {
+"archive": "ui_audit/source_review/final_revalidation/bestiario__bestiario__src__species.js",
+"url": "https://jetgames.fun/bestiario/src/species.js",
+"rank": 4
+},
+"bestiario/src/state.js": {
+"archive": "ui_audit/source_review/final_revalidation/bestiario__bestiario__src__state.js",
+"url": "https://jetgames.fun/bestiario/src/state.js",
+"rank": 4
+},
+"bestiario/src/themes.js": {
+"archive": "ui_audit/source_review/final_revalidation/bestiario__bestiario__src__themes.js",
+"url": "https://jetgames.fun/bestiario/src/themes.js",
+"rank": 4
+},
+"bestiario/src/ui.css": {
+"archive": "ui_audit/source_review/final_revalidation/bestiario__bestiario__src__ui.css",
+"url": "https://jetgames.fun/bestiario/src/ui.css?v=20261022i",
+"rank": 4
+},
+"bestiario/src/world.js": {
+"archive": "ui_audit/source_review/final_revalidation/bestiario__bestiario__src__world.js",
+"url": "https://jetgames.fun/bestiario/src/world.js",
+"rank": 4
+},
+"bestiario/vendor/three.module.js": {
+"archive": "ui_audit/source_review/final_revalidation/bestiario__bestiario__vendor__three.module.js",
+"url": "https://jetgames.fun/bestiario/vendor/three.module.js",
+"rank": 4
+},
+"cajanegra/index.html": {
+"archive": "ui_audit/source_review/final_revalidation/cajanegra.html",
+"url": "https://jetgames.fun/cajanegra/",
+"rank": 4
+},
+"cajanegra/src/app.js": {
+"archive": "ui_audit/source_review/final_revalidation/cajanegra__cajanegra__src__app.js",
+"url": "https://jetgames.fun/cajanegra/src/app.js?v=9",
+"rank": 4
+},
+"cajanegra/src/astronauta-oficial.js": {
+"archive": "ui_audit/source_review/final_revalidation/cajanegra__cajanegra__src__astronauta-oficial.js",
+"url": "https://jetgames.fun/cajanegra/src/astronauta-oficial.js?v=1",
+"rank": 4
+},
+"cajanegra/src/audio.js": {
+"archive": "ui_audit/source_review/final_revalidation/cajanegra__cajanegra__src__audio.js",
+"url": "https://jetgames.fun/cajanegra/src/audio.js?v=3",
+"rank": 4
+},
+"cajanegra/src/calendario.js": {
+"archive": "ui_audit/source_review/final_revalidation/cajanegra__cajanegra__src__calendario.js",
+"url": "https://jetgames.fun/cajanegra/src/calendario.js?v=1",
+"rank": 4
+},
+"cajanegra/src/campana.js": {
+"archive": "ui_audit/source_review/final_revalidation/cajanegra__cajanegra__src__campana.js",
+"url": "https://jetgames.fun/cajanegra/src/campana.js?v=2",
+"rank": 4
+},
+"cajanegra/src/dibujo.js": {
+"archive": "ui_audit/source_review/final_revalidation/cajanegra__cajanegra__src__dibujo.js",
+"url": "https://jetgames.fun/cajanegra/src/dibujo.js?v=1",
+"rank": 4
+},
+"cajanegra/src/estilo.css": {
+"archive": "ui_audit/source_review/final_revalidation/cajanegra__cajanegra__src__estilo.css",
+"url": "https://jetgames.fun/cajanegra/src/estilo.css?v=6",
+"rank": 4
+},
+"cajanegra/src/generador.js": {
+"archive": "ui_audit/source_review/final_revalidation/cajanegra__cajanegra__src__generador.js",
+"url": "https://jetgames.fun/cajanegra/src/generador.js?v=3",
+"rank": 4
+},
+"cajanegra/src/i18n.js": {
+"archive": "ui_audit/source_review/final_revalidation/cajanegra__cajanegra__src__i18n.js",
+"url": "https://jetgames.fun/cajanegra/src/i18n.js?v=5",
+"rank": 4
+},
+"cajanegra/src/mundo.js": {
+"archive": "ui_audit/source_review/final_revalidation/cajanegra__cajanegra__src__mundo.js",
+"url": "https://jetgames.fun/cajanegra/src/mundo.js?v=2",
+"rank": 4
+},
+"cajanegra/src/registros.js": {
+"archive": "ui_audit/source_review/final_revalidation/cajanegra__cajanegra__src__registros.js",
+"url": "https://jetgames.fun/cajanegra/src/registros.js?v=1",
+"rank": 4
+},
+"cajanegra/src/rng.js": {
+"archive": "ui_audit/source_review/final_revalidation/cajanegra__cajanegra__src__rng.js",
+"url": "https://jetgames.fun/cajanegra/src/rng.js?v=1",
+"rank": 4
+},
+"cajanegra/src/solucionador.js": {
+"archive": "ui_audit/source_review/final_revalidation/cajanegra__cajanegra__src__solucionador.js",
+"url": "https://jetgames.fun/cajanegra/src/solucionador.js?v=1",
+"rank": 4
+},
+"cajanegra/src/textos-casos.js": {
+"archive": "ui_audit/source_review/final_revalidation/cajanegra__cajanegra__src__textos-casos.js",
+"url": "https://jetgames.fun/cajanegra/src/textos-casos.js?v=2",
+"rank": 4
+},
+"crater/index.html": {
+"archive": "ui_audit/source_review/final_revalidation/crater.html",
+"url": "https://jetgames.fun/crater/",
+"rank": 4
+},
+"crater/src/estado.js": {
+"archive": "ui_audit/source_review/final_revalidation/crater__crater__src__estado.js",
+"url": "https://jetgames.fun/crater/src/estado.js?v=1",
+"rank": 4
+},
+"crater/src/gen.js": {
+"archive": "ui_audit/source_review/final_revalidation/crater__crater__src__gen.js",
+"url": "https://jetgames.fun/crater/src/gen.js?v=1",
+"rank": 4
+},
+"crater/src/jet-idioma.js": {
+"archive": "ui_audit/source_review/final_revalidation/crater__crater__src__jet-idioma.js",
+"url": "https://jetgames.fun/crater/src/jet-idioma.js?v=1",
+"rank": 4
+},
+"crater/src/red.js": {
+"archive": "ui_audit/source_review/final_revalidation/crater__crater__src__red.js",
+"url": "https://jetgames.fun/crater/src/red.js?v=2",
+"rank": 4
+},
+"crater/src/textos.js": {
+"archive": "ui_audit/source_review/final_revalidation/crater__crater__src__textos.js",
+"url": "https://jetgames.fun/crater/src/textos.js?v=3",
+"rank": 4
+},
+"crater/src/ui.js": {
+"archive": "ui_audit/source_review/final_revalidation/crater__crater__src__ui.js",
+"url": "https://jetgames.fun/crater/src/ui.js?v=6",
+"rank": 4
+},
+"crater/sw.js": {
+"archive": "ui_audit/source_review/crater_1504/sw.js",
+"url": "https://jetgames.fun/crater/sw.js?audit=20261022T1506",
+"rank": 3
+},
+"crater/src/audio.js": {
+"archive": "ui_audit/source_review/final_revalidation/crater__crater__src__audio.js",
+"url": "https://jetgames.fun/crater/src/audio.js?v=3",
+"rank": 4
+},
+"crater/src/bancos.js": {
+"archive": "ui_audit/source_review/final_revalidation/crater__crater__src__bancos.js",
+"url": "https://jetgames.fun/crater/src/bancos.js?v=1",
+"rank": 4
+},
+"crater/src/estilo.css": {
+"archive": "ui_audit/source_review/final_revalidation/crater__crater__src__estilo.css",
+"url": "https://jetgames.fun/crater/src/estilo.css?v=6",
+"rank": 4
+},
+"crater/src/horno.js": {
+"archive": "ui_audit/source_review/final_revalidation/crater__crater__src__horno.js",
+"url": "https://jetgames.fun/crater/src/horno.js?v=1",
+"rank": 4
+},
+"crater/src/mapa.js": {
+"archive": "ui_audit/source_review/final_revalidation/crater__crater__src__mapa.js",
+"url": "https://jetgames.fun/crater/src/mapa.js?v=1",
+"rank": 4
+},
+"escudos/index.html": {
+"archive": "ui_audit/source_review/final_revalidation/escudos.html",
+"url": "https://jetgames.fun/escudos/",
+"rank": 4
+},
+"escudos/data/wc2026_llave.js": {
+"archive": "ui_audit/source_review/final_revalidation/escudos__escudos__data__wc2026_llave.js",
+"url": "https://jetgames.fun/escudos/data/wc2026_llave.js",
+"rank": 4
+},
+"escudos/i18n.js": {
+"archive": "ui_audit/source_review/final_revalidation/escudos__escudos__i18n.js",
+"url": "https://jetgames.fun/escudos/i18n.js?v=20261022b",
+"rank": 4
+},
+"escudos/jet-idioma.js": {
+"archive": "ui_audit/source_review/final_revalidation/escudos__escudos__jet-idioma.js",
+"url": "https://jetgames.fun/escudos/jet-idioma.js?v=20261022",
+"rank": 4
+},
+"escudos/pelotas.js": {
+"archive": "ui_audit/source_review/final_revalidation/escudos__escudos__pelotas.js",
+"url": "https://jetgames.fun/escudos/pelotas.js?v=20261022",
+"rank": 4
+},
+"estacion/index.html": {
+"archive": "ui_audit/source_review/final_revalidation/estacion.html",
+"url": "https://jetgames.fun/estacion/",
+"rank": 4
+},
+"estacion/src/astro.js": {
+"archive": "ui_audit/source_review/final_revalidation/estacion__estacion__src__astro.js",
+"url": "https://jetgames.fun/estacion/src/astro.js?v=6",
+"rank": 4
+},
+"estacion/src/audio.js": {
+"archive": "ui_audit/source_review/final_revalidation/estacion__estacion__src__audio.js",
+"url": "https://jetgames.fun/estacion/src/audio.js?v=6",
+"rank": 4
+},
+"estacion/src/content.js": {
+"archive": "ui_audit/source_review/final_revalidation/estacion__estacion__src__content.js",
+"url": "https://jetgames.fun/estacion/src/content.js?v=6",
+"rank": 4
+},
+"estacion/src/core.js": {
+"archive": "ui_audit/source_review/final_revalidation/estacion__estacion__src__core.js",
+"url": "https://jetgames.fun/estacion/src/core.js?v=6",
+"rank": 4
+},
+"estacion/src/draw.js": {
+"archive": "ui_audit/source_review/final_revalidation/estacion__estacion__src__draw.js",
+"url": "https://jetgames.fun/estacion/src/draw.js?v=6",
+"rank": 4
+},
+"estacion/src/i18n.js": {
+"archive": "ui_audit/source_review/final_revalidation/estacion__estacion__src__i18n.js",
+"url": "https://jetgames.fun/estacion/src/i18n.js?v=6",
+"rank": 4
+},
+"estacion/src/puzzles-a.js": {
+"archive": "ui_audit/source_review/final_revalidation/estacion__estacion__src__puzzles-a.js",
+"url": "https://jetgames.fun/estacion/src/puzzles-a.js?v=6",
+"rank": 4
+},
+"estacion/src/puzzles-b.js": {
+"archive": "ui_audit/source_review/final_revalidation/estacion__estacion__src__puzzles-b.js",
+"url": "https://jetgames.fun/estacion/src/puzzles-b.js?v=6",
+"rank": 4
+},
+"estacion/src/puzzles-c.js": {
+"archive": "ui_audit/source_review/final_revalidation/estacion__estacion__src__puzzles-c.js",
+"url": "https://jetgames.fun/estacion/src/puzzles-c.js?v=6",
+"rank": 4
+},
+"estacion/src/scenes.js": {
+"archive": "ui_audit/source_review/final_revalidation/estacion__estacion__src__scenes.js",
+"url": "https://jetgames.fun/estacion/src/scenes.js?v=6",
+"rank": 4
+},
+"estacion/src/style.css": {
+"archive": "ui_audit/source_review/final_revalidation/estacion__estacion__src__style.css",
+"url": "https://jetgames.fun/estacion/src/style.css?v=6",
+"rank": 4
+},
+"estacion/src/ui.js": {
+"archive": "ui_audit/source_review/final_revalidation/estacion__estacion__src__ui.js",
+"url": "https://jetgames.fun/estacion/src/ui.js?v=6",
+"rank": 4
+},
+"frentes/index.html": {
+"archive": "ui_audit/source_review/final_revalidation/frentes.html",
+"url": "https://jetgames.fun/frentes/",
+"rank": 4
+},
+"frentes/src/academia.js": {
+"archive": "ui_audit/source_review/final_revalidation/frentes__frentes__src__academia.js",
+"url": "https://jetgames.fun/frentes/src/academia.js?v=3",
+"rank": 4
+},
+"frentes/src/astronauta-oficial.js": {
+"archive": "ui_audit/source_review/final_revalidation/frentes__frentes__src__astronauta-oficial.js",
+"url": "https://jetgames.fun/frentes/src/astronauta-oficial.js?v=2",
+"rank": 4
+},
+"frentes/src/audio.js": {
+"archive": "ui_audit/source_review/final_revalidation/frentes__frentes__src__audio.js",
+"url": "https://jetgames.fun/frentes/src/audio.js?v=3",
+"rank": 4
+},
+"frentes/src/core.js": {
+"archive": "ui_audit/source_review/final_revalidation/frentes__frentes__src__core.js",
+"url": "https://jetgames.fun/frentes/src/core.js?v=3",
+"rank": 4
+},
+"frentes/src/game.js": {
+"archive": "ui_audit/source_review/final_revalidation/frentes__frentes__src__game.js",
+"url": "https://jetgames.fun/frentes/src/game.js?v=8",
+"rank": 4
+},
+"frentes/src/i18n.js": {
+"archive": "ui_audit/source_review/final_revalidation/frentes__frentes__src__i18n.js",
+"url": "https://jetgames.fun/frentes/src/i18n.js?v=7",
+"rank": 4
+},
+"frentes/src/render.js": {
+"archive": "ui_audit/source_review/final_revalidation/frentes__frentes__src__render.js",
+"url": "https://jetgames.fun/frentes/src/render.js?v=3",
+"rank": 4
+},
+"frentes/src/ui.css": {
+"archive": "ui_audit/source_review/final_revalidation/frentes__frentes__src__ui.css",
+"url": "https://jetgames.fun/frentes/src/ui.css?v=7",
+"rank": 4
+},
+"jetball/index.html": {
+"archive": "ui_audit/source_review/final_revalidation/jetball.html",
+"url": "https://jetball.jetgames.fun/",
+"rank": 4
+},
+"jetbox/index.html": {
+"archive": "ui_audit/source_review/final_revalidation/jetbox__legacy.html",
+"url": "https://jetgames.fun/jetbox/",
+"rank": 4
+},
+"jetflow/index.html": {
+"archive": "ui_audit/source_review/final_revalidation/jetflow__legacy.html",
+"url": "https://jetflow.jetgames.fun",
+"rank": 4
+},
+"flow/index.html": {
+"archive": "ui_audit/source_review/final_revalidation/jetflow.html",
+"url": "https://jetgames.fun/flow/",
+"rank": 4
+},
+"jetjump/index.html": {
+"archive": "ui_audit/source_review/final_revalidation/jetjump.html",
+"url": "https://jetgames.fun/jetjump/",
+"rank": 4
+},
+"jetjump/src/audio.js": {
+"archive": "ui_audit/source_review/final_revalidation/jetjump__jetjump__src__audio.js",
+"url": "https://jetgames.fun/jetjump/src/audio.js",
+"rank": 4
+},
+"jetjump/src/camera.js": {
+"archive": "ui_audit/source_review/final_revalidation/jetjump__jetjump__src__camera.js",
+"url": "https://jetgames.fun/jetjump/src/camera.js",
+"rank": 4
+},
+"jetjump/src/career-ui.js": {
+"archive": "ui_audit/source_review/final_revalidation/jetjump__jetjump__src__career-ui.js",
+"url": "https://jetgames.fun/jetjump/src/career-ui.js",
+"rank": 4
+},
+"jetjump/src/career.js": {
+"archive": "ui_audit/source_review/final_revalidation/jetjump__jetjump__src__career.js",
+"url": "https://jetgames.fun/jetjump/src/career.js",
+"rank": 4
+},
+"jetjump/src/course.js": {
+"archive": "ui_audit/source_review/final_revalidation/jetjump__jetjump__src__course.js",
+"url": "https://jetgames.fun/jetjump/src/course.js",
+"rank": 4
+},
+"jetjump/src/dust.js": {
+"archive": "ui_audit/source_review/final_revalidation/jetjump__jetjump__src__dust.js",
+"url": "https://jetgames.fun/jetjump/src/dust.js",
+"rank": 4
+},
+"jetjump/src/fences.js": {
+"archive": "ui_audit/source_review/final_revalidation/jetjump__jetjump__src__fences.js",
+"url": "https://jetgames.fun/jetjump/src/fences.js",
+"rank": 4
+},
+"jetjump/src/herd.js": {
+"archive": "ui_audit/source_review/final_revalidation/jetjump__jetjump__src__herd.js",
+"url": "https://jetgames.fun/jetjump/src/herd.js",
+"rank": 4
+},
+"jetjump/src/horse.js": {
+"archive": "ui_audit/source_review/final_revalidation/jetjump__jetjump__src__horse.js",
+"url": "https://jetgames.fun/jetjump/src/horse.js",
+"rank": 4
+},
+"jetjump/src/input.js": {
+"archive": "ui_audit/source_review/final_revalidation/jetjump__jetjump__src__input.js",
+"url": "https://jetgames.fun/jetjump/src/input.js",
+"rank": 4
+},
+"jetjump/src/main.js": {
+"archive": "ui_audit/source_review/final_revalidation/jetjump__jetjump__src__main.js",
+"url": "https://jetgames.fun/jetjump/src/main.js?v=20",
+"rank": 4
+},
+"jetjump/src/post.js": {
+"archive": "ui_audit/source_review/final_revalidation/jetjump__jetjump__src__post.js",
+"url": "https://jetgames.fun/jetjump/src/post.js",
+"rank": 4
+},
+"jetjump/src/ranch.js": {
+"archive": "ui_audit/source_review/final_revalidation/jetjump__jetjump__src__ranch.js",
+"url": "https://jetgames.fun/jetjump/src/ranch.js",
+"rank": 4
+},
+"jetjump/src/ride.js": {
+"archive": "ui_audit/source_review/final_revalidation/jetjump__jetjump__src__ride.js",
+"url": "https://jetgames.fun/jetjump/src/ride.js",
+"rank": 4
+},
+"jetjump/src/stable.js": {
+"archive": "ui_audit/source_review/final_revalidation/jetjump__jetjump__src__stable.js",
+"url": "https://jetgames.fun/jetjump/src/stable.js",
+"rank": 4
+},
+"jetjump/src/text.js": {
+"archive": "ui_audit/source_review/final_revalidation/jetjump__jetjump__src__text.js",
+"url": "https://jetgames.fun/jetjump/src/text.js",
+"rank": 4
+},
+"jetjump/src/world.js": {
+"archive": "ui_audit/source_review/final_revalidation/jetjump__jetjump__src__world.js",
+"url": "https://jetgames.fun/jetjump/src/world.js",
+"rank": 4
+},
+"jetmatch/index.html": {
+"archive": "ui_audit/source_review/final_revalidation/jetmatch__legacy.html",
+"url": "https://jetmatch.jetgames.fun",
+"rank": 4
+},
+"match/index.html": {
+"archive": "ui_audit/source_review/final_revalidation/jetmatch.html",
+"url": "https://jetgames.fun/match/",
+"rank": 4
+},
+"jetrocket/index.html": {
+"archive": "ui_audit/source_review/final_revalidation/jetrocket__legacy.html",
+"url": "https://jetrocket.jetgames.fun",
+"rank": 4
+},
+"rocket/jet-idioma.js": {
+"archive": "ui_audit/source_review/final_revalidation/jetrocket__rocket__jet-idioma.js",
+"url": "https://jetgames.fun/rocket/jet-idioma.js",
+"rank": 4
+},
+"rocket/index.html": {
+"archive": "ui_audit/source_review/final_revalidation/jetrocket.html",
+"url": "https://jetgames.fun/rocket/",
+"rank": 4
+},
+"jetslalom/index.html": {
+"archive": "ui_audit/source_review/final_revalidation/jetslalom__legacy.html",
+"url": "https://jetslalom.jetgames.fun",
+"rank": 4
+},
+"slalom/index.html": {
+"archive": "ui_audit/source_review/final_revalidation/jetslalom.html",
+"url": "https://jetgames.fun/slalom/",
+"rank": 4
+},
+"jetwords/index.html": {
+"archive": "ui_audit/source_review/final_revalidation/jetwords__legacy.html",
+"url": "https://jetwords.jetgames.fun",
+"rank": 4
+},
+"jetwords/musica.js": {
+"archive": "ui_audit/source_review/current_1410/jetwords__musica.js",
+"url": "https://jetwords.jetgames.fun/musica.js?v=20261022&audit=20261022T1413",
+"rank": 2
+},
+"jetwords/palabras.js": {
+"archive": "ui_audit/source_review/current_1410/jetwords__palabras.js",
+"url": "https://jetwords.jetgames.fun/palabras.js?v=20261022&audit=20261022T1413",
+"rank": 2
+},
+"words/jet-idioma.js": {
+"archive": "ui_audit/source_review/final_revalidation/jetwords__words__jet-idioma.js",
+"url": "https://jetgames.fun/words/jet-idioma.js",
+"rank": 4
+},
+"words/musica.js": {
+"archive": "ui_audit/source_review/final_revalidation/jetwords__words__musica.js",
+"url": "https://jetgames.fun/words/musica.js?v=20261022w",
+"rank": 4
+},
+"words/palabras.js": {
+"archive": "ui_audit/source_review/final_revalidation/jetwords__words__palabras.js",
+"url": "https://jetgames.fun/words/palabras.js?v=20261022w",
+"rank": 4
+},
+"words/index.html": {
+"archive": "ui_audit/source_review/final_revalidation/jetwords.html",
+"url": "https://jetgames.fun/words/",
+"rank": 4
+},
+"portada/index.html": {
+"archive": "ui_audit/source_review/final_revalidation/portada.html",
+"url": "https://jetgames.fun/portada/",
+"rank": 4
+},
+"portada/src/art.js": {
+"archive": "ui_audit/source_review/final_revalidation/portada__portada__src__art.js",
+"url": "https://jetgames.fun/portada/src/art.js?v=2",
+"rank": 4
+},
+"portada/src/astronauta-oficial.js": {
+"archive": "ui_audit/source_review/final_revalidation/portada__portada__src__astronauta-oficial.js",
+"url": "https://jetgames.fun/portada/src/astronauta-oficial.js?v=1",
+"rank": 4
+},
+"portada/src/audio.js": {
+"archive": "ui_audit/source_review/final_revalidation/portada__portada__src__audio.js",
+"url": "https://jetgames.fun/portada/src/audio.js?v=2",
+"rank": 4
+},
+"portada/src/content.js": {
+"archive": "ui_audit/source_review/final_revalidation/portada__portada__src__content.js",
+"url": "https://jetgames.fun/portada/src/content.js?v=1",
+"rank": 4
+},
+"portada/src/content2.js": {
+"archive": "ui_audit/source_review/final_revalidation/portada__portada__src__content2.js",
+"url": "https://jetgames.fun/portada/src/content2.js?v=2",
+"rank": 4
+},
+"portada/src/core.js": {
+"archive": "ui_audit/source_review/final_revalidation/portada__portada__src__core.js",
+"url": "https://jetgames.fun/portada/src/core.js?v=2",
+"rank": 4
+},
+"portada/src/i18n.js": {
+"archive": "ui_audit/source_review/final_revalidation/portada__portada__src__i18n.js",
+"url": "https://jetgames.fun/portada/src/i18n.js?v=5",
+"rank": 4
+},
+"portada/src/style.css": {
+"archive": "ui_audit/source_review/final_revalidation/portada__portada__src__style.css",
+"url": "https://jetgames.fun/portada/src/style.css?v=5",
+"rank": 4
+},
+"portada/src/ui.js": {
+"archive": "ui_audit/source_review/final_revalidation/portada__portada__src__ui.js",
+"url": "https://jetgames.fun/portada/src/ui.js?v=6",
+"rank": 4
+},
+"raid/index.html": {
+"archive": "ui_audit/source_review/final_revalidation/raid.html",
+"url": "https://jetgames.fun/raid/",
+"rank": 4
+},
+"raid/raid.js": {
+"archive": "ui_audit/source_review/final_revalidation/raid__raid__raid.js",
+"url": "https://jetgames.fun/raid/raid.js?v=fc7c3538ee29",
+"rank": 4
+},
+"raid/style.css": {
+"archive": "ui_audit/source_review/final_revalidation/raid__raid__style.css",
+"url": "https://jetgames.fun/raid/style.css",
+"rank": 4
+},
+"salchidrez/index.html": {
+"archive": "ui_audit/source_review/final_revalidation/salchidrez.html",
+"url": "https://jetgames.fun/salchidrez/",
+"rank": 4
+},
+"senal/index.html": {
+"archive": "ui_audit/source_review/final_revalidation/senal.html",
+"url": "https://jetgames.fun/senal/",
+"rank": 4
+},
+"senal/src/app.js": {
+"archive": "ui_audit/source_review/final_revalidation/senal__senal__src__app.js",
+"url": "https://jetgames.fun/senal/src/app.js?v=7",
+"rank": 4
+},
+"senal/src/audio.js": {
+"archive": "ui_audit/source_review/final_revalidation/senal__senal__src__audio.js",
+"url": "https://jetgames.fun/senal/src/audio.js?v=4",
+"rank": 4
+},
+"senal/src/banco.js": {
+"archive": "ui_audit/source_review/final_revalidation/senal__senal__src__banco.js",
+"url": "https://jetgames.fun/senal/src/banco.js?v=2",
+"rank": 4
+},
+"senal/src/calendario.js": {
+"archive": "ui_audit/source_review/final_revalidation/senal__senal__src__calendario.js",
+"url": "https://jetgames.fun/senal/src/calendario.js?v=2",
+"rank": 4
+},
+"senal/src/i18n.js": {
+"archive": "ui_audit/source_review/final_revalidation/senal__senal__src__i18n.js",
+"url": "https://jetgames.fun/senal/src/i18n.js?v=5",
+"rank": 4
+},
+"senal/src/piezas.js": {
+"archive": "ui_audit/source_review/final_revalidation/senal__senal__src__piezas.js",
+"url": "https://jetgames.fun/senal/src/piezas.js?v=2",
+"rank": 4
+},
+"senal/src/reglas.js": {
+"archive": "ui_audit/source_review/final_revalidation/senal__senal__src__reglas.js",
+"url": "https://jetgames.fun/senal/src/reglas.js?v=2",
+"rank": 4
+},
+"senal/src/sonda.js": {
+"archive": "ui_audit/source_review/final_revalidation/senal__senal__src__sonda.js",
+"url": "https://jetgames.fun/senal/src/sonda.js?v=2",
+"rank": 4
+},
+"senal/src/style.css": {
+"archive": "ui_audit/source_review/final_revalidation/senal__senal__src__style.css",
+"url": "https://jetgames.fun/senal/src/style.css?v=5",
+"rank": 4
+},
+"senal/src/verificador.js": {
+"archive": "ui_audit/source_review/final_revalidation/senal__senal__src__verificador.js",
+"url": "https://jetgames.fun/senal/src/verificador.js?v=2",
+"rank": 4
+},
+"telemetria/index.html": {
+"archive": "ui_audit/source_review/final_revalidation/telemetria.html",
+"url": "https://jetgames.fun/telemetria/",
+"rank": 4
+},
+"telemetria/src/astronauta-oficial.js": {
+"archive": "ui_audit/source_review/final_revalidation/telemetria__telemetria__src__astronauta-oficial.js",
+"url": "https://jetgames.fun/telemetria/src/astronauta-oficial.js?v=1",
+"rank": 4
+},
+"telemetria/src/audio.js": {
+"archive": "ui_audit/source_review/final_revalidation/telemetria__telemetria__src__audio.js",
+"url": "https://jetgames.fun/telemetria/src/audio.js?v=2",
+"rank": 4
+},
+"telemetria/src/cabina.js": {
+"archive": "ui_audit/source_review/final_revalidation/telemetria__telemetria__src__cabina.js",
+"url": "https://jetgames.fun/telemetria/src/cabina.js?v=3",
+"rank": 4
+},
+"telemetria/src/campana.js": {
+"archive": "ui_audit/source_review/final_revalidation/telemetria__telemetria__src__campana.js",
+"url": "https://jetgames.fun/telemetria/src/campana.js?v=3",
+"rank": 4
+},
+"telemetria/src/casos.js": {
+"archive": "ui_audit/source_review/final_revalidation/telemetria__telemetria__src__casos.js",
+"url": "https://jetgames.fun/telemetria/src/casos.js?v=1",
+"rank": 4
+},
+"telemetria/src/estilos.css": {
+"archive": "ui_audit/source_review/final_revalidation/telemetria__telemetria__src__estilos.css",
+"url": "https://jetgames.fun/telemetria/src/estilos.css?v=4",
+"rank": 4
+},
+"telemetria/src/musica.js": {
+"archive": "ui_audit/source_review/final_revalidation/telemetria__telemetria__src__musica.js",
+"url": "https://jetgames.fun/telemetria/src/musica.js?v=2",
+"rank": 4
+},
+"telemetria/src/nucleo.js": {
+"archive": "ui_audit/source_review/final_revalidation/telemetria__telemetria__src__nucleo.js",
+"url": "https://jetgames.fun/telemetria/src/nucleo.js?v=1",
+"rank": 4
+},
+"telemetria/src/piloto.js": {
+"archive": "ui_audit/source_review/final_revalidation/telemetria__telemetria__src__piloto.js",
+"url": "https://jetgames.fun/telemetria/src/piloto.js?v=1",
+"rank": 4
+},
+"telemetria/src/sfx.js": {
+"archive": "ui_audit/source_review/final_revalidation/telemetria__telemetria__src__sfx.js",
+"url": "https://jetgames.fun/telemetria/src/sfx.js?v=2",
+"rank": 4
+},
+"telemetria/src/textos.js": {
+"archive": "ui_audit/source_review/final_revalidation/telemetria__telemetria__src__textos.js",
+"url": "https://jetgames.fun/telemetria/src/textos.js?v=4",
+"rank": 4
+},
+"telemetria/src/ui.js": {
+"archive": "ui_audit/source_review/final_revalidation/telemetria__telemetria__src__ui.js",
+"url": "https://jetgames.fun/telemetria/src/ui.js?v=7",
+"rank": 4
+},
+"antes/src/jet-idioma.js": {
+"archive": "ui_audit/source_review/final_revalidation/antes__antes__src__jet-idioma.js",
+"url": "https://jetgames.fun/antes/src/jet-idioma.js",
+"rank": 4
+},
+"balizas/src/jet-idioma.js": {
+"archive": "ui_audit/source_review/final_revalidation/balizas__balizas__src__jet-idioma.js",
+"url": "https://jetgames.fun/balizas/src/jet-idioma.js?v=7",
+"rank": 4
+},
+"bestiario/jet-idioma.js": {
+"archive": "ui_audit/source_review/final_revalidation/bestiario__bestiario__jet-idioma.js",
+"url": "https://jetgames.fun/bestiario/jet-idioma.js",
+"rank": 4
+},
+"bestiario/src/forms.js": {
+"archive": "ui_audit/source_review/final_revalidation/bestiario__bestiario__src__forms.js",
+"url": "https://jetgames.fun/bestiario/src/forms.js",
+"rank": 4
+},
+"bestiario/src/i18n.js": {
+"archive": "ui_audit/source_review/final_revalidation/bestiario__bestiario__src__i18n.js",
+"url": "https://jetgames.fun/bestiario/src/i18n.js",
+"rank": 4
+},
+"bestiario/src/preview.js": {
+"archive": "ui_audit/source_review/final_revalidation/bestiario__bestiario__src__preview.js",
+"url": "https://jetgames.fun/bestiario/src/preview.js",
+"rank": 4
+},
+"bestiario/src/weather.js": {
+"archive": "ui_audit/source_review/final_revalidation/bestiario__bestiario__src__weather.js",
+"url": "https://jetgames.fun/bestiario/src/weather.js",
+"rank": 4
+},
+"bestiario/vendor/addons/loaders/GLTFLoader.js": {
+"archive": "ui_audit/source_review/final_revalidation/bestiario__bestiario__vendor__addons__loaders__GLTFLoader.js",
+"url": "https://jetgames.fun/bestiario/vendor/addons/loaders/GLTFLoader.js",
+"rank": 4
+},
+"bestiario/vendor/addons/utils/BufferGeometryUtils.js": {
+"archive": "ui_audit/source_review/final_revalidation/bestiario__bestiario__vendor__addons__utils__BufferGeometryUtils.js",
+"url": "https://jetgames.fun/bestiario/vendor/addons/utils/BufferGeometryUtils.js",
+"rank": 4
+},
+"bestiario/vendor/addons/utils/SkeletonUtils.js": {
+"archive": "ui_audit/source_review/final_revalidation/bestiario__bestiario__vendor__addons__utils__SkeletonUtils.js",
+"url": "https://jetgames.fun/bestiario/vendor/addons/utils/SkeletonUtils.js",
+"rank": 4
+},
+"cajanegra/src/jet-idioma.js": {
+"archive": "ui_audit/source_review/final_revalidation/cajanegra__cajanegra__src__jet-idioma.js",
+"url": "https://jetgames.fun/cajanegra/src/jet-idioma.js?v=1",
+"rank": 4
+},
+"estacion/src/jet-idioma.js": {
+"archive": "ui_audit/source_review/final_revalidation/estacion__estacion__src__jet-idioma.js",
+"url": "https://jetgames.fun/estacion/src/jet-idioma.js?v=6",
+"rank": 4
+},
+"frentes/src/jet-idioma.js": {
+"archive": "ui_audit/source_review/final_revalidation/frentes__frentes__src__jet-idioma.js",
+"url": "https://jetgames.fun/frentes/src/jet-idioma.js?v=1",
+"rank": 4
+},
+"index.html": {
+"archive": "ui_audit/source_review/final_revalidation/home.html",
+"url": "https://jetgames.fun/",
+"rank": 4
+},
+"box/index.html": {
+"archive": "ui_audit/source_review/final_revalidation/jetbox.html",
+"url": "https://jetgames.fun/box/",
+"rank": 4
+},
+"jetjump/jet-idioma.js": {
+"archive": "ui_audit/source_review/final_revalidation/jetjump__jetjump__jet-idioma.js",
+"url": "https://jetgames.fun/jetjump/jet-idioma.js",
+"rank": 4
+},
+"jetjump/src/breed.js": {
+"archive": "ui_audit/source_review/final_revalidation/jetjump__jetjump__src__breed.js",
+"url": "https://jetgames.fun/jetjump/src/breed.js",
+"rank": 4
+},
+"jetjump/src/legik.js": {
+"archive": "ui_audit/source_review/final_revalidation/jetjump__jetjump__src__legik.js",
+"url": "https://jetgames.fun/jetjump/src/legik.js",
+"rank": 4
+},
+"jetjump/src/tex.js": {
+"archive": "ui_audit/source_review/final_revalidation/jetjump__jetjump__src__tex.js",
+"url": "https://jetgames.fun/jetjump/src/tex.js",
+"rank": 4
+},
+"portada/src/jet-idioma.js": {
+"archive": "ui_audit/source_review/final_revalidation/portada__portada__src__jet-idioma.js",
+"url": "https://jetgames.fun/portada/src/jet-idioma.js?v=1",
+"rank": 4
+},
+"raid/jet-idioma.js": {
+"archive": "ui_audit/source_review/final_revalidation/raid__raid__jet-idioma.js",
+"url": "https://jetgames.fun/raid/jet-idioma.js",
+"rank": 4
+},
+"senal/src/jet-idioma.js": {
+"archive": "ui_audit/source_review/final_revalidation/senal__senal__src__jet-idioma.js",
+"url": "https://jetgames.fun/senal/src/jet-idioma.js?v=1",
+"rank": 4
+},
+"senal/src/worker.js": {
+"archive": "ui_audit/source_review/final_revalidation/senal__senal__src__worker.js",
+"url": "https://jetgames.fun/senal/src/worker.js",
+"rank": 4
+},
+"telemetria/src/jet-idioma.js": {
+"archive": "ui_audit/source_review/final_revalidation/telemetria__telemetria__src__jet-idioma.js",
+"url": "https://jetgames.fun/telemetria/src/jet-idioma.js?v=1",
+"rank": 4
+}
+}

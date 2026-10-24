@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>JET//Match</title>
+<link rel="canonical" href="https://jetgames.fun/match/">
+<link rel="icon" href="data:,">
+<style>html,body{margin:0;height:100%;background:#050108;color:#b9acd9;font:500 14px/1.5 system-ui,sans-serif;display:flex;align-items:center;justify-content:center;text-align:center}a{color:#00f2cf}</style>
+<script>
+/* Puente de mudanza 2026-10-22: jetmatch.jetgames.fun (y /jetmatch/) → https://jetgames.fun/match/
+   Lleva el localStorage de este origen al nuevo en #jet-migrar=<JSON codificado>; el juego lo importa sin pisar nada. */
+(function () {
+  var destino = 'https://jetgames.fun/match/' + location.search;
+  try {
+    if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
+      navigator.serviceWorker.getRegistrations().then(function (rs) { rs.forEach(function (r) { r.unregister(); }); }).catch(function () {});
+    }
+  } catch (e) {}
+  var datos = {}, n = 0;
+  try {
+    for (var i = 0; i < localStorage.length; i++) {
+      var k = localStorage.key(i);
+      if (k === 'jet_lang') continue;
+      datos[k] = localStorage.getItem(k); n++;
+    }
+  } catch (e) {}
+  if (n && location.hostname !== 'jetgames.fun') destino += '#jet-migrar=' + encodeURIComponent(JSON.stringify(datos));
+  location.replace(destino);
+})();
+</script>
+</head>
+<body>
+<p>JET//Match se mudó · JET//Match has moved<br><a href="https://jetgames.fun/match/">jetgames.fun/match</a></p>
+</body>
+</html>

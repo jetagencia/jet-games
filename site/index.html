@@ -1,0 +1,1253 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- ============== PRIMARY META (browser tab + SEO) ============== -->
+<title>JET//Games · Play anywhere</title>
+<meta name="description" content="Free games for your thumb, your head, or your whole afternoon. Phone, tablet and desktop.">
+<meta name="author" content="JETCompany OÜ">
+<meta name="copyright" content="© 2026 JETCompany OÜ. All rights reserved. JETBALL™ and JETGames™ are unregistered trademarks of JETCompany OÜ.">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#0a0512">
+<link rel="canonical" href="https://jetgames.fun/">
+
+<!-- ============== OPEN GRAPH (WhatsApp, Telegram, Facebook, Discord, iMessage) ============== -->
+<meta property="og:site_name" content="JETGAMES">
+<meta property="og:title" content="JET//Games · Play anywhere">
+<meta property="og:description" content="Free games for your thumb, your head, or your whole afternoon. Phone, tablet and desktop.">
+<meta property="og:url" content="https://jetgames.fun/">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://jetgames.fun/img/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="JETGAMES">
+<meta property="og:locale" content="en_US">
+
+<!-- ============== TWITTER CARD ============== -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="JET//Games · Play anywhere">
+<meta name="twitter:description" content="Free games for your thumb, your head, or your whole afternoon. Phone, tablet and desktop.">
+<meta name="twitter:image" content="https://jetgames.fun/img/og.jpg">
+
+<!-- ============== FAVICON ============== -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%237700f4'/><stop offset='1' stop-color='%2300f2cf'/></linearGradient></defs><rect width='64' height='64' rx='14' fill='%230a0512'/><circle cx='32' cy='32' r='14' fill='none' stroke='url(%23g)' stroke-width='6'/><rect x='32' y='30' width='14' height='4' fill='%2300f2cf'/></svg>">
+<link rel="apple-touch-icon" href="/icon-512.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --jet-purple: #7700f4;
+    --jet-cyan:   #00f2cf;
+    --grad-jet: linear-gradient(135deg, #7700f4 0%, #00f2cf 100%);
+  }
+  [data-theme="dark"] {
+    --bg:        #0a0512;
+    --bg-2:      #14092a;
+    --ink:       #f5f0ff;
+    --ink-2:     #b4a6d4;
+    --dim:       #7a6d96;
+    --card:      rgba(245, 240, 255, 0.03);
+    --card-2:    rgba(245, 240, 255, 0.06);
+    --card-border: rgba(245, 240, 255, 0.08);
+    --card-hover-border: rgba(0, 242, 207, 0.5);
+    --shadow-h:  0 28px 64px rgba(0, 0, 0, 0.55), 0 0 36px rgba(0, 242, 207, 0.12);
+    --ill-bg:    #0d0620;
+    --ill-grid:  rgba(0, 242, 207, 0.05);
+    --ill-soft:  rgba(245, 240, 255, 0.04);
+  }
+  [data-theme="light"] {
+    --bg:        #f5f1e8;
+    --bg-2:      #e8e2d0;
+    --ink:       #14062e;
+    --ink-2:     #3a2e62;
+    --dim:       #7a6e98;
+    --card:      rgba(20, 6, 46, 0.05);
+    --card-2:    rgba(20, 6, 46, 0.08);
+    --card-border: rgba(20, 6, 46, 0.18);
+    --card-hover-border: rgba(119, 0, 244, 0.6);
+    --shadow-h:  0 18px 44px rgba(119, 0, 244, 0.18);
+    /* card-art stays DARK in light mode — game illustrations are designed dark */
+    --ill-bg:    #0a0612;
+    --ill-grid:  rgba(0, 242, 207, 0.05);
+    --ill-soft:  rgba(245, 240, 255, 0.04);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Inter', system-ui, sans-serif;
+    font-weight: 400;
+    line-height: 1.55;
+    transition: background 0.5s ease, color 0.5s ease;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+  }
+  ::selection { background: var(--jet-cyan); color: var(--bg); }
+  a { color: inherit; text-decoration: none; }
+
+  /* ───────── Ambient blobs (animated) ───────── */
+  .ambient {
+    position: fixed; inset: 0; z-index: -2;
+    pointer-events: none;
+    overflow: hidden;
+  }
+  .ambient .blob {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.6;
+    will-change: transform;
+  }
+  .ambient .b1 {
+    width: 540px; height: 540px;
+    background: var(--jet-purple);
+    top: -200px; left: -200px;
+    animation: drift1 22s ease-in-out infinite alternate;
+  }
+  .ambient .b2 {
+    width: 460px; height: 460px;
+    background: var(--jet-cyan);
+    top: 30%; right: -180px;
+    animation: drift2 26s ease-in-out infinite alternate;
+  }
+  .ambient .b3 {
+    width: 600px; height: 600px;
+    background: var(--jet-purple);
+    bottom: -240px; left: 30%;
+    opacity: 0.3;
+    animation: drift3 30s ease-in-out infinite alternate;
+  }
+  [data-theme="light"] .ambient .blob { opacity: 0.22; }
+  @keyframes drift1 {
+    0%   { transform: translate(0, 0) scale(1); }
+    100% { transform: translate(120px, 80px) scale(1.15); }
+  }
+  @keyframes drift2 {
+    0%   { transform: translate(0, 0) scale(1); }
+    100% { transform: translate(-100px, 120px) scale(0.92); }
+  }
+  @keyframes drift3 {
+    0%   { transform: translate(0, 0) scale(1); }
+    100% { transform: translate(-140px, -90px) scale(1.1); }
+  }
+  /* Subtle grain overlay */
+  body::after {
+    content:''; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+    background-image:
+      repeating-linear-gradient(0deg, rgba(255,255,255,0.012) 0 1px, transparent 1px 3px);
+    mix-blend-mode: overlay;
+  }
+
+
+  .container { max-width: 1180px; margin: 0 auto; padding: 0 32px; }
+
+  /* ───────── Nav ───────── */
+  nav { padding: 30px 0 16px; }
+  nav .container { display: flex; align-items: center; justify-content: space-between; }
+  .brand {
+    display: inline-flex; align-items: center; gap: 11px;
+    font-weight: 700; font-size: 15px; letter-spacing: -0.3px;
+    padding: 11px 0;
+  }
+  .brand svg { width: 30px; height: 30px; animation: brandIn 0.7s cubic-bezier(.25,.46,.45,.94) backwards; }
+  .brand .slash { color: var(--jet-cyan); font-weight: 300; }
+  .brand .games {
+    background: var(--grad-jet);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  @keyframes brandIn { from { transform: rotate(-12deg) scale(0.6); opacity: 0; } to { transform: rotate(0) scale(1); opacity: 1; } }
+  nav .right {
+    font-size: 12px; color: var(--dim); letter-spacing: 0.5px;
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  nav .right.shelves { display: flex; gap: 22px; }
+  nav .right.shelves a { color: var(--ink-2); text-decoration: none; transition: color .2s; padding: 13px 2px; font-size: 13px; }
+  nav .right.shelves a:hover { color: var(--jet-cyan); }
+  .games + .games { padding-top: 0; }
+  nav .right .live-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--jet-cyan);
+    box-shadow: 0 0 10px var(--jet-cyan);
+    animation: livePulse 1.6s ease-in-out infinite;
+  }
+  @keyframes livePulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%      { opacity: 0.35; transform: scale(0.7); }
+  }
+
+  /* ───────── Hero (centered, no illustration) ───────── */
+  .hero {
+    padding: 56px 0 44px;
+    text-align: center;
+  }
+  .hero h1 {
+    font-size: clamp(44px, 7.2vw, 108px);
+    font-weight: 900;
+    line-height: 1.08;
+    letter-spacing: -3.5px;
+    margin: 0 auto 22px;
+    max-width: 1000px;
+    padding: 0.06em 0;
+    opacity: 0; transform: translateY(20px);
+    animation: heroIn 0.8s cubic-bezier(.25,.46,.45,.94) 0.15s forwards;
+  }
+  .hero h1 .grad {
+    background: var(--grad-jet);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+    position: relative;
+    display: inline-block;
+  }
+  .hero h1 .grad::after {
+    content: '';
+    position: absolute;
+    left: 0; bottom: 4px;
+    width: 100%; height: 6px;
+    background: var(--grad-jet);
+    opacity: 0.20;
+    border-radius: 100px;
+    transform: scaleX(0);
+    transform-origin: left;
+    animation: drawUnderline 1.1s cubic-bezier(.65,0,.35,1) 1.1s forwards;
+  }
+  /* Hero rotating word (Play / Have Fun / Enjoy) — force own line so headline is always 2 lines */
+  .hero h1 .hero-rot {
+    display: block;
+    transition: opacity 0.35s ease;
+    padding: 0;
+    margin-bottom: 0.04em;
+  }
+  .hero h1 .hero-rot.fade {
+    opacity: 0;
+  }
+  .grad-rot {
+    background: linear-gradient(135deg, #00f2cf 0%, #7700f4 100%);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent; color: transparent;
+  }
+  @keyframes drawUnderline { to { transform: scaleX(1); } }
+  @keyframes heroIn { to { opacity: 1; transform: translateY(0); } }
+  .hero .sub {
+    font-size: clamp(15px, 1.7vw, 19px);
+    color: var(--ink-2);
+    line-height: 1.55;
+    font-weight: 400;
+    max-width: 540px;
+    margin: 0 auto;
+    opacity: 0;
+    animation: heroIn 0.8s cubic-bezier(.25,.46,.45,.94) 0.4s forwards;
+  }
+  @media (max-width: 600px) {
+    .hero { padding: 44px 0 36px; }
+  }
+
+  /* ───────── Games grid ───────── */
+  .section-label {
+    font-size: 10px;
+    color: var(--dim);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .section-label::before {
+    content: ''; width: 24px; height: 1px;
+    background: var(--card-border);
+    display: inline-block;
+  }
+  .section-head {
+    margin-bottom: 38px;
+  }
+  .section-head h2 {
+    font-size: clamp(24px, 3.2vw, 34px);
+    font-weight: 800;
+    letter-spacing: -1px;
+    margin-bottom: 6px;
+  }
+  .section-head p {
+    font-size: 14px; color: var(--ink-2);
+  }
+
+  .games { padding-top: 40px; padding-bottom: 88px; }
+  .grid {
+    display: grid;
+    /* Responsive grid: 4 cols wide → 3 cols → 2 cols → 1 col.
+       Cards stay at min 260px so they never get cramped. */
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 18px;
+  }
+  @media (max-width: 560px) {
+    .grid { grid-template-columns: 1fr; }
+  }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 22px;
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(.25,.46,.45,.94);
+    cursor: pointer;
+    display: flex; flex-direction: column;
+    position: relative;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  .card:hover {
+    border-color: var(--card-hover-border);
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-h);
+  }
+  /* Columnas fijas por ancho y tarjetas anchas por cantidad de columnas: cada fila queda completa */
+  @media (min-width: 1200px) {
+    .grid { grid-template-columns: repeat(4, minmax(0, 1fr)); grid-auto-flow: dense; }
+    .card.w4 { grid-column: span 2; } .card.w4 .card-art { aspect-ratio: 32 / 9; }
+  }
+  @media (min-width: 900px) and (max-width: 1199px) {
+    .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); grid-auto-flow: dense; }
+    .card.w3 { grid-column: span 2; } .card.w3 .card-art { aspect-ratio: 32 / 9; }
+  }
+  @media (min-width: 561px) and (max-width: 899px) {
+    .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-flow: dense; }
+    .card.w2 { grid-column: span 2; } .card.w2 .card-art { aspect-ratio: 32 / 9; }
+  }
+  .card.soon { opacity: 0.7; cursor: default; }
+  .card.soon:hover { transform: none; box-shadow: none; }
+
+  /* Mini illustration block */
+  .card-art img { width:100%; height:100%; object-fit:cover; display:block; transition: transform .6s ease; }
+  .card:hover .card-art img { transform: scale(1.04); }
+  .card-art {
+    aspect-ratio: 16 / 9;
+    background: var(--ill-bg);
+    border-bottom: 1px solid var(--card-border);
+    overflow: hidden;
+    position: relative;
+  }
+  .card-art svg {
+    width: 100%; height: 100%;
+    display: block;
+    transition: transform 0.55s cubic-bezier(.25,.46,.45,.94);
+  }
+  .card:hover .card-art svg {
+    transform: scale(1.08);
+  }
+
+  .card-body { padding: 18px 22px 22px; flex: 1; display: flex; flex-direction: column; }
+  .card .head {
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px 10px;
+    margin-bottom: 14px;
+  }
+  .card h3 {
+    white-space: nowrap;
+    font-size: 21px; font-weight: 800;
+    letter-spacing: -0.5px;
+  }
+  .card h3 .slash { color: var(--jet-cyan); font-weight: 300; }
+  .badge {
+    font-size: 9.5px; font-weight: 700;
+    letter-spacing: 1.8px; text-transform: uppercase;
+    padding: 4px 9px;
+    border-radius: 100px;
+    display: inline-flex; align-items: center; gap: 5px;
+  }
+  .badge::before {
+    content: ''; width: 5px; height: 5px; border-radius: 50%;
+  }
+  .badge.live { background: rgba(0, 242, 207, 0.12); color: var(--jet-cyan); }
+  .badge.live::before { background: var(--jet-cyan); box-shadow: 0 0 6px var(--jet-cyan); }
+  .badge.beta { background: rgba(255, 184, 77, 0.12); color: #ffb84d; }
+  .badge.beta::before { background: #ffb84d; box-shadow: 0 0 6px #ffb84d; }
+  .badge.soon { background: var(--card-2); color: var(--dim); }
+  .badge.soon::before { background: var(--dim); }
+
+  .card .verb {
+    font-size: 18px; font-weight: 700;
+    letter-spacing: -0.4px;
+    line-height: 1.2;
+    margin-bottom: 6px;
+    color: var(--ink);
+  }
+  .card .desc {
+    font-size: 14.5px; line-height: 1.55;
+    color: var(--ink-2);
+    margin: 0 0 20px;
+    flex: 1;
+  }
+  .card .sense {
+    font-size: 13px;
+    color: var(--ink-2);
+    font-style: italic;
+    line-height: 1.5;
+    margin-bottom: 20px;
+    flex-grow: 1;
+  }
+
+  /* CTA button with smooth word-cycle */
+  .cycle-btn {
+    align-self: flex-start;
+    padding: 10px 20px;
+    border-radius: 100px;
+    background: transparent;
+    border: 1px solid var(--card-border);
+    color: var(--ink);
+    font-family: inherit;
+    font-size: 12px; font-weight: 700;
+    letter-spacing: 1.2px; text-transform: uppercase;
+    cursor: pointer;
+    display: inline-flex; align-items: center; gap: 10px;
+    transition: all 0.25s;
+    overflow: hidden;
+    position: relative;
+  }
+  .card:hover .cycle-btn {
+    background: var(--grad-jet);
+    border-color: transparent;
+    color: var(--bg);
+  }
+  .card.soon .cycle-btn { color: var(--dim); }
+  .card.soon:hover .cycle-btn { background: transparent; color: var(--dim); border-color: var(--card-border); }
+  .cycle-word {
+    display: inline-block;
+    white-space: nowrap;
+    text-align: left;
+    transition: opacity 0.28s ease;
+  }
+  .cycle-word.fade { opacity: 0; }
+  .cycle-arrow {
+    display: inline-block;
+    transition: transform 0.3s cubic-bezier(.25,.46,.45,.94);
+  }
+  .card:hover .cycle-arrow { transform: translateX(4px); }
+
+  /* ───────── Footer ───────── */
+  footer {
+    padding: 28px 0 36px;
+    border-top: 1px solid var(--card-border);
+  }
+  footer .container {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 11px; color: var(--dim); letter-spacing: 0.3px;
+    flex-wrap: wrap; gap: 14px;
+  }
+  footer a { color: var(--ink-2); transition: color 0.2s; display: inline-block; padding: 13px 4px; }
+  footer a:hover { color: var(--jet-cyan); }
+
+  /* Selector de idioma ES | EN (el mismo en todo el sitio) */
+  nav .container { gap: 18px; }
+  nav .right.shelves { margin-left: auto; }
+  .lang-sw { display: inline-flex; border: 1px solid var(--card-border); border-radius: 100px; padding: 3px; background: var(--card); flex: none; }
+  .lang-sw button { min-width: 44px; min-height: 40px; border: 0; border-radius: 100px; background: transparent; color: var(--ink-2); font: 700 12px/1 'Inter', system-ui, sans-serif; letter-spacing: 1px; cursor: pointer; transition: background .2s, color .2s; }
+  .lang-sw button[aria-pressed="true"] { background: var(--grad-jet); color: #fff; }
+  @media (max-width: 760px) { nav .right.shelves { display: none; } }
+  .lang-sw button:focus-visible { outline: 2px solid var(--jet-cyan); outline-offset: 2px; }
+
+  /* Foco visible con teclado */
+  a:focus-visible { outline: 2px solid var(--jet-cyan); outline-offset: 3px; border-radius: 8px; }
+  .card:focus-visible { outline-offset: 4px; border-radius: 22px; }
+
+  /* Reveal on scroll */
+  .reveal {
+    opacity: 0; transform: translateY(24px);
+    transition: opacity 0.7s ease, transform 0.7s cubic-bezier(.25,.46,.45,.94);
+  }
+  .reveal.in { opacity: 1; transform: translateY(0); }
+  @media (prefers-reduced-motion: reduce) {
+    .reveal { opacity: 1; transform: none; transition: none; }
+    .ambient .blob, .float-chip, .brand svg, .hero h1, .hero h1 .grad::after, .hero .sub, .hero-illust { animation: none !important; opacity: 1; transform: none; }
+  }
+  @media (max-width: 560px) {
+    nav { padding: 22px 0 8px; }
+    nav .right, nav .right.shelves { display: none; }
+    .hero { padding-top: 28px; }
+    .games { padding-top: 40px; padding-bottom: 80px; }
+    .container { padding-left: 20px; padding-right: 20px; }
+    /* Teléfono: el botón de tema se queda arriba, no flota sobre las tarjetas */
+    /* Teléfono: una tarjeta por fila con la descripción completa y el botón Jugar */
+    .games + .games { padding-top: 0; }
+    .games { padding-bottom: 56px; }
+    .section-head { margin-bottom: 22px; }
+    .grid { grid-template-columns: 1fr; gap: 14px; }
+    .card { border-radius: 16px; }
+    .card .head { flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+    .card .badge { font-size: 8px; letter-spacing: 1.2px; padding: 3px 7px; }
+    .card-art { aspect-ratio: 21 / 9; }
+    .card-body { padding: 14px 16px 16px; }
+    .card h3 { font-size: 18px; }
+    .card .desc { font-size: 14px; margin-bottom: 14px; }
+    .card .cycle-btn { padding: 8px 16px; font-size: 11px; }
+  }
+</style>
+<script>
+/* JET//Games — idioma único para todo el sitio (2026-10-22).
+   Copiar tal cual al principio de cada juego (antes de pintar textos).
+   Prioridad: ?lang=es|en en la URL  >  elección guardada (cookie de .jetgames.fun + localStorage)  >  idioma del navegador.
+   La elección se comparte entre la portada y todos los juegos porque la cookie vale para todo jetgames.fun. */
+(function () {
+  'use strict';
+  var KEY = 'jet_lang';
+  var OK = { es: 1, en: 1 };
+
+  function leerCookie() {
+    var m = document.cookie.match(/(?:^|;\s*)jet_lang=(es|en)\b/);
+    return m ? m[1] : null;
+  }
+  function guardar(lang) {
+    var dominio = /(^|\.)jetgames\.fun$/.test(location.hostname) ? '; domain=.jetgames.fun' : '';
+    var seguro = location.protocol === 'https:' ? '; Secure' : '';
+    try { document.cookie = KEY + '=' + lang + '; path=/; max-age=31536000; SameSite=Lax' + dominio + seguro; } catch (e) {}
+    try { localStorage.setItem(KEY, lang); } catch (e) {}
+  }
+  function delNavegador() {
+    var l = (navigator.languages && navigator.languages[0]) || navigator.language || 'en';
+    return /^es\b/i.test(l) ? 'es' : 'en';
+  }
+
+  var desdeUrl = (location.search.match(/[?&]lang=(es|en)\b/) || [])[1] || null;
+  var guardado = leerCookie();
+  if (!guardado) { try { var ls = localStorage.getItem(KEY); if (OK[ls]) guardado = ls; } catch (e) {} }
+  var actual = desdeUrl || guardado || delNavegador();
+  if (desdeUrl || (guardado && !leerCookie())) guardar(actual);
+  document.documentElement.lang = actual;
+
+  window.JETIdioma = {
+    get: function () { return actual; },
+    /* Cambia el idioma, lo recuerda para todo el sitio y avisa con el evento 'jet-idioma'. */
+    set: function (lang) {
+      if (!OK[lang] || lang === actual) return;
+      actual = lang; guardar(lang);
+      document.documentElement.lang = lang;
+      try { window.dispatchEvent(new CustomEvent('jet-idioma', { detail: lang })); } catch (e) {}
+    },
+  };
+})();
+</script>
+</head>
+<body>
+
+<div class="ambient">
+  <div class="blob b1"></div>
+  <div class="blob b2"></div>
+  <div class="blob b3"></div>
+</div>
+
+<nav>
+  <div class="container">
+    <a href="/" class="brand">
+      <span>JET<span class="slash">//</span><span class="games">Games</span></span>
+    </a>
+    <span class="right shelves"><a href="#minuto" data-es="Un minuto">One minute</a><a href="#cabeza" data-es="Para la cabeza">Your head</a><a href="#mundo" data-es="Con el mundo">With the world</a><a href="#tarde" data-es="Toda la tarde">All afternoon</a></span>
+    <span class="lang-sw" role="group" aria-label="Idioma / Language"><button type="button" data-lang="es">ES</button><button type="button" data-lang="en">EN</button></span>
+  </div>
+</nav>
+
+<section class="container">
+  <div class="hero">
+    <h1><span class="hero-rot grad-rot">Play</span> <span class="grad" data-t="anywhere">Anywhere.</span></h1>
+    <p class="sub" data-t="sub">For your thumb, your head, or your whole afternoon.</p>
+  </div>
+</section>
+
+
+<section class="games container" id="minuto">
+  <div class="section-head reveal">
+    <span class="section-label" data-es="Un minuto">One minute</span>
+    <h2 data-es="Un toque y a jugar.">Tap and play.</h2>
+    <p data-es="Se aprenden en segundos. Partidas cortas, para el pulgar.">Learn in seconds. Short runs, built for thumbs.</p>
+  </div>
+
+  <div class="grid">
+
+    <!-- JET//Ball — JezzBall: 4 zones split by walls, balls bounce ONLY inside their zone -->
+    <a class="card reveal w4" href="https://jetball.jetgames.fun" target="_blank" rel="noopener">
+      <div class="card-art">
+        <svg viewBox="0 0 320 180" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+          <defs>
+            <linearGradient id="ball-wall-h" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0" stop-color="#7700f4"/>
+              <stop offset="1" stop-color="#00f2cf"/>
+            </linearGradient>
+            <linearGradient id="ball-wall-v" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#00f2cf"/>
+              <stop offset="1" stop-color="#7700f4"/>
+            </linearGradient>
+            <linearGradient id="ball-wall-build" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#fdd835"/>
+              <stop offset="1" stop-color="#ff2bd6"/>
+            </linearGradient>
+          </defs>
+          <!-- subtle grid -->
+          <g stroke="rgba(0,242,207,0.05)" stroke-width="1">
+            <line x1="0" y1="30" x2="320" y2="30"/><line x1="0" y1="60" x2="320" y2="60"/>
+            <line x1="0" y1="90" x2="320" y2="90"/><line x1="0" y1="120" x2="320" y2="120"/>
+            <line x1="0" y1="150" x2="320" y2="150"/>
+            <line x1="40" y1="0" x2="40" y2="180"/><line x1="80" y1="0" x2="80" y2="180"/>
+            <line x1="120" y1="0" x2="120" y2="180"/><line x1="160" y1="0" x2="160" y2="180"/>
+            <line x1="200" y1="0" x2="200" y2="180"/><line x1="240" y1="0" x2="240" y2="180"/>
+            <line x1="280" y1="0" x2="280" y2="180"/>
+          </g>
+
+          <!--
+            LAYOUT (4 zones separated by 2 walls):
+              · vertical wall at x=160 (full height)
+              · horizontal wall at y=90 (full width)
+              · captured zone top-right (160-320, 0-90) — purple
+            Each ball lives in ONE rectangular zone and bounces inside it.
+          -->
+
+          <!-- captured zone (already cleared) -->
+          <rect x="160" y="0" width="160" height="90" fill="rgba(119,0,244,0.22)"/>
+
+          <!-- VERTICAL wall (full height, gradient) at x=160 -->
+          <rect x="158" y="0" width="4" height="180" fill="url(#ball-wall-v)" opacity="0.9"/>
+          <!-- HORIZONTAL wall (full width, gradient) at y=90 -->
+          <rect x="0" y="88" width="320" height="4" fill="url(#ball-wall-h)" opacity="0.9"/>
+
+          <!-- WALL BEING BUILT — short vertical, extending downward in the bottom-left zone -->
+          <rect x="78" y="92" width="4" height="0" fill="url(#ball-wall-build)" filter="drop-shadow(0 0 4px rgba(253,216,53,0.5))">
+            <animate attributeName="height" values="0;84;84;0" keyTimes="0;0.45;0.85;1" dur="3.6s" repeatCount="indefinite"/>
+            <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.05;0.9;1" dur="3.6s" repeatCount="indefinite"/>
+          </rect>
+
+          <!-- BALL 1 (cyan) — confined to TOP-LEFT zone (x: 10–150, y: 12–80) -->
+          <circle r="7" fill="#00f2cf" filter="drop-shadow(0 0 6px rgba(0,242,207,0.6))">
+            <animate attributeName="cx"
+              values="30;145;72;145;30"
+              keyTimes="0;0.28;0.55;0.82;1"
+              dur="4.2s" repeatCount="indefinite"/>
+            <animate attributeName="cy"
+              values="20;76;38;72;20"
+              keyTimes="0;0.28;0.55;0.82;1"
+              dur="4.2s" repeatCount="indefinite"/>
+          </circle>
+
+          <!-- BALL 2 (yellow) — confined RIGHT of the building wall at x=78
+               (bottom-center zone: x 86–150, y 100–170, never crosses x=78) -->
+          <circle r="7" fill="#fdd835" filter="drop-shadow(0 0 6px rgba(253,216,53,0.6))">
+            <animate attributeName="cx"
+              values="92;148;100;140;92"
+              keyTimes="0;0.32;0.6;0.85;1"
+              dur="5s" repeatCount="indefinite"/>
+            <animate attributeName="cy"
+              values="160;110;165;120;160"
+              keyTimes="0;0.32;0.6;0.85;1"
+              dur="5s" repeatCount="indefinite"/>
+          </circle>
+
+          <!-- BALL 3 (white/cyan) — confined to BOTTOM-RIGHT zone (x: 172–310, y: 100–170) -->
+          <circle r="7" fill="#e8feff" filter="drop-shadow(0 0 8px rgba(0,242,207,0.7))">
+            <animate attributeName="cx"
+              values="190;300;220;280;190"
+              keyTimes="0;0.3;0.55;0.8;1"
+              dur="4.6s" repeatCount="indefinite"/>
+            <animate attributeName="cy"
+              values="115;165;108;160;115"
+              keyTimes="0;0.3;0.55;0.8;1"
+              dur="4.6s" repeatCount="indefinite"/>
+          </circle>
+        </svg>
+      </div>
+      <div class="card-body">
+        <div class="head"><h3>JET<span class="slash">//</span>Ball</h3><span class="badge live" data-es="El primero">The original</span></div>
+        <p class="desc" data-es="Construye barreras para encerrar las bolas y conquistar el tablero. Evita que las golpeen mientras se construyen.">Build walls to trap the balls and claim the board. Don't let them hit a wall while it's still going up.</p>
+        <span class="cycle-btn"><span class="cycle-word" data-t="play"></span><span class="cycle-arrow">→</span></span>
+      </div>
+    </a>
+
+    <!-- JET//Astro — el astronauta del onboarding de JET, estilo dinosaurio sin conexión (Canvas2D) -->
+    <a class="card reveal w4" href="https://jetgames.fun/astro/" target="_blank" rel="noopener">
+      <div class="card-art"><img src="img/astro.jpg?v=2" alt="JET//Astro: un astronauta con jetpack salta asteroides frente a Júpiter" loading="lazy"></div>
+      <div class="card-body">
+        <div class="head"><h3>JET<span class="slash">//</span>Astro</h3></div>
+        <p class="desc" data-es="Salta con tu astronauta para esquivar los asteroides frente a Júpiter. Calcula cada impulso y supera tu récord.">Jump with your astronaut to dodge the asteroids in front of Jupiter. Time every boost and beat your best score.</p>
+        <span class="cycle-btn"><span class="cycle-word" data-t="play"></span><span class="cycle-arrow">→</span></span>
+      </div>
+    </a>
+    <!-- JET//Rocket — Snake-with-rocket: ship trail snaking past crystals + asteroid -->
+    <a class="card reveal" href="https://jetrocket.jetgames.fun" target="_blank" rel="noopener">
+      <div class="card-art">
+        <svg viewBox="0 0 320 180" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+          <defs>
+            <radialGradient id="rocket-sky" cx="0.5" cy="0.4" r="0.7">
+              <stop offset="0" stop-color="#1a0a3a"/>
+              <stop offset="1" stop-color="#03020a"/>
+            </radialGradient>
+            <linearGradient id="rocket-body" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#7df0ff"/>
+              <stop offset="1" stop-color="#00f2cf"/>
+            </linearGradient>
+            <radialGradient id="rocket-crystal" cx="0.5" cy="0.5" r="0.5">
+              <stop offset="0" stop-color="#ffffff"/>
+              <stop offset="0.5" stop-color="#00f2cf"/>
+              <stop offset="1" stop-color="#0e8aa0"/>
+            </radialGradient>
+            <radialGradient id="rocket-core" cx="0.5" cy="0.5" r="0.5">
+              <stop offset="0" stop-color="#ffd4ec"/>
+              <stop offset="0.6" stop-color="#ff2bd6"/>
+              <stop offset="1" stop-color="#7a0a4a"/>
+            </radialGradient>
+          </defs>
+          <rect width="320" height="180" fill="url(#rocket-sky)"/>
+
+          <!-- starfield -->
+          <g fill="#ffffff">
+            <circle cx="32"  cy="22"  r="0.9" opacity="0.7"/>
+            <circle cx="86"  cy="14"  r="0.6" opacity="0.5"/>
+            <circle cx="140" cy="30"  r="0.7" opacity="0.6"/>
+            <circle cx="220" cy="20"  r="0.8" opacity="0.6"/>
+            <circle cx="276" cy="38"  r="0.6" opacity="0.5"/>
+            <circle cx="48"  cy="156" r="0.7" opacity="0.5"/>
+            <circle cx="178" cy="160" r="0.6" opacity="0.4"/>
+            <circle cx="260" cy="148" r="0.8" opacity="0.6"/>
+            <circle cx="120" cy="100" r="0.5" opacity="0.4"/>
+            <circle cx="304" cy="92"  r="0.6" opacity="0.5"/>
+          </g>
+
+          <!-- subtle grid (top-down) -->
+          <g stroke="rgba(0,242,207,0.05)" stroke-width="1">
+            <line x1="0" y1="60" x2="320" y2="60"/>
+            <line x1="0" y1="120" x2="320" y2="120"/>
+            <line x1="80"  y1="0" x2="80"  y2="180"/>
+            <line x1="160" y1="0" x2="160" y2="180"/>
+            <line x1="240" y1="0" x2="240" y2="180"/>
+          </g>
+
+          <!-- spinning asteroid lower-right -->
+          <g transform="translate(248 132)">
+            <animateTransform attributeName="transform" type="rotate" from="0 0 0" to="360 0 0" dur="14s" repeatCount="indefinite"/>
+            <polygon points="-12,-4 -6,-12 6,-10 12,-2 10,8 2,12 -8,10 -14,2" fill="#5a4a3a" stroke="#2a1a0a" stroke-width="1"/>
+            <circle cx="-4" cy="-2" r="2" fill="#3a2a1a"/>
+            <circle cx="4"  cy="4"  r="1.5" fill="#3a2a1a"/>
+          </g>
+
+          <!-- cyan crystals -->
+          <polygon points="60,40 68,32 76,40 68,52" fill="url(#rocket-crystal)" filter="drop-shadow(0 0 4px rgba(0,242,207,0.7))">
+            <animateTransform attributeName="transform" type="rotate" from="0 68 42" to="360 68 42" dur="6s" repeatCount="indefinite"/>
+          </polygon>
+          <polygon points="200,72 208,64 216,72 208,84" fill="url(#rocket-crystal)" filter="drop-shadow(0 0 4px rgba(0,242,207,0.7))">
+            <animateTransform attributeName="transform" type="rotate" from="0 208 74" to="-360 208 74" dur="7s" repeatCount="indefinite"/>
+          </polygon>
+          <polygon points="40,128 48,120 56,128 48,140" fill="url(#rocket-crystal)" filter="drop-shadow(0 0 4px rgba(0,242,207,0.7))">
+            <animateTransform attributeName="transform" type="rotate" from="0 48 130" to="360 48 130" dur="5.5s" repeatCount="indefinite"/>
+          </polygon>
+
+          <!-- rare magenta core (pulses) -->
+          <g transform="translate(160 132)">
+            <circle r="8" fill="url(#rocket-core)" filter="drop-shadow(0 0 6px rgba(255,43,214,0.8))">
+              <animate attributeName="r" values="7;10;7" dur="2.2s" repeatCount="indefinite"/>
+            </circle>
+            <circle r="13" fill="none" stroke="#ff2bd6" stroke-width="1" opacity="0.5">
+              <animate attributeName="r" values="9;18" dur="2.2s" repeatCount="indefinite"/>
+              <animate attributeName="opacity" values="0.7;0" dur="2.2s" repeatCount="indefinite"/>
+            </circle>
+          </g>
+
+          <!-- ROCKET path (S-curve) — rocket + trail follow it staggered -->
+          <path id="rocket-path"
+                d="M -20 100 Q 60 60, 120 100 T 240 100 Q 290 80, 340 100"
+                fill="none" stroke="none"/>
+
+          <!-- 5 trailing segments (back→front, staggered) -->
+          <circle r="4.5" fill="#00f2cf" opacity="0.35" filter="drop-shadow(0 0 3px rgba(0,242,207,0.5))">
+            <animateMotion dur="8s" repeatCount="indefinite" begin="-0.45s"><mpath href="#rocket-path"/></animateMotion>
+          </circle>
+          <circle r="5.5" fill="#00f2cf" opacity="0.55" filter="drop-shadow(0 0 4px rgba(0,242,207,0.55))">
+            <animateMotion dur="8s" repeatCount="indefinite" begin="-0.36s"><mpath href="#rocket-path"/></animateMotion>
+          </circle>
+          <circle r="6"   fill="#00f2cf" opacity="0.75" filter="drop-shadow(0 0 4px rgba(0,242,207,0.65))">
+            <animateMotion dur="8s" repeatCount="indefinite" begin="-0.27s"><mpath href="#rocket-path"/></animateMotion>
+          </circle>
+          <circle r="6.5" fill="#00f2cf" opacity="0.9" filter="drop-shadow(0 0 5px rgba(0,242,207,0.7))">
+            <animateMotion dur="8s" repeatCount="indefinite" begin="-0.18s"><mpath href="#rocket-path"/></animateMotion>
+          </circle>
+          <circle r="7"   fill="#00f2cf" filter="drop-shadow(0 0 6px rgba(0,242,207,0.85))">
+            <animateMotion dur="8s" repeatCount="indefinite" begin="-0.09s"><mpath href="#rocket-path"/></animateMotion>
+          </circle>
+
+          <!-- the rocket itself (chevron, rotates with path) -->
+          <g>
+            <animateMotion dur="8s" repeatCount="indefinite" rotate="auto"><mpath href="#rocket-path"/></animateMotion>
+            <ellipse cx="-8" cy="0" rx="6" ry="3" fill="#ff8000" opacity="0.6">
+              <animate attributeName="opacity" values="0.4;0.9;0.4" dur="0.3s" repeatCount="indefinite"/>
+            </ellipse>
+            <path d="M -8 -6 L 10 0 L -8 6 L -4 0 Z" fill="url(#rocket-body)" stroke="#0a0512" stroke-width="1.4"/>
+            <circle cx="2" cy="0" r="1.7" fill="#ffffff"/>
+          </g>
+        </svg>
+      </div>
+      <div class="card-body">
+        <div class="head"><h3>JET<span class="slash">//</span>Rocket</h3></div>
+        <p class="desc" data-es="Guía un cohete que alarga su estela al recoger cristales. Planea tus giros para no chocar con tu propia cola.">Steer a rocket whose trail grows as it collects crystals. Plan your turns so you never crash into your own tail.</p>
+        <span class="cycle-btn"><span class="cycle-word" data-t="play"></span><span class="cycle-arrow">→</span></span>
+      </div>
+    </a>
+    <!-- JET//Slalom — SkiFree top-down: skier in center, gates + trees scroll up -->
+    <a class="card reveal" href="https://jetslalom.jetgames.fun" target="_blank" rel="noopener">
+      <div class="card-art">
+        <svg viewBox="0 0 320 180" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+          <defs>
+            <linearGradient id="snow-bg" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#0a1838"/>
+              <stop offset="1" stop-color="#1a3858"/>
+            </linearGradient>
+            <linearGradient id="snow-trail" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="rgba(255,255,255,0.4)"/>
+              <stop offset="1" stop-color="rgba(255,255,255,0)"/>
+            </linearGradient>
+          </defs>
+          <rect width="320" height="180" fill="url(#snow-bg)"/>
+          <g fill="rgba(255,255,255,0.4)">
+            <circle cx="40" cy="0" r="1"><animate attributeName="cy" values="-10;200" dur="3s" repeatCount="indefinite"/></circle>
+            <circle cx="280" cy="0" r="1"><animate attributeName="cy" values="-30;200" dur="2.6s" repeatCount="indefinite"/></circle>
+            <circle cx="120" cy="0" r="0.8"><animate attributeName="cy" values="-60;200" dur="3.4s" repeatCount="indefinite"/></circle>
+            <circle cx="200" cy="0" r="0.8"><animate attributeName="cy" values="-90;200" dur="2.8s" repeatCount="indefinite"/></circle>
+            <circle cx="80" cy="0" r="0.7"><animate attributeName="cy" values="-150;200" dur="3.6s" repeatCount="indefinite"/></circle>
+            <circle cx="260" cy="0" r="0.7"><animate attributeName="cy" values="-200;200" dur="3.1s" repeatCount="indefinite"/></circle>
+          </g>
+          <g>
+            <g><animateTransform attributeName="transform" type="translate" values="0 200;0 -40" dur="4s" repeatCount="indefinite"/>
+              <line x1="80"  y1="0" x2="80"  y2="22" stroke="#ff2bd6" stroke-width="3.5" filter="drop-shadow(0 0 4px rgba(255,43,214,0.6))"/>
+              <line x1="240" y1="0" x2="240" y2="22" stroke="#00f2cf" stroke-width="3.5" filter="drop-shadow(0 0 4px rgba(0,242,207,0.6))"/>
+            </g>
+            <g><animateTransform attributeName="transform" type="translate" values="0 280;0 40" dur="4s" repeatCount="indefinite"/>
+              <line x1="120" y1="0" x2="120" y2="22" stroke="#ff2bd6" stroke-width="3.5" filter="drop-shadow(0 0 4px rgba(255,43,214,0.6))"/>
+              <line x1="200" y1="0" x2="200" y2="22" stroke="#00f2cf" stroke-width="3.5" filter="drop-shadow(0 0 4px rgba(0,242,207,0.6))"/>
+            </g>
+            <g><animateTransform attributeName="transform" type="translate" values="0 360;0 120" dur="4s" repeatCount="indefinite"/>
+              <line x1="100" y1="0" x2="100" y2="22" stroke="#ff2bd6" stroke-width="3.5" filter="drop-shadow(0 0 4px rgba(255,43,214,0.6))"/>
+              <line x1="220" y1="0" x2="220" y2="22" stroke="#00f2cf" stroke-width="3.5" filter="drop-shadow(0 0 4px rgba(0,242,207,0.6))"/>
+            </g>
+          </g>
+          <g fill="#0a3848" stroke="#1a5868" stroke-width="1">
+            <g><animateTransform attributeName="transform" type="translate" values="0 200;0 -30" dur="5s" repeatCount="indefinite"/>
+              <path d="M 26 0 L 32 -16 L 38 0 Z"/><rect x="31" y="0" width="2" height="4" fill="#082030"/>
+            </g>
+            <g><animateTransform attributeName="transform" type="translate" values="0 240;0 10" dur="5s" repeatCount="indefinite"/>
+              <path d="M 280 0 L 286 -16 L 292 0 Z"/><rect x="285" y="0" width="2" height="4" fill="#082030"/>
+            </g>
+            <g><animateTransform attributeName="transform" type="translate" values="0 320;0 90" dur="5s" repeatCount="indefinite"/>
+              <path d="M 30 0 L 36 -14 L 42 0 Z"/>
+            </g>
+            <g><animateTransform attributeName="transform" type="translate" values="0 380;0 150" dur="5s" repeatCount="indefinite"/>
+              <path d="M 270 0 L 276 -14 L 282 0 Z"/>
+            </g>
+          </g>
+          <g transform="translate(160 130)">
+            <path d="M -8 4 Q -10 30 -8 50" stroke="url(#snow-trail)" stroke-width="2" fill="none">
+              <animate attributeName="opacity" values="0.6;0.4;0.6" dur="1.4s" repeatCount="indefinite"/>
+            </path>
+            <path d="M 8 4 Q 10 30 8 50" stroke="url(#snow-trail)" stroke-width="2" fill="none">
+              <animate attributeName="opacity" values="0.4;0.6;0.4" dur="1.4s" repeatCount="indefinite"/>
+            </path>
+            <g>
+              <animateTransform attributeName="transform" type="translate" values="-8 0;8 0;-8 0" dur="3s" repeatCount="indefinite"/>
+              <path d="M -10 0 L 0 -14 L 10 0 L 6 4 L -6 4 Z" fill="#00f2cf" stroke="#0a0512" stroke-width="1.5" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.4))"/>
+              <circle cx="0" cy="-8" r="2" fill="#fff"/>
+            </g>
+          </g>
+        </svg>
+      </div>
+      <div class="card-body">
+        <div class="head"><h3>JET<span class="slash">//</span>Slalom</h3></div>
+        <p class="desc" data-es="Desciende esquiando, pasa por el lado correcto de las banderas y esquiva obstáculos. Salta rampas, haz trucos y sobrevive a los jefes.">Ski downhill, pass every flag on the correct side and dodge obstacles. Hit the ramps, land tricks and survive the bosses.</p>
+        <span class="cycle-btn"><span class="cycle-word" data-t="play"></span><span class="cycle-arrow">→</span></span>
+      </div>
+    </a>
+    <!-- JET//Flow — Pipe path with plasma actually flowing through it -->
+    <a class="card reveal" href="https://jetflow.jetgames.fun" target="_blank" rel="noopener">
+      <div class="card-art"><img src="img/jetflow.jpg" alt="JET//Flow: un astronauta instala tuberías de plasma en una nave" loading="lazy"></div>
+      <div class="card-body">
+        <div class="head"><h3>JET<span class="slash">//</span>Flow</h3></div>
+        <p class="desc" data-es="Coloca tuberías para guiar el plasma por los tramos que pide cada nivel. Construye el recorrido antes de que el flujo te alcance y se derrame.">Lay pipes to guide the plasma through the sections each level requires. Finish the route before the flow catches up and spills.</p>
+        <span class="cycle-btn"><span class="cycle-word" data-t="play"></span><span class="cycle-arrow">→</span></span>
+      </div>
+    </a>
+    <!-- JET//Match — Match-3 board with gems cascading + match shockwave -->
+    <a class="card reveal" href="https://jetmatch.jetgames.fun" target="_blank" rel="noopener">
+      <div class="card-art"><img src="img/jetmatch.jpg" alt="JET//Match: tablero de gemas" loading="lazy"></div>
+      <div class="card-body">
+        <div class="head"><h3>JET<span class="slash">//</span>Match</h3></div>
+        <p class="desc" data-es="Intercambia gemas para alinear tres o más iguales y encadenar combinaciones. Alcanza la meta con jugadas limitadas o contra reloj.">Swap gems to line up three or more and chain combos. Reach the goal with limited moves or against the clock.</p>
+        <span class="cycle-btn"><span class="cycle-word" data-t="play"></span><span class="cycle-arrow">→</span></span>
+      </div>
+    </a>
+
+  </div>
+</section>
+
+<section class="games container" id="cabeza">
+  <div class="section-head reveal">
+    <span class="section-label" data-es="Para la cabeza">For your head</span>
+    <h2 data-es="Piensa un rato.">Think a little.</h2>
+    <p data-es="Reglas secretas, deducción, palabras, cajas y ajedrez. Sin prisa.">Secret rules, deduction, words, crates and chess. No rush.</p>
+  </div>
+
+  <div class="grid">
+
+    <!-- JET//Words — Wordle-style grid with row revealing colors -->
+    <a class="card reveal" href="https://jetwords.jetgames.fun" target="_blank" rel="noopener">
+      <div class="card-art">
+        <svg viewBox="0 0 320 180" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+          <defs>
+            <style>
+              .wd-empty { fill: rgba(245,240,255,0.04); stroke: rgba(245,240,255,0.18); stroke-width: 1.4; }
+              .wd-gray  { fill: rgba(122,109,150,0.5); stroke: none; }
+              .wd-yel   { fill: #fdd835; stroke: none; }
+              .wd-cyan  { fill: #00f2cf; stroke: none; }
+              .wd-l     { fill: #f5f0ff; font-family: 'Inter', sans-serif; font-weight: 800; font-size: 18px; text-anchor: middle; dominant-baseline: middle; }
+              .wd-lk    { fill: #0a0512; }
+            </style>
+          </defs>
+          <g transform="translate(85 14)">
+            <!-- Row 1: PLAYS -->
+            <g transform="translate(0 0)">
+              <rect class="wd-gray"  x="0"   y="0" width="26" height="26" rx="2"/>
+              <rect class="wd-yel"   x="30"  y="0" width="26" height="26" rx="2"/>
+              <rect class="wd-gray"  x="60"  y="0" width="26" height="26" rx="2"/>
+              <rect class="wd-gray"  x="90"  y="0" width="26" height="26" rx="2"/>
+              <rect class="wd-cyan"  x="120" y="0" width="26" height="26" rx="2"/>
+              <text class="wd-l"      x="13"  y="14">P</text>
+              <text class="wd-l wd-lk" x="43"  y="14">L</text>
+              <text class="wd-l"      x="73"  y="14">A</text>
+              <text class="wd-l"      x="103" y="14">Y</text>
+              <text class="wd-l wd-lk" x="133" y="14">S</text>
+            </g>
+            <!-- Row 2: GAMES -->
+            <g transform="translate(0 32)">
+              <rect class="wd-yel"  x="0"   y="0" width="26" height="26" rx="2"/>
+              <rect class="wd-cyan" x="30"  y="0" width="26" height="26" rx="2"/>
+              <rect class="wd-gray" x="60"  y="0" width="26" height="26" rx="2"/>
+              <rect class="wd-yel"  x="90"  y="0" width="26" height="26" rx="2"/>
+              <rect class="wd-cyan" x="120" y="0" width="26" height="26" rx="2"/>
+              <text class="wd-l wd-lk" x="13"  y="14">G</text>
+              <text class="wd-l wd-lk" x="43"  y="14">A</text>
+              <text class="wd-l"      x="73"  y="14">M</text>
+              <text class="wd-l wd-lk" x="103" y="14">E</text>
+              <text class="wd-l wd-lk" x="133" y="14">S</text>
+            </g>
+            <!-- Row 3: typing -->
+            <g transform="translate(0 64)">
+              <rect class="wd-cyan" x="0" y="0" width="26" height="26" rx="2"/>
+              <text class="wd-l wd-lk" x="13" y="14">J</text>
+              <rect class="wd-yel" x="30" y="0" width="26" height="26" rx="2">
+                <animateTransform attributeName="transform" type="scale" additive="sum"
+                  values="1 1;1 0.05;1 1;1 1" keyTimes="0;0.15;0.3;1" dur="4s" repeatCount="indefinite"/>
+              </rect>
+              <text class="wd-l wd-lk" x="43" y="14">E</text>
+              <rect x="60" y="0" width="26" height="26" rx="2"
+                    fill="rgba(0,242,207,0.08)" stroke="#00f2cf" stroke-width="1.8">
+                <animate attributeName="stroke" values="#00f2cf;#fff;#00f2cf" dur="1.2s" repeatCount="indefinite"/>
+              </rect>
+              <text class="wd-l" x="73" y="14">
+                <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.3;0.7;1" dur="2.4s" repeatCount="indefinite"/>T</text>
+              <rect class="wd-empty" x="90" y="0" width="26" height="26" rx="2"/>
+              <rect class="wd-empty" x="120" y="0" width="26" height="26" rx="2"/>
+            </g>
+            <!-- Row 4: empty -->
+            <g transform="translate(0 96)">
+              <rect class="wd-empty" x="0"   y="0" width="26" height="26" rx="2"/>
+              <rect class="wd-empty" x="30"  y="0" width="26" height="26" rx="2"/>
+              <rect class="wd-empty" x="60"  y="0" width="26" height="26" rx="2"/>
+              <rect class="wd-empty" x="90"  y="0" width="26" height="26" rx="2"/>
+              <rect class="wd-empty" x="120" y="0" width="26" height="26" rx="2"/>
+            </g>
+          </g>
+        </svg>
+      </div>
+      <div class="card-body">
+        <div class="head"><h3>JET<span class="slash">//</span>Words</h3></div>
+        <p class="desc" data-es="Descubre una palabra de cinco letras en seis intentos, guiándote por los colores. Resuelve el reto diario o practica sin límite.">Find a five-letter word in six tries, guided by the colors. Solve the daily challenge or practice without limits.</p>
+        <span class="cycle-btn"><span class="cycle-word" data-t="play"></span><span class="cycle-arrow">→</span></span>
+      </div>
+    </a>
+    <!-- JET//Box — astronaut pushing cargo crates onto docking pads -->
+    <a class="card reveal" href="https://jetgames.fun/jetbox/" target="_blank" rel="noopener">
+      <div class="card-art">
+        <svg viewBox="0 0 320 180" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+          <defs>
+            <linearGradient id="box-wall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#54459a"/><stop offset="1" stop-color="#3a2f74"/></linearGradient>
+            <linearGradient id="box-crate" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd54f"/><stop offset="1" stop-color="#f5a623"/></linearGradient>
+            <linearGradient id="box-crate-on" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5ffff0"/><stop offset="1" stop-color="#00b8a8"/></linearGradient>
+            <pattern id="box-bricks" width="40" height="20" patternUnits="userSpaceOnUse">
+              <rect width="40" height="20" fill="url(#box-wall)"/>
+              <path d="M0 20 L20 0 M20 20 L40 0" stroke="rgba(255,255,255,.05)" stroke-width="1"/>
+            </pattern>
+          </defs>
+          <!-- station floor -->
+          <rect x="0" y="0" width="320" height="180" fill="#120a24"/>
+          <g stroke="rgba(0,242,207,0.06)" stroke-width="1">
+            <line x1="60" y1="0" x2="60" y2="180"/><line x1="100" y1="0" x2="100" y2="180"/><line x1="140" y1="0" x2="140" y2="180"/><line x1="180" y1="0" x2="180" y2="180"/><line x1="220" y1="0" x2="220" y2="180"/><line x1="260" y1="0" x2="260" y2="180"/>
+            <line x1="0" y1="50" x2="320" y2="50"/><line x1="0" y1="90" x2="320" y2="90"/><line x1="0" y1="130" x2="320" y2="130"/>
+          </g>
+          <!-- hull walls -->
+          <rect x="0" y="0" width="320" height="30" fill="url(#box-bricks)"/>
+          <rect x="0" y="150" width="320" height="30" fill="url(#box-bricks)"/>
+          <rect x="0" y="0" width="40" height="180" fill="url(#box-bricks)"/>
+          <rect x="280" y="0" width="40" height="180" fill="url(#box-bricks)"/>
+          <rect x="140" y="30" width="40" height="40" fill="url(#box-bricks)"/>
+          <path d="M40 30 H140 M180 30 H280 M40 150 H280" stroke="#00f2cf" stroke-opacity=".5" stroke-width="2"/>
+          <!-- docking pads -->
+          <g fill="none" stroke="#00f2cf" stroke-width="2.5">
+            <circle cx="240" cy="70" r="13"><animate attributeName="stroke-opacity" values="1;.45;1" dur="1.8s" repeatCount="indefinite"/></circle>
+            <circle cx="240" cy="110" r="13"/>
+          </g>
+          <circle cx="240" cy="70" r="3" fill="#00f2cf"/><circle cx="240" cy="110" r="3" fill="#00f2cf"/>
+          <!-- crate already docked -->
+          <g transform="translate(222 92)" filter="drop-shadow(0 0 8px rgba(0,242,207,.7))"><rect width="36" height="36" rx="8" fill="#f1eeff"/><rect y="15" width="36" height="6" rx="2" fill="#00bfa8"/><circle cx="18" cy="18" r="8" fill="#1a0f36"/><circle cx="18" cy="18" r="6" fill="#5ffff0"/></g>
+          <!-- crate being pushed + astronaut -->
+          <g>
+            <animateTransform attributeName="transform" type="translate" values="0 0;40 0;40 0;0 0" keyTimes="0;0.45;0.85;1" dur="3.6s" repeatCount="indefinite"/>
+            <g transform="translate(142 82)"><rect width="36" height="36" rx="8" fill="#f1eeff"/><rect y="15" width="36" height="6" rx="2" fill="#7700f4"/><circle cx="18" cy="18" r="8" fill="#1a0f36"/><circle cx="18" cy="18" r="6" fill="#fdd835" filter="drop-shadow(0 0 4px rgba(253,216,53,.8))"/></g>
+            <g transform="translate(118 100)">
+              <ellipse cx="0" cy="17" rx="11" ry="3" fill="rgba(0,0,0,.4)"/>
+              <path d="M-4 -19 L-6 -25 M4 -19 L6 -25" stroke="#8f97b8" stroke-width="1.6"/>
+              <circle cx="-6" cy="-26" r="1.8" fill="#fdd835"/><circle cx="6" cy="-26" r="1.8" fill="#fdd835"/>
+              <rect x="-8" y="-3" width="16" height="16" rx="5" fill="#eef1fa"/>
+              <rect x="-8" y="8" width="16" height="2" fill="#7700f4"/>
+              <rect x="6" y="-1" width="12" height="5" rx="2.5" fill="#eef1fa"/>
+              <circle cx="0" cy="-10" r="10" fill="#f4f6fc"/>
+              <ellipse cx="3" cy="-10" rx="6" ry="5.5" fill="#00c4d4"/>
+              <ellipse cx="1" cy="-12" rx="2" ry="1.4" fill="#fff" opacity=".85"/>
+            </g>
+          </g>
+        </svg>
+      </div>
+      <div class="card-body">
+        <div class="head"><h3>JET<span class="slash">//</span>Box</h3></div>
+        <p class="desc" data-es="Empuja cada contenedor hasta su plataforma en 60 puzles espaciales. No puedes tirar de ellos: evita dejarlos atrapados y busca la solución con menos movimientos.">Push every container onto its pad across 60 space puzzles. You can't pull them: avoid getting them stuck and find the solution with the fewest moves.</p>
+        <span class="cycle-btn"><span class="cycle-word" data-t="play"></span><span class="cycle-arrow">→</span></span>
+      </div>
+    </a>
+    <!-- Salchidrez — ajedrez de perros salchicha (Canvas2D) -->
+    <a class="card reveal" href="https://jetgames.fun/salchidrez/" target="_blank" rel="noopener">
+      <div class="card-art"><img src="img/salchidrez.jpg" alt="Salchidrez: tablero de ajedrez con perros salchicha disfrazados" loading="lazy"></div>
+      <div class="card-body">
+        <div class="head"><h3>Salchidrez</h3></div>
+        <p class="desc" data-es="Aprende ajedrez desde cero con lecciones paso a paso y piezas de perros salchicha. Juega contra la máquina o con un amigo en el mismo dispositivo.">Learn chess from scratch with step-by-step lessons and sausage-dog pieces. Play against the computer or with a friend on the same device.</p>
+        <span class="cycle-btn"><span class="cycle-word" data-t="play"></span><span class="cycle-arrow">→</span></span>
+      </div>
+    </a>
+    <!-- JET//Escudos — simulador de competiciones: Mundial, ligas, copas, NBA, NFL, MLB, NHL, F1 -->
+    <a class="card reveal" href="https://jetgames.fun/escudos/" rel="noopener">
+      <div class="card-art"><img src="img/escudos.jpg" alt="JET//Escudos: escudos de las selecciones" loading="lazy"></div>
+      <div class="card-body">
+        <div class="head"><h3>JET<span class="slash">//</span>Escudos</h3></div>
+        <p class="desc" data-es="Elige quién gana cada encuentro y crea tu propia historia deportiva. Las tablas y eliminatorias se actualizan con tus resultados en torneos de fútbol y otras competiciones.">Pick the winner of every match and write your own sports story. Tables and knockout rounds update with your results across football tournaments and other competitions.</p>
+        <span class="cycle-btn"><span class="cycle-word" data-t="play"></span><span class="cycle-arrow">→</span></span>
+      </div>
+    </a>
+
+    <!-- JET//Señal — nuevo 2026-10-22 -->
+    <a class="card reveal w4 w2" href="https://jetgames.fun/senal/" target="_blank" rel="noopener">
+      <div class="card-art"><img src="img/senal.jpg" alt="JET//Señal: una sonda alienígena que examina objetos" loading="lazy"></div>
+      <div class="card-body">
+        <div class="head"><h3>JET<span class="slash">//</span>Señal</h3><span class="badge live" data-es="Nuevo">New</span></div>
+        <p class="desc" data-es="Descubre la regla secreta con la que una sonda alienígena acepta o rechaza objetos. Arma muestras, pon a prueba tus hipótesis y descífrala con el menor número de pulsos.">Uncover the secret rule an alien probe uses to accept or reject objects. Build samples, test your hypotheses and crack it in as few pulses as possible.</p>
+        <span class="cycle-btn"><span class="cycle-word" data-t="play"></span><span class="cycle-arrow">→</span></span>
+      </div>
+    </a>
+    <!-- JET//Antes — nuevo 2026-10-22 -->
+    <a class="card reveal w4" href="https://jetgames.fun/antes/" target="_blank" rel="noopener">
+      <div class="card-art"><img src="img/antes.jpg" alt="JET//Antes: el astronauta y sus ecos en una estación" loading="lazy"></div>
+      <div class="card-body">
+        <div class="head"><h3>JET<span class="slash">//</span>Antes</h3><span class="badge live" data-es="Nuevo">New</span></div>
+        <p class="desc" data-es="Cada intento de tu astronauta queda como un eco que repite lo que hiciste. Coordina con tus copias del pasado para abrir puertas, sostener placas y llegar a la salida.">Every attempt your astronaut makes stays behind as an echo that repeats your moves. Team up with your past copies to open doors, hold plates and reach the exit.</p>
+        <span class="cycle-btn"><span class="cycle-word" data-t="play"></span><span class="cycle-arrow">→</span></span>
+      </div>
+    </a>
+    <!-- JET//Telemetría — nuevo 2026-10-22 -->
+    <a class="card reveal" href="https://jetgames.fun/telemetria/" target="_blank" rel="noopener">
+      <div class="card-art"><img src="img/telemetria.jpg" alt="JET//Telemetría: la cabina con los sensores de la nave" loading="lazy"></div>
+      <div class="card-body">
+        <div class="head"><h3>JET<span class="slash">//</span>Telemetría</h3><span class="badge live" data-es="Nuevo">New</span></div>
+        <p class="desc" data-es="Encuentra la avería de la nave con sensores que a veces mienten. Cada lectura gasta oxígeno: decide qué medir y cuándo arriesgarte a reparar.">Find the ship's fault using sensors that sometimes lie. Every reading costs oxygen: choose what to measure and when to risk a repair.</p>
+        <span class="cycle-btn"><span class="cycle-word" data-t="play"></span><span class="cycle-arrow">→</span></span>
+      </div>
+    </a>
+    <!-- JET//Portada — nuevo 2026-10-22 -->
+    <a class="card reveal" href="https://jetgames.fun/portada/" target="_blank" rel="noopener">
+      <div class="card-art"><img src="img/portada.jpg" alt="JET//Portada: la portada de un diario espacial" loading="lazy"></div>
+      <div class="card-body">
+        <div class="head"><h3>JET<span class="slash">//</span>Portada</h3><span class="badge live" data-es="Nuevo">New</span></div>
+        <p class="desc" data-es="Arma la portada del diario de la colonia encajando noticias, fotos y anuncios sin dejar huecos. Combina secciones que se potencian y elige reglas de redacción para cada edición.">Lay out the colony newspaper's front page by fitting stories, photos and ads with no gaps. Pair sections that boost each other and pick editorial rules for every edition.</p>
+        <span class="cycle-btn"><span class="cycle-word" data-t="play"></span><span class="cycle-arrow">→</span></span>
+      </div>
+    </a>
+    <!-- JET//Caja Negra — nuevo 2026-10-22 -->
+    <a class="card reveal w4" href="https://jetgames.fun/cajanegra/" target="_blank" rel="noopener">
+      <div class="card-art"><img src="img/cajanegra.jpg" alt="JET//Caja Negra: la caja negra de una nave" loading="lazy"></div>
+      <div class="card-body">
+        <div class="head"><h3>JET<span class="slash">//</span>Caja Negra</h3><span class="badge live" data-es="Nuevo">New</span></div>
+        <p class="desc" data-es="Reconstruye un incidente espacial a partir de bitácoras, fotos y mensajes de radio. Completa el informe con las palabras correctas: solo se confirma cuando casi todo está bien.">Rebuild a space incident from logs, photos and radio messages. Complete the report with the right words: it's only confirmed when nearly everything is correct.</p>
+        <span class="cycle-btn"><span class="cycle-word" data-t="play"></span><span class="cycle-arrow">→</span></span>
+      </div>
+    </a>
+
+  </div>
+</section>
+
+<section class="games container" id="mundo">
+  <div class="section-head reveal">
+    <span class="section-label" data-es="Con el mundo">With the world</span>
+    <h2 data-es="Juega con todos.">Play with everyone.</h2>
+    <p data-es="Una jugada al día, junto a miles de personas o contra ellas.">One move a day, alongside thousands of people or against them.</p>
+  </div>
+
+  <div class="grid">
+
+    <!-- JET//Cráter — nuevo 2026-10-22 -->
+    <a class="card reveal w4 w2" href="https://jetgames.fun/crater/" target="_blank" rel="noopener">
+      <div class="card-art"><img src="img/crater.jpg" alt="JET//Cráter: cráteres lunares para aterrizar" loading="lazy"></div>
+      <div class="card-body">
+        <div class="head"><h3>JET<span class="slash">//</span>Cráter</h3><span class="badge live" data-es="Nuevo">New</span></div>
+        <p class="desc" data-es="Aterriza donde crees que aterrizará la mayoría, sin hablar con nadie. A medianoche se revela el mapa de todos y ves cuánto piensas como el mundo.">Land where you think most players will land, without talking to anyone. At midnight everyone's map is revealed and you see how much you think like the world.</p>
+        <span class="cycle-btn"><span class="cycle-word" data-t="play"></span><span class="cycle-arrow">→</span></span>
+      </div>
+    </a>
+    <!-- JET//Frentes — nuevo 2026-10-22 -->
+    <a class="card reveal" href="https://jetgames.fun/frentes/" target="_blank" rel="noopener">
+      <div class="card-art"><img src="img/frentes.jpg" alt="JET//Frentes: cinco planetas en disputa" loading="lazy"></div>
+      <div class="card-body">
+        <div class="head"><h3>JET<span class="slash">//</span>Frentes</h3><span class="badge live" data-es="Nuevo">New</span></div>
+        <p class="desc" data-es="Reparte 100 naves entre cinco planetas y enfréntate a la flota que jugó ayer. Gana cada planeta donde tengas más naves y descubre a cuántos rivales venciste.">Split 100 ships across five planets and face yesterday's fleet. Win every planet where you have more ships and see how many rivals you beat.</p>
+        <span class="cycle-btn"><span class="cycle-word" data-t="play"></span><span class="cycle-arrow">→</span></span>
+      </div>
+    </a>
+    <!-- JET//Balizas — nuevo 2026-10-22 -->
+    <a class="card reveal" href="https://jetgames.fun/balizas/" target="_blank" rel="noopener">
+      <div class="card-art"><img src="img/balizas.jpg" alt="JET//Balizas: una nave entre asteroides y balizas" loading="lazy"></div>
+      <div class="card-body">
+        <div class="head"><h3>JET<span class="slash">//</span>Balizas</h3><span class="badge live" data-es="Nuevo">New</span></div>
+        <p class="desc" data-es="Cruza un campo de asteroides cubierto de niebla y deja balizas para guiar a quienes vienen después. Sigue las señales de otros jugadores y vota cuáles te ayudaron.">Fly through a fog-covered asteroid field and leave beacons to guide those who come after you. Follow other players' signals and vote for the ones that helped.</p>
+        <span class="cycle-btn"><span class="cycle-word" data-t="play"></span><span class="cycle-arrow">→</span></span>
+      </div>
+    </a>
+
+  </div>
+</section>
+
+<section class="games container" id="tarde">
+  <div class="section-head reveal">
+    <span class="section-label" data-es="Para toda la tarde">For the whole afternoon</span>
+    <h2 data-es="Mundos para quedarse.">Worlds to stay in.</h2>
+    <p data-es="3D, campañas y un progreso que se guarda.">3D, campaigns and progress that sticks.</p>
+  </div>
+
+  <div class="grid">
+
+    <!-- JET//Estación Silencio — nuevo 2026-10-22 -->
+    <a class="card reveal w3" href="https://jetgames.fun/estacion/" target="_blank" rel="noopener">
+      <div class="card-art"><img src="img/estacion.jpg" alt="JET//Estación Silencio: el astronauta en una estación a la deriva" loading="lazy"></div>
+      <div class="card-body">
+        <div class="head"><h3>JET<span class="slash">//</span>Estación Silencio</h3><span class="badge live" data-es="Nuevo">New</span></div>
+        <p class="desc" data-es="Despierta solo en una estación a la deriva y descifra 34 enigmas escondidos en imágenes, sonidos y textos. Cada palabra clave repara un sistema y revela qué pasó con la tripulación.">Wake up alone on a drifting station and solve 34 puzzles hidden in images, sounds and texts. Every keyword repairs a system and reveals what happened to the crew.</p>
+        <span class="cycle-btn"><span class="cycle-word" data-t="play"></span><span class="cycle-arrow">→</span></span>
+      </div>
+    </a>
+
+    <!-- JET//Drive — hovercraft, captura banderas en el puerto (3D) -->
+    <a class="card reveal w3" href="https://raid.jetgames.fun" target="_blank" rel="noopener">
+      <div class="card-art"><img src="img/jetdrive.jpg" alt="JET//Raid: hovercraft en el puerto" loading="lazy"></div>
+      <div class="card-body">
+        <div class="head"><h3>JET<span class="slash">//</span>Raid</h3></div>
+        <p class="desc" data-es="Pilota un hovercraft en 3D para capturar banderas, disputar carreras y extraer suministros. Completa 16 misiones sobre el agua usando turbo y equipo contra tus rivales.">Pilot a 3D hovercraft to capture flags, race and extract supplies. Complete 16 missions on the water using boost and gear against your rivals.</p>
+        <span class="cycle-btn"><span class="cycle-word" data-t="play"></span><span class="cycle-arrow">→</span></span>
+      </div>
+    </a>
+    <!-- JET//Jump — salto ecuestre web (Three.js) -->
+    <a class="card reveal" href="https://jetgames.fun/jetjump/" target="_blank" rel="noopener">
+      <div class="card-art"><img src="img/jetjump.jpg" alt="JET//Jump: caballo y jinete en la pista de salto" loading="lazy"></div>
+      <div class="card-body">
+        <div class="head"><h3>JET<span class="slash">//</span>Jump</h3></div>
+        <p class="desc" data-es="Cuida y entrena a tu caballo para competir en salto ecuestre, desde la liga Club hasta el Gran Premio. Controla el ritmo y cada salto para terminar con menos penalizaciones.">Care for and train your horse to compete in show jumping, from the Club league to the Grand Prix. Control the rhythm and every jump to finish with fewer faults.</p>
+        <span class="cycle-btn"><span class="cycle-word" data-t="play"></span><span class="cycle-arrow">→</span></span>
+      </div>
+    </a>
+    <!-- JET//Bestiario — cría dragones y otras criaturas, cada una en su jaula (Three.js, prototipo) -->
+    <a class="card reveal" href="https://jetgames.fun/bestiario/" target="_blank" rel="noopener">
+      <div class="card-art"><img src="img/bestiario.jpg" alt="JET//Bestiario: un dragón oscuro con las alas abiertas" loading="lazy"></div>
+      <div class="card-body">
+        <div class="head"><h3>JET<span class="slash">//</span>Bestiario</h3></div>
+        <p class="desc" data-es="Explora un pueblo en 3D y cría criaturas fantásticas desde el huevo. Alimenta y entrena a tus bestias, y amplía tu equipo con nuevas criaturas.">Explore a 3D village and raise fantastic creatures from the egg. Feed and train your beasts, and grow your team with new creatures.</p>
+        <span class="cycle-btn"><span class="cycle-word" data-t="play"></span><span class="cycle-arrow">→</span></span>
+      </div>
+    </a>
+
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <span>© 2026 JETCompany OÜ</span>
+    <span><a href="/privacy.html" data-t="privacy">Privacy</a></span>
+  </div>
+</footer>
+
+<script>
+  /* ============== Word cycle: Play → Have Fun → Enjoy ============== */
+  /* ============== Idioma: el mismo para todo jetgames.fun (JETIdioma) ============== */
+  const TX = {
+    es: {anywhere:'donde quieras.', sub:'Para el pulgar, para la cabeza o para toda la tarde.', play:'Jugar', privacy:'Privacidad', words:['Juega', 'Diviértete', 'Disfruta']},
+    en: {anywhere:'Anywhere.', sub:'For your thumb, your head, or your whole afternoon.', play:'Play', privacy:'Privacy', words:['Play', 'Have Fun', 'Enjoy']}
+  };
+  document.querySelectorAll('[data-es]').forEach(el => { if (!el.dataset.en) el.dataset.en = el.textContent; });
+  const rotEls = Array.from(document.querySelectorAll('.hero-rot'));
+  let WORDS = TX.en.words;
+  let wIdx = 0;
+  function aplicarIdioma() {
+    const L = JETIdioma.get(), D = TX[L];
+    document.querySelectorAll('[data-t]').forEach(el => { if (D[el.dataset.t]) el.textContent = D[el.dataset.t]; });
+    document.querySelectorAll('[data-es]').forEach(el => { el.textContent = L === 'es' ? el.dataset.es : el.dataset.en; });
+    WORDS = D.words;
+    rotEls.forEach(el => { el.textContent = WORDS[wIdx % WORDS.length]; });
+    document.querySelectorAll('.lang-sw button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.lang === L)));
+  }
+  document.querySelectorAll('.lang-sw button').forEach(b => b.addEventListener('click', () => JETIdioma.set(b.dataset.lang)));
+  window.addEventListener('jet-idioma', aplicarIdioma);
+  aplicarIdioma();
+
+  setInterval(() => {
+    const next = (wIdx + 1) % WORDS.length;
+    // Fade out everything in sync
+    rotEls.forEach(el => el.classList.add('fade'));
+    // After fade-out, swap text and fade back in
+    setTimeout(() => {
+      rotEls.forEach(el => { el.textContent = WORDS[next]; });
+      // Force a reflow before removing fade so the new text starts at opacity 0
+      requestAnimationFrame(() => {
+        rotEls.forEach(el => el.classList.remove('fade'));
+      });
+    }, 320);
+    wIdx = next;
+  }, 2400);
+
+  /* ============== Reveal on scroll ============== */
+  const revealEls = document.querySelectorAll('.reveal');
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver(entries => {
+      entries.forEach(en => {
+        if (en.isIntersecting) {
+          en.target.classList.add('in');
+          io.unobserve(en.target);
+        }
+      });
+    }, { threshold: 0.12, rootMargin: '0px 0px -50px 0px' });
+    revealEls.forEach(el => io.observe(el));
+    // Red de seguridad: lo que ya está a la vista aparece aunque el observador no dispare
+    const safety = () => revealEls.forEach(el => { if (el.getBoundingClientRect().top < innerHeight) el.classList.add('in'); });
+    setTimeout(safety, 1200); addEventListener('scroll', safety, { passive: true });
+  } else {
+    revealEls.forEach(el => el.classList.add('in'));
+  }
+</script>
+
+</body>
+</html>
+        

@@ -1,0 +1,100 @@
+JETGAMES — EMPEZAR ACÁ
+Auditoría del 2026-10-22. Un único paquete para implementar con Claude.
+Archivo: JETGAMES_INTERFACES_Y_VISUALES_PARA_CLAUDE.zip
+Este es el paquete de interfaces y visuales; no es el paquete musical.
+
+1. CÓMO ABRIRLO EN WINDOWS
+Descargá el ZIP completo. En el Explorador: clic derecho sobre el ZIP → Extraer todo…
+→ elegí una carpeta corta (por ejemplo, Documentos\Jetgames) → Extraer.
+No trabajes dentro de la vista comprimida: primero extraé todos los archivos.
+Abrí este 00_EMPEZAR_ACA.txt. Los TXT se leen con Bloc de notas; los PDF, con tu lector.
+
+2. QUÉ PASARLE A CLAUDE
+Lo más simple es adjuntar el ZIP completo y pedirle que lo descomprima y lea este README.
+Si el entorno de Claude no abre ZIP, extraelo primero y poné TODA la carpeta a su disposición
+como archivos de proyecto. No hace falta descargar archivos uno por uno.
+Pedile: «Leé 00_EMPEZAR_ACA.txt y ORDEN_MAESTRA_PARA_CLAUDE.txt. Usá el catálogo
+completo de cambios, los copys ES/EN y ambos libros PDF. Trabajá por ID sobre el
+repositorio vigente, conservá mecánicas y datos, y devolvé la matriz de implementación
+y verificación. Separá lo opcional y lo bloqueado. No reemplaces el proyecto por los
+snapshots de fuentes de este paquete.»
+
+3. ORDEN DE LECTURA
+A. ORDEN_MAESTRA_PARA_CLAUDE.txt: reglas, prioridades, excepciones y límites.
+B. CATALOGO_CAMBIOS_PARA_CLAUDE.txt o .json: inventario consolidado de cambios por ID
+   SRC / RSP / PLAY / VIS (328 registros, no 328 bugs independientes).
+   TXT y JSON son dos representaciones del mismo catálogo; no sumarlas dos veces.
+C. COPYS_ES_EN.txt o .json: cadenas literales, contexto, condiciones y parámetros.
+   No copiar como etiqueta una descripción técnica. Conectar EN sólo donde ya existe soporte.
+D. JETGAMES_INTERFACES_Y_VISUALES_PARA_CLAUDE.pdf: libro de interfaces y visuales internos;
+   fondos, tableros, grillas, líneas, materiales, jerarquía, controles y estados de los juegos.
+E. JETGAMES_DIRECCION_EDITORIAL_22_CARDS.pdf y
+   JETGAMES_INSTRUCCIONES_CARDS_PARA_CLAUDE.txt: dirección editorial de las 22 portadas.
+F. 06_COBERTURA_Y_LIMITES.txt/.json: pruebas exactas alcanzadas y restricciones.
+G. 07_ACCIONES_LOCALES_Y_PUBLICACION.txt, 08_MAPA_DE_REFERENCIAS.json y
+   08_FUENTES_PUBLICAS.json: trazabilidad, rutas, versiones y archivos omitidos.
+
+4. QUÉ CONTIENE
+Instrucciones para implementar, textos propuestos ES/EN, libros PDF y briefs de 22 cards.
+Arte fuente público de las cards (SVG/JPG) y previews editoriales sólo cuando el inventario
+los refiere. No son nuevas portadas terminadas ni capturas de partidas.
+Fuentes públicas HTML/CSS/JS consultadas, con versiones, URL y SHA256. Por defecto se
+conservan las rutas originales ui_audit/... para abrir las citas sin buscar equivalencias.
+Si se eligió deduplicación por tamaño, 08_MAPA_DE_REFERENCIAS.json señala cada alias
+SHA256; su archivo de destino contiene exactamente los mismos bytes y líneas.
+Los HTML/JS son evidencia para leer como código; no un sitio completo listo para ejecutar.
+Los módulos públicos llamados audio.js o musica.js son código de referencia, no pistas
+musicales nuevas ni el paquete musical.
+
+5. PRECEDENCIA Y CAMBIOS NO IMPLEMENTADOS
+La ORDEN MAESTRA y el CATÁLOGO consolidado prevalecen sobre propuestas históricas en
+fuentes de origen. El repertorio COPYS fija las cadenas con sus condiciones; los PDFs
+explican su aplicación. Si encontrás una contradicción sustantiva, frená ese ID y resolvela.
+Esta entrega NO modifica ni despliega el sitio. La implementación la hacés vos con Claude.
+Los criterios de aceptación son pruebas futuras, no resultados aprobados de esta auditoría.
+Las fuentes son snapshots: identificá la revisión actual antes de editar y conservá cambios
+posteriores. Si algo ya está corregido, verificá y registrá la regresión, no apliques otro parche.
+No crear música, reemplazar partituras ni mezclar el ZIP musical de 229 MB con esta carpeta.
+
+6. ALCANCE REAL DE LA AUDITORÍA
+22 juegos en el catálogo y en la dirección editorial. En la cobertura registrada:
+- 19 juegos con al menos dos pruebas interactivas limitadas.
+- 38 pruebas/pasadas registradas en total.
+- 6 intentos de carga bloqueados en 3 juegos; no cuentan como partidas.
+- 44 intentos de revisión en total; juegos sin intentar: 0.
+- Sin partida interactiva registrada: Raid, Jump, Bestiario.
+- Bloqueos de carga: Raid (2 intentos bloqueados), Jump (2 intentos bloqueados), Bestiario (2 intentos bloqueados).
+Leé por juego el modo, las acciones y el resultado exactos en 06_COBERTURA_Y_LIMITES.
+«Dos pruebas» NO significa dos campañas, todos los niveles ni todos los modos: pueden
+ser dos niveles tutoriales, dos casos iniciales, dos rondas o dos ensayos de una sola ronda.
+Se distingue OBSERVADO / FUENTE / PROPUESTA / BLOQUEADO. La revisión de código
+responsive no certifica pruebas reales en móvil. Tampoco se certifican lector de pantalla,
+accesibilidad integral ni audio. Los tamaños y pruebas solicitados son tareas de aceptación.
+El sitio cambió durante la auditoría: evidencia fechada no equivale a reprobar la última versión.
+
+7. BLOQUEOS Y DECISIONES OPCIONALES
+En Cráter, el ensayo local no equivale al día completo. La ronda Base y las rondas no
+alcanzadas se estudian por fuente cuando avanzar exigiría votos públicos. No simular
+cobertura cambiando fecha, almacenamiento, red, hooks o estado interno.
+La práctica local completa de siete rondas en Cráter es una ampliación OPCIONAL de
+producto, pendiente de decisión; no es una función existente ni requisito del arreglo visual.
+El tutorial separado de Rocket, si se adopta, también debe tratarse como propuesta opcional.
+Los juegos con carga bloqueada (detallados arriba) no tienen una partida probada ni
+gráficos internos comprobados en ejecución. Las propuestas basadas en fuente necesitan
+un renderer compatible. Un fallo de WebGL en el entorno auditado no prueba un fallo universal.
+Nunca confundir una acción de evaluación local con publicar; revisar las trazas antes de probar.
+
+8. EVIDENCIA QUE NO ESTÁ ADJUNTA
+NO se incluyen capturas de navegador, imágenes aportadas por el usuario, referencias
+privadas del escritorio, notas de agentes, memoria, scripts de trabajo ni borradores.
+Las rutas evidence/*.jpg y image(...).png citadas son registros de observación histórica
+NO ADJUNTOS. No son enlaces a archivos disponibles en el ZIP. Se conservan en el mapa
+con ese estado; las descripciones de observación siguen en el catálogo. No inventar ni
+reconstruir una captura como si fuera la original. Los informes crudos redundantes se
+omiten: el catálogo consolidado es la fuente de instrucciones, y la cobertura separada
+conserva el detalle de las pruebas sin reintroducir propuestas viejas.
+
+9. INTEGRIDAD
+99_INVENTARIO.json enumera el contenido y su función. 99_SHA256SUMS.txt permite
+comprobar los archivos; el inventario no se autohashea y el listado SHA no se incluye a sí
+mismo. El constructor verifica los CRC del ZIP y los hashes antes de darlo por válido.

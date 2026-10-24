@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<script src="src/jet-idioma.js?v=7"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>JET//Balizas · Cruza la niebla</title>
+<meta name="description" content="Cada día, un cinturón de asteroides en la niebla, el mismo para todos. Crúzalo, deja balizas para los que vienen detrás y mira cuántos astronautas guiaste.">
+<meta name="theme-color" content="#050108">
+<meta property="og:title" content="JET//Balizas">
+<meta property="og:description" content="Cruza la niebla. Deja luz para los demás.">
+<meta property="og:image" content="https://jetgames.fun/balizas/captura-home.jpg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="src/style.css?v=7">
+</head>
+<body>
+<canvas id="cv" tabindex="-1" aria-label="JET//Balizas"></canvas>
+
+<a id="back" class="on" href="https://jetgames.fun/" target="_top" rel="noopener" data-ta="back_games">‹ JET<i>//</i>Games</a>
+<div id="topR">
+  <button id="fsBtn" class="ico" data-ta="fullscreen"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg></button>
+  <button id="gearBtn" class="ico" data-ta="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.4" stroke-width="3.4" stroke-dasharray="3.3 3.3" stroke-linecap="butt"/><circle cx="12" cy="12" r="6.6"/><circle cx="12" cy="12" r="2.4"/></svg></button>
+</div>
+<div id="offline" class="pill-warn" role="status" hidden></div>
+
+<!-- INICIO -->
+<section id="home" class="scr on" aria-labelledby="homeTitle">
+  <div class="home-grid">
+    <div class="home-l">
+      <div class="kick" id="homeKick"></div>
+      <h1 id="homeTitle" class="logo">JET<i>//</i>Balizas</h1>
+      <p class="sub" data-t="tagline"></p>
+      <div id="dayCard" class="daycard">
+        <div class="dc-top"><b id="dcDate"></b><span id="dcBadge" class="badge" hidden></span></div>
+        <div id="dcStats" class="dc-stats"></div>
+        <div id="dcMine" class="dc-mine" hidden></div>
+        <div id="dcGuided" class="dc-guided" hidden><span class="odo" id="dcOdo">0</span> <span id="dcGuidedTxt"></span></div>
+      </div>
+    </div>
+    <div class="home-r">
+      <button id="mainBtn" class="btn pri big"><span id="mainTxt"></span><small id="mainSub"></small></button>
+      <div class="chips">
+        <div class="chip" id="chipStreak" title=""><svg viewBox="0 0 24 24"><path d="M12 2c1 4 5 5.5 5 10.5A5 5 0 0 1 7 12.5C7 9 9 8 9.5 6 11 8 11 9.5 12 10c.6-2.5 0-5.5 0-8Z"/></svg><b id="streakN">0</b><span data-t="streak"></span></div>
+        <div class="chip" id="chipRank"><i class="ring" id="rankRing"></i><b id="rankName"></b></div>
+      </div>
+      <div class="grid2">
+        <button class="btn" id="howBtn" data-t="how"></button>
+        <button class="btn" id="tableBtn" data-t="table"></button>
+        <button class="btn" id="logBtn" data-t="log"></button>
+        <button class="btn" id="archBtn" data-t="archive"></button>
+      </div>
+      <div class="foot"><span id="nextField"></span><span class="foot-r"><span class="seg seg-sm langseg" id="langHome" role="group" data-ta="set_lang"><button data-v="es" lang="es">ES</button><button data-v="en" lang="en">EN</button></span><button class="link" id="fsHome" data-t="fullscreen"></button></span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ANTES DEL VUELO -->
+<section id="day" class="scr" aria-labelledby="dayTitle">
+  <div class="card wide daycardx">
+    <div class="top"><button class="x" data-close="day" data-ta="go_home">‹</button><h2 id="dayTitle"></h2><span id="dayMode" class="badge"></span></div>
+    <div class="day-grid">
+      <div class="day-l">
+        <p id="dayIntro" class="intro" hidden></p>
+        <div id="dayHaz" class="haz" hidden><canvas id="hazCv" width="320" height="120"></canvas><p id="hazTxt"></p></div>
+        <div class="hzlist"><small data-t="hazards_today"></small><div id="hzChips" class="hzchips"></div></div>
+        <p id="dayPractice" class="note" hidden data-t="practice_note"></p>
+      </div>
+      <div class="day-r">
+        <ul class="facts" id="dayFacts"></ul>
+        <div class="set" id="trailRow"><label for="trailTog" data-t="trails"></label><button class="tog" id="trailTog" role="switch" aria-checked="false"></button></div>
+        <button id="takeoffBtn" class="btn pri big" data-t="takeoff"></button>
+        <p class="keys" id="dayKeys" data-t="keys_line"></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- VUELO -->
+<div id="hud" hidden>
+  <div id="hudBar">
+    <div class="hg hg-l"><div class="hv"><small data-t="hud_time"></small><b id="hTime">00:00.0</b></div>
+      <div class="hv"><small data-t="hud_hull"></small><span class="hull"><i id="hHullBar"></i></span><b id="hHull">100%</b></div></div>
+    <div class="hg hg-r"><div class="hv"><small data-t="hud_treasure"></small><b id="hTre">◆ 0/3</b></div>
+      <div class="hv" id="hBeacWrap"><small data-t="hud_beacons"></small><b id="hBeac">3</b></div></div>
+  </div>
+  <button id="pauseBtn" class="ico" data-ta="pause"><svg viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></svg></button>
+  <div id="prog"><i id="progDot"></i></div>
+  <canvas id="mini" width="84" height="84" hidden></canvas>
+  <div id="tutLine" class="tutline" hidden></div>
+  <div id="undoBar" class="undo" hidden><span data-t="beacon_placed"></span><button id="undoBtn" data-t="undo"></button><i id="undoTimer"></i></div>
+  <div id="stick" hidden><i id="stickKnob"></i></div>
+  <div id="ghost" hidden><i></i><span data-t="hint_drag"></span></div>
+  <div id="ctl">
+    <button id="beaconBtn" class="cbtn" data-ta="beacon"><svg viewBox="-1.15 -1.15 2.3 2.3"><path d="M0 -0.78 L0.74 0.06 L0.74 0.56 L0 -0.16 L-0.74 0.56 L-0.74 0.06 Z"/></svg><b id="beaconN">3</b></button>
+    <button id="brakeBtn" class="cbtn big" data-ta="brake"><span data-t="brake"></span></button>
+  </div>
+  <div id="sel" class="sel" hidden role="dialog" data-ta="choose_symbol"><div class="sel-c" id="selC"></div><div class="sel-t" id="selT" data-t="choose_symbol"></div></div>
+  <div id="dial" class="dial" hidden role="dialog" data-ta="choose_dir"><div id="dialRing"></div><div id="dialArrow"></div><div class="sel-t" data-t="choose_dir"></div><button id="dialOk" class="dial-ok" data-ta="confirm">✓</button></div>
+  <div id="count" class="count" hidden></div>
+</div>
+
+<!-- PAUSA -->
+<section id="pause" class="scr lite" aria-labelledby="pauseTitle">
+  <div class="card">
+    <h2 id="pauseTitle" class="ctitle" data-t="pause"></h2>
+    <p id="pauseInfo" class="sub small"></p>
+    <button id="resumeBtn" class="btn pri big" data-t="resume"></button>
+    <button id="restartBtn" class="btn" data-t="restart"></button>
+    <div class="row"><button class="btn" id="pHow" data-t="how"></button><button class="btn" id="pSet" data-t="settings"></button></div>
+    <div class="row"><button id="abandonBtn" class="btn danger" data-t="abandon"></button><a class="btn ghost inline" href="https://jetgames.fun/" target="_top">‹ JET<i class="cy">//</i>Games</a></div>
+  </div>
+</section>
+
+<!-- RESULTADO -->
+<section id="result" class="scr" aria-labelledby="resTitle">
+  <div class="card wide res">
+    <div class="res-head"><div class="kick" id="resKick"></div><h2 id="resTitle" class="ctitle"></h2></div>
+    <div class="res-body">
+      <div class="res-map"><canvas id="resMap" width="200" height="560"></canvas></div>
+      <div class="res-side">
+        <div class="lines" id="resLines"></div>
+        <div class="res-rank" id="resRank"></div>
+        <p class="note" id="resNote"></p>
+        <button id="rateBtn" class="btn pri big" data-t="rate"></button>
+        <button id="againBtn" class="btn pri big" data-t="fly_again" hidden></button>
+        <div class="row"><button class="btn" id="shareBtn" data-t="share"></button><button class="btn" id="resTable" data-t="table"></button></div>
+        <button class="btn ghost" id="resHome" data-t="go_home"></button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- VALORAR -->
+<section id="rate" class="scr" aria-labelledby="rateTitle">
+  <div class="card wide">
+    <div class="top"><h2 id="rateTitle" data-t="rate_title"></h2><span class="prog-t" id="rateProg"></span></div>
+    <div class="rcards" id="rCards"></div>
+    <p class="note center" id="rateEnd" hidden data-t="rate_thanks"></p>
+    <div class="row"><button class="btn" id="rateSkip" data-t="skip"></button><button class="btn pri" id="rateDone" data-t="done"></button></div>
+  </div>
+</section>
+
+<!-- TABLA -->
+<section id="table" class="scr" aria-labelledby="tabTitle">
+  <div class="card wide">
+    <div class="top"><button class="x" data-close="table" data-ta="go_home">‹</button><h2 id="tabTitle" data-t="table"></h2><span class="badge" id="tabState"></span></div>
+    <div class="tabs" role="tablist"><button role="tab" class="tab on" id="tabToday" data-t="tab_today"></button><button role="tab" class="tab" id="tabYest" data-t="tab_yesterday"></button></div>
+    <p class="note" id="tabNote" hidden></p>
+    <div class="tbl" id="tbl"></div>
+    <div class="alias-row"><span id="myAlias"></span><button class="link" id="rerollBtn"></button></div>
+  </div>
+</section>
+
+<!-- BITÁCORA -->
+<section id="logs" class="scr" aria-labelledby="logTitle">
+  <div class="card wide">
+    <div class="top"><button class="x" data-close="logs" data-ta="go_home">‹</button><h2 id="logTitle" data-t="log"></h2></div>
+    <div class="rankbox"><canvas id="logAstro" width="96" height="96"></canvas><div><b id="logRank"></b><div class="bar"><i id="logBar"></i></div><small id="logRankTxt"></small></div></div>
+    <div id="logList" class="loglist"></div>
+  </div>
+</section>
+
+<!-- ARCHIVO -->
+<section id="arch" class="scr" aria-labelledby="archTitle">
+  <div class="card wide">
+    <div class="top"><button class="x" data-close="arch" data-ta="go_home">‹</button><h2 id="archTitle" data-t="archive_title"></h2></div>
+    <p class="sub small left" data-t="archive_sub"></p>
+    <div id="archList" class="archlist"></div>
+  </div>
+</section>
+
+<!-- CÓMO JUGAR -->
+<section id="help" class="scr" aria-labelledby="helpTitle">
+  <div class="card wide">
+    <div class="top"><button class="x" data-close="help" data-ta="go_home">‹</button><h2 id="helpTitle" data-t="how_title"></h2></div>
+    <div class="vignettes">
+      <figure><canvas class="vg" id="vg1" width="300" height="190"></canvas><figcaption data-t="how_1"></figcaption></figure>
+      <figure><canvas class="vg" id="vg2" width="300" height="190"></canvas><figcaption data-t="how_2"></figcaption></figure>
+      <figure><canvas class="vg" id="vg3" width="300" height="190"></canvas><figcaption data-t="how_3"></figcaption></figure>
+    </div>
+    <p class="sub small" data-t="how_hint"></p>
+    <div class="legend" id="legend"></div>
+    <button class="btn" id="replayTut" data-t="replay_tutorial"></button>
+  </div>
+</section>
+
+<!-- AJUSTES -->
+<section id="settings" class="scr" aria-labelledby="setTitle">
+  <div class="card">
+    <div class="top"><button class="x" data-close="settings" data-ta="go_home">‹</button><h2 id="setTitle" data-t="settings"></h2></div>
+    <p class="note" id="noAudio" hidden data-t="no_audio"></p>
+    <div class="set"><label data-t="set_music"></label><input type="range" id="musVol" min="0" max="100" data-ta="volume"><button class="tog" id="musTog" role="switch"></button></div>
+    <div class="set"><label data-t="set_sfx"></label><input type="range" id="sfxVol" min="0" max="100" data-ta="volume"><button class="tog" id="sfxTog" role="switch"></button></div>
+    <div class="set" id="vibRow"><label data-t="set_vibration"></label><button class="tog" id="vibTog" role="switch"></button></div>
+    <div class="set"><label data-t="set_lang"></label><div class="seg langseg" id="langSeg" role="group" data-ta="set_lang"><button data-v="es" lang="es">ES</button><button data-v="en" lang="en">EN</button></div></div>
+    <div class="set" id="fsRow"><label data-t="fullscreen"></label><button class="tog" id="fsTog" role="switch"></button></div>
+    <div class="set"><label data-t="set_controls"></label><div class="seg" id="ctlSeg"><button data-v="thumbs" data-t="ctl_thumbs"></button><button data-v="one" data-t="ctl_one"></button></div></div>
+    <div class="set"><label data-t="set_side"></label><div class="seg" id="sideSeg"><button data-v="right" data-t="side_right"></button><button data-v="left" data-t="side_left"></button></div></div>
+    <div class="set"><label data-t="set_trails"></label><button class="tog" id="trailSet" role="switch"></button></div>
+    <div class="set"><label data-t="set_minimap"></label><button class="tog" id="miniTog" role="switch"></button></div>
+    <div class="set"><label data-t="set_shake"></label><button class="tog" id="shakeTog" role="switch"></button></div>
+    <div class="set"><label data-t="set_contrast"></label><button class="tog" id="contrastTog" role="switch"></button></div>
+    <button class="btn danger" id="resetBtn" data-t="reset_progress"></button>
+  </div>
+</section>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<div id="mapBig" hidden><canvas id="mapBigCv"></canvas></div>
+<div id="fade"></div>
+
+<script src="src/gen.js?v=7"></script>
+<script src="src/sim.js?v=7"></script>
+<script src="src/astro.js?v=7"></script>
+<script src="src/i18n.js?v=7"></script>
+<script src="src/audio.js?v=7"></script>
+<script src="src/render.js?v=7"></script>
+<script src="src/net.js?v=7"></script>
+<script src="src/main.js?v=7"></script>
+</body>
+</html>
