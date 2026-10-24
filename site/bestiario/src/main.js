@@ -593,7 +593,7 @@ function showTitle(on) {
 function paintTitle() {
   const has = G.hasGame();
   {
-    $('t-play').textContent = has ? L('Continuar', 'Continue') : L('Jugar', 'Play');
+    $('t-play').textContent = has ? L('Continuar partida', 'Continue game') : L('Jugar', 'Play');   // SRC-G03: «Continuar partida» recupera el guardado
     $('t-new').hidden = !has;
     const beaten = G.leagueBeaten();
     $('tprog').innerHTML = has ? `<span>${G.isChampion() ? L('♛ Campeón del Bestiario', '♛ Bestiary Champion') : `${L('Liga', 'League')} ${beaten}/${LEAGUE.length}`}</span><span>${L('Bestiario', 'Bestiary')} ${G.dexCount()}/${SPECIES.length}</span><span>${G.state().coins} ${L('monedas', 'coins')}</span>` : '';

@@ -398,7 +398,7 @@
     $('resv').hidden = !!cfg.noReserve;
     G.paused = false; // una partida nueva nunca hereda la pausa de la anterior (PLAY-FRENTES-01)
     renderBanner(); renderSideBrief(); relayout(); updateBoard(true);
-    if ((cfg.mode === 'daily' || cfg.mode === 'quick') && !B.x.some((v) => v) && !LS.get('hintDrag', 0)) { LS.set('hintDrag', 1); setTimeout(() => { if (G.base === 'board' && !G.overlays.length) toast(t('dragHelp'), null, null, 5000); }, 700); }
+    if ((cfg.mode === 'daily' || cfg.mode === 'quick') && !B.x.some((v) => v) && !LS.get('hintDrag', 0)) { LS.set('hintDrag', 1); setTimeout(() => { if (G.base === 'board' && !G.overlays.length && !G.bt && !B.x.some((v) => v)) toast(t('dragHelp'), null, null, 5000); }, 700); }
   }
   function reserve() { let s = 0; for (const v of B.x) s += v; return B.ships - s; }
   const maxFor = (p) => B.x[p] + reserve();
@@ -825,7 +825,7 @@
       bh += '<div class="badge">' + ringSVG(nextR ? (mer - C.RANKS[rk]) / (nextR - C.RANKS[rk]) : 1, '#7700f4', '<text x="20" y="25" text-anchor="middle" font-size="13" fill="#c9a2ff">★</text>') + '<div><span class="kick">' + esc(t('rankKick')) + '</span><b>' + esc(t('ranks')[rk]) + '</b></div></div>';
     } else {
       const q = LS.get('rapida', { best: 0, n: 0 });
-      bh += '<div class="badge">' + ringSVG(q.best / 100, '#00f2cf', '') + '<div><span class="kick">' + esc(t('record', { p: fmtPct(q.best) })) + '</span><b>' + (rec.newRecord ? esc(t('newRecord')) : '#' + q.n) + '</b></div></div>';
+      bh += '<div class="badge">' + ringSVG(q.best / 100, '#00f2cf', '') + '<div><span class="kick">' + esc(t('record', { p: fmtRend(q.best) })) + '</span><b>' + (rec.newRecord ? esc(t('newRecord')) : '#' + q.n) + '</b></div></div>';
     }
     // criterios de medalla: la regla vigente (Math.round del rendimiento; 50/75/90; Mando perfecto sólo con mejor reparto evaluado)
     bh += '<div class="badge info"><button type="button" class="btn sm" id="bMedalInfo" aria-expanded="false" aria-controls="rsMedalInfo"><span>' + esc(t('medalCriteria')) + '</span></button><p id="rsMedalInfo" hidden>' + esc(t('medalRounded')) + ' ' + esc(t('medalThresholds')) + (quick ? '' : ' ' + esc(t('perfectCommand'))) + '</p></div>';
@@ -1031,7 +1031,7 @@
   }
   function renderTrain() {
     const q = LS.get('rapida', { best: 0, n: 0 });
-    $('trRec').textContent = q.n ? t('record', { p: fmtPct(q.best) }) : '';
+    $('trRec').textContent = q.n ? t('record', { p: fmtRend(q.best) }) : '';
     const st = $('trStyles'); st.innerHTML = '';
     ['agresivo', 'equilibrado', 'sorpresa', 'desconocido'].forEach((k) => { const b = el('button', 'opt'); b.innerHTML = '<b>' + esc(t('styles')[k]) + '</b><span>' + esc(t('styleDesc')[k]) + '</span>'; b.onclick = () => { sfx('click'); startDuel(k); }; st.appendChild(b); });
   }

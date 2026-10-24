@@ -289,8 +289,8 @@ function layout() {
   $('mName').style.fontSize = clamp(m.mast * (m.mast < 56 ? 0.62 : 0.5), 15, 42) + 'px';
   const mf = clamp(m.mast * 0.15, 8, 11) + 'px'; mast.querySelectorAll('.m-top,.m-bot').forEach(e => { e.style.fontSize = mf; });
   const B = $('board'); B.style.width = C * cell + 'px'; B.style.height = F * cell + 'px';
-  $('cells').style.backgroundSize = cell + 'px ' + cell + 'px'; $('cells').style.backgroundPosition = (cell / 2) + 'px ' + (cell / 2) + 'px';
-  $('cells').style.backgroundImage = 'radial-gradient(circle at center, rgba(22,17,31,.22) 1px, transparent 1.6px)';
+  // VIS-PORTADA-01: la retícula la dibuja el CSS a partir de --cell (puntos tenues en reposo, guías visibles solo en #board.editing)
+  $('cells').style.setProperty('--cell', cell + 'px');
   const changed = cell !== S.cell; S.cell = cell;
   // PLAY-PORTADA-02 / VIS-PORTADA-01: guías de filas y columnas sólo mientras se edita; tras cerrar la edición, retícula tenue
   $('board').classList.toggle('editing', !!(S.run && S.run.phase === 'play' && !S.run.demo));

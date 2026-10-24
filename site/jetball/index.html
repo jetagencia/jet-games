@@ -2985,7 +2985,7 @@ body.jb-menu #overlay.show{padding-top:calc(58px + var(--st,0px))!important}
 /* HUD legible en pantallas grandes */
 @media (min-width:900px) and (pointer:fine){
   .hud-top .hud-pill,.hud-top.dim .hud-pill{font-size:13px!important;padding:7px 12px!important;gap:7px!important}
-  .hud-pill .lbl{font-size:10px!important}
+  .hud-pill .lbl{font-size:12px!important}
   .hud-top #btnMenu.nav-button{font-size:13px!important}
 }
 @media (max-width:899px){.hud-top .hud-pill,.hud-top.dim .hud-pill{font-size:11px!important}}
@@ -3001,6 +3001,9 @@ button,.mode-pill,.diff-btn,.inv-slot,.pw-btn{touch-action:manipulation}
 /* PLAY-BALL-03 / VIS-BALL-03: lectura instrumental del HUD */
 .hud-pill .stat{display:inline-flex;align-items:baseline;gap:4px;white-space:nowrap}
 .hud-pill .lbl{font:600 12px/1.3 Poppins,sans-serif;letter-spacing:.03em;text-transform:none;color:#c9c3dc;text-shadow:none;opacity:1}
+/* las etiquetas y el grupo Nivel se ven en todos los anchos (anulan las reglas viejas de ≤480 px) */
+.hud-top .hud-pill .lbl{display:inline!important}
+.hud-top .hud-pill .stat.hud-extra{display:inline-flex!important}.hud-top .hud-pill .sep.hud-extra{display:inline!important}
 .hud-top .hud-pill .val,.hud-pill .val{font-weight:800;font-variant-numeric:tabular-nums;text-shadow:none!important;font-size:14px;line-height:1.1}
 .hud-pill .val.best{font-size:12px;font-weight:600}
 .hud-pill .val.success{animation:successPulse .3s ease-in-out 1}
@@ -3046,13 +3049,26 @@ body.theme-light .overlay.show:not(.intermediate) .more-settings>summary{backgro
 @media (min-width:900px) and (min-height:600px){
   #overlay.show:not(.intermediate){flex-direction:row;flex-wrap:nowrap;align-items:flex-start;justify-content:center;gap:32px;padding-left:max(1rem,calc(50% - 480px));padding-right:max(1rem,calc(50% - 480px))}
   #overlay.show:not(.intermediate) .home-col{display:flex;flex-direction:column;align-items:center;flex:1 1 0;min-width:0;max-width:460px}
-  #overlay.show:not(.intermediate) .home-col.home-right{position:sticky;top:0}
+  #overlay.show:not(.intermediate) .home-right .ov-buttons{position:static;bottom:auto}
   #overlay.show:not(.intermediate) .home-howto{display:block;width:100%;max-width:400px;margin:6px 0 10px;padding:14px 16px;border:1px solid var(--card-border);border-radius:12px;background:var(--card-bg);text-align:left;font:400 13px/1.55 Poppins,sans-serif;color:var(--ink-2)}
   #overlay.show:not(.intermediate) .home-howto h2{font:700 12px Poppins,sans-serif;letter-spacing:.2em;text-transform:uppercase;color:#00f2cf;margin:0 0 6px}
   #overlay.show:not(.intermediate) .home-howto p{margin:0 0 6px}
   #overlay.show:not(.intermediate) .home-howto p:last-child{margin:0}
   #overlay.show:not(.intermediate) .config-card{margin-top:0}
   #overlay.show:not(.intermediate) .hero-mode .hero-preview{height:96px}
+  #overlay.show:not(.intermediate) .home-left .hero-mode{width:100%;max-width:400px;margin:6px 0 10px}
+  #overlay.show:not(.intermediate) .home-left .records{margin:0 0 10px}
+}
+/* el hero vive fuera de la tarjeta de configuración: en pantallas intermedias se oculta igual que la tarjeta */
+#overlay.intermediate .hero-mode{display:none!important}
+/* en móvil / pantallas bajas los hijos de las columnas vuelven al orden visual anterior */
+@media (max-width:899px), (max-height:599px){
+  #overlay .home-left>*{order:0}
+  #overlay #configCard{order:1}
+  #overlay #ovRecords{order:2}
+  #overlay .ov-buttons{order:3}
+  #overlay #inventory,#overlay #powerHelp,#overlay .play-controls{order:4}
+  #overlay #moreSettings{order:5}
 }
 </style>
 </head>
@@ -19337,8 +19353,10 @@ return { init, play, stop, setVolume };
     const howto = document.createElement('div'); howto.className = 'home-howto'; howto.id = 'homeHowto';
     howto.innerHTML = '<h2>Cómo se juega</h2><p>Trazá barreras horizontales o verticales para encerrar las bolas y capturar el porcentaje de tablero que pide cada nivel.</p><p>Si una bola toca una barrera en construcción, perdés una vida. Los poderes guardados se usan con 1 / 2 / 3 o desde la pausa.</p>';
     const pick = sel => ov.querySelector(':scope > ' + sel);
-    const L = ['.ov-brand', '.ov-tagline', '.ov-trademark', '#langSwitch'].map(pick).filter(Boolean);
-    const R = ['#ovEye', '.stage-identity', '#stagePreviewSlot', '#ovTitle', '#ovStats', '#ovMsg', '#configCard', '#ovRecords', '.ov-buttons', '#inventory', '#powerHelp', '.play-controls', '#moreSettings'].map(pick).filter(Boolean);
+    // izquierda: marca, idioma, resumen del modo (hero) y récords; derecha: pills, dificultad, Jugar y ajustes.
+    // En móvil el orden visual anterior se conserva con reglas `order` (ver CSS).
+    const L = ['.ov-brand', '.ov-tagline', '.ov-trademark', '#langSwitch'].map(pick).filter(Boolean).concat([document.getElementById('heroMode'), pick('#ovRecords')].filter(Boolean));
+    const R = ['#ovEye', '.stage-identity', '#stagePreviewSlot', '#ovTitle', '#ovStats', '#ovMsg', '#configCard', '.ov-buttons', '#inventory', '#powerHelp', '.play-controls', '#moreSettings'].map(pick).filter(Boolean);
     if (L.length && R.length) {
       ov.insertBefore(left, L[0]);
       L.forEach(el => left.appendChild(el));

@@ -28,7 +28,7 @@ h1,h2,h3,p{margin:0}
 #banner.ok{background:rgba(0,40,36,.92);border-color:rgba(0,242,207,.5);color:#c9fff5}
 
 /* ---------- pantallas ---------- */
-.scr{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;padding:calc(64px + var(--sat)) calc(14px + var(--sar)) calc(14px + var(--sab)) calc(14px + var(--sal));background:rgba(5,1,10,.66);-webkit-backdrop-filter:blur(5px);backdrop-filter:blur(5px);z-index:20;overflow-y:auto;overflow-x:hidden;touch-action:pan-y;-webkit-overflow-scrolling:touch}
+.scr{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;padding:calc(64px + var(--sat)) calc(14px + var(--sar)) calc(14px + var(--sab)) calc(14px + var(--sal));background:rgba(5,1,10,.66);-webkit-backdrop-filter:blur(5px);backdrop-filter:blur(5px);z-index:20;overflow-y:auto;overflow-x:hidden;touch-action:pan-y pinch-zoom;-webkit-overflow-scrolling:touch}
 .scr.on{display:flex;animation:fade var(--tr) ease}
 .scr.home{background:transparent;-webkit-backdrop-filter:none;backdrop-filter:none;z-index:10}
 @keyframes fade{from{opacity:0}to{opacity:1}}
@@ -53,8 +53,7 @@ h1,h2,h3,p{margin:0}
 .btn.big{min-height:64px;font-size:19px;border-radius:18px}
 .btn.sm{min-height:46px;font-size:14px}
 .btn.danger{border-color:rgba(255,68,102,.35);color:#ffc0cc}
-.btn.danger.armed{background:#ff4466;color:#fff;border-color:#ff4466;animation:pulse 1s infinite}
-@keyframes pulse{50%{box-shadow:0 0 0 6px rgba(255,68,102,.25)}}
+#msgB .btn.danger{border-color:rgba(255,68,102,.6);color:#ffc0cc}
 .row{display:flex;gap:10px}.row .btn{flex:1}
 .chip{font:600 12px 'JetBrains Mono',monospace;padding:6px 10px;border-radius:99px;background:rgba(255,255,255,.06);border:1px solid var(--line);color:#e2dcf5;white-space:nowrap}
 .chip.today{border-color:rgba(0,242,207,.45);color:var(--cyan)}
@@ -452,3 +451,65 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
  .row2{gap:8px}.row2 .btn.sm{min-height:44px}
 }
 @media (min-width:900px) and (min-height:600px) and (max-height:860px){.hstage{min-height:170px}.logo{font-size:56px}}
+
+/* ══ Auditoría 2026-10-22 · Frentes ══ */
+/* RSP-MODALS-01 / RSP-FRENTES-01: lo inerte no se ve interactivo; las hojas cerradas no existen para el teclado */
+[inert]{pointer-events:none}
+#toast.accion{pointer-events:auto}
+/* Texto compartible íntegro y seleccionable (SRC-FR02) */
+.copiaMano{width:100%;min-height:120px;padding:10px;border-radius:12px;background:#0b0618;color:var(--ink);border:1px solid var(--line);font:500 13px 'JetBrains Mono',monospace;line-height:1.5;-webkit-user-select:text;user-select:text;resize:vertical;margin-bottom:4px}
+/* Tutorial completado: destinos separados en la burbuja (PLAY-FRENTES-02) */
+.bubble .bubble-btns{display:flex;flex-wrap:wrap;gap:8px;flex:1 1 100%;margin-left:6px}
+.bubble .bubble-btns .btn{flex:1 1 140px;width:auto;margin:0;min-height:44px;font-size:14px}
+/* Reserva y total asignado (SRC-FR01) */
+.resv{flex-wrap:wrap}
+.resv-tot{flex:1 1 100%;font:600 12px 'JetBrains Mono',monospace;color:var(--dim);letter-spacing:.04em}
+/* Leyendas de datos (PLAY-FRENTES-04) */
+.ley,.sb-ley,.rs-ley{display:flex;flex-wrap:wrap;gap:4px 14px;font:600 11px 'JetBrains Mono',monospace;color:var(--dim);letter-spacing:.04em}
+.comp .ley{justify-content:center;margin-top:6px}
+.sb-ley{margin-top:8px}
+.rs-ley{margin:0 0 8px}
+.sw{display:inline-block;width:14px;height:0;vertical-align:middle;margin-right:6px}
+.sw.dash{border-top:2px dashed rgba(255,68,102,.8)}
+.sw.bar{height:6px;border-radius:3px;background:var(--pink)}
+.sw.line{border-top:2px solid var(--cyan)}
+.sw.bars{height:10px;background:repeating-linear-gradient(90deg,rgba(255,68,102,.78) 0 3px,transparent 3px 5px)}
+/* Rendimiento: regla de ponderación y criterios de medalla (PLAY-FRENTES-06/07) */
+.rs-rule{font-size:12.5px;color:var(--dim);margin-top:4px;line-height:1.4}
+.badge.info{flex-direction:column;align-items:stretch;gap:6px;flex:1 1 100%}
+.badge.info .btn{margin:0;min-height:40px;font-size:13px}
+.badge.info p{font-size:12.5px;line-height:1.45;color:#d9d1f0}
+.badge.info p[hidden]{display:none}
+@media (max-width:560px){.rs-badges .badge.info{grid-column:1/-1}}
+/* Barra de acciones del resultado siempre a mano, sin tapar las tarjetas */
+.rs-btns{position:sticky;bottom:calc(-20px - var(--sab));background:#110922;padding:10px 0 22px;margin:12px 0 -20px;border-top:1px solid var(--line)}
+/* Pausa durante la batalla */
+#paNote{margin:-8px 0 12px}
+
+/* ── VIS-FRENTES-01 · Tablero: paneles opacos y escala de texto; el fondo de partida lo pinta render.js ── */
+.bside{background:rgba(18,29,43,.96);border:1px solid #34465B;border-radius:12px;padding:12px;gap:12px;-webkit-backdrop-filter:none;backdrop-filter:none}
+.obj{background:rgba(18,29,43,.96);border:1px solid #34465B;border-radius:12px;padding:12px 16px;font-size:16px;line-height:1.4}
+.obj small{font-size:14px;line-height:1.5}
+.bubble{background:rgba(18,29,43,.96);border:1px solid #34465B;border-radius:12px}
+.bb-lab{background:rgba(18,29,43,.96);border:1px solid #34465B;border-radius:12px}
+.resv-top b{font-size:28px}
+.sb-tip p,.sbrief .sb-comp{font-size:14px;line-height:1.5}
+@media (min-width:640px){.lanes{gap:8px}.bside{padding:16px}}
+/* ── VIS-FRENTES-03 · Columnas de precisión ── */
+.lcol{background:#101A27;border:1px solid #3C5067;border-radius:8px}
+.lfill{background:linear-gradient(0deg,#1AA899,#58D8C5);box-shadow:none}
+.lfill::before{content:'';position:absolute;left:0;right:0;top:0;height:1px;background:#BCFFF3}
+.lfill::after{background:repeating-linear-gradient(0deg,transparent 0,transparent calc(var(--seg,10%) - 1px),rgba(0,0,0,.22) calc(var(--seg,10%) - 1px),rgba(0,0,0,.22) var(--seg,10%))}
+.lnum{font-weight:700;font-variant-numeric:tabular-nums;background:#1C2C3E;border:1px solid #4D657E;border-radius:8px}
+.lane.sel .lnum{border-color:var(--cyan);box-shadow:inset 0 0 0 1px var(--cyan)}
+.lpm button{border-radius:8px}
+.lpm button svg{width:22px;height:22px}
+.resv.zero .resv-bar{opacity:.5}
+.board.battle .lcol,.board.locked .lcol{background:#0E1722;border-color:#5A7086}
+/* ── VIS-FRENTES-04 · Batalla y CTA ── */
+.rchip{border-radius:6px;padding:4px 6px}
+.btn.launch.ready{background:var(--cyan);color:#052F2B;text-shadow:none;box-shadow:0 8px 24px rgba(0,242,207,.25);animation:ctaIn .18s ease}
+.btn.launch.ready::after{display:none}
+@keyframes ctaIn{from{opacity:.6;transform:scale(.98)}to{opacity:1;transform:none}}
+.nomo .btn.launch.ready{animation:none}
+@media (prefers-reduced-motion:reduce){.btn.launch.ready{animation:none}}

@@ -48,6 +48,7 @@ kbd{display:inline-block;min-width:1.6em;padding:1px 6px;border:1px solid #f4ecd
 #load[data-state=error] #load-txt{font-size:15px;color:var(--cream);margin-top:8px;line-height:1.5}
 .load-actions{display:flex;flex-direction:column;align-items:center;gap:10px;width:100%;margin-top:16px}
 .load-actions .btn{width:min(100%,260px);min-height:48px;margin:0;justify-content:center;text-align:center;text-decoration:none}
+.load-actions a.btn{color:var(--cream)}
 #load-details{margin-top:14px;font-size:13px;color:var(--cream-2);text-align:left;width:100%}
 #load-details summary{cursor:pointer;text-align:center;color:var(--gold2)}
 #load-details pre{margin-top:6px;white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;line-height:1.5;max-height:30vh;overflow:auto;padding:8px;border-radius:8px;background:#0d241a99}
@@ -611,8 +612,8 @@ body:has(#hud:not(.hidden)) #upd{display:none}
     </div>
     <div class="best" id="m-best"></div>
     <div class="links">
-      <button class="btn quiet" id="m-how"></button>
-      <a class="btn quiet" href="credits.html" id="m-credits"></a>
+      <button class="btn quiet" id="m-how">Cómo jugar</button>
+      <a class="btn quiet" href="credits.html" id="m-credits">Créditos</a>
     </div>
     <div class="menu-foot" id="m-ver"></div>
   </div>

@@ -473,3 +473,76 @@ input[type=range]{height:44px}
  #finCard>.acts{order:3;position:static;background:none;padding:6px 0 4px}
  .acts .row .btn{font-size:14px;padding:6px 8px}
 }
+
+/* ---- auditoría 24-10 (catálogo portada + comunes) ---- */
+/* SRC-G05: estados de carga (loading / error / ready son excluyentes; los gobierna html[data-carga]) */
+.carga{position:fixed;inset:0;z-index:15;display:grid;align-content:center;justify-items:center;gap:12px;text-align:center;padding:calc(64px + var(--sat)) calc(16px + var(--sar)) calc(16px + var(--sab)) calc(16px + var(--sal))}
+.carga .logo{margin-bottom:6px}
+.carga-txt{font:600 14px 'JetBrains Mono',monospace;color:var(--dim);letter-spacing:.04em;max-width:360px;line-height:1.45}
+html[data-carga="cargando"] .carga-txt::after{content:'';display:block;width:120px;height:3px;margin:10px auto 0;border-radius:99px;background:linear-gradient(90deg,transparent,var(--cyan),transparent);animation:cargaBarra 1.4s linear infinite}
+@keyframes cargaBarra{from{background-position:-120px 0}to{background-position:120px 0}}
+.carga-acc{display:grid;gap:10px;width:100%;max-width:300px;margin-top:6px}
+.carga-acc .btn{margin:0;text-decoration:none}
+html[data-carga="listo"] #carga{display:none!important}
+/* RSP-GLOBAL-01: el zoom del navegador sigue disponible (pinch) en las superficies desplazables */
+.scr{touch-action:pan-y pinch-zoom}
+#tray{touch-action:pan-x pinch-zoom}
+.land #tray,.wide #tray{touch-action:pan-y pinch-zoom}
+.land.trayrow #tray{touch-action:pan-x pinch-zoom}
+.hcar{touch-action:pan-x pan-y pinch-zoom}
+/* RSP-PORTADA-01: fichas de reglas/tema con 44 px reales de alto (sin pseudo-elemento que invade la fila vecina) */
+.chip{min-height:44px;height:auto;padding:6px 12px}
+.chip::after{content:none}
+.chip-t{font:600 10.5px Poppins,system-ui,sans-serif;color:var(--dim);letter-spacing:0;margin-left:2px}
+@media (max-width:359px){.chip-t{display:none}}
+/* VIS-PORTADA-01: retícula tenue en reposo; guías de filas y columnas sólo mientras se edita */
+#cells{--cell:24px;background-image:radial-gradient(circle at center,rgba(22,17,31,.07) 1px,transparent 1.6px);background-size:var(--cell) var(--cell);background-position:calc(var(--cell) / 2) calc(var(--cell) / 2);border-color:rgba(22,17,31,.08)}
+#board.editing #cells{background-image:radial-gradient(circle at center,rgba(22,17,31,.2) 1px,transparent 1.6px),linear-gradient(rgba(22,17,31,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(22,17,31,.07) 1px,transparent 1px);background-size:var(--cell) var(--cell),var(--cell) var(--cell),var(--cell) var(--cell);background-position:calc(var(--cell) / 2) calc(var(--cell) / 2),0 0,0 0;border-color:rgba(22,17,31,.16)}
+/* VIS-PORTADA-01: el grano y la viñeta del papel quedan debajo del contenido y más suaves (no ensucian el texto) */
+#paper::before{z-index:0;background:radial-gradient(120% 90% at 50% 40%,transparent 62%,rgba(80,60,30,.06) 100%),url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .3  0 0 0 0 .25  0 0 0 0 .15  0 0 0 .035 0'/></filter><rect width='140' height='140' filter='url(%23n)'/></svg>")}
+#mast,#board{position:relative;z-index:1}
+#press,#stamp,.foil{z-index:8}
+/* VIS-PORTADA-02: titulares legibles en recortes chicos */
+.pc .h{-webkit-hyphenate-limit-chars:10 5 4;hyphenate-limit-chars:10 5 4}
+.pc.compact .in{padding:4% 5%}
+.pc.compact .sec{font-size:8px;margin-bottom:2px}
+.pc.compact .d{display:none}
+.pc.compact.t-foto .cap{-webkit-line-clamp:1}
+/* VIS-PORTADA-03: los sellos ocupan una banda propia arriba y no tapan el titular */
+.pc .st{top:3px;right:3px;gap:2px;max-width:calc(100% - 6px)}
+.pc .st i{transform:none;border-radius:3px;box-shadow:0 1px 2px rgba(0,0,0,.25);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pc .st i.sum{background:#3d2f66}
+.pc.has-st .in{padding-top:max(16px,1.5em)}
+.pc.has-st.t-foto .in{padding-top:0}
+.pc.has-st.t-pub .in,.pc.has-st.t-clas .in,.pc.has-st.t-excl .in{padding-top:max(18px,1.6em)}
+/* VIS-PORTADA-04: estados de pieza sin halos: selección con contorno de 2 px, origen del arrastre punteado, «no entra» en el borde inferior */
+.pc.sel .in{box-shadow:0 0 0 2px var(--cyan)}
+.ti.sel{box-shadow:0 0 0 2px var(--cyan)}
+.pc.src{opacity:.45}
+.pc.src .in{border:1px dashed rgba(22,17,31,.55);background:repeating-linear-gradient(45deg,rgba(22,17,31,.05) 0 6px,transparent 6px 12px),var(--paper2)}
+.pc.nofit{opacity:.55}
+.pc.nofit::after{top:auto;left:50%;bottom:4px;transform:translateX(-50%);font-size:9.5px;border-radius:3px}
+/* resultados: acciones en flujo (nunca tapan el desglose), estrellas con texto, comparación bajo demanda */
+.acts,#finCard>.acts{position:static;margin:8px 0 0;padding:0;background:none;border-radius:0}
+.stars-txt{text-align:center;color:var(--dim);font-size:13px;line-height:1.45;margin:0 0 10px}
+#bCmp{margin:0 0 10px}
+.cmp{margin:0 0 12px}
+.lines-t{font:800 11px 'JetBrains Mono',monospace;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);margin:8px 0 4px}
+.row .btn.danger{margin-top:0}
+/* ayuda: navegación por botones además de los puntos; la diapositiva activa es la única visible para lectores */
+.hnav{display:flex;align-items:center;justify-content:center;gap:6px;margin:6px 0}
+.hnav .bb{min-width:44px;height:44px;padding:0;font-size:22px;line-height:1}
+.hnav .dots{margin:0}
+.dots button[aria-current="true"]::before{width:22px;background:var(--cyan)}
+/* vista ampliada: reproducción de la foto a tamaño legible */
+.det-foto{display:block;margin:4px auto 10px;border-radius:8px;border:1px solid var(--line);background:#e9e2d2}
+/* presentación de la edición: referencia del jefe y botón «Continuar» */
+.intro .gl.ref{font-size:12.5px;margin-top:6px;color:var(--dim)}
+#bIntroGo{margin:16px auto 0;max-width:260px}
+.intro .tap{display:none}
+/* marcador: unidad explícita junto al número */
+.sc-u{font:600 10.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:var(--dim);text-transform:uppercase}
+.score.stack .sc-u{display:none}
+@media (max-width:359px){.sc-u{display:none}}
+/* vuelve a pintar las fichas de pares por encima del papel (z-index del papel ahora en 0) */
+#pieces{z-index:2}

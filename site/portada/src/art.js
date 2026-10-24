@@ -152,28 +152,43 @@ function scene(c, id, w, h) {
 }
 
 const cache = new Map();
-/** Dibuja la viñeta `id` en semitono sobre un canvas de w×h píxeles (ya multiplicados por dpr). */
-function halftone(cv, id, ink, paper) {
+/** Dibuja la viñeta `id` en semitono sobre un canvas de w×h píxeles de backing (ya multiplicados por dpr).
+ *  VIS-PORTADA-03: el paso se calcula en píxeles CSS (clamp(min(anchoCSS, altoCSS)/30, 1.5, 3)) y después se multiplica por dpr,
+ *  así la misma foto se reconoce igual a DPR 1/2/3. Con lado corto < 48 px CSS se usa una versión de tres tonos planos de la
+ *  misma escena (sin puntos más grandes que sus rasgos). La clave de caché incluye dpr y paso. La ilustración (p.ill) no cambia. */
+function halftone(cv, id, ink, paper, dpr) {
   const w = cv.width, h = cv.height; if (!w || !h) return;
-  const key = id + ':' + w + 'x' + h + ':' + ink + paper;
+  dpr = dpr || 1;
+  const wCss = w / dpr, hCss = h / dpr, minCss = Math.min(wCss, hCss);
+  const stepCss = Math.max(1.5, Math.min(3, minCss / 30)), step = stepCss * dpr, flat = minCss < 48;
+  const key = id + ':' + w + 'x' + h + ':' + ink + paper + ':' + dpr + ':' + step.toFixed(2) + (flat ? ':f' : '');
   const c = cv.getContext('2d');
   const hit = cache.get(key);
   if (hit) { c.clearRect(0, 0, w, h); c.drawImage(hit, 0, 0); return; }
-  const step = Math.max(3, Math.round(Math.min(w, h) / 30));
   const sw = Math.ceil(w / step) + 1, sh = Math.ceil(h / step) + 1;
-  const src = document.createElement('canvas'); src.width = Math.max(40, sw * 2); src.height = Math.max(40, Math.round(src.width * h / w));
+  const src = document.createElement('canvas'); src.width = Math.max(40, Math.min(400, sw * 2)); src.height = Math.max(40, Math.round(src.width * h / w));
   const sc = src.getContext('2d'); scene(sc, id, src.width, src.height);
   let data; try { data = sc.getImageData(0, 0, src.width, src.height).data; } catch (e) { data = null; }
   const out = document.createElement('canvas'); out.width = w; out.height = h;
   const o = out.getContext('2d');
   o.fillStyle = paper || '#f2ecdf'; o.fillRect(0, 0, w, h);
-  o.fillStyle = ink || '#16111f';
-  for (let j = 0; j < sh; j++) for (let i = 0; i < sw; i++) {
-    const x = i * step + (j % 2 ? step / 2 : 0), y = j * step;
-    let L = 0.5;
-    if (data) { const sx = Math.min(src.width - 1, Math.floor(x / w * src.width)), sy = Math.min(src.height - 1, Math.floor(y / h * src.height)); const k = (sy * src.width + sx) * 4; L = (data[k] * 0.3 + data[k + 1] * 0.59 + data[k + 2] * 0.11) / 255; }
-    const rad = step * 0.62 * Math.sqrt(Math.max(0, 1 - L));
-    if (rad > 0.25) { o.beginPath(); o.arc(x, y, rad, 0, 6.283); o.fill(); }
+  const lum = (x, y) => { if (!data) return 0.5; const sx = Math.min(src.width - 1, Math.floor(x / w * src.width)), sy = Math.min(src.height - 1, Math.floor(y / h * src.height)); const k = (sy * src.width + sx) * 4; return (data[k] * 0.3 + data[k + 1] * 0.59 + data[k + 2] * 0.11) / 255; };
+  if (flat) {
+    // tres tonos planos: celdas de 2 px CSS, tinta plena / media / papel
+    const cs = 2 * dpr;
+    for (let y = 0; y < h; y += cs) for (let x = 0; x < w; x += cs) {
+      const L = lum(x + cs / 2, y + cs / 2);
+      if (L < 0.38) { o.globalAlpha = 1; } else if (L < 0.7) { o.globalAlpha = 0.45; } else continue;
+      o.fillStyle = ink || '#16111f'; o.fillRect(x, y, cs + 0.5, cs + 0.5);
+    }
+    o.globalAlpha = 1;
+  } else {
+    o.fillStyle = ink || '#16111f';
+    for (let j = 0; j < sh; j++) for (let i = 0; i < sw; i++) {
+      const x = i * step + (j % 2 ? step / 2 : 0), y = j * step;
+      const rad = step * 0.62 * Math.sqrt(Math.max(0, 1 - lum(x, y)));
+      if (rad > 0.25) { o.beginPath(); o.arc(x, y, rad, 0, 6.283); o.fill(); }
+    }
   }
   if (cache.size > 160) cache.delete(cache.keys().next().value);
   cache.set(key, out);

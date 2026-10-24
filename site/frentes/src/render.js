@@ -24,24 +24,35 @@ var TS = 48; // tamaño del astronauta oficial (lo usa drawAstro)
     cv.style.width = w + 'px'; cv.style.height = h + 'px';
     R.bg = null;
   };
+  // Dos fondos: portada (actual) y partida (VIS-FRENTES-01): base #080E18 con radial #17243A al .45, nebulosas ≤ .025 y
+  // como mucho 180 estrellas tenues, para que nada compita detrás de columnas y textos.
   function buildBg() {
+    const board = !!R.boardMode;
     const c = document.createElement('canvas'); c.width = Math.max(1, R.w * R.dpr); c.height = Math.max(1, R.h * R.dpr);
     const g = c.getContext('2d'); g.scale(R.dpr, R.dpr);
     const W = R.w, H = R.h;
-    const grd = g.createRadialGradient(W * 0.3, H * 0.15, 0, W * 0.5, H * 0.5, Math.max(W, H) * 0.9);
-    grd.addColorStop(0, '#140830'); grd.addColorStop(0.5, '#0a0418'); grd.addColorStop(1, '#050108');
-    g.fillStyle = grd; g.fillRect(0, 0, W, H);
+    if (board) {
+      g.fillStyle = '#080E18'; g.fillRect(0, 0, W, H);
+      const grd = g.createRadialGradient(W * 0.5, H * 0.1, 0, W * 0.5, H * 0.4, Math.max(W, H) * 0.8);
+      grd.addColorStop(0, 'rgba(23,36,58,.45)'); grd.addColorStop(1, 'rgba(23,36,58,0)');
+      g.fillStyle = grd; g.fillRect(0, 0, W, H);
+    } else {
+      const grd = g.createRadialGradient(W * 0.3, H * 0.15, 0, W * 0.5, H * 0.5, Math.max(W, H) * 0.9);
+      grd.addColorStop(0, '#140830'); grd.addColorStop(0.5, '#0a0418'); grd.addColorStop(1, '#050108');
+      g.fillStyle = grd; g.fillRect(0, 0, W, H);
+    }
     // nebulosa violeta muy tenue
     const r = seeded(4242);
     for (let i = 0; i < 9; i++) {
       const x = r() * W, y = r() * H, rad = (0.2 + r() * 0.35) * Math.max(W, H);
       const ng = g.createRadialGradient(x, y, 0, x, y, rad);
       const col = i % 3 === 0 ? '0,242,207' : '119,0,244';
-      ng.addColorStop(0, 'rgba(' + col + ',' + (i % 3 === 0 ? 0.025 : 0.06) + ')'); ng.addColorStop(1, 'rgba(' + col + ',0)');
+      const a = board ? 0.025 : (i % 3 === 0 ? 0.025 : 0.06);
+      ng.addColorStop(0, 'rgba(' + col + ',' + a + ')'); ng.addColorStop(1, 'rgba(' + col + ',0)');
       g.fillStyle = ng; g.fillRect(0, 0, W, H);
     }
-    R.bg = c;
-    const n = Math.round(W * H / 2600); R.stars = [];
+    R.bg = c; R.bgMode = board;
+    const n = board ? Math.min(180, Math.round(W * H / 2600)) : Math.round(W * H / 2600); R.stars = [];
     for (let i = 0; i < n; i++) R.stars.push({ x: r() * W, y: r() * H, z: 0.2 + r() * 0.8, p: r() * 6.28, s: r() < 0.08 ? 1.6 : 0.8 + r() * 0.6 });
   }
   // ---------- planetas ----------
@@ -78,12 +89,13 @@ var TS = 48; // tamaño del astronauta oficial (lo usa drawAstro)
     const c = document.createElement('canvas'); c.width = D; c.height = D; const g = c.getContext('2d'); const cx = D / 2;
     // luz de un sol arriba a la izquierda
     const sg = g.createRadialGradient(cx - S * 0.45, cx - S * 0.5, S * 0.1, cx, cx, S * 1.05);
-    sg.addColorStop(0, 'rgba(255,255,255,0.28)'); sg.addColorStop(0.45, 'rgba(255,255,255,0)'); sg.addColorStop(0.75, 'rgba(5,1,12,0.45)'); sg.addColorStop(1, 'rgba(5,1,12,0.88)');
+    // misma luz superior izquierda; el terminador separa sin empastar en negro (.72 en vez de .88)
+    sg.addColorStop(0, 'rgba(255,255,255,0.28)'); sg.addColorStop(0.45, 'rgba(255,255,255,0)'); sg.addColorStop(0.75, 'rgba(5,1,12,0.4)'); sg.addColorStop(1, 'rgba(5,1,12,0.72)');
     g.fillStyle = sg; g.beginPath(); g.arc(cx, cx, S, 0, Math.PI * 2); g.fill();
-    // atmósfera
-    const ag = g.createRadialGradient(cx, cx, S * 0.92, cx, cx, S * 1.32);
-    ag.addColorStop(0, PCOL[idx].glow + '0.55)'); ag.addColorStop(1, PCOL[idx].glow + '0)');
-    g.fillStyle = ag; g.beginPath(); g.arc(cx, cx, S * 1.32, 0, Math.PI * 2); g.moveTo(cx + S * 0.96, cx); g.arc(cx, cx, S * 0.96, Math.PI * 2, 0, true); g.fill();
+    // atmósfera: .22 hasta 1.18 r (radio físico y sombra de esfera intactos)
+    const ag = g.createRadialGradient(cx, cx, S * 0.92, cx, cx, S * 1.18);
+    ag.addColorStop(0, PCOL[idx].glow + '0.22)'); ag.addColorStop(1, PCOL[idx].glow + '0)');
+    g.fillStyle = ag; g.beginPath(); g.arc(cx, cx, S * 1.18, 0, Math.PI * 2); g.moveTo(cx + S * 0.96, cx); g.arc(cx, cx, S * 0.96, Math.PI * 2, 0, true); g.fill();
     R.shades[key] = c; return c;
   }
   R.drawPlanet = function (g, idx, x, y, r, t, alpha) {
@@ -114,7 +126,8 @@ var TS = 48; // tamaño del astronauta oficial (lo usa drawAstro)
   // ---------- enjambres ----------
   function chevron(g, x, y, a, s, col, alpha) {
     g.save(); g.translate(x, y); g.rotate(a); g.globalAlpha = alpha; g.fillStyle = col;
-    g.beginPath(); g.moveTo(s, 0); g.lineTo(-s, -s * 0.8); g.lineTo(-s * 0.45, 0); g.lineTo(-s, s * 0.8); g.closePath(); g.fill(); g.restore();
+    g.beginPath(); g.moveTo(s, 0); g.lineTo(-s, -s * 0.8); g.lineTo(-s * 0.45, 0); g.lineTo(-s, s * 0.8); g.closePath(); g.fill();
+    g.strokeStyle = 'rgba(5,1,12,.6)'; g.lineWidth = 0.6; g.lineJoin = 'round'; g.stroke(); g.restore();
   }
   // dibuja la parte de atrás (back=true) o de delante del enjambre
   R.drawSwarm = function (g, sl, t, back, col) {
@@ -133,7 +146,7 @@ var TS = 48; // tamaño del astronauta oficial (lo usa drawAstro)
         const dir = Math.atan2(c * ry * (sp >= 0 ? 1 : -1), -s * rx * (sp >= 0 ? 1 : -1));
         const fresh = sl.fresh && k >= n - sl.fresh.n ? Math.max(0, 1 - (R.t - sl.fresh.t) / 0.18) : 0;
         const fx = fresh ? x + (sl.from.x - x) * fresh : x, fy = fresh ? y + (sl.from.y - y) * fresh : y;
-        chevron(g, fx, fy, dir, Math.max(1.6, Math.min(3.2, sl.r * 0.1)), col || CY, back ? 0.45 : 0.95);
+        chevron(g, fx, fy, dir, Math.max(1.6, Math.min(3.2, sl.r * 0.1)), col || CY, back ? 0.5 : 1);
         k++;
       }
       left -= cnt; ring++;
@@ -145,6 +158,8 @@ var TS = 48; // tamaño del astronauta oficial (lo usa drawAstro)
     const scale = L.scale || 100, maxH = L.maxH || 1, x = L.x;
     const rowH = c.h / (scale + 1);
     const arrive = L.arrive == null ? 1 : L.arrive, rf = L.reveal || 0;
+    // línea base de la zona de datos (1 px, #5A7086)
+    g.globalAlpha = 1; g.fillStyle = '#5A7086'; g.fillRect(c.x, Math.round(c.y + c.h) - 1, c.w, 1);
     const cut = x * rf; // filas por debajo de cut ya se tiñeron
     for (let s = 0; s <= scale; s++) {
       const h = L.hist[s]; if (!h) continue;
@@ -158,7 +173,7 @@ var TS = 48; // tamaño del astronauta oficial (lo usa drawAstro)
     g.globalAlpha = 1;
     if (rf > 0 || L.showMark) {
       const y = c.y + c.h - (x + 0.5) * rowH;
-      g.save(); g.shadowColor = CY; g.shadowBlur = 10; g.strokeStyle = CY; g.lineWidth = 2;
+      g.save(); g.shadowColor = CY; g.shadowBlur = 4; g.strokeStyle = CY; g.lineWidth = 2;
       g.beginPath(); g.moveTo(c.x - 4, y); g.lineTo(c.x + c.w + 4, y); g.stroke(); g.restore();
       if (rf > 0 && rf < 1 && !R.reduced && Math.random() < 0.6) R.spark(c.x + Math.random() * c.w, c.y + c.h - cut * rowH, CY);
     }
@@ -168,9 +183,10 @@ var TS = 48; // tamaño del astronauta oficial (lo usa drawAstro)
     const a = Math.random() * 6.28, v = (big ? 120 : 40) + Math.random() * (big ? 220 : 80);
     R.fx.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - (big ? 60 : 20), life: 0, max: 0.4 + Math.random() * (big ? 1.0 : 0.4), col, s: big ? 2.6 : 1.6 });
   };
+  // victoria: máximo 40 partículas y ≤ 700 ms, fuera de la zona de datos (caen desde arriba del todo)
   R.starRain = function () {
     if (R.reduced) return;
-    for (let i = 0; i < 90; i++) R.fx.push({ x: Math.random() * R.w, y: -20 - Math.random() * R.h * 0.4, vx: (Math.random() - 0.5) * 30, vy: 160 + Math.random() * 260, life: 0, max: 1.2 + Math.random() * 0.8, col: Math.random() < 0.5 ? CY : '#a774ff', s: 2 + Math.random() * 2, star: true });
+    for (let i = 0; i < 40; i++) R.fx.push({ x: Math.random() * R.w, y: -20 - Math.random() * R.h * 0.25, vx: (Math.random() - 0.5) * 30, vy: 420 + Math.random() * 320, life: 0, max: 0.45 + Math.random() * 0.25, col: Math.random() < 0.5 ? CY : '#a774ff', s: 2 + Math.random() * 2, star: true });
   };
   R.trail = function (from, to, col) {
     if (R.reduced) return;
@@ -197,15 +213,16 @@ var TS = 48; // tamaño del astronauta oficial (lo usa drawAstro)
     const dt = Math.min(0.05, last ? (now - last) / 1000 : 0.016); last = now;
     if (!R.paused) R.t += dt;
     const t = R.t;
-    if (!R.bg || R.bg.width !== Math.round(R.w * R.dpr)) buildBg();
+    if (!R.bg || R.bg.width !== Math.round(R.w * R.dpr) || R.bgMode !== !!R.boardMode) buildBg();
     g.setTransform(R.dpr, 0, 0, R.dpr, 0, 0);
     // fondo con paralaje leve
     const px = R.reduced ? 0 : R.mx * 6, py = R.reduced ? 0 : R.my * 6;
     g.drawImage(R.bg, 0, 0, R.w, R.h);
     g.fillStyle = '#ffffff';
+    const board = !!R.boardMode;
     for (const s of R.stars) {
       const tw = R.reduced ? 0.7 : 0.45 + 0.4 * Math.sin(t * (0.6 + s.z) + s.p);
-      g.globalAlpha = tw * s.z; const x = (s.x + px * s.z + R.w) % R.w, y = (s.y + py * s.z + R.h) % R.h;
+      g.globalAlpha = board ? 0.15 + 0.2 * s.z * tw : tw * s.z; const x = (s.x + px * s.z + R.w) % R.w, y = (s.y + py * s.z + R.h) % R.h;
       g.fillRect(x, y, s.s, s.s);
     }
     g.globalAlpha = 1;
@@ -216,7 +233,7 @@ var TS = 48; // tamaño del astronauta oficial (lo usa drawAstro)
       const slots = v.slots || [];
       for (const sl of slots) if (sl.r > 2) R.drawSwarm(g, sl, t, true, sl.col);
       for (const sl of slots) if (sl.r > 2) {
-        if (sl.sel) { g.save(); g.globalAlpha = 0.5 + 0.25 * Math.sin(t * 4); g.strokeStyle = CY; g.lineWidth = 1.5; g.setLineDash([3, 4]); g.beginPath(); g.arc(sl.x, sl.y, sl.r + 6, 0, 7); g.stroke(); g.restore(); }
+        if (sl.sel) { const C = 2 * Math.PI * (sl.r + 6); g.save(); g.globalAlpha = 0.9; g.strokeStyle = CY; g.lineWidth = 2; g.setLineDash([C * 0.16, C * 0.09]); g.lineDashOffset = -C * 0.045; g.beginPath(); g.arc(sl.x, sl.y, sl.r + 6, 0, 7); g.stroke(); g.restore(); }
         if (sl.won != null) { g.save(); g.globalAlpha = 0.6; g.shadowBlur = 20; g.shadowColor = sl.won > 0 ? CY : sl.won < 0 ? PK : WH; g.fillStyle = 'rgba(0,0,0,0)'; g.strokeStyle = g.shadowColor; g.lineWidth = 2; g.beginPath(); g.arc(sl.x, sl.y, sl.r + 3, 0, 7); g.stroke(); g.restore(); }
         R.drawPlanet(g, sl.idx, sl.x, sl.y, sl.r, t + sl.idx * 13, sl.alpha);
       }
