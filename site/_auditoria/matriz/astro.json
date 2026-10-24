@@ -1,0 +1,181 @@
+[
+ {
+  "id": "RSP-ASTRO-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/astro/index.html"
+  ],
+  "detalle": "setOverlayVisible(on) centraliza hidden + inert + aria-hidden del #overlay; CSS #overlay[hidden]{display:none!important}; showOverlay() enfoca #play y marca role=dialog/aria-modal/aria-labelledby en pausa y fin de vuelo (no en la pantalla de inicio); hideOverlay() mueve el foco al canvas #c (tabindex=0, aria-label y aria-describedby=#hint con los controles). Tab queda atrapado dentro del overlay durante la pausa (trapTab). El diálogo de confirmación #confirm sigue la misma regla.",
+  "verificacion": "Playwright: en partida el overlay está hidden+inert y document.getElementById(\"play\").focus() no toma el foco; Shift+Tab desde el canvas recorre sonido → pausa → volver; P/Enter en Pausa devuelven foco visible a #play y al reanudar al canvas."
+ },
+ {
+  "id": "RSP-ASTRO-02",
+  "estado": "implementado",
+  "archivos": [
+   "site/astro/index.html"
+  ],
+  "detalle": "El keydown global devuelve si e.defaultPrevented o Ctrl/Meta/Alt; P/Escape sólo fuera de campos editables; Tab atrapado en pausa; si el objetivo es button/a/input/select/textarea/[contenteditable]/[role=button] no se procesa salto ni bajada (el click nativo activa el control). Space/↑/W/Enter sobre canvas o body siguen saltando; ↓/S bajan.",
+  "verificacion": "Playwright: Enter sostenido sobre #back no activa hold; Enter y Espacio sobre #pause pausan una vez y no saltan; Space sobre #c salta (alt sube y hold=true); flechas en el slider de música cambian el valor sin tocar la partida."
+ },
+ {
+  "id": "PLAY-ASTRO-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/astro/index.html"
+  ],
+  "detalle": "Pantalla de inicio: #ov-hint muestra el bloque de controles completo antes de jugar, adaptado al dispositivo: escritorio «Saltar: Espacio, ↑ o clic. Mantené para subir más. Bajada rápida: ↓. Pausa: P.» (COPY-astro-controls) / táctil «Tocá para saltar. Mantené el dedo para subir más.»; inglés equivalente. El mismo texto se muestra en #hint durante la partida (ahora admite dos líneas). No se anunció Esc en la ayuda.",
+  "verificacion": "Captura astro-390/1280 y lectura de #ov-hint por Playwright en ES y EN."
+ },
+ {
+  "id": "PLAY-ASTRO-02",
+  "estado": "implementado",
+  "archivos": [
+   "site/astro/index.html"
+  ],
+  "detalle": "Pausa con «▶ Reanudar partida» como acción principal y fila secundaria «Reiniciar partida» / «Volver al menú» (menú del juego = pantalla de inicio, nunca el catálogo) más enlace «Volver a los juegos». Ambas acciones secundarias descartan el intento y abren el diálogo #confirm («¿Volver al menú?» o «¿Reiniciar la partida?» / «Vas a perder este intento.» / «Seguir jugando» enfocado / botón peligro con la etiqueta del destino). Escape cancela y devuelve el foco al botón que lo abrió; tocar el fondo de la pausa ya no reanuda; P y Esc reanudan (comprobado en código y prueba). Cadena nueva no prevista en copys: «¿Reiniciar la partida?» / «Restart the game?».",
+  "verificacion": "Playwright: P abre pausa con foco en Reanudar; Tab x7 permanece dentro del overlay; Volver al menú → confirm con foco en Seguir jugando; Escape → vuelve a pausa con foco en Volver al menú y partida intacta; confirmar → pantalla de inicio con running=false; Reiniciar → confirm y partida nueva."
+ },
+ {
+  "id": "PLAY-ASTRO-03",
+  "estado": "implementado",
+  "archivos": [
+   "site/astro/index.html"
+  ],
+  "detalle": "Fin de vuelo: título «Fin del vuelo», motivo según el choque real (s.cause: «Chocaste con un asteroide.» o «Chocaste con un meteorito.»), puntaje (32 px, tabular) y récord alineados por línea base, CTA «↻ Reintentar vuelo» y consejo acorde (roca → «Mantené Espacio o ↑ para saltar más alto.» o versión táctil; meteorito → «Meteoritos: a veces conviene no saltar.») seguido de «Activá «Reintentar vuelo» para empezar de nuevo.».",
+  "verificacion": "Playwright: ASTRO.crash() con cause rock/met muestra los textos correspondientes; captura astro-over-390.png: puntuación y botón visibles sin recortes."
+ },
+ {
+  "id": "PLAY-ASTRO-04",
+  "estado": "implementado",
+  "archivos": [
+   "site/astro/index.html"
+  ],
+  "detalle": "JetAudioUI: el botón expone su estado real con aria-label «Sonido activado»/«Sonido desactivado»; el panel muestra porcentajes legibles (output) junto a cada volumen, aria-valuetext en los sliders y un botón «Silenciar todo» (deshabilitado si ya está todo en silencio). La preferencia persiste en localStorage y el reintento no la reactiva. El valor inicial sigue siendo música y efectos activos (arrancan en la primera interacción, no hay autoplay sin gesto): cambiar el valor inicial a silencio es una decisión de producto que queda pendiente de validación.",
+  "verificacion": "Playwright: Silenciar todo → aria-label «Sonido desactivado» y prefs {m:0,s:0} persistidas; slider 70% → 80% con output «80%». No se afirma reproducción audible."
+ },
+ {
+  "id": "RSP-AUDIO-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/astro/index.html"
+  ],
+  "detalle": "setAudioOpen(open,{focusFirst,restoreFocus}) cambia clase y aria-expanded juntos; al abrir por teclado (click sin pointerdown) enfoca el primer control; Escape cierra, restaura el foco al botón y detiene la propagación para no pausar el juego; el clic exterior cierra y actualiza aria-expanded sin robar foco; se eliminaron los blur() forzados en botón, checkbox y range; filas con label for= en vez de label envolvente; aria-haspopup=dialog.",
+  "verificacion": "Playwright: Enter abre (aria-expanded=true, foco en el checkbox), Tab al slider, ArrowRight x2 cambia 0.7→0.8 sin perder foco; Escape cierra con foco en el botón y la partida sigue pausada; clic exterior deja aria-expanded=false."
+ },
+ {
+  "id": "RSP-GLOBAL-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/astro/index.html"
+  ],
+  "detalle": "meta viewport sin maximum-scale ni user-scalable (se conserva width, initial-scale y viewport-fit=cover); touch-action:none pasó de html,body a #stage (superficie de juego); html,body usan manipulation; overlays con pan-y pinch-zoom; botones con manipulation. No hay bloqueos de gesturestart/dblclick.",
+  "verificacion": "Playwright: meta leída = «width=device-width, initial-scale=1.0, viewport-fit=cover»; getComputedStyle: html touch-action manipulation, #stage none."
+ },
+ {
+  "id": "RSP-LANGUAGE-TARGETS-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/astro/index.html"
+  ],
+  "detalle": ".lang-seg button: min-width/min-height 44 px, height:auto, flex:none; gap 8 px; se eliminó el pseudoelemento ::after de ampliación y la redefinición compacta (#stage.compact … min-height:32px). El grupo mantiene su lugar en la tarjeta; el overlay admite scroll si la altura es escasa. El foco queda en la opción elegida tras cambiar idioma (sin blur).",
+  "verificacion": "Playwright a 320/360/390/768: ambos botones 44×44, separación 8 px; la tarjeta entra en el escenario (bottom 601 < 633 a 320 px)."
+ },
+ {
+  "id": "SRC-A01",
+  "estado": "implementado",
+  "archivos": [
+   "site/astro/index.html"
+  ],
+  "detalle": "CTA explícitos: «▶ Despegar» (inicio), «↻ Reintentar vuelo» (fin), «▶ Reanudar partida» (pausa) y ayuda «Activá «Reintentar vuelo» para empezar de nuevo.». Tocar la pantalla ya no reinicia tras un impacto ni reanuda la pausa (sólo despega desde la pantalla de inicio y salta en partida); la repetición de tecla se ignora. Enlace secundario «Volver a los juegos» dentro de pausa y resultados (misma pestaña, con ?lang= para conservar idioma). La pausa automática por blur/visibilitychange se conserva y sólo se reanuda a voluntad.",
+  "verificacion": "Playwright: tap en el fondo y Space sobre el canvas tras el impacto no inician partida; el botón sí. Pausa por blur verificada (Tab fuera del documento pausa)."
+ },
+ {
+  "id": "VIS-ASTRO-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/astro/index.html"
+  ],
+  "detalle": "Estrellas decorativas (fondo y primer plano) limitadas a 0,45 de opacidad en el corredor del astronauta (y > GROUND−125); conservadas arriba. Nebulosas intactas (0,08/0,11). Borde del suelo: trazo continuo #71608F de 1,5 px CSS ajustado a la escala (1.5/SCALE unidades lógicas), sin halo; se quitó la segunda línea cian. Júpiter conserva paleta y posición; GROUND y tamaños no cambian.",
+  "verificacion": "Capturas 390/1280 comparadas: suelo nítido, cielo con estrellas brillantes arriba. Sin cambios en física (mismo código de step())."
+ },
+ {
+  "id": "VIS-ASTRO-02",
+  "estado": "implementado",
+  "archivos": [
+   "site/astro/index.html"
+  ],
+  "detalle": "Rocas comunes con borde mineral rgba(148,163,184,.75) de 1,25 px CSS (1.25/SCALE); meteoritos conservan su borde cálido con el mismo grosor. a.shape, a.w/h/r, hitboxes y el aviso triangular no cambian. La llama sigue detrás del cuerpo; las chispas nacen en la mochila, lejos del casco.",
+  "verificacion": "Revisión del código de draw() y captura; colisiones sin cambios."
+ },
+ {
+  "id": "VIS-ASTRO-03",
+  "estado": "implementado",
+  "archivos": [
+   "site/astro/index.html"
+  ],
+  "detalle": "Inicio, pausa y fin comparten la tarjeta .ov-card (radio 16 px, plano rgba(2,2,8,.88), gap 12 px, 20 px antes del CTA) sobre el escenario oscurecido (overlay 0,55 + blur 3 px); orden título/estado → motivo → datos → CTA → ayuda → catálogo → idioma; #play relleno sólido #00F2CF con texto #06251F; gradiente sólo como acento superior; puntaje 32 px/800 tabular alineado por línea base con el récord. Acciones y ES/EN conservados.",
+  "verificacion": "Capturas astro-390, astro-1280 y astro-over-390 revisadas en ES y EN."
+ },
+ {
+  "id": "VIS-ASTRO-04",
+  "estado": "implementado",
+  "archivos": [
+   "site/astro/index.html"
+  ],
+  "detalle": "Hito: 24 px, ≈500 ms (se dibuja mientras mileT>60 de los 90 cuadros existentes; la lógica del hito no cambia) en el cielo alto (y=30 apaisado, GROUND·0,34 en vertical), fuera del corredor; con movimiento reducido sin desplazamiento. Llama sin ruido aleatorio en movimiento reducido (longitud base 10/17 + 3); sacudida ya era 0 con RM; titileo de estrellas ya fijo con RM.",
+  "verificacion": "Playwright con reducedMotion: shake=0 tras impacto. Revisión de draw(): velocidad, gravedad y aparición de peligros intactas."
+ },
+ {
+  "id": "SRC-A02",
+  "estado": "implementado",
+  "archivos": [
+   "site/astro/index.html"
+  ],
+  "detalle": "Resultado separado en título («Fin del vuelo»), motivo y datos antes del CTA; controles en bloques cortos: «Saltar: Espacio, ↑ o clic. Mantené para subir más. Bajada rápida: ↓. Pausa: P.» en escritorio y versión táctil sin atajos de teclado. #hint admite dos líneas a 320 px.",
+  "verificacion": "Captura a 390 y lectura de #hint; a 320 el texto se parte en dos líneas sin recorte (min-height 3em)."
+ },
+ {
+  "id": "SRC-G01",
+  "estado": "no_aplicable",
+  "archivos": [],
+  "detalle": "Astro: el ID afecta a las tarjetas de la home (site/index.html), fuera de esta asignación. El enlace de regreso del juego ya abre en la misma pestaña (target=_top) y conserva idioma.",
+  "verificacion": "Inspección del enlace de regreso en el HTML del juego."
+ },
+ {
+  "id": "SRC-G02",
+  "estado": "ya_corregido_verificado",
+  "archivos": [],
+  "detalle": "Astro: el juego ya consume JETIdioma (?lang > cookie jet_lang > localStorage > navegador) y el selector ES/EN existente sincroniza aria-pressed. No se creó un segundo selector; sólo se ajustaron tamaños táctiles donde el catálogo lo pide (RSP-LANGUAGE-TARGETS-01).",
+  "verificacion": "Playwright: carga con ?lang=es y cambio en vivo ES/EN repinta textos sin recargar; aria-pressed sincronizado."
+ },
+ {
+  "id": "SRC-G03",
+  "estado": "implementado",
+  "archivos": [
+   "site/astro/index.html"
+  ],
+  "detalle": "Astro: «Reanudar partida» en pausa, «Volver al menú» (pantalla de inicio del juego), «Volver a los juegos» (catálogo), «Reiniciar partida», «Reintentar vuelo»; se conserva el verbo de dominio «Despegar». Nueva partida parte del estado inicial (start()).",
+  "verificacion": "Lectura de cada etiqueta en la interfaz y en el diccionario ES/EN; prueba Playwright de los destinos reales de cada botón."
+ },
+ {
+  "id": "SRC-G04",
+  "estado": "no_aplicable",
+  "archivos": [],
+  "detalle": "Astro: no tiene borrado de progreso (sólo récord local sin acción de borrado).",
+  "verificacion": "Inspección del código: no existe acción de borrado de progreso en este juego."
+ },
+ {
+  "id": "SRC-G05",
+  "estado": "no_aplicable",
+  "archivos": [],
+  "detalle": "Astro: juego de un solo HTML con scripts inline, sin módulos externos ni estados de carga; el título y los textos se pintan antes del JS del juego. No se añadió pantalla de carga.",
+  "verificacion": "Inspección del HTML: no hay import() ni <script src> de módulos propios."
+ },
+ {
+  "id": "SRC-G06",
+  "estado": "no_aplicable",
+  "archivos": [],
+  "detalle": "Astro: el juego no tiene acción de compartir resultado; no se añadió red ni publicación.",
+  "verificacion": "Inspección del código: sin navigator.share ni clipboard."
+ }
+]

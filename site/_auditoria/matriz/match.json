@@ -1,0 +1,192 @@
+[
+ {
+  "id": "RSP-MATCH-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/match/index.html"
+  ],
+  "detalle": "show(id) pone #app.inert=true mientras haya una pantalla y hideAll() lo revierte; resume() y beginPlay() enfocan el tablero (#stage con tabindex=0, role=application); closeSub() devuelve el foco al control que abrió la subpantalla (OPENER). Pausa, Ajustes, Cómo jugar, mapa, intro, victoria, derrota, fin de campaña y fin de partida llevan role=dialog, aria-modal y aria-labelledby (h2). En juego, el keydown devuelve antes de los atajos de gema cuando el objetivo es un control nativo, así Enter/Espacio sobre Pausa o Pista disparan su click sin intercambiar gemas ni duplicar la pausa.",
+  "verificacion": "Playwright: Enter en #b-pause pausa una vez (sel=false); #b-hint queda dentro de [inert] con la pausa abierta; Ajustes desde la pausa y Escape devuelven el foco a b-pa-set; Escape en pausa reanuda con foco en #stage; Enter en Pista pide pista sin seleccionar gema."
+ },
+ {
+  "id": "SRC-M01",
+  "estado": "implementado",
+  "archivos": [
+   "site/match/index.html"
+  ],
+  "detalle": "#b-quit por modo: campaña «Volver al mapa» (openMap), Contrarreloj «Salir al menú» (menú), Zen «Finalizar partida» (muestra el resumen o-tend, sin derrota). Campaña y Contrarreloj confirman la pérdida del intento (PLAY-MATCH-03).",
+  "verificacion": "Playwright en los tres modos: etiquetas y destinos verificados (o-map, o-menu, o-tend con «Partida terminada»)."
+ },
+ {
+  "id": "PLAY-MATCH-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/match/index.html"
+  ],
+  "detalle": "Texto de ayuda reescrito: «¿Te trabaste? Tocá «Pista» para ver un intercambio posible. Al completar el objetivo, las jugadas restantes se convierten en rayos (hasta 15; las demás suman puntos).» Regla verificada en startBonus()/bonusStep(): hasta 15 jugadas se convierten en rayos y el resto suma 300 puntos cada una; por eso el copy lleva ese inciso aclaratorio.",
+  "verificacion": "Lectura del diccionario ES/EN y del código de bonificación."
+ },
+ {
+  "id": "PLAY-MATCH-02",
+  "estado": "implementado",
+  "archivos": [
+   "site/match/index.html"
+  ],
+  "detalle": "«Contrarreloj» en menú, HUD (Modo: Contrarreloj), pausa y resultado («contrarreloj»/«Time Trial»). HUD: etiqueta «Tiempo restante» con valor «{s} s» real que baja con la partida y respeta la pausa, aria-label «Tiempo restante: {s} s». La duración (90 s) sale de la constante TIME_S y se muestra en el selector como «{n} segundos» (no se fija en los textos).",
+  "verificacion": "Playwright: tras 1,6 s el HUD muestra «Tiempo restante 89 s» y aria «Tiempo restante: 89 s»; pausa titulada Contrarreloj."
+ },
+ {
+  "id": "PLAY-MATCH-03",
+  "estado": "implementado",
+  "archivos": [
+   "site/match/index.html"
+  ],
+  "detalle": "Salir desde la pausa en campaña y Contrarreloj abre #o-confirm («¿Salir de esta partida?» / «Vas a perder el avance de esta partida.» / «Seguir jugando» enfocado / botón con el destino real: «Volver al mapa» o «Salir al menú»). Escape o Seguir jugando vuelven a la pausa con el foco en Salir y el tablero, puntos y tiempo intactos. Zen finaliza sin confirmación porque no se pierde nada (se registra el resumen).",
+  "verificacion": "Playwright: confirm con foco en Seguir jugando; Escape conserva estado exacto (score, moves, phase); confirmar lleva a o-map / o-menu."
+ },
+ {
+  "id": "PLAY-MATCH-04",
+  "estado": "implementado",
+  "archivos": [
+   "site/match/index.html"
+  ],
+  "detalle": "Victoria: rótulo «Puntos» sobre el total, «Bonificación por jugadas restantes: +{n}» (diferencia real desde G.scoreAtGoal), «{n} de 3 estrellas» con las estrellas reales (starsFor) y umbrales «2 estrellas: {n} puntos · conseguido/pendiente» y «3 estrellas: …» desde STARS[li]. También «Puntos» en derrota y fin de Contrarreloj/Zen.",
+  "verificacion": "Playwright: victoria simulada → «Bonificación por jugadas restantes: +13.320», «3 de 3 estrellas», umbrales 15.000/30.000 marcados; captura match-win-390.png."
+ },
+ {
+  "id": "PLAY-MATCH-05",
+  "estado": "implementado",
+  "archivos": [
+   "site/match/index.html"
+  ],
+  "detalle": "Live region #a11y anuncia la celda del cursor («Fila {f}, columna {c}: {gema}» con nombre de gema, especial, núcleo, asteroide y cristal), «Gema seleccionada», «Selección cancelada» e «Intercambio no válido» (en afterSwap). El juego de fondo queda inert bajo cualquier superposición y el foco inicial/restauración se gestiona en show()/closeSub(). No se expone cada gema como nodo del árbol (el tablero sigue en canvas).",
+  "verificacion": "Playwright: ArrowRight → «Fila 4, columna 4: oro»; Espacio → «… Gema seleccionada»."
+ },
+ {
+  "id": "RSP-GLOBAL-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/match/index.html"
+  ],
+  "detalle": "meta viewport sin maximum-scale/user-scalable; .ov con touch-action:pan-y pinch-zoom; html,body ya usaban manipulation y #stage none.",
+  "verificacion": "Playwright: meta = «width=device-width, initial-scale=1, viewport-fit=cover»."
+ },
+ {
+  "id": "RSP-LANGUAGE-TARGETS-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/match/index.html"
+  ],
+  "detalle": ".seg con gap 8 px; .seg button min-width/min-height 44 px, height:auto, flex:none; sin pseudoelementos. El grupo mantiene su lugar (menú arriba a la derecha y fila de Ajustes).",
+  "verificacion": "Playwright a 320 y 390: botones 44×44 con 8 px de separación en Ajustes."
+ },
+ {
+  "id": "RSP-MATCH-02",
+  "estado": "implementado",
+  "archivos": [
+   "site/match/index.html"
+  ],
+  "detalle": ".sw de 52×44 con fondo transparente, pista 52×30 en ::before (inset 7px 0) e indicador de 24 px en ::after (top 10 px); aria-pressed conservado. Sliders de 44 px de alto con foco visible en el pulgar; pista de 6 px. gap 12 px de .set intacto.",
+  "verificacion": "Playwright: switch 52×44 y range 44 px de alto a 320 y 390."
+ },
+ {
+  "id": "SRC-M02",
+  "estado": "implementado",
+  "archivos": [
+   "site/match/index.html"
+  ],
+  "detalle": "Pausa: «Reanudar partida», «Reiniciar nivel» (campaña) / «Reiniciar partida» (Contrarreloj y Zen). Resultados: «Repetir nivel» tras ganar, «Reintentar nivel» tras perder, «Volver al mapa», «Nueva partida» al terminar Contrarreloj/Zen, «Volver al menú». Selector: Contrarreloj muestra «90 segundos» (TIME_S) junto al récord y Zen «Sin límite de jugadas ni de tiempo».",
+  "verificacion": "Playwright: etiquetas leídas en pausa y resultados de los tres modos; menú con «90 segundos» y texto de Zen."
+ },
+ {
+  "id": "VIS-MATCH-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/match/index.html"
+  ],
+  "detalle": "paintGem: halo R·0,11 (antes 0,2), brillo especular 0,28 (antes 0,42), borde rgba(255,255,255,.5) max(1, R·.028) conservado, radio R·0,37 conservado, luz arriba-izquierda. Las seis parejas color/forma no cambian; objetivos y tablero usan los mismos sprites.",
+  "verificacion": "Captura match-play-1180.png: gemas con color base dominante y silueta nítida."
+ },
+ {
+  "id": "VIS-MATCH-02",
+  "estado": "implementado",
+  "archivos": [
+   "site/match/index.html"
+  ],
+  "detalle": "Símbolos de rayo y bomba con contorno oscuro #130D21 al 90 % (1,5 px) bajo el blanco y glow máximo R·0,08; cristal doble con una segunda línea interior #E6FCFF al 55 % (inset 3 px) y menos blanco (0,38/0,22) para no tapar la gema; anillos naranja de roca y nova/núcleo conservados.",
+  "verificacion": "Revisión de paintLine/paintBomb/paintIce; render sin errores."
+ },
+ {
+  "id": "VIS-MATCH-03",
+  "estado": "implementado",
+  "archivos": [
+   "site/match/index.html"
+  ],
+  "detalle": "buildBoardLayer: se retiró la sombra por casilla y se dibuja un único halo del perímetro (ruta compuesta de todas las celdas no hueco) con blur 0,14·CS y alpha 0,22 del color del sector; juntas internas #31253F al 80 %, 1 px, sin bloom; huecos intactos. Estrellas del fondo a 0,15 como máximo detrás del tablero. Selección cian 3 px a 3 px; cursor amarillo discontinuo 2,5 px a 1 px; pista amarilla de 2 px a 5 px sin shadowBlur.",
+  "verificacion": "Captura match-play-1180.png: sin resplandor entre juntas, cursor visible; pista y selección coexisten."
+ },
+ {
+  "id": "VIS-MATCH-04",
+  "estado": "implementado",
+  "archivos": [
+   "site/match/index.html"
+  ],
+  "detalle": "Con movimiento reducido: nova sin giro, bomba y núcleo sin pulsación, selección/pista/flecha con alpha constante 0,9, sin rebote de caída ni de nacimiento; estallido como fundido. Modo normal: estallido máximo 1,15 (antes 1,25), nacimiento 1,15 (antes 1,3), sacudida limitada a 2 px. SWAP_T/POP_T y la cronología lógica no cambian.",
+  "verificacion": "Revisión de render(); smoke sin errores. La lógica (update/settle) no se tocó."
+ },
+ {
+  "id": "VIS-MATCH-05",
+  "estado": "implementado",
+  "archivos": [
+   "site/match/index.html"
+  ],
+  "detalle": "Apaisado: #app.land pasa a grid con columna instrumental clamp(196px,24vw,270px) (270 px a 1180×757), 24 px de separación con el tablero y Pista 16 px debajo del último dato dentro de la misma columna (ya no anclada al borde inferior). El tablero se recalcula desde #stage (layout + ResizeObserver). Resultado: rótulo «Puntos» 12 px/600 #B8AECF sobre #wi-score (tabular) y bloque de récord/combo a 12 px.",
+  "verificacion": "Playwright a 1180×757: hud 270 px, stage.left − hud.right = 24, dock bajo el HUD; captura match-play-1180.png; CS lógico y W/H intactos (G.W/G.H)."
+ },
+ {
+  "id": "SRC-G01",
+  "estado": "no_aplicable",
+  "archivos": [],
+  "detalle": "Match: el ID afecta a las tarjetas de la home (site/index.html), fuera de esta asignación. El enlace de regreso del juego ya abre en la misma pestaña (target=_top) y conserva idioma.",
+  "verificacion": "Inspección del enlace de regreso en el HTML del juego."
+ },
+ {
+  "id": "SRC-G02",
+  "estado": "ya_corregido_verificado",
+  "archivos": [],
+  "detalle": "Match: el juego ya consume JETIdioma (?lang > cookie jet_lang > localStorage > navegador) y el selector ES/EN existente sincroniza aria-pressed. No se creó un segundo selector; sólo se ajustaron tamaños táctiles donde el catálogo lo pide (RSP-LANGUAGE-TARGETS-01).",
+  "verificacion": "Playwright: carga con ?lang=es y cambio en vivo ES/EN repinta textos sin recargar; aria-pressed sincronizado."
+ },
+ {
+  "id": "SRC-G03",
+  "estado": "implementado",
+  "archivos": [
+   "site/match/index.html"
+  ],
+  "detalle": "Match: «Reanudar partida», «Reiniciar nivel»/«Reiniciar partida», «Repetir nivel», «Reintentar nivel», «Volver al mapa», «Salir al menú», «Finalizar partida», «Nueva partida», «Volver al menú». Nueva partida en Contrarreloj/Zen reinicia desde el estado inicial (startMode) con la generación propia del juego.",
+  "verificacion": "Lectura de cada etiqueta en la interfaz y en el diccionario ES/EN; prueba Playwright de los destinos reales de cada botón."
+ },
+ {
+  "id": "SRC-G04",
+  "estado": "implementado",
+  "archivos": [
+   "site/match/index.html"
+  ],
+  "detalle": "Match: Borrar progreso abre #o-confirm («¿Borrar todo el progreso de JET//Match?» / «Se borrarán tus niveles superados, estrellas, récords de campaña, Contrarreloj y Zen, y las pistas vistas. Esta acción no se puede deshacer.» / Cancelar enfocado / «Borrar progreso»); se reemplazó el doble toque de 3 s; conserva SAVE.set e idioma; estado «Progreso borrado» en role=status y botón movido a una zona separada al final de Ajustes.",
+  "verificacion": "Playwright: primer clic nunca borra; Enter con Cancelar enfocado no borra; Escape conserva estado; confirmar borra sólo los datos enumerados y conserva ajustes de sonido e idioma."
+ },
+ {
+  "id": "SRC-G05",
+  "estado": "no_aplicable",
+  "archivos": [],
+  "detalle": "Match: juego de un solo HTML con scripts inline, sin módulos externos ni estados de carga; el título y los textos se pintan antes del JS del juego. No se añadió pantalla de carga.",
+  "verificacion": "Inspección del HTML: no hay import() ni <script src> de módulos propios."
+ },
+ {
+  "id": "SRC-G06",
+  "estado": "no_aplicable",
+  "archivos": [],
+  "detalle": "Match: el juego no tiene acción de compartir resultado; no se añadió red ni publicación.",
+  "verificacion": "Inspección del código: sin navigator.share ni clipboard."
+ }
+]

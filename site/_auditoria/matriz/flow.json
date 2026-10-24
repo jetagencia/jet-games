@@ -1,0 +1,183 @@
+[
+ {
+  "id": "RSP-FLOW-02",
+  "estado": "implementado",
+  "archivos": [
+   "site/flow/index.html"
+  ],
+  "detalle": "Capa #hudDom (pointer-events:none) con botones reales #flow-pause y #flow-release (pointer-events:auto, mínimo 44×44, transparentes sobre el dibujo del canvas que queda como decoración debajo). syncHudDom() copia left/top/width/height de LY.pause y LY.fast en cada layout() y al cambiar de fase; el segundo refleja «Liberar plasma» (cuenta), «Acelerar plasma» (flujo) o «Plasma acelerado» deshabilitado; aria-describedby con la ayuda de plasma. Click invoca pause()/release() y detiene la propagación; la capa se oculta (hidden) al abrir pantallas, en revisión de fuga y fuera de partida. El tablero sigue siendo un canvas; no se afirma que todo el tablero sea accesible.",
+  "verificacion": "Playwright a 390: rect de #flow-pause = LY.pause (12,10,44,44) y #flow-release = LY.fast; Tab los alcanza; Enter en Pausar pausa sin colocar pieza; Enter en Liberar libera (phase flow, fast true) y el botón pasa a deshabilitado."
+ },
+ {
+  "id": "PLAY-FLOW-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/flow/index.html"
+  ],
+  "detalle": "show() enfoca el primer control marcado [data-focus] (en Ajustes, el slider de música) en vez del primer .btn (que era Borrar progreso). Borrar progreso se movió al final en una zona separada (.zone) debajo de «Listo», con estilo de peligro, y abre la confirmación explícita #sConfirm («¿Borrar todo el progreso de JET//Flow?» / «Se eliminarán tus circuitos completados, estrellas y récords guardados. Esta acción no se puede deshacer.» / Cancelar enfocado / «Borrar progreso»). La enumeración se amplió con los récords porque SAVE.best también se borra; ajustes de sonido, vibración, idioma y la marca de ayuda vista se conservan. Tras borrar se muestra «Progreso borrado» en un role=status.",
+  "verificacion": "Playwright: Ajustes abre con foco en rMus; Enter no borra; Borrar → foco en Cancelar; Escape y Enter (Cancelar) no cambian SAVE; confirmar deja unl=1, stars=[], best=[], mv intacto."
+ },
+ {
+  "id": "PLAY-FLOW-02",
+  "estado": "implementado",
+  "archivos": [
+   "site/flow/index.html"
+  ],
+  "detalle": "Botón y tutorial sincronizados: rótulo del canvas y del botón DOM «LIBERAR PLASMA» durante la cuenta y «ACELERAR PLASMA» durante el flujo (dos líneas si no entra); tip del circuito 1, consejo de la ayuda (tip5) y guías (gReadyRelease/gTapBoost) usan «Liberar plasma»/«Acelerar plasma»; texto de ayuda COPY-flow-plasma-help. La regla verificada en onTile(): acelerar duplica los puntos por tramo (×2), sin cambios.",
+  "verificacion": "Lectura de TX() en ES/EN por Playwright; captura flow-play-390/1280 con «LIBERAR PLASMA»."
+ },
+ {
+  "id": "PLAY-FLOW-03",
+  "estado": "implementado",
+  "archivos": [
+   "site/flow/index.html"
+  ],
+  "detalle": "La pieza fantasma se dibuja sólo en la celda objetivo (alpha 0,42); flechas de orientación en los puertos del reactor y el motor (VIS-FLOW-02); el astronauta se reduce y se corre lateralmente sólo en el dibujo cuando pisa la celda del cursor, el reactor, el motor o la casilla guiada (drawAstroClear); la cuenta gigante centrada desapareció y vive en el HUD; el marco del cursor se dibuja sobre el astronauta. Salida accesible «Pieza actual»/«Próxima pieza» en el live region. No se añadió instrucción de rotar.",
+  "verificacion": "Captura flow-play-390/1280: reactor y recorrido legibles; anuncio «Pieza actual: … Próxima pieza: …» verificado."
+ },
+ {
+  "id": "PLAY-FLOW-04",
+  "estado": "implementado",
+  "archivos": [
+   "site/flow/index.html"
+  ],
+  "detalle": "Resultado de derrota con botón «Revisar la fuga» (sólo si hubo fuga): oculta la pantalla, deja el tablero congelado con la fuga marcada (anillo discontinuo) sin reanudar la simulación (fase result) y muestra «Volver al resultado» colocado fuera de la cola de piezas; Escape también vuelve. Mensajes con singular/plural calculados desde el objetivo y los tramos reales: «Faltó 1 tramo para completar el objetivo.» / «Faltaron {n} tramos para completar el objetivo.». Se mantiene el desglose de puntuación.",
+  "verificacion": "Playwright: derrota con 0/6 → «Faltaron 6 tramos…»; Revisar → screen=null, review=true, foco en Volver al resultado, HUD DOM oculto, phase=result; Escape vuelve con foco en Revisar la fuga. TX sShort(1) y (4) verificados."
+ },
+ {
+  "id": "PLAY-FLOW-05",
+  "estado": "implementado",
+  "archivos": [
+   "site/flow/index.html"
+  ],
+  "detalle": "Controles DOM con nombre, foco visible y disabled real (ver RSP-FLOW-02). Live region #a11y (aria-live=polite) anuncia la celda del cursor al moverlo con teclado («Fila {f}, columna {c}: {estado}»), la pieza instalada y la pieza actual/próxima; nunca por fotograma.",
+  "verificacion": "Playwright: ArrowRight anuncia; FLOW.place() anuncia «Instalada: tubo vertical en fila 1, columna 1. Pieza actual: …»."
+ },
+ {
+  "id": "RSP-FLOW-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/flow/index.html"
+  ],
+  "detalle": "Breakpoint @media(max-width:419px){.grid{3 columnas minmax(0,1fr)}.lvl{aspect-ratio:1.2;min-height:48px}}; 6 columnas desde 420 px. ArrowUp/Down derivan las columnas de getComputedStyle(grid).gridTemplateColumns del grid enfocado, mantienen la columna y avanzan una fila; al salir del sector pasan al grid vecino en la misma columna; si el destino está bloqueado el foco no se mueve; sin vecino, recorrido lineal.",
+  "verificacion": "Playwright: 320/360/390 → 3 columnas y alto 65/76/84 px; 768 → 6 columnas; ArrowDown desde 1: 4,7,10 (3 col.) y 7,13,19 (6 col.); ArrowUp vuelve; con progreso recién borrado el foco se queda al apuntar a un nivel bloqueado."
+ },
+ {
+  "id": "RSP-GLOBAL-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/flow/index.html"
+  ],
+  "detalle": "meta viewport sin maximum-scale/user-scalable; .scr y paneles desplazables con touch-action:pan-y pinch-zoom; el canvas conserva touch-action:none; botones con manipulation. No había bloqueos globales de gestos.",
+  "verificacion": "Playwright: meta = «width=device-width, initial-scale=1, viewport-fit=cover»."
+ },
+ {
+  "id": "SRC-F01",
+  "estado": "implementado",
+  "archivos": [
+   "site/flow/index.html"
+  ],
+  "detalle": "«Comenzar circuito» (#bGo), «Repetir circuito» si ok / «Reintentar circuito» si no (#bRetry), «Reanudar partida» (#bResume), «Reiniciar circuito» (#bRestart). Títulos de derrota por causa: fuga «El plasma se escapó del circuito.», sin motor «El plasma no llegó al motor.», motor temprano «Faltan tramos para llegar al objetivo.» con detalle «El plasma llegó al motor antes de completar los tramos requeridos ({a} de {b}).». Reintentar mantiene el circuito (startLevel(G.li)).",
+  "verificacion": "Playwright: textos leídos en ES; derrota por fuga verificada; EN revisado en el diccionario."
+ },
+ {
+  "id": "SRC-F02",
+  "estado": "implementado",
+  "archivos": [
+   "site/flow/index.html"
+  ],
+  "detalle": "Desde la pausa, «Reiniciar circuito», «Ver niveles» y «Volver al menú» piden confirmación sólo si hay cambios (piezas instaladas por el jugador o el flujo ya salió): «¿Reiniciar el circuito?» o «¿Salir del circuito?» / «Vas a perder los cambios de este intento.» / Cancelar enfocado / botón con la etiqueta del destino. Cancelar restaura exactamente la pausa (tablero, tiempo y flujo intactos) y el foco al botón que la abrió. Cadena nueva no prevista en copys: «¿Salir del circuito?» / «Leave the circuit?».",
+  "verificacion": "Playwright: sin cambios → reinicio directo; con una pieza → confirm con foco en Cancelar; Cancelar → tablero idéntico y paused=true; Volver al menú confirmado → menú."
+ },
+ {
+  "id": "VIS-FLOW-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/flow/index.html"
+  ],
+  "detalle": "Tubos: borde exterior #090610 de 1,5 px CSS (ancho .40·s+3), cuerpo frío conservado, brillo fino de 1 px #B7BFDC al 80 % en la arista (tubePathOff); cruce con sombra corta bajo el puente superior respetando el orden horizontal→crossTop→vertical. Celdas: junta continua de 1 px #473B61 al 65 %, borde interior más oscuro, relleno conservado; remaches y marcas sólo con celda ≥34 px. Fondo final #0A0512. PM, mapMask, puertos y rotación lógica intactos.",
+  "verificacion": "Capturas flow-play-390/1280 revisadas: casillas contables, tubos con silueta limpia. Simulación sin cambios (Sim intacta)."
+ },
+ {
+  "id": "VIS-FLOW-02",
+  "estado": "implementado",
+  "archivos": [
+   "site/flow/index.html"
+  ],
+  "detalle": "Flecha #D9E2F2 (0,12·s × 0,18·s) junto al puerto del reactor (saliente) y del motor (entrante), fuera del canal; arco de cuenta de 0,05·s con borde oscuro de 1 px; pulso del origen constante (0,8) con movimiento reducido; aspas del motor sin giro ornamental con movimiento reducido y coloreadas sólo con exitWon. Fluido y colores funcionales intactos.",
+  "verificacion": "Revisión de drawBoard() y capturas; cuenta/estado sin cambios en Sim."
+ },
+ {
+  "id": "VIS-FLOW-03",
+  "estado": "implementado",
+  "archivos": [
+   "site/flow/index.html"
+  ],
+  "detalle": "Paneles rgba(22,13,42,.94) con borde rgba(81,68,102,.6) 1 px; rótulos del HUD mínimo 12 px; ranura actual con borde cian 2 px y rótulo; iconos futuros a 0,95; botón acelerar desactivado con borde #665B7D al 65 % e icono #8D83A5 (no sólo texto gris); etiqueta de dos líneas cuando no entra; JetBrains Mono (tabular).",
+  "verificacion": "Captura flow-play-390: HUD legible; estado deshabilitado tras acelerar comprobado por Playwright (disabled=true)."
+ },
+ {
+  "id": "VIS-FLOW-04",
+  "estado": "implementado",
+  "archivos": [
+   "site/flow/index.html"
+  ],
+  "detalle": "Con movimiento reducido: LEDs estáticos ((x+y)%2), pulso del origen constante, sin giro del motor, confirmación de pieza mediante borde cian de 2 px durante 160 ms sin escala. Modo normal: escala máxima 1,08 durante 160 ms más el mismo borde. El frente del fluido sigue avanzando (no se tocó drawFluid salvo lo existente).",
+  "verificacion": "Revisión de código; captura normal. La simulación (Sim.step) no cambia."
+ },
+ {
+  "id": "VIS-FLOW-05",
+  "estado": "implementado",
+  "archivos": [
+   "site/flow/index.html"
+  ],
+  "detalle": "Se eliminó la cuenta gigante centrada; la cuenta vive en el HUD a 20 px/800 con realce de borde de 150 ms al cambiar de segundo (G.tickAt) y la barra deja sitio al número. Fantasma 0,42, marco amarillo = reemplazo, cian = válido, rojo = inválido, dibujado al final (sobre el astronauta). El astronauta se reduce a 0,55·cs y se desplaza lateralmente sólo en el dibujo si pisa cursor, reactor, motor o casilla guiada (drawAstroClear); astroGo/astroSpot y tiempos no cambian.",
+  "verificacion": "Capturas flow-play-390/1280; Playwright: la partida arranca y libera con los mismos tiempos (G.cd/G.cdMax intactos)."
+ },
+ {
+  "id": "SRC-G01",
+  "estado": "no_aplicable",
+  "archivos": [],
+  "detalle": "Flow: el ID afecta a las tarjetas de la home (site/index.html), fuera de esta asignación. El enlace de regreso del juego ya abre en la misma pestaña (target=_top) y conserva idioma.",
+  "verificacion": "Inspección del enlace de regreso en el HTML del juego."
+ },
+ {
+  "id": "SRC-G02",
+  "estado": "ya_corregido_verificado",
+  "archivos": [],
+  "detalle": "Flow: el juego ya consume JETIdioma (?lang > cookie jet_lang > localStorage > navegador) y el selector ES/EN existente sincroniza aria-pressed. No se creó un segundo selector; sólo se ajustaron tamaños táctiles donde el catálogo lo pide (RSP-LANGUAGE-TARGETS-01).",
+  "verificacion": "Playwright: carga con ?lang=es y cambio en vivo ES/EN repinta textos sin recargar; aria-pressed sincronizado."
+ },
+ {
+  "id": "SRC-G03",
+  "estado": "implementado",
+  "archivos": [
+   "site/flow/index.html"
+  ],
+  "detalle": "Flow: «Reanudar partida», «Reiniciar circuito», «Ver niveles», «Volver al menú» (pausa y final), «Comenzar circuito», «Repetir circuito»/«Reintentar circuito», «Continuar partida · circuito n» en el menú. Contradicción detectada: el juego usa tuteo («Toca», «Instala») y los copys del catálogo usan voseo («tocá», «podés»); se aplicaron las cadenas exactas de los copys donde el catálogo las pide y se dejó el resto del tono existente.",
+  "verificacion": "Lectura de cada etiqueta en la interfaz y en el diccionario ES/EN; prueba Playwright de los destinos reales de cada botón."
+ },
+ {
+  "id": "SRC-G04",
+  "estado": "implementado",
+  "archivos": [
+   "site/flow/index.html"
+  ],
+  "detalle": "Flow: diálogo de confirmación explícita para Borrar progreso (ver PLAY-FLOW-01); se reemplazó el doble toque temporal de 3 s.",
+  "verificacion": "Playwright: primer clic nunca borra; Enter con Cancelar enfocado no borra; Escape conserva estado; confirmar borra sólo los datos enumerados y conserva ajustes de sonido e idioma."
+ },
+ {
+  "id": "SRC-G05",
+  "estado": "no_aplicable",
+  "archivos": [],
+  "detalle": "Flow: juego de un solo HTML con scripts inline, sin módulos externos ni estados de carga; el título y los textos se pintan antes del JS del juego. No se añadió pantalla de carga.",
+  "verificacion": "Inspección del HTML: no hay import() ni <script src> de módulos propios."
+ },
+ {
+  "id": "SRC-G06",
+  "estado": "no_aplicable",
+  "archivos": [],
+  "detalle": "Flow: el juego no tiene acción de compartir resultado; no se añadió red ni publicación.",
+  "verificacion": "Inspección del código: sin navigator.share ni clipboard."
+ }
+]

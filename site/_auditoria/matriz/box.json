@@ -1,0 +1,199 @@
+[
+ {
+  "id": "RSP-BOX-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/box/index.html"
+  ],
+  "detalle": "#mHelp, #mWin y #mLevels arrancan con hidden + inert; CSS [hidden]{display:none!important}; openM() cierra los demás, quita hidden/inert, pone #app.inert=true (y el toast), guarda el disparador y enfoca el primer control relevante (Siguiente nivel en victoria, nivel actual en la grilla, CTA en ayuda); trapTab mantiene Tab/Shift+Tab dentro; closeM() (único camino de cierre: botones data-close, fondo, Escape) marca inert de inmediato y hidden al terminar la transición, limpia inert de #app y devuelve el foco al disparador (o al tablero). .modal con role=dialog, aria-modal y aria-labelledby del título. Los cierres directos de clase se sustituyeron por closeM().",
+  "verificacion": "Playwright: al cargar sólo mHelp visible, los otros hidden y #app inert; Tab se queda dentro; Escape cierra y limpia inert; abrir niveles con Enter en el nombre del nivel y Escape devuelve el foco a #lName; victoria → foco en Siguiente nivel; abrir/cerrar los tres repetido sin fugas de inert."
+ },
+ {
+  "id": "RSP-BOX-02",
+  "estado": "implementado",
+  "archivos": [
+   "site/box/index.html"
+  ],
+  "detalle": "El controlador de movimiento ignora eventos cuyo objetivo sea button/a/input/select/textarea/contenteditable (flechas en los sliders del popover de audio cambian el volumen y no mueven al astronauta; Enter/Espacio en un botón sólo lo activan). En victoria, Enter/Espacio ya no se convierten en Siguiente: sólo activan el botón enfocado; la tecla N avanza salvo en campos editables.",
+  "verificacion": "Playwright: ArrowRight con foco en btnHelp → moves=0; ArrowRight en el slider → 0.7→0.75 sin mover; en victoria Shift+Tab a Ver niveles + Enter abre niveles (no Siguiente)."
+ },
+ {
+  "id": "PLAY-BOX-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/box/index.html"
+  ],
+  "detalle": "HUD: «Movimientos», «Empujes» y «Objetivo» (el número es el par real del nivel; «Par» queda en tooltip y aria-label «Objetivo: {par} movimientos», con singular «Objetivo: 1 movimiento» si par=1). Ayuda: «Completá el nivel en {par} movimientos o menos para conseguir 3 estrellas. Cada paso y cada empuje cuentan como un movimiento.» con el par del nivel vigente. Victoria: «¡Objetivo perfecto!» si está en el par y subtítulo «Nivel n de 60 · Objetivo: {par} movimientos · {k} de 3 estrellas». Sin cambios en el conteo ni en TWO_STAR/starsFor.",
+  "verificacion": "Playwright: aria-label «Objetivo: 3 movimientos»; ayuda con «3 movimientos»; victoria del nivel 1 en 3 movimientos → «¡Objetivo perfecto!»."
+ },
+ {
+  "id": "PLAY-BOX-02",
+  "estado": "implementado",
+  "archivos": [
+   "site/box/index.html"
+  ],
+  "detalle": "Apaisado: la columna izquierda concentra nivel, objetivo y contadores; Deshacer movimiento y Reiniciar nivel pasan a una barra centrada debajo del tablero (área «acts» de la grilla CSS, sin coordenadas fijas del viewport); la cruceta/teclas quedan en la columna derecha. Etiquetas «Deshacer movimiento», «Reiniciar nivel», «Ver niveles». El canvas se escala desde #stage.",
+  "verificacion": "Playwright a 1180×757: stage 274–906 px, Deshacer/Reiniciar centrados debajo (y=658) sin solapar celdas; captura box-play-1180.png."
+ },
+ {
+  "id": "PLAY-BOX-03",
+  "estado": "implementado",
+  "archivos": [
+   "site/box/index.html"
+  ],
+  "detalle": "Las superposiciones inactivas están hidden + inert y el foco entra a la activa (RSP-BOX-01). Live region #a11y anuncia posición tras cada movimiento («Fila {f}, columna {c}», «Empuje», «Contenedor en la plataforma»), «Movimiento bloqueado» y «Nivel {n} completado»; #stage es role=application enfocable con resumen «Tablero: {b} contenedores, {d} en plataforma». No se construyó una representación celda a celda de muros y metas (queda parcial).",
+  "verificacion": "Playwright: anuncios «Fila 3, columna 3. Empuje», «Movimiento bloqueado», «Nivel 1 completado» verificados."
+ },
+ {
+  "id": "PLAY-BOX-04",
+  "estado": "implementado",
+  "archivos": [
+   "site/box/index.html"
+  ],
+  "detalle": "Tarjetas: disponible (.avail, borde cian), completado (.done, estrellas) y bloqueado (.lock con borde discontinuo, número y candado legibles, miniatura al 30 %). El bloqueado usa aria-disabled=true (sigue enfocable; activarlo muestra el aviso «Completá el nivel anterior para desbloquearlo.» y nunca inicia el nivel); aria-label y title: «Nivel {n} disponible», «Nivel {n}, {k} de 3 estrellas», «Nivel {n}, bloqueado. Completá el nivel anterior…». Miniaturas con el mapa real inicial.",
+  "verificacion": "Playwright: Enter en el nivel 4 bloqueado → toast y partida sin cambios; captura box-levels-390.png."
+ },
+ {
+  "id": "RSP-AUDIO-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/box/index.html"
+  ],
+  "detalle": "JetAudioUI compartido actualizado (misma versión que Astro): setAudioOpen() con clase + aria-expanded juntos, foco al primer control al abrir por teclado, Escape restaura el foco al botón, clic exterior no roba foco, sin blur() forzado; filas con label for=; porcentajes y «Silenciar todo»; aria-label de estado «Sonido activado/desactivado» (ES/EN añadidos en AUD_TX).",
+  "verificacion": "Playwright: Enter abre con foco en el checkbox; ArrowRight en el slider cambia el volumen sin mover al astronauta; Escape cierra con aria-expanded=false y foco en #btnSound."
+ },
+ {
+  "id": "RSP-BOX-03",
+  "estado": "implementado",
+  "archivos": [
+   "site/box/index.html"
+  ],
+  "detalle": ".lname pasó a <button type=button id=lName> con aria-label «Elegir nivel; nivel {n} de 60» (total real LEVELS.length); flechas .arr de 44×44 mínimo sin reducción a 28 px; a ≤419 px #hud{flex-wrap:wrap}, .lnav{flex:1 1 100%} y las tres .stat comparten la fila siguiente con flex:1 1 0 y 8 px de separación vertical. El botón superior Niveles se conserva.",
+  "verificacion": "Playwright: a 320/360/390 flechas 44×44, nombre ≥206×44 y HUD en 2 filas; a 768 en 1 fila; Enter en el nombre abre niveles; el canvas se recalcula desde #stage."
+ },
+ {
+  "id": "RSP-BOX-04",
+  "estado": "implementado",
+  "archivos": [
+   "site/box/index.html"
+  ],
+  "detalle": "moveOnce(d) extraído; cada .dp mantiene pointerdown/up/cancel para el auto-repeat y añade click para activaciones sin pointerdown (teclado o asistencia). Una marca temporal del puntero evita el doble movimiento tap+click; se limpia al cancelar o perder la captura. El d-pad no se oculta por recibir un evento de accesibilidad.",
+  "verificacion": "Playwright: .click() sintetizado mueve una casilla; tap mueve exactamente una (3, no 4); teclado sigue funcionando."
+ },
+ {
+  "id": "RSP-GLOBAL-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/box/index.html"
+  ],
+  "detalle": "meta viewport sin maximum-scale/user-scalable; se eliminaron los bloqueos globales de gesturestart y dblclick; touch-action:none salió de html,body y queda en #stage, #cv, #dpad y .dp; modales, grilla de niveles y popover de audio con pan-y pinch-zoom; botones con manipulation.",
+  "verificacion": "Playwright: meta = «width=device-width, initial-scale=1, viewport-fit=cover»; grep: sin gesturestart/dblclick."
+ },
+ {
+  "id": "RSP-LANGUAGE-TARGETS-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/box/index.html"
+  ],
+  "detalle": ".seg{min-height:52px;height:auto;gap:8px;padding:3px}, botones 44×44 mínimo, sin separador <i> ni ::after; el popover de audio hereda el mismo tamaño (min-width 262 px). A ≤419 px la cabecera es una grilla minmax(0,1fr) 44px 44px con gap 8 px: .bblock fila 1 columnas 1/3, sonido fila 1 columna 3, #segLang fila 2 columna 1, #btnHelp fila 2 columna 2, #btnLevels fila 2 columna 3, .spacer oculto; .ib de 44 px.",
+  "verificacion": "Playwright a 320/360/390/768: botones 44×44 con 8 px; captura box-320.png: HUD y tablero visibles tras la cabecera de dos filas (canvas recalculado desde #stage)."
+ },
+ {
+  "id": "SRC-BX01",
+  "estado": "implementado",
+  "archivos": [
+   "site/box/index.html"
+  ],
+  "detalle": "Textos: «Movimientos», «Objetivo» (Par en tooltip), «Siguiente nivel», «Repetir nivel», «Comenzar nivel» (cierre de la ayuda), «Ver niveles», «Deshacer movimiento», «Reiniciar nivel»; victoria identifica nivel y objetivo. Métricas y umbrales sin cambios.",
+  "verificacion": "Lectura de la interfaz por Playwright en ES; EN en el diccionario."
+ },
+ {
+  "id": "SRC-BX02",
+  "estado": "implementado",
+  "archivos": [
+   "site/box/index.html"
+  ],
+  "detalle": "Botón Reiniciar nivel y tecla R comparten la misma acción restart(): ambos son reversibles con Deshacer (entrada «r» en hist) y avisan «Reiniciado. Podés deshacer para recuperar el intento.»; se eliminó el doble toque de 2,5 s del botón para que teclado y toque tengan la misma protección.",
+  "verificacion": "Playwright: R y botón reinician con el mismo aviso; Z y Deshacer recuperan jugador, cajas, movimientos y empujes."
+ },
+ {
+  "id": "VIS-BOX-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/box/index.html"
+  ],
+  "detalle": "buildStatic con dos niveles de detalle: TS<28 conserva el suelo alternado y una junta de 1 px al .08 y omite remaches, trama diagonal, costuras y paneles; TS≥28 conserva los detalles con remaches al .06 (no en casillas objetivo). Biseles y trim cian que separan muro y suelo intactos; capa estática cacheada; L.dw/L.inside sin cambios.",
+  "verificacion": "Capturas box-320 (TS 35) y box-play-1180 (TS grande): casillas transitables distinguibles del muro."
+ },
+ {
+  "id": "VIS-BOX-02",
+  "estado": "implementado",
+  "archivos": [
+   "site/box/index.html"
+  ],
+  "detalle": "Meta libre: cuatro flechas conservadas, anillo interior sólido de ≥1,5 px (sin guiones animados), halo min(8, .16·S). Caja acoplada: marca de verificación oscura dentro del núcleo cian sólo cuando el estado lógico la considera en meta y no está en movimiento (docked = L.goal[boxes[i]] && !moviéndose), y se retira al salir; glow min(10, .22·S); pulso único de 160 ms al acoplar (dockT). k y boxes no cambian.",
+  "verificacion": "Captura box-320.png: caja acoplada con marca; deshacer un empuje retira la marca (estado derivado del tablero)."
+ },
+ {
+  "id": "VIS-BOX-03",
+  "estado": "implementado",
+  "archivos": [
+   "site/box/index.html"
+  ],
+  "detalle": "drawCrate: caja .8·S y radio .2·S intactos; contorno max(1.25, .03·S); sombra de contacto sólo debajo; un solo reflejo superior; abrazaderas sólo con TS≥28; variación del núcleo del 8 % al 3 % y 0 con movimiento reducido; el módulo no se escala al empujar.",
+  "verificacion": "Revisión de drawCrate y capturas."
+ },
+ {
+  "id": "VIS-BOX-04",
+  "estado": "implementado",
+  "archivos": [
+   "site/box/index.html"
+  ],
+  "detalle": "Paleta compartida PAL (muro #54459a, suelo #1a1230, módulo marfil con núcleo ámbar o cian, meta como marco cian, jugador disco blanco con borde oscuro) usada por thumb() (6 px por celda, formas planas alineadas al píxel, geometría completa) y por las ilustraciones SVG de la ayuda, que ahora muestran el módulo marfil con núcleo ámbar. Orden, estrellas y desbloqueo de niveles sin cambios.",
+  "verificacion": "Captura box-levels-390.png: miniaturas con cajas y metas distinguibles."
+ },
+ {
+  "id": "SRC-G01",
+  "estado": "no_aplicable",
+  "archivos": [],
+  "detalle": "Box: el ID afecta a las tarjetas de la home (site/index.html), fuera de esta asignación. El enlace de regreso del juego ya abre en la misma pestaña (target=_top) y conserva idioma.",
+  "verificacion": "Inspección del enlace de regreso en el HTML del juego."
+ },
+ {
+  "id": "SRC-G02",
+  "estado": "ya_corregido_verificado",
+  "archivos": [],
+  "detalle": "Box: el juego ya consume JETIdioma (?lang > cookie jet_lang > localStorage > navegador) y el selector ES/EN existente sincroniza aria-pressed. No se creó un segundo selector; sólo se ajustaron tamaños táctiles donde el catálogo lo pide (RSP-LANGUAGE-TARGETS-01).",
+  "verificacion": "Playwright: carga con ?lang=es y cambio en vivo ES/EN repinta textos sin recargar; aria-pressed sincronizado."
+ },
+ {
+  "id": "SRC-G03",
+  "estado": "implementado",
+  "archivos": [
+   "site/box/index.html"
+  ],
+  "detalle": "Box: «Siguiente nivel», «Repetir nivel», «Ver niveles», «Comenzar nivel», «Reiniciar nivel», «Deshacer movimiento»; «Volver a JET//Games» en el enlace de regreso.",
+  "verificacion": "Lectura de cada etiqueta en la interfaz y en el diccionario ES/EN; prueba Playwright de los destinos reales de cada botón."
+ },
+ {
+  "id": "SRC-G04",
+  "estado": "no_aplicable",
+  "archivos": [],
+  "detalle": "Box: no tiene acción de borrado de progreso.",
+  "verificacion": "Inspección del código: no existe acción de borrado de progreso en este juego."
+ },
+ {
+  "id": "SRC-G05",
+  "estado": "no_aplicable",
+  "archivos": [],
+  "detalle": "Box: juego de un solo HTML con scripts inline, sin módulos externos ni estados de carga; el título y los textos se pintan antes del JS del juego. No se añadió pantalla de carga.",
+  "verificacion": "Inspección del HTML: no hay import() ni <script src> de módulos propios."
+ },
+ {
+  "id": "SRC-G06",
+  "estado": "no_aplicable",
+  "archivos": [],
+  "detalle": "Box: el juego no tiene acción de compartir resultado; no se añadió red ni publicación.",
+  "verificacion": "Inspección del código: sin navigator.share ni clipboard."
+ }
+]
