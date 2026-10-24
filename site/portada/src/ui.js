@@ -528,6 +528,7 @@ function renderChips() {
   const c = $('chips'), ed = S.ed; let h = '';
   if (ed.theme) h += '<button class="chip theme" style="color:' + A.SEC_COLOR[ed.theme] + '" data-chip="theme">' + A.iconSVG(ed.theme) + '<span style="color:var(--ink)">' + esc(L().secs[ed.theme]) + ' ×' + (S.ctx.rules.doble ? '2' : (LANG === 'es' ? '1,5' : '1.5')) + '</span></button>';
   const picks = (S.run.picks || []).filter(p => p.ed <= S.run.k);
+  if (S.compactChips && !picks.length && !ed.theme) { c.innerHTML = ''; return; }
   if (S.compactChips) { const roomy = c.clientWidth >= 84; c.innerHTML = '<button class="chip rule" data-chip="rules" style="max-width:100%" aria-label="' + esc(tr('rules_theme') + ' · ' + tr('rules_n', { n: picks.length })) + '">' + (ed.theme ? '<span style="color:' + A.SEC_COLOR[ed.theme] + '">' + A.iconSVG(ed.theme) + '</span>' + (roomy ? esc(L().code[ed.theme]) : '') : '') + ' <b>§' + picks.length + '</b><span class="chip-t">' + esc(tr('rules_theme')) + '</span></button>'; return; }
   if (false) h += '<button class="chip rule" data-chip="rules"><b>§</b>' + esc(tr('rules_n', { n: picks.length })) + '</button>';
   else picks.forEach(p => { const r = L().rules[p.id]; h += '<button class="chip rule" data-chip="' + p.id + '"><b>' + esc(glyph(p.id)) + '</b>' + esc(r[0]) + (p.sec ? ' · ' + L().code[p.sec] : '') + '</button>'; });
@@ -1046,7 +1047,7 @@ function renderEdResult() {
   h += '<div class="stars" role="img" aria-label="' + esc(tr('stars_lbl', { n: res.stars })) + '">' + [1, 2, 3].map(i => starSVG(false)).join('') + '</div>';
   h += '<p class="stars-txt">' + esc(tr('published', { estrellas: res.stars })) + (res.total < res.J ? '<br>' + esc(tr('ref_shortfall', { diferencia: fmt(res.J - res.total) })) : '') + '</p>';
   const bd = bossDiff(res);
-  h += '<div class="dnote">' + esc(typeof bd === 'string' ? bd : bd.full) + '</div>';
+  h += '<div class="dnote">' + esc(typeof bd === 'string' ? tr('diff_note', { t: bd }) : bd.full) + '</div>';
   // PLAY-PORTADA-06: desglose completo (piezas, vecinos, reglas, globales y huecos) siempre antes del CTA; las portadas se comparan a pedido
   const sc = K.score(S.ed, res.pos, S.ctx);
   const rulesV = sc.extras + sc.glob.reduce((a, x) => a + x[1], 0);
@@ -1230,13 +1231,17 @@ function shareText(run) {
 // si no se puede copiar, el texto íntegro queda seleccionable (patrón de Señal) con «Copiar texto» y «Cerrar».
 function share(text, noUrl) {
   const url = 'https://jetgames.fun/portada/', full = text + '\n' + url;
+  // SRC-G06: el foco vuelve al botón que compartió (la copia clásica lo mueve a un textarea temporal)
+  const act = document.activeElement && document.activeElement !== document.body ? document.activeElement : null;
+  const volver = () => { if (act && visibleEl(act)) { try { act.focus({ preventScroll: true }); } catch (e) { } } };
   const copiarClasico = () => { const ta = document.createElement('textarea'); ta.value = full; ta.setAttribute('readonly', ''); ta.style.cssText = 'position:fixed;left:-9999px;top:0;opacity:0'; document.body.appendChild(ta); ta.select(); let ok = false; try { ok = document.execCommand('copy'); } catch (e) { ok = false; } ta.remove(); return ok; };
   const fallback = () => {
-    const done = () => { sfx('copied'); toast(tr('copied')); };
+    const done = () => { sfx('copied'); toast(tr('copied')); volver(); };
     if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(full).then(done, () => { if (copiarClasico()) done(); else manual(); }); else if (copiarClasico()) done(); else manual();
   };
   const manual = () => modal('<div class="top"><h2>' + esc(tr('share')) + '</h2><button class="x" data-c aria-label="' + esc(tr('close')) + '">✕</button></div><p class="note">' + esc(tr('share_fail')) + '</p><textarea class="shtxt" readonly aria-labelledby="modalT" data-foco>' + esc(full) + '</textarea><div class="row"><button class="btn pri" data-cp>' + esc(tr('copy_text')) + '</button><button class="btn" data-c>' + esc(tr('close')) + '</button></div>', c => {
     c.querySelectorAll('[data-c]').forEach(b => b.onclick = closeModal); const ta = c.querySelector('textarea'); setTimeout(() => { ta.focus(); ta.select(); }, 40);
+    if (act && S.focusStack.length) S.focusStack[S.focusStack.length - 1] = act;
     c.querySelector('[data-cp]').onclick = () => { ta.focus(); ta.select(); const fin = ok => { if (ok) { sfx('copied'); toast(tr('copied')); } else toast(tr('share_fail'), 3000); }; if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(full).then(() => fin(true), () => fin(copiarClasico())); else fin(copiarClasico()); };
   });
   if (navigator.share) navigator.share({ text, url }).then(() => sfx('copied'), e => { if (!e || e.name !== 'AbortError') fallback(); });

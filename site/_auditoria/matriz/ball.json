@@ -1,0 +1,254 @@
+[
+ {
+  "id": "RSP-BALL-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/jetball/index.html"
+  ],
+  "detalle": "ball: reglas finales editadas (no parches nuevos): .hud-top,.hud-top.dim → top/left/right calc(6px + inset) con altura automática (min 40); .active-fx → top:calc(58px + var(--st) + var(--powerbar-height,0px) + 8px), left con --sl y ancho acotado por insets (también en el media ≤700); #overlay.intermediate → padding calc(28px+--st) calc(18px+--sr) calc(28px+--sb) calc(18px+--sl)!important y en max-height:600 bases 16/12 con los mismos insets. El canvas sigue a pantalla completa.",
+  "verificacion": "Playwright propio (scratchpad/test_ball.mjs, servidor 879x): con --st 40px/--sl 20px el HUD queda en top 46/left 26; sin insets 6 px; panel intermedio con --sb 30/--sr 12 → padding 58/30."
+ },
+ {
+  "id": "RSP-BALL-04",
+  "estado": "implementado",
+  "archivos": [
+   "site/jetball/index.html"
+  ],
+  "detalle": "ball: cursor de celda propio kbCursor (inicializado en el centro del tablero en startLevel; si hubo puntero arranca en su celda); #game con tabindex=0, aria-label y aria-describedby=#kbHelp («Flechas: mover el cursor. H: barrera horizontal. V: barrera vertical. Enter o Espacio: construir.»); flechas mueven (con repetición), H/V conservan orientación, Enter/Espacio llaman a startWall(cursor.x,cursor.y,currentOrient) sin precondición de _lastMousePos; contorno blanco/oscuro con la dirección de la barrera (drawKbCursor tras draw()); región #kbStatus aria-live «Fila {fila}, columna {columna}. Orientación: {orientación}. {estado}». Flechas/Enter no se capturan con el foco en botones, inputs, sliders o menús; al cerrar overlays el foco pasa al lienzo.",
+  "verificacion": "Playwright propio (scratchpad/test_ball.mjs, servidor 879x): sin tocar el ratón: Enter desde el menú, Entendido, flechas y Enter construyen una barrera («Orientación: vertical. Construyendo barrera»); el estado se publica en #kbStatus."
+ },
+ {
+  "id": "RSP-BALL-06",
+  "estado": "implementado",
+  "archivos": [
+   "site/jetball/index.html"
+  ],
+  "detalle": "ball: el keydown devuelve sin interceptar Enter/Espacio cuando el objetivo está en button,a,input,select,textarea,summary,[contenteditable],[role=button|switch|slider]; el atajo de CTA con overlay visible sólo se dispara con el foco en body, el lienzo, el overlay o su título.",
+  "verificacion": "Playwright propio (scratchpad/test_ball.mjs, servidor 879x): Tab al summary «Ajustes de sonido» en menú y en pausa: Enter/Espacio abren/cierran el details y no inician ni reanudan; Enter desde el fondo sí arranca."
+ },
+ {
+  "id": "PLAY-BALL-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/jetball/index.html"
+  ],
+  "detalle": "ball: en escritorio (≥900×600) la home se reparte en dos columnas dentro de 960 px: izquierda marca, idioma, resumen del modo (hero), récords y bloque «Cómo se juega»; derecha «Cambiar modo», dificultad, Continuar/Jugar y controles. Los hijos del overlay se agrupan en .home-col (display:contents fuera de la home de escritorio; en móvil reglas order conservan el orden anterior). Audio, pantalla completa, sonido y tema pasan a un <details> «Más ajustes» cerrado.",
+  "verificacion": "Playwright propio (scratchpad/test_ball.mjs, servidor 879x): a 1180×757 pills (bottom 283), dificultad (400) y Jugar (583) visibles sin desplazamiento; a 390 se inicia sin recorrer ajustes. Capturas _smoke/jetball-home-1180.png y jetball-menu-390.png."
+ },
+ {
+  "id": "PLAY-BALL-02",
+  "estado": "implementado",
+  "archivos": [
+   "site/jetball/index.html"
+  ],
+  "detalle": "ball: startTutorial() (antes inexistente) muestra la guía #coach (role=dialog) al empezar el nivel 1 de una partida nueva: «Arrastrá horizontal o verticalmente para construir una barrera. Evitá que una bola la toque antes de terminar.» más la alternativa real de ratón (clic izquierdo vertical / derecho horizontal) y teclado; botones «Entendido» y «Omitir tutorial»; pausa la lógica mientras se lee y guarda tutorialSeen (no se repite); el ajuste «Tutorial» lo reactiva.",
+  "verificacion": "Playwright propio (scratchpad/test_ball.mjs, servidor 879x): la guía aparece con el copy, foco en Entendido, Enter la cierra y enfoca el tablero; en la segunda partida no se repite. Captura _smoke/jetball-coach-390.png."
+ },
+ {
+  "id": "PLAY-BALL-03",
+  "estado": "implementado",
+  "archivos": [
+   "site/jetball/index.html"
+  ],
+  "detalle": "ball: HUD en grupos con etiqueta: modo completo, «Nivel {n}», «Vidas: {n}» (número siempre; ∞ en infinitas), «Capturado: {pct}% · Meta: {target}%» (Parecido en arte_mimic), «Tiempo: {s} s», «Puntos: {n}» (toLocaleString según idioma), «Mejor nivel: {n}»; valores 14 px/800 tabulares, etiquetas 12 px; la pastilla se reparte en dos filas antes de recortar; reglas viejas que ocultaban etiquetas en ≤480 anuladas.",
+  "verificacion": "Playwright propio (scratchpad/test_ball.mjs, servidor 879x): texto «CLÁSICO · Nivel 1 · Vidas: 5 · Capturado: 0% · Meta: 75% · Puntos: 0», etiquetas visibles, 14/12 px, sin solape con Pausa a 360. Captura _smoke/jetball-play-390.png."
+ },
+ {
+  "id": "PLAY-BALL-04",
+  "estado": "implementado",
+  "archivos": [
+   "site/jetball/index.html"
+  ],
+  "detalle": "ball: DIFFICULTIES.expert.name «DIFÍCIL»→«EXPERTO» (short EXP); el mapeo botón data-diff=expert → DIFFICULTIES.expert era correcto, sólo difería el nombre; el toast «Dificultad: {name}» y HUD usan el mismo.",
+  "verificacion": "Playwright propio (scratchpad/test_ball.mjs, servidor 879x): botón EXPERTO; UI_WORDS ya contenía EXPERTO para en/pt/fr/de."
+ },
+ {
+  "id": "PLAY-BALL-05",
+  "estado": "implementado",
+  "archivos": [
+   "site/jetball/index.html"
+  ],
+  "detalle": "ball: «1 modo jugado» / «{n} modos jugados» (singular real), «Récord · {Modo}» (modeTitle: Clásico, Supervivencia…) en lugar de «Mejor · CLA/SUP», HUD «Mejor nivel: {n}» en lugar de «BEST L01»; el modo en el HUD se muestra completo. Traducciones en/pt/fr/de añadidas (Récord, Mejor nivel, modo jugado).",
+  "verificacion": "Playwright propio (scratchpad/test_ball.mjs, servidor 879x): con una partida guardada «1 modo jugado»; «Récord · Clásico»; en EN «Record · …», «2 modes played»."
+ },
+ {
+  "id": "PLAY-BALL-06",
+  "estado": "implementado",
+  "archivos": [
+   "site/jetball/index.html"
+  ],
+  "detalle": "ball: victoria con CTA «Siguiente nivel», destino «Nivel {n}» como texto secundario (#ovBtnNote), «Volver al menú» visible; casilla «Avance automático» (settings.autoAdvance, OFF por defecto, persistente) y botón «Detener avance»; con avance activo la nota dice «Nivel {n} · Avance automático en {s} s»; se eliminó el cancelado por toque en cualquier zona; empezar manualmente cancela el temporizador en hideOverlay() (sin doble lanzamiento). Las estadísticas quedan hasta una acción explícita.",
+  "verificacion": "Revisión de fuente (nextLevel/startVictoryCountdown) y DOM estático en Playwright (controles presentes, ocultos fuera de victoria). La victoria no se reprodujo interactivamente en la sesión (requiere completar un nivel)."
+ },
+ {
+  "id": "PLAY-BALL-07",
+  "estado": "implementado",
+  "archivos": [
+   "site/jetball/index.html"
+  ],
+  "detalle": "ball: gameOver distingue firstResult (sin récord previo): mensaje «Primer resultado guardado» y sin resaltado new-record; «¡Nuevo récord!» sólo al superar el nivel previo. Tarjeta «Nivel alcanzado» con el nivel de la partida y tarjeta «Récord · {Modo}» cuyo detalle dice «Nivel · {rango}» para explicar que el récord se mide por nivel.",
+  "verificacion": "Revisión de fuente (gameOver/renderRecordsUI). No se reprodujo una derrota completa en la sesión."
+ },
+ {
+  "id": "PLAY-BALL-08",
+  "estado": "implementado",
+  "archivos": [
+   "site/jetball/index.html"
+  ],
+  "detalle": "ball: CONTINUE_LIVES=3 (vidas totales que fija continueAfterDeath, no un extra) alimenta la etiqueta «Continuar con 3 vidas» (con anuncio: «Ver anuncio · Continuar con 3 vidas»); límite verificado en código (_continueUsed: una por partida) → nota «Una continuación gratuita por partida» sólo cuando no hay SDK de anuncios; en Supervivencia se aclara que la continuación otorga 3 vidas. No se cambió la economía.",
+  "verificacion": "Revisión de fuente (continueAfterDeath, gameOver, btnStartFire)."
+ },
+ {
+  "id": "PLAY-BALL-09",
+  "estado": "implementado",
+  "archivos": [
+   "site/jetball/index.html"
+  ],
+  "detalle": "ball: paintPowerHelp() en pausa: inventario vacío → «Todavía no tenés poderes. Juntalos durante la partida.»; Zen (cleanModes: no genera poderes) → «En modo Zen no aparecen poderes.» y el inventario se oculta (#overlay.pause.no-powers); con poderes se conserva «Elegir un poder lo activa y reanuda la partida.». aria-label/title de cada ranura incluye efecto y duración («congela las bolas 4 s», «cámara lenta 6 s», «absorbe un impacto»).",
+  "verificacion": "Playwright propio (scratchpad/test_ball.mjs, servidor 879x): pausa en Clásico sin poderes y pausa en Zen muestran los textos correctos; en Zen el inventario no se muestra."
+ },
+ {
+  "id": "RSP-BALL-02",
+  "estado": "implementado",
+  "archivos": [
+   "site/jetball/index.html"
+  ],
+  "detalle": "ball: .pw-btn min 44×44; en ≤700 px #inventoryReadout es grid de 3 columnas de ancho min(360px, 100% − 16px − insets) con gap 6, botones ≥56 px en columna: icono+cantidad arriba (.pw-top) y nombre 11 px abajo (.pw-name, white-space normal); el nombre ya no se oculta por ancho; aria-label y teclas 1/2/3 conservados; la barra sigue capturando sus propios toques (stopPropagation).",
+  "verificacion": "Playwright propio (scratchpad/test_ball.mjs, servidor 879x): barra simulada con 3 poderes a 360 px: botones 111×56, nombres visibles, 3 columnas, ancho 344 ≤ 344."
+ },
+ {
+  "id": "RSP-BALL-03",
+  "estado": "implementado",
+  "archivos": [
+   "site/jetball/index.html"
+  ],
+  "detalle": "ball: #inventoryReadout en top:calc(58px + --st); ResizeObserver+MutationObserver publican --powerbar-height (0 sin botones) en :root; .active-fx en top:calc(58px + --st + --powerbar-height + 8px) y ancho acotado por insets; sin cambios de z-index.",
+  "verificacion": "Playwright propio (scratchpad/test_ball.mjs, servidor 879x): con barra de 56 px los efectos quedan a 122 px (barra termina en 114 → 8 px de separación); al vaciar la barra --powerbar-height=0px y top=66."
+ },
+ {
+  "id": "RSP-BALL-05",
+  "estado": "implementado",
+  "archivos": [
+   "site/jetball/index.html"
+  ],
+  "detalle": "ball: fitModePills() ya no reduce (sólo limpia estilos inline); .mode-pill span 12 px, line-height 1.25, white-space normal, overflow-wrap anywhere; .mode-pill min-height 48, padding 8px 6px, overflow visible; 2 columnas por defecto y 4 sólo con @container (min-width:470px) sobre .config-card (container-type inline-size), en lugar del media de 560 px.",
+  "verificacion": "Playwright propio (scratchpad/test_ball.mjs, servidor 879x): a 320/390 todas las etiquetas a 12 px sin estilos inline, sin desborde ni scroll horizontal; a 1180 la tarjeta (≤400 px) mantiene 2 columnas."
+ },
+ {
+  "id": "RSP-GLOBAL-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/jetball/index.html"
+  ],
+  "detalle": "ball: meta viewport sin maximum-scale/user-scalable; touch-action:none retirado de html/body (queda en #game); .overlay pan-y pinch-zoom; botones/pills/ranuras manipulation. Sin bloqueos globales de gesturestart/dblclick.",
+  "verificacion": "Revisión de fuente + smoke."
+ },
+ {
+  "id": "SRC-B01",
+  "estado": "implementado",
+  "archivos": [
+   "site/jetball/index.html"
+  ],
+  "detalle": "ball: ver PLAY-BALL-06: «Siguiente nivel» estable, «Nivel {n}» separado, «Avance automático» OFF por defecto y persistente, «Avance automático en {s} s» y «Detener avance» accesible por teclado/toque; el único modo de frenarlo ya no es tocar una zona sin etiqueta; con movimiento reducido no se impone (el valor por defecto es desactivado).",
+  "verificacion": "Revisión de fuente (startVictoryCountdown/cancelVictoryCountdown/bindAutoAdvance)."
+ },
+ {
+  "id": "SRC-B02",
+  "estado": "implementado",
+  "archivos": [
+   "site/jetball/index.html"
+  ],
+  "detalle": "ball: coachSkip «Omitir tutorial»; #btnResume «Continuar partida» con nota secundaria «Modo guardado: {modo} · Nivel guardado: {n}» (#resumeNote); #btnReset «Reiniciar partida» (icono aria-hidden; handler resetGame = partida completa); #btnStart «Jugar»; intro de nivel «Empezar nivel {n}». Mayúsculas por CSS, no en las cadenas.",
+  "verificacion": "Playwright propio (scratchpad/test_ball.mjs, servidor 879x): con jetball.run nivel 4: «Continuar partida» + «Modo guardado: Clásico · Nivel guardado: 4»; pausa: «↺ Reiniciar partida»."
+ },
+ {
+  "id": "VIS-BALL-01",
+  "estado": "pendiente_decision",
+  "archivos": [
+   "site/jetball/index.html"
+  ],
+  "detalle": "ball: clásico aplicado: trama hexagonal sin cambios (rgba(34,232,255,0.07), hexR 28) y los wireframes a la deriva con ganancia decorativa 0,75 (globalAlpha). Para frutas, océano y Egipto el factor por modo exige revisar qué capas de drawFruitBackdrop/drawOceanBackdrop/drawEgyptBackdrop se superponen a entidades sin tocar paletas ni composiciones; no se aplicó a ciegas y queda pendiente de decisión/validación visual con la misma semilla.",
+  "verificacion": "Revisión de fuente; smoke sin errores."
+ },
+ {
+  "id": "VIS-BALL-02",
+  "estado": "implementado",
+  "archivos": [
+   "site/jetball/index.html"
+  ],
+  "detalle": "ball: drawStandardBall(): halo shadowBlur = min(12, 1,2·r) para bolas normales y min(16, 1,5·r) para especiales (boss, magnetic, phantom, bullet, explosive, timebomb); arte sigue plano; colores por tipo, radio b.r, alfa de phantom y gradiente intactos. La marca interior opcional no se añadió (requiere validar toda la tabla de tipos).",
+  "verificacion": "Revisión de fuente + captura _smoke/jetball-play-390.png."
+ },
+ {
+  "id": "VIS-BALL-03",
+  "estado": "implementado",
+  "archivos": [
+   "site/jetball/index.html"
+  ],
+  "detalle": "ball: HUD: valores 14 px/800 con tabular-nums, etiquetas 12 px/600 sin resplandor, text-shadow eliminado, récord 12 px (no microscópico), panel rgba(11,7,21,.94) con borde rgba(82,69,102,.65), tema claro casi opaco; successPulse una vez (300 ms) y estado estático; los chips de resultados ya separan grupos sin gradiente (reglas existentes).",
+  "verificacion": "Playwright: fontSize 14/12 px; capturas HUD."
+ },
+ {
+  "id": "VIS-BALL-04",
+  "estado": "implementado",
+  "archivos": [
+   "site/jetball/index.html"
+  ],
+  "detalle": "ball: sacudida visual ≤3 px y decaimiento ~180 ms (lógica de shake intacta), nula con reducedMotion; destello de pantalla completa (flash) sólo sin movimiento reducido; confeti de victoria a 0,6 s y detrás de estadísticas/botones (z-index); en reduced-motion sin pulsos del HUD y con borde estático de 2 px para el valor en peligro; level-reveal sin animación.",
+  "verificacion": "Revisión de fuente + CSS; settings.reducedMotion ya existía (infraestructura ampliada)."
+ },
+ {
+  "id": "SRC-G01",
+  "estado": "no_aplicable",
+  "archivos": [
+   "site/jetball/index.html"
+  ],
+  "detalle": "ball: el enlace de regreso #jgBack ya usa target=_top; las tarjetas pertenecen a la home.",
+  "verificacion": "Revisión de fuente."
+ },
+ {
+  "id": "SRC-G02",
+  "estado": "implementado",
+  "archivos": [
+   "site/jetball/index.html"
+  ],
+  "detalle": "ball: no consumía la preferencia común jet_lang (usaba sólo jetball.lang/navegador). Ahora: ?lang=es|en de la URL > elección propia (jetball.lang) > cookie/localStorage jet_lang > navegador; al elegir ES/EN en su selector escribe jet_lang (cookie .jetgames.fun + localStorage). Se conserva el selector propio de 60 idiomas.",
+  "verificacion": "Playwright propio (scratchpad/test_ball.mjs, servidor 879x): ?lang=es arranca en español con navegador en-US; elegir English deja localStorage jet_lang=en y traduce la interfaz."
+ },
+ {
+  "id": "SRC-G03",
+  "estado": "implementado",
+  "archivos": [
+   "site/jetball/index.html"
+  ],
+  "detalle": "ball: pausa «Reanudar partida»; «Volver al menú»; «Reiniciar partida»; «Siguiente nivel»; «Continuar partida»; «Jugar»; «Empezar nivel {n}».",
+  "verificacion": "Playwright (pausa y menú)."
+ },
+ {
+  "id": "SRC-G04",
+  "estado": "no_aplicable",
+  "archivos": [
+   "site/jetball/index.html"
+  ],
+  "detalle": "ball: no existe acción de borrar progreso ni confirmación por doble toque.",
+  "verificacion": "Revisión de fuente (sin «Borrar»)."
+ },
+ {
+  "id": "SRC-G05",
+  "estado": "no_aplicable",
+  "archivos": [
+   "site/jetball/index.html"
+  ],
+  "detalle": "ball: HTML único con scripts inline y splash propio; sólo Google Translate se carga de forma externa como respaldo opcional.",
+  "verificacion": "Smoke: 1 error esperable (sw.js 404)."
+ },
+ {
+  "id": "SRC-G06",
+  "estado": "no_aplicable",
+  "archivos": [
+   "site/jetball/index.html"
+  ],
+  "detalle": "ball: no tiene función de compartir.",
+  "verificacion": "Revisión de fuente."
+ }
+]

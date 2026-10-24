@@ -1,0 +1,200 @@
+[
+ {
+  "id": "RSP-SLALOM-04",
+  "estado": "implementado",
+  "archivos": [
+   "site/slalom/index.html"
+  ],
+  "detalle": "slalom: en el keydown global, Escape/P pausan como acción explícita antes que nada; si el objetivo está en un control nativo/semántico (button,a,input,select,textarea,summary,[contenteditable],[role=button],[role=switch]) Enter/Espacio no activan gameplay (el botón Pausa gestiona su propia activación). menuKey(): soporte manual sólo para los div role=button/switch no nativos; para botones/enlaces/inputs retorna sin fallback; el CTA por Enter sólo se ejecuta si no hay control enfocado. pauseGame() enfoca «Reanudar partida»; resumeGame() devuelve el foco al botón Pausa si fue el disparador o al lienzo (#game tabindex=-1). trapTab() encierra Tab en los diálogos (pausa/confirmación) incluyendo el enlace JET//Games.",
+  "verificacion": "Playwright propio (scratchpad/test_slalom.mjs, servidor 879x): Tab a Pausa + Espacio pausa una sola vez sin salto; Enter igual; P enfoca Reanudar partida y Escape devuelve el foco al lienzo; Espacio con el lienzo enfocado salta; Enter sobre JET//Games en el menú sigue el enlace y no inicia partida."
+ },
+ {
+  "id": "PLAY-SLALOM-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/slalom/index.html"
+  ],
+  "detalle": "slalom: con perfil nuevo, «Jugar» abre el briefing de «Slalom · Pista 1» (crumb {disciplina} · Pista {n}) en lugar de lanzar la pista: muestra objetivo (goal-list), «Reglas de esta modalidad» (flags_rule «Pasá a la izquierda de las banderas rojas y a la derecha de las azules.» + p_slalom) y «Controles» (teclado o táctil según pointer), CTA «Empezar» (conservado, SRC-S01) y botón «Elegir modalidad» que lleva a disciplinas. No es un tutorial obligatorio, por eso no se usa «Empezar tutorial».",
+  "verificacion": "Playwright propio (scratchpad/test_slalom.mjs, servidor 879x): perfil nuevo → brief con crumb «Slalom · Pista 1», regla y controles; Empezar inicia la pista 1 de Slalom; Elegir modalidad abre disciplinas."
+ },
+ {
+  "id": "PLAY-SLALOM-02",
+  "estado": "implementado",
+  "archivos": [
+   "site/slalom/index.html"
+  ],
+  "detalle": "slalom: «Cómo jugar» reordenado: título «Controles» con secciones «Táctil» y «Teclado» (antes «Teclado y mouse»), sección «Reglas de esta modalidad» (regla de la disciplina elegida, Slalom por defecto) con diagrama SVG del lado correcto de cada bandera (role=img, aria-label con la regla), y <details> «Ver reglas avanzadas» con vidas/choques, otras disciplinas, Bosque/Combinada, pistas/estrellas/jefes.",
+  "verificacion": "Playwright propio (scratchpad/test_slalom.mjs, servidor 879x): títulos Controles/Táctil/Teclado/Reglas de esta modalidad, diagrama visible, details cerrado; EN «Keyboard». Captura _smoke/slalom-howto-390.png."
+ },
+ {
+  "id": "PLAY-SLALOM-03",
+  "estado": "implementado",
+  "archivos": [
+   "site/slalom/index.html"
+  ],
+  "detalle": "slalom: HUD con nombres completos «Distancia», «Puntos», «Penalización» (hud_pen), «Monedas»; en ≤430 px las etiquetas quedan sólo visualmente ocultas (sr-only) y los iconos son aria-hidden, así cada cifra conserva su nombre accesible. Objetivos (briefing y fin de bajada) con estado textual «Estrella conseguida»/«Estrella pendiente» (goalLi) además del color.",
+  "verificacion": "Playwright propio (scratchpad/test_slalom.mjs, servidor 879x): texto del HUD «Distancia … Puntos … Penalización … Monedas …»; 3 objetivos con «Estrella pendiente» en briefing y resultado."
+ },
+ {
+  "id": "PLAY-SLALOM-04",
+  "estado": "implementado",
+  "archivos": [
+   "site/slalom/index.html"
+  ],
+  "detalle": "slalom: resultado con encabezado compacto (causa, estrellas, puntos), acciones y objetivos visibles, y estadísticas secundarias en <details> «Ver estadísticas» (cerrado). Botones por efecto/destino: «Reintentar pista» (derrota en pistas), «Repetir pista», «Siguiente pista», «Elegir pista» (pistas), «Volver a modos» (infinito/diario), «Volver al menú» (combinada).",
+  "verificacion": "Playwright propio (scratchpad/test_slalom.mjs, servidor 879x): a 1180×757 causa, puntos, objetivos y los dos CTA quedan dentro del viewport (CTA bottom 482 px); etiquetas «Reintentar pista»/«Elegir pista». Capturas _smoke/slalom-over-1180.png y -390.png."
+ },
+ {
+  "id": "PLAY-SLALOM-05",
+  "estado": "implementado",
+  "archivos": [
+   "site/slalom/index.html"
+  ],
+  "detalle": "slalom: tarjetas bloqueadas focalizables (tabIndex 0) con aria-disabled=true, rótulo «Pista bloqueada», condición «Completá la pista anterior para desbloquearla.» legible (opacidad .78, borde discontinuo) y aria-label completo; click/Enter no inician (toast informativo). La condición real es secuencial (n > cleared+1).",
+  "verificacion": "Playwright propio (scratchpad/test_slalom.mjs, servidor 879x): 9 bloqueadas con texto y aria correctos; Enter sobre una bloqueada no inicia. Captura _smoke/slalom-levels-390.png."
+ },
+ {
+  "id": "RSP-GLOBAL-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/slalom/index.html"
+  ],
+  "detalle": "slalom: meta viewport sin maximum-scale/user-scalable; touch-action:none retirado de html/body (queda en #game); .overlay con pan-y pinch-zoom; botones/tarjetas manipulation. Los gestos del juego siguen en el lienzo (touchstart con preventDefault sólo en canvas).",
+  "verificacion": "Revisión de fuente + smoke."
+ },
+ {
+  "id": "RSP-SLALOM-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/slalom/index.html"
+  ],
+  "detalle": "slalom: en ≤430 px .hud-top es grid 44px minmax(0,1fr) auto (gap 6); la pastilla de métricas (no la de vidas) es grid de 2 columnas con gap 2px 8px, padding 4px 8px, 11px/14px, min-height 44, white-space normal, overflow visible; separadores y .hud-spacer ocultos; .hud-level/.boss-bar bajan a 60px+inset (≥6 px de margen). El JS ya no fuerza display:flex inline (hudEl.style.display=''). A ≥431 px se conserva la fila amplia.",
+  "verificacion": "Playwright propio (scratchpad/test_slalom.mjs, servidor 879x): con distancia 99999, puntos 9999999, penalización 999,9 y monedas 99999 ninguna cifra se recorta a 390 ni a 320 (scrollWidth=clientWidth por stat, sin solape con vidas ni nivel, 8 px de margen); a 768 fila flex con etiquetas. Capturas _smoke/slalom-hud-390.png y -320.png."
+ },
+ {
+  "id": "RSP-SLALOM-02",
+  "estado": "implementado",
+  "archivos": [
+   "site/slalom/index.html"
+  ],
+  "detalle": "slalom: la tienda usa <button type=button class=card data-skin-id>; aria-pressed en las poseídas según equipado; buildShop() recuerda el data-skin-id enfocado y le devuelve el foco tras reconstruir; las no compradas siguen consultables (no disabled). El manejador manual Enter/Espacio de menuKey ya no aplica a botones nativos (sin doble click).",
+  "verificacion": "Playwright propio (scratchpad/test_slalom.mjs, servidor 879x): Enter sobre una skin compra/equipa y el foco queda en la misma tarjeta con aria-pressed=true; un segundo Enter no duplica la compra; Tab pasa a la skin siguiente."
+ },
+ {
+  "id": "RSP-SLALOM-03",
+  "estado": "implementado",
+  "archivos": [
+   "site/slalom/index.html"
+  ],
+  "detalle": "slalom: resizeCanvas() mide #app.getBoundingClientRect() (única fuente), multiplica sólo el backing store por DPR, guarda canvasRect y los punteros restan ese rectángulo; resize/orientationchange/visualViewport.resize y un ResizeObserver sobre #app se consolidan en un requestAnimationFrame (scheduleResize).",
+  "verificacion": "Playwright propio (scratchpad/test_slalom.mjs, servidor 879x): a 768×1024 canvas CSS = rectángulo de #app (±1 px). visualViewport no es emulable en headless; el camino de --app-height → #app → canvas queda unificado por construcción."
+ },
+ {
+  "id": "SRC-S02",
+  "estado": "implementado",
+  "archivos": [
+   "site/slalom/index.html"
+  ],
+  "detalle": "slalom: #btn-quit con etiqueta dinámica por destino real (exitLabel): «Volver a las pistas» (pistas), «Volver a modos» (infinito/diario), «Volver al menú» (combinada); lo mismo en #btn-over-menu («Elegir pista» en pistas). #btn-resume «Reanudar partida»; #btn-restart «Reiniciar bajada»; «Repetir pista» conservado.",
+  "verificacion": "Playwright propio (scratchpad/test_slalom.mjs, servidor 879x): en pausa de una pista la salida dice «Volver a las pistas» y lleva a la grilla de pistas sin iniciar ni borrar nada."
+ },
+ {
+  "id": "VIS-SLALOM-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/slalom/index.html"
+  ],
+  "detalle": "slalom: bandas de relieve 0,18→0,10; elipses ambientales 0,08→0,06; sombra de pinos rgba(82,97,123,0.20) en la misma dirección; huellas del esquiador (2 px, 0,40) y colores de nieve sin cambios; sin árboles nuevos en la zona navegable.",
+  "verificacion": "Revisión de fuente + captura _smoke/slalom-hud-390.png (esquiador y obstáculos destacan sobre las líneas)."
+ },
+ {
+  "id": "VIS-SLALOM-02",
+  "estado": "implementado",
+  "archivos": [
+   "site/slalom/index.html"
+  ],
+  "detalle": "slalom: halo aditivo de banderas 14·s→5·s (asta #1a1530 y orientación roja/azul intactas); halo del jugador 36·s/0,40→26·s/0,20 en estado normal; el halo rojo de caída conserva radio y alfa. Sin cambios de hitbox ni skins.",
+  "verificacion": "Revisión de fuente + captura de juego."
+ },
+ {
+  "id": "VIS-SLALOM-03",
+  "estado": "implementado",
+  "archivos": [
+   "site/slalom/index.html"
+  ],
+  "detalle": "slalom: Yeti sin resplandor blanco (shadowBlur 0), contorno rgba(102,117,142,0.8) de 1,25·s en cuerpo y brazos, luz de borde #DCE8F8 (1·s) recortada dentro de la silueta, sombra rgba(82,97,123,0.26) con la misma elipse; tamaño, animación de brazos y ojos/boca intactos.",
+  "verificacion": "Revisión de fuente (no se reprodujo el jefe en la sesión de prueba)."
+ },
+ {
+  "id": "VIS-SLALOM-04",
+  "estado": "implementado",
+  "archivos": [
+   "site/slalom/index.html"
+  ],
+  "detalle": "slalom: --hud-bg rgba(17,18,33,.94) y --hud-border #66758E a .5; sombra 0 3px 10px rgba(0,0,0,.2) en pastillas, botón e incluso toasts (sin halos de 22 px); valores sin text-shadow; etiquetas 12 px/600; dangerPulse una vez (350 ms) y estado estático; bossPulse una sola iteración; new-record 2 iteraciones. Reduced-motion global ya corta animaciones.",
+  "verificacion": "Revisión de fuente + capturas HUD 390/320."
+ },
+ {
+  "id": "SRC-S01",
+  "estado": "ya_corregido_verificado",
+  "archivos": [
+   "site/slalom/index.html"
+  ],
+  "detalle": "slalom: #btn-brief-go dice «Empezar» (data-i18n start) y su handler fija structure=levels y llama startGame(); ninguna acción «Salir» inicia el juego. Sin cambios de etiqueta.",
+  "verificacion": "Playwright propio (scratchpad/test_slalom.mjs, servidor 879x): prueba de regresión: pulsar «Empezar» en el briefing de la pista 1 inicia exactamente esa pista (level 1, mode slalom, structure levels)."
+ },
+ {
+  "id": "SRC-G01",
+  "estado": "implementado",
+  "archivos": [
+   "site/slalom/index.html"
+  ],
+  "detalle": "slalom: el enlace del pie «jetgames.fun» abría en pestaña nueva (target=_blank); pasa a target=_top como el enlace de regreso. Las tarjetas de la home están fuera del alcance.",
+  "verificacion": "Revisión de fuente."
+ },
+ {
+  "id": "SRC-G02",
+  "estado": "ya_corregido_verificado",
+  "archivos": [
+   "site/slalom/index.html"
+  ],
+  "detalle": "slalom: selector ES/EN (.lang-sw, aria-pressed) en portada y ajustes sobre JETIdioma embebido (?lang > cookie/localStorage > navegador). Sin cambios.",
+  "verificacion": "Playwright propio (scratchpad/test_slalom.mjs, servidor 879x): ?lang=es prevalece con navegador en-US; JETIdioma.set('en') repinta HUD, pausa y confirmación."
+ },
+ {
+  "id": "SRC-G03",
+  "estado": "implementado",
+  "archivos": [
+   "site/slalom/index.html"
+  ],
+  "detalle": "slalom: «Reanudar partida», «Reiniciar bajada», salidas con destino explícito (pistas/modos/menú), «Reintentar pista», «Repetir pista», «Elegir pista». «Jugar de nuevo» (infinito) y «Reintentar el reto» (diario) se conservan.",
+  "verificacion": "Playwright (ver SRC-S02 y PLAY-SLALOM-04)."
+ },
+ {
+  "id": "SRC-G04",
+  "estado": "implementado",
+  "archivos": [
+   "site/slalom/index.html"
+  ],
+  "detalle": "slalom: eliminado el doble toque de 3,5 s. «Borrar progreso» abre #ov-confirm (role=dialog) con «¿Borrar todo el progreso de JET//Slalom?» y «Se borrarán las monedas y los aspectos desbloqueados, las pistas superadas con sus estrellas y mejores marcas, los récords, los retos diarios, las estadísticas de la temporada y las guías de las primeras bajadas. Esta acción no se puede deshacer.»; Cancelar enfocado, botón peligro aparte; conserva ajustes (sonido, controles) e idioma.",
+  "verificacion": "Playwright propio (scratchpad/test_slalom.mjs, servidor 879x): Escape y Enter sobre Cancelar no borran (coins intactas); aceptar deja coins=0, conserva settings.music=false y lang=es; el foco vuelve a «Borrar progreso»."
+ },
+ {
+  "id": "SRC-G05",
+  "estado": "no_aplicable",
+  "archivos": [
+   "site/slalom/index.html"
+  ],
+  "detalle": "slalom: HTML único con scripts inline; portada presente antes del JS. Sin módulos externos ni WebGL.",
+  "verificacion": "Smoke: sólo 404 de sw.js."
+ },
+ {
+  "id": "SRC-G06",
+  "estado": "no_aplicable",
+  "archivos": [
+   "site/slalom/index.html"
+  ],
+  "detalle": "slalom: no tiene función de compartir.",
+  "verificacion": "Revisión de fuente."
+ }
+]

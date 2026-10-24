@@ -3059,6 +3059,8 @@ body.theme-light .overlay.show:not(.intermediate) .more-settings>summary{backgro
   #overlay.show:not(.intermediate) .home-left .hero-mode{width:100%;max-width:400px;margin:6px 0 10px}
   #overlay.show:not(.intermediate) .home-left .records{margin:0 0 10px}
 }
+/* el hero y los récords son ahora hijos directos del overlay (flex): no deben encogerse */
+#overlay .hero-mode,#overlay .records{flex-shrink:0}
 /* el hero vive fuera de la tarjeta de configuración: en pantallas intermedias se oculta igual que la tarjeta */
 #overlay.intermediate .hero-mode{display:none!important}
 /* en móvil / pantallas bajas los hijos de las columnas vuelven al orden visual anterior */

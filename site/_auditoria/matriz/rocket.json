@@ -1,0 +1,201 @@
+[
+ {
+  "id": "RSP-ROCKET-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/rocket/index.html"
+  ],
+  "detalle": "rocket: en la media query horizontal (≤600 px de alto) #btn-pause pasa a position:relative; top:auto; right:auto; width:100%; height:44px; min-height:44px, y #btn-pause::before usa inset:0, así la zona activa es exactamente el botón y no todo #top. order:10 y el texto (::after data-label) se conservan. El doble disparo click+pointerup ya estaba cubierto: pauseGame() retorna si la escena no es play.",
+  "verificacion": "Playwright propio (scratchpad/test_rocket.mjs, servidor 879x): a 568×320 position=relative, alto 44, ::before inset 0px, top=auto; tap en una pastilla del marcador no pausa (scene sigue play). Captura _smoke/rocket-568x320.png."
+ },
+ {
+  "id": "PLAY-ROCKET-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/rocket/index.html"
+  ],
+  "detalle": "rocket: nuevo párrafo #mode-desc (aria-live) encima de «Jugar arcade» que renderMenu() rellena con la regla real del modo: desc.classic / desc.timer / desc.survive; {s} sale de ARCADE.timer.timeLimit (90). Renombrados mode.timer→«Contrarreloj»/«Time Trial» y mode.survive→«Supervivencia»/«Survival» (también en help6).",
+  "verificacion": "Playwright propio (scratchpad/test_rocket.mjs, servidor 879x): al pulsar Contrarreloj la descripción muestra «…en 90 segundos. Chocar termina la partida.» y aria-pressed cambia; en EN «Time Trial: score as many points as you can in 90 seconds…»."
+ },
+ {
+  "id": "PLAY-ROCKET-02",
+  "estado": "pendiente_decision",
+  "archivos": [
+   "site/rocket/index.html"
+  ],
+  "detalle": "rocket: el manual se separó en «Controles» (pilotaje, pausa, muros/bordes) y un desplegable «Reglas avanzadas» (cristales, combo, mejoras, portales, asteroides) cerrado por defecto; nada se explica antes de hacer falta y el cierre «Entendido» se conserva. La práctica guiada del primer giro y primer cristal es una ampliación opcional (decisión 9: práctica separada, sin tocar física) y queda pendiente de decisión; no hay tutorial que «omitir», por eso no se instaló la etiqueta «Omitir». No se tocó física ni dificultad.",
+  "verificacion": "Playwright propio (scratchpad/test_rocket.mjs, servidor 879x): títulos Controles / Reglas avanzadas, details cerrado, foco inicial en Entendido, Escape devuelve el foco a «Cómo jugar»."
+ },
+ {
+  "id": "PLAY-ROCKET-03",
+  "estado": "implementado",
+  "archivos": [
+   "site/rocket/index.html"
+  ],
+  "detalle": "rocket: rótulo «Puntos» (.ov-score-lbl, data-i18n pointsCaps) sobre la cifra grande en derrota y victoria, y aria-label «Puntos: {n}» en #lose-score/#win-score con el valor real. La causa concreta («Choque contra el borde») se conserva como eyebrow.",
+  "verificacion": "Playwright propio (scratchpad/test_rocket.mjs, servidor 879x): tras una derrota el rótulo es «Puntos» y aria-label «Puntos: 0». Captura _smoke/rocket-lose-390.png."
+ },
+ {
+  "id": "PLAY-ROCKET-04",
+  "estado": "implementado",
+  "archivos": [
+   "site/rocket/index.html"
+  ],
+  "detalle": "rocket: nuevo STATE.played (segundos jugados; sólo avanza en simulate(), no en pausa/espera/cuenta atrás). HUD con reloj: valor m:ss (fmtClock) bajo la etiqueta «Tiempo» y aria-label «Tiempo restante: {s} s» en #pill4 (setAria con caché). En derrota con límite de tiempo, lose-msg añade «Duración de la partida: {s} s · Tiempo restante: {s} s» desde el temporizador real; con reason=time el restante es 0, lo que distingue choque de fin de reloj.",
+  "verificacion": "Playwright propio (scratchpad/test_rocket.mjs, servidor 879x): derrota en Contrarreloj: «Duración de la partida: 3 s · Tiempo restante: 88 s» (suma 90±1 con el límite real)."
+ },
+ {
+  "id": "PLAY-ROCKET-05",
+  "estado": "implementado",
+  "archivos": [
+   "site/rocket/index.html"
+  ],
+  "detalle": "rocket: tarjetas bloqueadas con aria-disabled=\"true\" (focalizables, sin iniciar), opacidad .8, borde discontinuo y texto legible; muestran «Completá el sector {n} para desbloquear.» con n = sector anterior real (la campaña desbloquea i+2 al superar i). aria-label = «Sector {n} {name}, bloqueado. Completá el sector {n} para desbloquear.».",
+  "verificacion": "Playwright propio (scratchpad/test_rocket.mjs, servidor 879x): 11 tarjetas bloqueadas, condición correcta, click/Enter no abren el briefing, sin desborde a 320 px (scrollWidth=clientWidth). Capturas _smoke/rocket-sectors-390.png y -320.png."
+ },
+ {
+  "id": "PLAY-ROCKET-06",
+  "estado": "implementado",
+  "archivos": [
+   "site/rocket/index.html"
+  ],
+  "detalle": "rocket: etiquetas por destino: «Volver al menú» (sectores→menú, pausa, derrota, fin de campaña), «Volver a sectores» (briefing), «Elegir otro sector» (derrota/victoria), «Ver sectores» (campaña completa). Desde pausa, «Volver al menú» y «Reiniciar recorrido» abren el diálogo #ov-confirm (Cancelar enfocado, Escape cancela); tras derrota no se pide confirmación.",
+  "verificacion": "Playwright propio (scratchpad/test_rocket.mjs, servidor 879x): pausa→Volver al menú abre confirmación «¿Volver al menú?» con foco en Cancelar; Escape conserva la partida y devuelve el foco a ese botón; aceptar lleva al menú."
+ },
+ {
+  "id": "RSP-GLOBAL-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/rocket/index.html"
+  ],
+  "detalle": "rocket: meta viewport sin maximum-scale ni user-scalable. touch-action:none pasa de body a body.playing (sólo durante la partida; el deslizamiento en cualquier parte de la pantalla sigue funcionando); los .ov usan pan-y pinch-zoom y los botones manipulation. No hay bloqueos de gesturestart/dblclick en el documento.",
+  "verificacion": "Revisión de fuente + smoke sin errores; el gesto de juego sigue preventDefault sólo con scene=play."
+ },
+ {
+  "id": "RSP-ROCKET-02",
+  "estado": "implementado",
+  "archivos": [
+   "site/rocket/index.html"
+  ],
+  "detalle": "rocket: pausa, ajustes, ayuda y confirmación llevan role=dialog, aria-modal, aria-labelledby (títulos con tabindex=-1). showOv() guarda el disparador, pone #top y #stage inert mientras hay overlay (también al cargar), enfoca el [data-primary] del diálogo o el título de la pantalla; hideAll() quita inert y devuelve el foco al disparador visible (botón Pausa) o al lienzo (tabindex=-1). trapTab() encierra Tab/Shift+Tab en el diálogo e incluye el enlace global JET//Games como salida. Escape conserva su flujo (pausa→reanudar; confirmación→cancelar).",
+  "verificacion": "Playwright propio (scratchpad/test_rocket.mjs, servidor 879x): P→foco en «Reanudar partida»; Tab recorre Reiniciar/Ajustes/Volver al menú/JET//Games y vuelve a Reanudar sin tocar Pausa ni el lienzo; Escape reanuda y enfoca el lienzo; ratón: Reanudar devuelve el foco al botón Pausa; Ajustes→Listo devuelve el foco a «Ajustes» del menú."
+ },
+ {
+  "id": "RSP-ROCKET-03",
+  "estado": "implementado",
+  "archivos": [
+   "site/rocket/index.html"
+  ],
+  "detalle": "rocket: .mode-choose con role=group y aria-label «Modo arcade» (data-i18n-aria); cada .mode-btn type=button con aria-pressed sincronizado desde arcadeMode en renderMenu(); el récord se actualiza en el <small> sin reemplazar el nodo, el foco permanece.",
+  "verificacion": "Playwright propio (scratchpad/test_rocket.mjs, servidor 879x): exactamente un aria-pressed=true al inicio y tras elegir Contrarreloj; el juego arranca con ese modo."
+ },
+ {
+  "id": "SRC-R01",
+  "estado": "implementado",
+  "archivos": [
+   "site/rocket/index.html"
+  ],
+  "detalle": "rocket: campStart→«Jugar campaña» (se conserva «Continuar campaña» cuando ya hay progreso guardado), Contrarreloj, Supervivencia, resume→«Reanudar partida», restart→«Reiniciar recorrido», menu→«Volver al menú», replay→«Repetir sector», sectores→«Ver sectores»/«Volver a sectores»/«Elegir otro sector»; reintento tras derrota dinámico «Reintentar sector» (campaña) / «Reintentar recorrido» (arcade). «Despegar» se mantiene. Reiniciar/salir desde pausa confirman la pérdida del recorrido.",
+  "verificacion": "Playwright propio (scratchpad/test_rocket.mjs, servidor 879x): etiquetas ES/EN verificadas (Resume game, Restart run, Back to menu, Time Trial); pausa→Ajustes→Listo vuelve a la pausa."
+ },
+ {
+  "id": "SRC-R02",
+  "estado": "implementado",
+  "archivos": [
+   "site/rocket/index.html"
+  ],
+  "detalle": "rocket: eliminado resetState (armado indefinido). #btn-reset abre #ov-confirm con «¿Borrar todo el progreso de JET//Rocket?», «Se borrarán la campaña (sectores abiertos, estrellas y mejores puntajes), los récords de los tres modos arcade y el rango máximo. Esta acción no se puede deshacer.», Cancelar (foco inicial, data-primary) y «Borrar progreso» (clase danger). Borra sólo esas claves; conserva jetrocket-settings e idioma. Tras borrar, estado «Progreso borrado» en #reset-status (role=status).",
+  "verificacion": "Playwright propio (scratchpad/test_rocket.mjs, servidor 879x): primer clic no borra; Enter sobre Cancelar enfocado no borra (jetrocket-best intacto); aceptar borra best/campaña/maxrank y conserva ajustes; foco vuelve a Borrar progreso."
+ },
+ {
+  "id": "VIS-ROCKET-01",
+  "estado": "implementado",
+  "archivos": [
+   "site/rocket/index.html"
+  ],
+  "detalle": "rocket: buildBg(): cuadrícula rgba(95,130,147,0.12) 1 px; estrellas con alfa 0,06–0,20 y nunca dentro de una celda de muro (isWall); muros con borde ≥1,5 px y halo shadowBlur = 0,15·celda; fondo #0a0418 y esquinas del marco sin cambios. Filas/columnas/transposición intactas.",
+  "verificacion": "Revisión de fuente + capturas smoke/568×320 (muro y espacio libre distinguibles; sin falsas casillas)."
+ },
+ {
+  "id": "VIS-ROCKET-02",
+  "estado": "implementado",
+  "archivos": [
+   "site/rocket/index.html"
+  ],
+  "detalle": "rocket: drawSnake(): halo exterior bodyW+0,35·celda con alfa 0,07 (0,10 con escudo); halo secundario y bodyW=0,78·celda sin cambios; el escudo se marca con un anillo de 2 px (pulsa con movimiento, estático alfa 0,75 en reducido) dibujado bajo el cuerpo en lugar del trazo pulsante final. Cabeza (drawRocketShape) y colores de ítems/portales intactos.",
+  "verificacion": "Revisión de fuente; captura _smoke/rocket-568x320.png (cabeza, cuerpo y cristal reconocibles)."
+ },
+ {
+  "id": "VIS-ROCKET-03",
+  "estado": "implementado",
+  "archivos": [
+   "site/rocket/index.html"
+  ],
+  "detalle": "rocket: placas unificadas (PLATE_FILL rgba(5,1,8,.9), PLATE_BORDER #5F8293 a .5, radio 10, tipografía 12 px/700) para la placa de espera y drawBanner(); banners apilados con 8 px (BANNER_H+8); cuenta atrás con numeral de tamaño estable 1,5·celda en el centro (sin expansión), alfa sólo con movimiento. No se altera la duración de eventos ni de la cuenta.",
+  "verificacion": "Revisión de fuente + smoke (placa de espera visible en rocket-390.png tras iniciar)."
+ },
+ {
+  "id": "VIS-ROCKET-04",
+  "estado": "implementado",
+  "archivos": [
+   "site/rocket/index.html"
+  ],
+  "detalle": "rocket: reloj de animación animNow() que sólo avanza con scene≠pause y motionOK(); lo leen pulsos de cristales, portales, placa de espera y escudo; la llama de la nave no parpadea fuera de play; chispas y popups no se actualizan en pausa; chispas decorativas de la estela ≤1,5 px (vida 0,4 s); banners sin fundido en reducido; body.no-motion desactiva animaciones CSS (pastilla urgente) cuando motionOK() es falso.",
+  "verificacion": "Revisión de fuente; en pausa (Playwright) el lienzo deja de animar (animClock congelado)."
+ },
+ {
+  "id": "SRC-G01",
+  "estado": "no_aplicable",
+  "archivos": [
+   "site/rocket/index.html"
+  ],
+  "detalle": "rocket: la unificación de tarjetas corresponde a la home (fuera del alcance). El enlace de regreso #back-portfolio ya abre en la misma pestaña (target=_top) y el idioma se conserva por cookie jet_lang.",
+  "verificacion": "Revisión de fuente."
+ },
+ {
+  "id": "SRC-G02",
+  "estado": "ya_corregido_verificado",
+  "archivos": [
+   "site/rocket/index.html",
+   "site/rocket/jet-idioma.js"
+  ],
+  "detalle": "rocket: selector ES/EN (.lang-seg, aria-pressed) en menú y ajustes consumiendo JETIdioma (?lang > cookie .jetgames.fun/localStorage > navegador). Sin cambios.",
+  "verificacion": "Playwright propio (scratchpad/test_rocket.mjs, servidor 879x): con ?lang=es el juego arranca en español aunque el navegador esté en en-US; JETIdioma.set('en') repinta todo (incluida la confirmación abierta)."
+ },
+ {
+  "id": "SRC-G03",
+  "estado": "implementado",
+  "archivos": [
+   "site/rocket/index.html"
+  ],
+  "detalle": "rocket: pausa = «Reanudar partida»; «Volver al menú»; «Reiniciar recorrido»; «Repetir sector»; «Reintentar sector/recorrido»; destinos específicos («Volver a sectores», «Elegir otro sector», «Ver sectores»). Ver SRC-R01.",
+  "verificacion": "Playwright + revisión de etiquetas ES/EN."
+ },
+ {
+  "id": "SRC-G04",
+  "estado": "implementado",
+  "archivos": [
+   "site/rocket/index.html"
+  ],
+  "detalle": "rocket: ver SRC-R02 (diálogo explícito, Cancelar enfocado, botón peligro separado, datos enumerados, idioma/audio intactos).",
+  "verificacion": "Playwright (ver SRC-R02)."
+ },
+ {
+  "id": "SRC-G05",
+  "estado": "no_aplicable",
+  "archivos": [
+   "site/rocket/index.html"
+  ],
+  "detalle": "rocket: un solo HTML con script inline; el título y el menú existen en el HTML antes del JS; el único externo (jet-idioma.js) es síncrono y mínimo. No hay carga de módulos ni WebGL.",
+  "verificacion": "Smoke: 0 errores de consola."
+ },
+ {
+  "id": "SRC-G06",
+  "estado": "no_aplicable",
+  "archivos": [
+   "site/rocket/index.html"
+  ],
+  "detalle": "rocket: no tiene función de compartir.",
+  "verificacion": "Revisión de fuente (sin navigator.share ni clipboard)."
+ }
+]
